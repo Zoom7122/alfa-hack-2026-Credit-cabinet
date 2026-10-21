@@ -1,312 +1,206 @@
 // ERD для dbdiagram.io: вставить файл целиком на https://dbdiagram.io/d
-// Широкие группы колонок свёрнуты в строку с типом `group`: "fin_* (7)" — 7 колонок с префиксом fin_.
-// Полный список колонок — справочник в docs/db-schema.md (при расхождении прав он).
+// Колонки показаны все. Состав jsonb-полей и допустимые значения text-полей — в docs/db-schema.md.
 
 Project credit_cabinet {
   database_type: 'PostgreSQL'
-  Note: 'Умный кредитный кабинет предпринимателя. Справочник колонок: docs/db-schema.md'
+  Note: 'Умный кредитный кабинет предпринимателя. Справочник: docs/db-schema.md'
 }
 
-// ------------------------------------------------------------ пользователи, компании, каталог
+// ------------------------------------------------------------ пользователи и компании
 
 Table users {
   id text [pk, note: 'usr_<ULID>']
-  full_name text
-  roles "user_role[]"
-  "identity (2)" group [note: 'inn_individual, snils']
-  "demo (2)" group [note: 'persona, is_test']
-  created_at timestamptz
+  full_name text [not null]
+  role text [not null, note: 'CLIENT | UNDERWRITER']
+  inn text [note: 'ИНН ФЛ, для проверки подписанта']
+  persona text [note: 'описание для /auth/test-users']
+  created_at timestamptz [not null]
 }
 
-Table applicants {
-  id text [pk, note: 'apl_<ULID>']
-  inn text [unique]
-  applicant_type applicant_type
-  "requisites (5)" group [note: 'ogrn, kpp, full_name, short_name, registration_date']
-  "address (3)" group [note: 'legal_address_full, region_code, postal_code']
-  "registry (5)" group [note: 'okved_main_code, okved_main_title, director_name, director_inn, registry_status']
-  profile jsonb [note: 'ApplicantFull, кэш досье']
-  "timestamps (3)" group [note: 'profile_built_at, created_at, updated_at']
+Table companies {
+  id text [pk, note: 'apl_<ULID>; в API — Applicant']
+  inn text [not null, unique]
+  type text [not null, note: 'LEGAL_ENTITY | SOLE_PROPRIETOR']
+  name text [not null]
+  ogrn text
+  director_inn text
+  registry_status text
+  registry jsonb [note: 'реквизиты из ЕГРЮЛ/ЕГРИП']
+  created_at timestamptz [not null]
 }
 
-Table user_companies {
-  user_id text [ref: > users.id]
-  applicant_id text [ref: > applicants.id]
-  role representative_role
-  can_sign boolean
-  poa_id text [null, ref: > powers_of_attorney.id]
-  created_at timestamptz
+Table company_members {
+  user_id text [not null, ref: > users.id]
+  company_id text [not null, ref: > companies.id]
+  role text [not null, note: 'RepresentativeRole']
+  can_sign boolean [not null]
 
   indexes {
-    (user_id, applicant_id) [pk]
+    (user_id, company_id) [pk]
   }
-}
-
-Table products {
-  code text [pk]
-  name text
-  "eligibility (2)" group [note: 'applicant_types, purposes']
-  "limits (6)" group [note: 'amount_min, amount_max, term_min_months, term_max_months, rate_annual_from, revenue_k']
-  "collateral (3)" group [note: 'collateral_required_above, collateral_accepted_types, guarantee_required']
-  "requirements (2)" group [note: 'required_fields, required_documents']
-  is_active boolean
 }
 
 // ------------------------------------------------------------ заявка
 
 Table applications {
   id text [pk, note: 'app_<ULID>']
-  number text [unique, note: 'A-2026-000123']
-  version int [note: 'optimistic lock']
-  status application_status
-  applicant_id text [ref: > applicants.id]
-  product_code text [null, ref: > products.code]
-  created_by text [ref: > users.id]
-  prefilled_from text [null, ref: > applications.id]
-  assignee_id text [null, ref: > users.id]
-  "requested (2)" group [note: 'requested_amount, requested_term_months']
-  "purpose (2)" group [note: 'purpose_code, purpose_description']
-  "fin_* (7)" group [note: 'annual_revenue, annual_revenue_year, net_profit, avg_monthly_turnover, avg_monthly_expenses, employees_count, main_bank']
-  has_no_debts boolean
-  "consent_* (3)" group [note: 'consent_personal_data, consent_credit_bureau, consents_accepted_at']
-  "workflow (3)" group [note: 'submitted_at, deadline_at, sla_due_at']
-  "timestamps (2)" group [note: 'created_at, updated_at']
-}
-
-Table application_debts {
-  id bigint [pk, increment]
-  application_id text [ref: > applications.id]
-  kind debt_kind
-  "fields (7)" group [note: 'position, lender, original_amount, outstanding, monthly_payment, maturity_date, has_overdue']
-}
-
-Table application_collateral {
-  id bigint [pk, increment]
-  application_id text [ref: > applications.id]
-  type collateral_type
-  "fields (7)" group [note: 'position, description, estimated_value, owner, cadastral_number, vin, year']
-}
-
-Table application_guarantors {
-  id bigint [pk, increment]
-  application_id text [ref: > applications.id]
-  inn text
-  "fields (6)" group [note: 'position, type, name, relation, birth_date, monthly_income']
+  number text [not null, unique, note: 'A-2026-000123']
+  company_id text [not null, ref: > companies.id]
+  product_code text [note: 'код из products.yaml']
+  created_by text [not null, ref: > users.id]
+  status text [not null, note: 'ApplicationStatus']
+  version int [not null, note: 'optimistic lock']
+  amount bigint
+  term_months int
+  form jsonb [not null, note: 'ApplicationInput']
+  assignee_id text [ref: > users.id]
+  deadline_at timestamptz
+  submitted_at timestamptz
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
 }
 
 Table application_events {
   id text [pk, note: 'evt_<ULID>, монотонный']
-  application_id text [ref: > applications.id]
-  type text
-  actor_id text [null, ref: > users.id]
-  "fsm (4)" group [note: 'fsm_event, from_status, to_status, version']
-  "content (4)" group [note: 'actor_kind, message, client_visible, payload']
-  created_at timestamptz
+  application_id text [not null, ref: > applications.id]
+  type text [not null]
+  from_status text
+  to_status text
+  actor_id text [ref: > users.id, note: 'NULL — система']
+  message text [note: 'NULL — событие не для клиента']
+  payload jsonb [not null]
+  created_at timestamptz [not null]
 }
 
 Table info_requests {
   id text [pk, note: 'ir_<ULID>']
-  application_id text [ref: > applications.id]
-  state info_request_state
-  required boolean
-  finding_id text [null, ref: > findings.id]
-  created_by text [null, ref: > users.id]
-  answered_by text [null, ref: > users.id]
-  "question (3)" group [note: 'title, description, target_field']
-  "input_* (4)" group [note: 'input_type, input_options, input_min, input_max']
-  "docs_* (3)" group [note: 'docs_required, docs_accepted_types, docs_hint']
-  "answer (3)" group [note: 'answer_value, answer_comment, answered_at']
-  "meta (3)" group [note: 'origin, created_at, due_at']
+  application_id text [not null, ref: > applications.id]
+  status text [not null, note: 'OPEN | ANSWERED | CANCELLED']
+  required boolean [not null]
+  question jsonb [not null]
+  answer jsonb
+  created_at timestamptz [not null]
+  answered_at timestamptz
 }
 
-// ------------------------------------------------------------ обогащение, скоринг, решение
+// ------------------------------------------------------------ обогащение и решение
 
 Table source_snapshots {
-  id text [pk, note: 'snap_<ULID>']
-  applicant_id text [ref: > applicants.id]
-  source_code source_code
-  mode text [note: 'LIVE | MOCK']
-  "evidence (3)" group [note: 'source_url, raw_sha256, raw_storage_key']
-  normalized jsonb
-  "ttl (2)" group [note: 'fetched_at, expires_at']
+  id text [pk, note: 'snap_<ULID>; только вставка']
+  company_id text [not null, ref: > companies.id]
+  source text [not null, note: 'SourceCode']
+  mode text [not null, note: 'LIVE | MOCK']
+  data jsonb [not null]
+  raw_sha256 text [not null]
+  raw_storage_key text [not null]
+  fetched_at timestamptz [not null]
+  expires_at timestamptz
+
+  indexes {
+    (company_id, source, fetched_at)
+  }
 }
 
 Table source_runs {
   id bigint [pk, increment]
-  application_id text [ref: > applications.id]
-  source_code source_code
-  state source_state
-  snapshot_id text [null, ref: > source_snapshots.id]
-  "run (5)" group [note: 'criticality, mode, attempts, error, skip_reason']
-  "timestamps (3)" group [note: 'started_at, finished_at, updated_at']
+  application_id text [not null, ref: > applications.id]
+  source text [not null]
+  state text [not null, note: 'PENDING | RUNNING | DONE | FAILED | SKIPPED']
+  mode text [note: 'LIVE | MOCK | CACHE']
+  attempts smallint [not null]
+  snapshot_id text [ref: > source_snapshots.id]
+  error text
+  finished_at timestamptz
 
   indexes {
-    (application_id, source_code) [unique]
+    (application_id, source) [unique]
   }
 }
 
-Table findings {
-  id text [pk, note: 'fnd_<ULID>']
-  application_id text [ref: > applications.id]
-  code text
-  severity finding_severity
-  material boolean
-  "compare (4)" group [note: 'field, declared_value, found_value, source_code']
-  "content (3)" group [note: 'message, resolved_at, created_at']
-}
-
-Table score_results {
-  id text [pk, note: 'scr_<ULID>']
-  application_id text [ref: > applications.id]
-  is_current boolean
-  "model (2)" group [note: 'model_version, engine']
-  "result (4)" group [note: 'total, grade, pd, stop_factors']
-  "max_amount (3)" group [note: 'max_amount, max_amount_limited_by, max_amount_calc']
-  computed_at timestamptz
-}
-
-Table score_factors {
-  id bigint [pk, increment]
-  score_result_id text [ref: > score_results.id]
-  code text
-  points numeric
-  added_by text [null, ref: > users.id]
-  "fields (5)" group [note: 'title, value, bucket, source, degraded']
-  comment text [null, note: 'для source = EXPERT']
-}
-
 Table decisions {
-  id text [pk, note: 'dcs_<ULID>']
-  application_id text [ref: > applications.id]
-  kind decision_kind [note: 'ENGINE | UNDERWRITER']
-  outcome engine_outcome
-  score_result_id text [null, ref: > score_results.id]
-  decided_by text [null, ref: > users.id]
-  "engine (2)" group [note: 'rules_fired, manual_review_reasons']
-  "client (4)" group [note: 'client_outcome, client_reasons, recommendations, reapply_after']
-  internal_comment text [null]
-  created_at timestamptz
+  id text [pk, note: 'dcs_<ULID>; строка на раунд рассмотрения']
+  application_id text [not null, ref: > applications.id]
+  grade text [note: 'A..E']
+  score numeric
+  max_amount bigint
+  auto_outcome text [note: 'итог движка']
+  outcome text [note: 'итог раунда']
+  decided_by text [ref: > users.id, note: 'NULL — автоматически']
+  details jsonb [not null]
+  client_reasons jsonb
+  comment text
+  created_at timestamptz [not null]
 }
 
 Table offers {
   id text [pk, note: 'ofr_<ULID>']
-  application_id text [ref: > applications.id]
-  decision_id text [ref: > decisions.id]
-  product_code text [ref: > products.code]
-  accepted_by text [null, ref: > users.id]
-  kind offer_kind
-  state offer_state
-  "terms (6)" group [note: 'amount, term_months, rate_annual, monthly_payment, total_payment, full_cost_rate']
-  "conditions (5)" group [note: 'recommended, collateral_required, guarantee_required, conditions, difference_from_requested']
-  "lifecycle (6)" group [note: 'valid_until, accepted_at, declined_at, decline_reason, decline_comment, created_at']
+  application_id text [not null, ref: > applications.id]
+  kind text [not null, note: 'REQUESTED | ALTERNATIVE | RETENTION']
+  status text [not null, note: 'ACTIVE | ACCEPTED | WITHDRAWN | EXPIRED']
+  amount bigint [not null]
+  term_months int [not null]
+  rate numeric(5,2) [not null]
+  monthly_payment bigint [not null]
+  terms jsonb [not null]
+  valid_until timestamptz [not null]
 }
 
-// ------------------------------------------------------------ документы, ЭП, подписание
+// ------------------------------------------------------------ документы и подписание
 
 Table documents {
   id text [pk, note: 'doc_<ULID>']
-  application_id text [ref: > applications.id]
-  type document_type
-  info_request_id text [null, ref: > info_requests.id]
-  signed_document_id text [null, ref: > documents.id, note: 'для открепленной .sig']
-  uploaded_by text [null, ref: > users.id]
-  latest_signature_report_id text [null, ref: > signature_reports.id]
-  "file (6)" group [note: 'file_name, mime_type, size_bytes, sha256, storage_key, origin']
-  signature_state text
-  "recognition_* (5)" group [note: 'recognition_state, recognition_detected_type, recognition_extracted, recognition_confidence, recognized_at']
-  "timestamps (2)" group [note: 'uploaded_at, deleted_at']
+  application_id text [not null, ref: > applications.id]
+  type text [not null, note: 'DocumentType']
+  file_name text [not null]
+  mime_type text [not null]
+  size_bytes bigint [not null]
+  sha256 text [not null]
+  storage_key text [not null]
+  uploaded_by text [ref: > users.id, note: 'NULL — сгенерирован банком']
+  info_request_id text [ref: > info_requests.id]
+  signed_document_id text [ref: > documents.id, note: 'для открепленной .sig']
+  recognition jsonb
+  signature_state text [not null, note: 'NOT_SIGNED | PENDING | DONE | FAILED']
+  signature_verdict text [note: 'вердикт последнего отчёта']
+  uploaded_at timestamptz [not null]
+  deleted_at timestamptz
 }
 
 Table signature_reports {
-  id text [pk, note: 'sigr_<ULID>']
-  document_id text [null, ref: > documents.id, note: 'NULL — POST /signatures/verify без заявки']
-  requested_by text [null, ref: > users.id]
-  policy signature_policy
-  verdict signature_verdict
-  policy_satisfied boolean
-  "file (2)" group [note: 'file_name, document_sha256']
-  "policy_* (2)" group [note: 'policy_required_signers, policy_message']
-  "meta (2)" group [note: 'trust_mode, verified_at']
+  id text [pk, note: 'sigr_<ULID>; только вставка']
+  document_id text [ref: > documents.id, note: 'NULL — POST /signatures/verify']
+  verdict text [not null, note: 'SignatureVerdict']
+  policy text [not null, note: 'SignaturePolicy']
+  policy_satisfied boolean [not null]
+  trust_mode text [not null, note: 'MOCK | LIVE']
+  report jsonb [not null, note: 'SignatureReport целиком']
+  requested_by text [ref: > users.id]
+  verified_at timestamptz [not null]
 }
 
-Table signatures {
-  id bigint [pk, increment]
-  report_id text [ref: > signature_reports.id]
-  idx smallint
-  verdict signature_verdict
-  poa_id text [null, ref: > powers_of_attorney.id]
-  "format (3)" group [note: 'format, container, kind']
-  "signing_time (3)" group [note: 'signing_time, signing_time_source, tsa_name']
-  "signer_* (8)" group [note: 'kind, full_name, position, inn_individual, snils_masked, org_name, org_inn, org_ogrn']
-  "cert_* (12)" group [note: 'serial_number, thumbprint, valid_from, valid_to, issuer_name, issuer_inn, issuer_ogrn, issuer_accredited, subject_sign_tool, issuer_sign_tool, policies, key_algorithm']
-  "revocation (4)" group [note: 'revocation_status, revocation_method, revoked_at, revocation_checked_at']
-  "authority (2)" group [note: 'authority_basis, authority_matches_applicant']
-
-  indexes {
-    (report_id, idx) [unique]
-  }
-}
-
-Table signature_checks {
-  signature_id bigint [ref: > signatures.id]
-  code signature_check_code
-  status text
-  "details (2)" group [note: 'message, details']
-
-  indexes {
-    (signature_id, code) [pk]
-  }
-}
-
-Table powers_of_attorney {
-  id text [pk, note: 'poa_<ULID>']
-  number text [unique, note: 'GUID МЧД']
-  document_id text [null, ref: - documents.id]
-  "principal_* (3)" group [note: 'principal_name, principal_inn, principal_ogrn']
-  "representative_* (2)" group [note: 'representative_full_name, representative_inn_individual']
-  "content (4)" group [note: 'format_version, powers, valid_from, valid_to']
-  "status (3)" group [note: 'registry_status, principal_signature_verdict, checked_at']
-  created_at timestamptz
-}
-
-Table signing_sessions {
+Table signings {
   id text [pk, note: 'sgn_<ULID>']
-  application_id text [ref: > applications.id]
-  offer_id text [ref: > offers.id]
-  state signing_state
-  method signing_method [null]
-  required_signer_id text [ref: > users.id]
-  signed_by text [null, ref: > users.id]
-  contract_document_id text [ref: - documents.id]
-  schedule_document_id text [null, ref: - documents.id]
-  signature_report_id text [null, ref: - signature_reports.id]
-  "attempt (3)" group [note: 'demo_code, attempts_left, failed_reason']
-  "timestamps (3)" group [note: 'signed_at, created_at, updated_at']
-}
-
-Table disbursements {
-  id text [pk, note: 'dsb_<ULID>']
-  application_id text [unique, ref: - applications.id]
-  signing_session_id text [unique, ref: - signing_sessions.id]
-  amount bigint
-  account_masked text
-  executed_at timestamptz
+  application_id text [not null, ref: > applications.id]
+  offer_id text [not null, ref: > offers.id]
+  signer_id text [not null, ref: > users.id]
+  method text [note: 'SIMPLE_CODE | QUALIFIED_SIGNATURE']
+  status text [not null, note: 'AWAITING_SIGNER | SIGNED | FAILED | CANCELLED']
+  code text [note: 'только mock']
+  attempts_left smallint [not null]
+  signed_at timestamptz
+  created_at timestamptz [not null]
 }
 
 // ------------------------------------------------------------ группы (цвет на диаграмме)
 
-TableGroup users_catalog [color: #3498DB] {
+TableGroup users_companies [color: #3498DB] {
   users
-  applicants
-  user_companies
-  products
+  companies
+  company_members
 }
 
 TableGroup application [color: #27AE60] {
   applications
-  application_debts
-  application_collateral
-  application_guarantors
   application_events
   info_requests
 }
@@ -314,9 +208,6 @@ TableGroup application [color: #27AE60] {
 TableGroup enrichment_decision [color: #E67E22] {
   source_snapshots
   source_runs
-  findings
-  score_results
-  score_factors
   decisions
   offers
 }
@@ -324,9 +215,5 @@ TableGroup enrichment_decision [color: #E67E22] {
 TableGroup documents_signing [color: #8E44AD] {
   documents
   signature_reports
-  signatures
-  signature_checks
-  powers_of_attorney
-  signing_sessions
-  disbursements
+  signings
 }
