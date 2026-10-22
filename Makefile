@@ -2,9 +2,9 @@
 -include .env
 
 DOZZLE_PORT ?= 8888
-MODULES := data-collector db
+MODULES := data-collector db mock-api
 
-.PHONY: help env up down restart build ps logs migrate migrate-status test clean
+.PHONY: help env up down restart build ps logs migrate migrate-status test test-integration clean
 
 help: ## список команд
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-16s %s\n", $$1, $$2}'
@@ -38,6 +38,9 @@ migrate-status: env ## статус миграций
 
 test: ## тесты и vet всех Go-модулей
 	@for m in $(MODULES); do echo "== $$m"; (cd $$m && go vet ./... && go test ./...) || exit 1; done
+
+test-integration: ## контрактные тесты data-collector против запущенного mock-api (сначала make up)
+	$(MAKE) -C data-collector test-integration BANK_API_URL=http://localhost:$(or $(MOCK_API_PORT),8090)/bank/v1
 
 clean: ## остановить и удалить данные БД
 	docker compose down -v

@@ -8,6 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/service"
 )
 
 // problem — ответ об ошибке по RFC 9457 (схема Problem в api/openapi.yaml).
@@ -18,13 +20,13 @@ type problem struct {
 	Detail string         `json:"detail,omitempty"`
 	Code   string         `json:"code"`
 	Errors []problemField `json:"errors,omitempty"`
-}
+} //	@name	Problem
 
 type problemField struct {
 	Field   string `json:"field"`
 	Message string `json:"message"`
 	Code    string `json:"code,omitempty"`
-}
+} //	@name	ProblemField
 
 const (
 	codeValidationFailed = "VALIDATION_FAILED"
@@ -46,6 +48,15 @@ func validationProblem(status int, detail string, fields []problemField) problem
 		Code:   codeValidationFailed,
 		Errors: fields,
 	}
+}
+
+// fromValidationError переводит нарушения бизнес-правил из сервиса в Problem 422.
+func fromValidationError(verr *service.ValidationError, detail string) problem {
+	fields := make([]problemField, 0, len(verr.Fields))
+	for _, f := range verr.Fields {
+		fields = append(fields, problemField{Field: f.Field, Message: f.Message, Code: f.Code})
+	}
+	return validationProblem(http.StatusUnprocessableEntity, detail, fields)
 }
 
 func internalProblem() problem {

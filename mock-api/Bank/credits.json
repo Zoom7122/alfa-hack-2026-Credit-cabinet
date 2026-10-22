@@ -1,0 +1,48 @@
+{
+  "bureau": "НБКИ",
+  "reportId": "CR-2026-10-22-000123",
+  "requestDate": "2026-10-22",
+  "consent": {
+    "date": "2026-10-20",
+    "validUntil": "2027-04-20",
+    "purpose": "Оценка кредитоспособности"
+  },
+  "subject": {
+    "inn": "7701234567",
+    "ogrn": "1217700000001",
+    "name": "ООО «Ромашка»"
+  },
+  "summary": {
+    "activeContracts": 2,
+    "totalDebt": "3800000.00",
+    "overdueDebt": "0.00",
+    "maxOverdueDaysLast12m": 5,
+    "inquiriesLast30d": 3
+  },
+  "contracts": [
+    {
+      "uid": "3f2b1c7a-0b9e-4d1e-9a11-1a2b3c4d5e6f-2",
+      "creditor": "ПАО «Банк А»",
+      "type": "Кредитная линия",
+      "currency": "RUB",
+      "limit": "5000000.00",
+      "openDate": "2025-02-10",
+      "plannedCloseDate": "2027-02-10",
+      "currentDebt": "3200000.00",
+      "overdueDebt": "0.00",
+      "collateral": "Залог оборудования",
+      "paymentHistory": "000000000100"
+    },
+    {
+      "uid": "8a7d6c5b-1111-2222-3333-444455556666-1",
+      "creditor": "АО «Банк Б»",
+      "type": "Овердрафт",
+      "currency": "RUB",
+      "limit": "1000000.00",
+      "openDate": "2026-01-15",
+      "currentDebt": "600000.00",
+      "overdueDebt": "0.00",
+      "paymentHistory": "000000000"
+    }
+  ]
+}

@@ -36,7 +36,7 @@ func TestCreate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			repo := memory.NewQuestionnaireRepository()
-			svc := service.New(repo,
+			svc := service.NewQuestionnaireService(repo,
 				service.WithClock(func() time.Time { return fixedNow }),
 				service.WithIDGenerator(func() string { return "qst_test" }),
 			)
@@ -83,7 +83,7 @@ func TestCreate(t *testing.T) {
 
 func TestCreateRepositoryError(t *testing.T) {
 	boom := errors.New("db down")
-	svc := service.New(failingRepo{err: boom})
+	svc := service.NewQuestionnaireService(failingRepo{err: boom})
 
 	_, err := svc.Create(context.Background(), service.CreateInput{Age: 30, MaritalStatus: domain.MaritalSingle})
 	if !errors.Is(err, boom) {
@@ -92,7 +92,7 @@ func TestCreateRepositoryError(t *testing.T) {
 }
 
 func TestDefaultIDPrefix(t *testing.T) {
-	svc := service.New(memory.NewQuestionnaireRepository())
+	svc := service.NewQuestionnaireService(memory.NewQuestionnaireRepository())
 	q, err := svc.Create(context.Background(), service.CreateInput{Age: 30, MaritalStatus: domain.MaritalSingle})
 	if err != nil {
 		t.Fatal(err)

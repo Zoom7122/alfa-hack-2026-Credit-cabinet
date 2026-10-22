@@ -1,0 +1,532 @@
+basePath: /api/v1
+definitions:
+  CreateQuestionnaireRequest:
+    properties:
+      age:
+        example: 34
+        maximum: 100
+        minimum: 18
+        type: integer
+      children_count:
+        example: 2
+        maximum: 20
+        minimum: 0
+        type: integer
+      marital_status:
+        enum:
+        - SINGLE
+        - MARRIED
+        - DIVORCED
+        - DIVORCED_MULTIPLE
+        example: MARRIED
+        type: string
+    required:
+    - age
+    - children_count
+    - marital_status
+    type: object
+  InternalData:
+    properties:
+      accounts:
+        $ref: '#/definitions/domain.AccountsReport'
+      acquiring:
+        $ref: '#/definitions/domain.AcquiringReport'
+      card_index:
+        $ref: '#/definitions/domain.CardIndexReport'
+      credits:
+        $ref: '#/definitions/domain.CreditReport'
+      inn:
+        type: string
+      salary_project:
+        $ref: '#/definitions/domain.SalaryProjectReport'
+      sources:
+        items:
+          $ref: '#/definitions/SourceResult'
+        type: array
+    type: object
+  Problem:
+    properties:
+      code:
+        type: string
+      detail:
+        type: string
+      errors:
+        items:
+          $ref: '#/definitions/ProblemField'
+        type: array
+      status:
+        type: integer
+      title:
+        type: string
+      type:
+        type: string
+    type: object
+  ProblemField:
+    properties:
+      code:
+        type: string
+      field:
+        type: string
+      message:
+        type: string
+    type: object
+  Questionnaire:
+    properties:
+      age:
+        type: integer
+      children_count:
+        type: integer
+      created_at:
+        type: string
+      id:
+        type: string
+      marital_status:
+        type: string
+    type: object
+  SourceResult:
+    properties:
+      duration_ms:
+        type: integer
+      error:
+        type: string
+      source:
+        enum:
+        - ACCOUNTS
+        - CREDITS
+        - ACQUIRING
+        - SALARY_PROJECT
+        - CARD_INDEX
+        type: string
+      state:
+        enum:
+        - DONE
+        - FAILED
+        type: string
+    type: object
+  domain.Account:
+    properties:
+      AccountDetails:
+        items:
+          $ref: '#/definitions/domain.AccountDetails'
+        type: array
+      Servicer:
+        $ref: '#/definitions/domain.Servicer'
+      accountDescription:
+        type: string
+      accountId:
+        type: string
+      accountSubType:
+        type: string
+      accountType:
+        type: string
+      currency:
+        type: string
+      openingDate:
+        type: string
+      status:
+        type: string
+      statusUpdateDateTime:
+        type: string
+    type: object
+  domain.AccountDetails:
+    properties:
+      identification:
+        description: номер счёта
+        type: string
+      name:
+        type: string
+      schemeName:
+        type: string
+    type: object
+  domain.AccountRestriction:
+    properties:
+      amount:
+        type: string
+      authority:
+        type: string
+      decisionDate:
+        type: string
+      decisionNumber:
+        type: string
+      type:
+        type: string
+    type: object
+  domain.AccountsData:
+    properties:
+      Account:
+        items:
+          $ref: '#/definitions/domain.Account'
+        type: array
+      Balance:
+        items:
+          $ref: '#/definitions/domain.Balance'
+        type: array
+      Transaction:
+        items:
+          $ref: '#/definitions/domain.Transaction'
+        type: array
+    type: object
+  domain.AccountsReport:
+    properties:
+      Data:
+        $ref: '#/definitions/domain.AccountsData'
+      Links:
+        properties:
+          self:
+            type: string
+        type: object
+      Meta:
+        properties:
+          totalPages:
+            type: integer
+        type: object
+    type: object
+  domain.AcquiringReport:
+    properties:
+      acquirer:
+        type: string
+      commissionRate:
+        description: '% от оборота'
+        type: string
+      contractDate:
+        type: string
+      merchant:
+        $ref: '#/definitions/domain.Merchant'
+      monthlyTurnover:
+        items:
+          $ref: '#/definitions/domain.MonthlyTurnover'
+        type: array
+      sbp:
+        $ref: '#/definitions/domain.SBP'
+      terminals:
+        items:
+          $ref: '#/definitions/domain.Terminal'
+        type: array
+    type: object
+  domain.Balance:
+    properties:
+      Amount:
+        $ref: '#/definitions/domain.Money'
+      accountId:
+        type: string
+      creditDebitIndicator:
+        type: string
+      dateTime:
+        type: string
+      type:
+        type: string
+    type: object
+  domain.CardIndexReport:
+    properties:
+      accountNumber:
+        type: string
+      arrests:
+        items:
+          $ref: '#/definitions/domain.AccountRestriction'
+        type: array
+      asOfDate:
+        type: string
+      source:
+        type: string
+      suspensions:
+        description: приостановления операций
+        items:
+          $ref: '#/definitions/domain.AccountRestriction'
+        type: array
+      totalUnpaid:
+        type: string
+      unpaidDocuments:
+        items:
+          $ref: '#/definitions/domain.UnpaidDocument'
+        type: array
+    type: object
+  domain.CounterpartyAccount:
+    properties:
+      identification:
+        type: string
+      name:
+        type: string
+    type: object
+  domain.CreditConsent:
+    properties:
+      date:
+        type: string
+      purpose:
+        type: string
+      validUntil:
+        type: string
+    type: object
+  domain.CreditContract:
+    properties:
+      collateral:
+        type: string
+      creditor:
+        type: string
+      currency:
+        type: string
+      currentDebt:
+        type: string
+      limit:
+        type: string
+      openDate:
+        type: string
+      overdueDebt:
+        type: string
+      paymentHistory:
+        description: по месяцу на символ, 0 — без просрочки
+        type: string
+      plannedCloseDate:
+        type: string
+      type:
+        type: string
+      uid:
+        type: string
+    type: object
+  domain.CreditReport:
+    properties:
+      bureau:
+        type: string
+      consent:
+        $ref: '#/definitions/domain.CreditConsent'
+      contracts:
+        items:
+          $ref: '#/definitions/domain.CreditContract'
+        type: array
+      reportId:
+        type: string
+      requestDate:
+        type: string
+      subject:
+        $ref: '#/definitions/domain.CreditSubject'
+      summary:
+        $ref: '#/definitions/domain.CreditSummary'
+    type: object
+  domain.CreditSubject:
+    properties:
+      inn:
+        type: string
+      name:
+        type: string
+      ogrn:
+        type: string
+    type: object
+  domain.CreditSummary:
+    properties:
+      activeContracts:
+        type: integer
+      inquiriesLast30d:
+        type: integer
+      maxOverdueDaysLast12m:
+        type: integer
+      overdueDebt:
+        type: string
+      totalDebt:
+        type: string
+    type: object
+  domain.Merchant:
+    properties:
+      inn:
+        type: string
+      mcc:
+        type: string
+      merchantId:
+        type: string
+    type: object
+  domain.Money:
+    properties:
+      amount:
+        type: string
+      currency:
+        type: string
+    type: object
+  domain.MonthlyTurnover:
+    properties:
+      amount:
+        type: string
+      month:
+        description: YYYY-MM
+        type: string
+      operations:
+        type: integer
+      refunds:
+        type: string
+    type: object
+  domain.SBP:
+    properties:
+      connected:
+        type: boolean
+      monthlyAmountLast3mAvg:
+        type: string
+    type: object
+  domain.SalaryPayment:
+    properties:
+      amount:
+        type: string
+      date:
+        type: string
+      employees:
+        type: integer
+      registryNumber:
+        type: string
+    type: object
+  domain.SalaryProjectReport:
+    properties:
+      avgMonthlyFundLast6m:
+        type: string
+      bank:
+        type: string
+      contractDate:
+        type: string
+      contractNumber:
+        type: string
+      employeesWithCards:
+        type: integer
+      payments:
+        items:
+          $ref: '#/definitions/domain.SalaryPayment'
+        type: array
+      status:
+        type: string
+    type: object
+  domain.Servicer:
+    properties:
+      identification:
+        description: БИК
+        type: string
+      schemeName:
+        type: string
+    type: object
+  domain.Terminal:
+    properties:
+      address:
+        type: string
+      status:
+        type: string
+      tid:
+        type: string
+      type:
+        description: POS, Ecom
+        type: string
+    type: object
+  domain.Transaction:
+    properties:
+      Amount:
+        $ref: '#/definitions/domain.Money'
+      CounterpartyAccount:
+        $ref: '#/definitions/domain.CounterpartyAccount'
+      accountId:
+        type: string
+      bookingDateTime:
+        type: string
+      creditDebitIndicator:
+        description: Credit — поступление, Debit — списание
+        type: string
+      documentNumber:
+        type: string
+      status:
+        type: string
+      transactionId:
+        type: string
+      transactionInformation:
+        description: назначение платежа
+        type: string
+    type: object
+  domain.UnpaidDocument:
+    properties:
+      amount:
+        type: string
+      basis:
+        type: string
+      date:
+        type: string
+      documentType:
+        type: string
+      number:
+        type: string
+      paidAmount:
+        type: string
+      queue:
+        description: очерёдность списания (ст. 855 ГК)
+        type: integer
+      recipient:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: |-
+    Сбор данных о заёмщике для скоринга: анкета клиента и данные внутренних систем банка.
+    Ошибки — RFC 9457 (`application/problem+json`).
+  title: data-collector API
+  version: "0.1"
+paths:
+  /check-mock:
+    get:
+      description: |-
+        Параллельно опрашивает 5 систем банка (эмулятор mock-api) и возвращает их ответы как есть.
+        Секция системы, которая не ответила, — null; причина — в sources.
+      parameters:
+      - description: 'ИНН: 10 цифр (ЮЛ) или 12 (ИП)'
+        example: "7701234567"
+        in: query
+        name: inn
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/InternalData'
+        "400":
+          description: не передан inn
+          schema:
+            $ref: '#/definitions/Problem'
+        "422":
+          description: inn не из 10 или 12 цифр
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Problem'
+      summary: Проверить данные внутренних систем банка
+      tags:
+      - internal-data
+  /questionnaires:
+    post:
+      consumes:
+      - application/json
+      description: Проверяет правила и сохраняет анкету. Возраст — полных лет, бакеты
+        считает скоринг.
+      parameters:
+      - description: Анкета
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/CreateQuestionnaireRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/Questionnaire'
+        "400":
+          description: битый JSON, нет поля или неверный тип
+          schema:
+            $ref: '#/definitions/Problem'
+        "422":
+          description: 'нарушено правило: возраст 18–100, статус из перечня, детей
+            0–20'
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Problem'
+      summary: Принять анкету заёмщика
+      tags:
+      - questionnaires
+swagger: "2.0"

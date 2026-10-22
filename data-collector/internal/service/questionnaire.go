@@ -31,24 +31,26 @@ type CreateInput struct {
 	ChildrenCount int
 }
 
-// Service принимает анкеты и сохраняет их.
-type Service struct {
+// QuestionnaireService принимает анкеты и сохраняет их.
+type QuestionnaireService struct {
 	repo  Repository
 	now   func() time.Time
 	newID func() string
 }
 
-// Option настраивает Service (используется в тестах).
-type Option func(*Service)
+// Option настраивает QuestionnaireService (используется в тестах).
+type Option func(*QuestionnaireService)
 
 // WithClock подменяет источник времени.
-func WithClock(now func() time.Time) Option { return func(s *Service) { s.now = now } }
+func WithClock(now func() time.Time) Option { return func(s *QuestionnaireService) { s.now = now } }
 
 // WithIDGenerator подменяет генератор идентификаторов.
-func WithIDGenerator(newID func() string) Option { return func(s *Service) { s.newID = newID } }
+func WithIDGenerator(newID func() string) Option {
+	return func(s *QuestionnaireService) { s.newID = newID }
+}
 
-func New(repo Repository, opts ...Option) *Service {
-	s := &Service{
+func NewQuestionnaireService(repo Repository, opts ...Option) *QuestionnaireService {
+	s := &QuestionnaireService{
 		repo:  repo,
 		now:   time.Now,
 		newID: func() string { return "qst_" + ulid.MustNew(ulid.Now(), rand.Reader).String() },
@@ -61,7 +63,7 @@ func New(repo Repository, opts ...Option) *Service {
 
 // Create проверяет бизнес-правила и сохраняет анкету.
 // Нарушения возвращаются как *ValidationError.
-func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Questionnaire, error) {
+func (s *QuestionnaireService) Create(ctx context.Context, in CreateInput) (domain.Questionnaire, error) {
 	if err := validate(in); err != nil {
 		return domain.Questionnaire{}, err
 	}

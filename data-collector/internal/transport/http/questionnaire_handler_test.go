@@ -3,8 +3,6 @@ package httptransport_test
 import (
 	"context"
 	"encoding/json"
-	"io"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -21,15 +19,16 @@ import (
 
 func newRouter(t *testing.T) (*gin.Engine, *memory.QuestionnaireRepository) {
 	t.Helper()
-	gin.SetMode(gin.TestMode)
 
 	repo := memory.NewQuestionnaireRepository()
-	svc := service.New(repo,
+	svc := service.NewQuestionnaireService(repo,
 		service.WithClock(func() time.Time { return time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC) }),
 		service.WithIDGenerator(func() string { return "qst_test" }),
 	)
-	r := gin.New()
-	httptransport.NewHandler(svc, slog.New(slog.NewTextHandler(io.Discard, nil))).Register(r.Group("/api/v1"))
+	r := httptransport.NewRouter(
+		httptransport.NewQuestionnaireHandler(svc, discardLog),
+		httptransport.NewInternalDataHandler(stubInternalData{}, discardLog),
+	)
 	return r, repo
 }
 

@@ -35,11 +35,24 @@ services:
     build: ./data-collector
     environment:
       HTTP_ADDR: :8081
+      BANK_API_URL: http://mock-api:8090/bank/v1
+      BANK_API_TIMEOUT: 5s
     ports:
       - "${DATA_COLLECTOR_PORT:-8081}:8081"
     depends_on:
       migrate:
         condition: service_completed_successfully
+      mock-api:
+        condition: service_started
+    restart: unless-stopped
+
+  # Эмулятор внешних систем (пока только внутренние системы банка: /bank/v1/...).
+  mock-api:
+    build: ./mock-api
+    environment:
+      HTTP_ADDR: :8090
+    ports:
+      - "${MOCK_API_PORT:-8090}:8090"
     restart: unless-stopped
 
   # Логи всех контейнеров в браузере: http://localhost:${DOZZLE_PORT:-8888}
