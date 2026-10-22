@@ -2,6 +2,22 @@
 
 Умный кредитный кабинет предпринимателя (Альфа-Хак 2026).
 
+## Запуск
+
+```bash
+make up      # создаёт .env из .env.example, собирает и поднимает всё
+make help    # остальные команды
+```
+
+| Сервис | Адрес | Что это |
+|---|---|---|
+| postgres | `localhost:${POSTGRES_PORT}` (5432) | общая БД |
+| migrate | — | накатывает миграции из [db/](db/) и завершается |
+| data-collector | http://localhost:8081 | сбор данных для скоринга, [data-collector/](data-collector/) |
+| dozzle | http://localhost:8888 | логи всех контейнеров в браузере |
+
+Порты и доступы к БД — в `.env`.
+
 ## Документация
 
 - [api/openapi.yaml](api/openapi.yaml) — REST-контракт для фронтенда и back-office (OpenAPI 3.1)
