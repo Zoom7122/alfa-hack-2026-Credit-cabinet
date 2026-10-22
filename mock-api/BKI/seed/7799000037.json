@@ -1,0 +1,147 @@
+{
+  "LEGAL": {
+    "report_id": "NBKI-RPT-413B7C",
+    "bureau": "NBKI",
+    "generated_at": "2026-10-22T10:15:07Z",
+    "subject": {
+      "type": "LEGAL",
+      "inn": "7799000037",
+      "name": "ООО \"АЛЬТАИР\""
+    },
+    "has_history": true,
+    "score": {
+      "value": 438,
+      "min": 300,
+      "max": 850,
+      "grade": "E",
+      "model": "MOCK-SME-v1"
+    },
+    "summary": {
+      "active_accounts": 2,
+      "closed_accounts": 2,
+      "total_limit": 3900000.00,
+      "total_outstanding": 2416000.00,
+      "total_monthly_payment": 151500.00,
+      "current_overdue_amount": 351700.00,
+      "max_overdue_days_ever": 64,
+      "overdue_30p_24m": 2,
+      "overdue_60p_24m": 1,
+      "overdue_90p_24m": 0,
+      "restructured_count": 1,
+      "inquiries_7d": 2,
+      "inquiries_30d": 5,
+      "inquiries_90d": 7
+    },
+    "accounts": [
+      {
+        "account_id": "ACC-1",
+        "creditor_type": "BANK",
+        "creditor_name": "ПАО \"БАНК ВОСТОК\"",
+        "product_type": "CREDIT_LINE",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2025-03-31",
+        "planned_close_at": "2027-03-31",
+        "limit": 1500000.00,
+        "outstanding": 1180000.00,
+        "monthly_payment": 64300.00,
+        "status": "ACTIVE",
+        "current_overdue_days": 35,
+        "current_overdue_amount": 64300.00,
+        "payment_history_24m": "21000000000000000000----",
+        "collateral": false
+      },
+      {
+        "account_id": "ACC-2",
+        "creditor_type": "BANK",
+        "creditor_name": "АО \"АЛЬФА-БАНК\"",
+        "product_type": "TERM_LOAN",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2025-01-19",
+        "planned_close_at": "2027-07-19",
+        "limit": 2400000.00,
+        "outstanding": 1236000.00,
+        "monthly_payment": 87200.00,
+        "status": "ACTIVE",
+        "current_overdue_days": 64,
+        "current_overdue_amount": 287400.00,
+        "payment_history_24m": "3210000000000000000000--",
+        "collateral": false
+      },
+      {
+        "account_id": "ACC-3",
+        "creditor_type": "BANK",
+        "creditor_name": "АО \"ПРОМКРЕДИТБАНК\"",
+        "product_type": "OVERDRAFT",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2022-03-01",
+        "planned_close_at": "2023-09-01",
+        "limit": 700000.00,
+        "outstanding": 0.00,
+        "monthly_payment": null,
+        "status": "CLOSED",
+        "current_overdue_days": 0,
+        "current_overdue_amount": 0.00,
+        "payment_history_24m": "------------------------",
+        "collateral": false
+      },
+      {
+        "account_id": "ACC-4",
+        "creditor_type": "BANK",
+        "creditor_name": "АО \"АЛЬФА-БАНК\"",
+        "product_type": "TERM_LOAN",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2021-06-10",
+        "planned_close_at": "2024-06-10",
+        "limit": 1500000.00,
+        "outstanding": 0.00,
+        "monthly_payment": null,
+        "status": "CLOSED",
+        "current_overdue_days": 0,
+        "current_overdue_amount": 0.00,
+        "payment_history_24m": "--------------0000100000",
+        "collateral": false
+      }
+    ],
+    "inquiries": [
+      {
+        "date": "2026-10-21",
+        "creditor_type": "BANK",
+        "purpose": "LOAN_APPLICATION"
+      },
+      {
+        "date": "2026-10-16",
+        "creditor_type": "MFO",
+        "purpose": "LOAN_APPLICATION"
+      },
+      {
+        "date": "2026-10-09",
+        "creditor_type": "MFO",
+        "purpose": "LOAN_APPLICATION"
+      },
+      {
+        "date": "2026-10-01",
+        "creditor_type": "BANK",
+        "purpose": "LOAN_APPLICATION"
+      },
+      {
+        "date": "2026-09-25",
+        "creditor_type": "LEASING",
+        "purpose": "LOAN_APPLICATION"
+      },
+      {
+        "date": "2026-09-02",
+        "creditor_type": "BANK",
+        "purpose": "LOAN_APPLICATION"
+      },
+      {
+        "date": "2026-08-11",
+        "creditor_type": "MFO",
+        "purpose": "LOAN_APPLICATION"
+      }
+    ]
+  }
+}

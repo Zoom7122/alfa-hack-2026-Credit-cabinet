@@ -1,0 +1,68 @@
+{
+  "inn": "7799000044",
+  "checked_at": "2026-10-22T10:15:06Z",
+  "summary": {
+    "as_defendant_count_12m": 1,
+    "as_defendant_amount_12m": 3200000.00,
+    "as_defendant_active_amount": 3200000.00,
+    "as_plaintiff_count_12m": 1,
+    "as_plaintiff_amount_12m": 420000.00,
+    "bankruptcy_as_debtor": false
+  },
+  "items": [
+    {
+      "case_number": "А40-233418/2026",
+      "court": "АС города Москвы",
+      "registered_at": "2026-09-24",
+      "case_type": "CIVIL",
+      "category": "О взыскании неосновательного обогащения и неустойки по договору подряда",
+      "role": "DEFENDANT",
+      "plaintiffs": [
+        {
+          "name": "ООО \"ПРОМОБОРУДОВАНИЕ\"",
+          "inn": "7719778899"
+        }
+      ],
+      "defendants": [
+        {
+          "name": "ООО \"ТЕХНО-СЕРВИС\"",
+          "inn": "7799000044"
+        }
+      ],
+      "claim_amount": 3200000.00,
+      "status": "PENDING",
+      "outcome": null,
+      "decision_date": null,
+      "last_event": "Заявление принято к производству",
+      "last_event_at": "2026-09-29",
+      "next_hearing_at": "2026-11-26"
+    },
+    {
+      "case_number": "А41-31877/2026",
+      "court": "АС Московской области",
+      "registered_at": "2026-02-17",
+      "case_type": "CIVIL",
+      "category": "О взыскании задолженности по договору оказания услуг",
+      "role": "PLAINTIFF",
+      "plaintiffs": [
+        {
+          "name": "ООО \"ТЕХНО-СЕРВИС\"",
+          "inn": "7799000044"
+        }
+      ],
+      "defendants": [
+        {
+          "name": "ООО \"АГРОМАШ\"",
+          "inn": "5011223344"
+        }
+      ],
+      "claim_amount": 420000.00,
+      "status": "CLOSED",
+      "outcome": "SATISFIED",
+      "decision_date": "2026-04-28",
+      "last_event": "Решение вступило в законную силу",
+      "last_event_at": "2026-05-29",
+      "next_hearing_at": null
+    }
+  ]
+}

@@ -14,7 +14,7 @@ make help    # остальные команды
 | postgres | `localhost:${POSTGRES_PORT}` (5432) | общая БД |
 | migrate | — | накатывает миграции из [db/](db/) и завершается |
 | data-collector | http://localhost:8081 | сбор данных для скоринга, [data-collector/](data-collector/); Swagger UI — http://localhost:8081/swagger/index.html |
-| mock-api | http://localhost:8090 | эмулятор внешних систем (внутренние системы банка), [mock-api/](mock-api/) |
+| mock-api | http://localhost:8090 | эмулятор внешних систем: АБС банка, ФНС, БКИ, Compliance, ФССП, КАД, Федресурс; [mock-api/](mock-api/) |
 | dozzle | http://localhost:8888 | логи всех контейнеров в браузере |
 
 Порты и доступы к БД — в `.env`.
@@ -28,6 +28,7 @@ make help    # остальные команды
 - [docs/websocket.md](docs/websocket.md) — WebSocket-события
 - [docs/e-signature.md](docs/e-signature.md) — проверка электронных подписей (КЭП, МЧД), политики, демо-сценарии
 - [docs/data-collection.md](docs/data-collection.md) — какие данные собираем, источники, скоринговая карта ЮЛ/ИП
+- [docs/mock-apis.md](docs/mock-apis.md) — контракты моков внешних систем и тестовые сценарии A–E
 
 Проверка контракта:
 

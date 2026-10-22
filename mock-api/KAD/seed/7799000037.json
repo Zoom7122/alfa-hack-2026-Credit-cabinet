@@ -1,0 +1,122 @@
+{
+  "inn": "7799000037",
+  "checked_at": "2026-10-22T10:15:06Z",
+  "summary": {
+    "as_defendant_count_12m": 4,
+    "as_defendant_amount_12m": 2958500.00,
+    "as_defendant_active_amount": 1540000.00,
+    "as_plaintiff_count_12m": 0,
+    "as_plaintiff_amount_12m": 0.00,
+    "bankruptcy_as_debtor": true
+  },
+  "items": [
+    {
+      "case_number": "А40-245903/2026",
+      "court": "АС города Москвы",
+      "registered_at": "2026-10-18",
+      "case_type": "BANKRUPTCY",
+      "category": "О несостоятельности (банкротстве) организаций и граждан",
+      "role": "DEBTOR",
+      "plaintiffs": [
+        {
+          "name": "ООО \"АГРОСНАБ\"",
+          "inn": "5024187365"
+        }
+      ],
+      "defendants": [
+        {
+          "name": "ООО \"АЛЬТАИР\"",
+          "inn": "7799000037"
+        }
+      ],
+      "claim_amount": 1184000.00,
+      "status": "PENDING",
+      "outcome": null,
+      "bankruptcy_stage": "PETITION_FILED",
+      "last_event": "Заявление принято к производству",
+      "last_event_at": "2026-10-20",
+      "next_hearing_at": "2026-11-25"
+    },
+    {
+      "case_number": "А40-221904/2026",
+      "court": "АС города Москвы",
+      "registered_at": "2026-09-14",
+      "case_type": "CIVIL",
+      "category": "О взыскании неосновательного обогащения (предоплата за непоставленный товар)",
+      "role": "DEFENDANT",
+      "plaintiffs": [
+        {
+          "name": "ООО \"РИТЕЙЛ-ЦЕНТР\"",
+          "inn": "7717334411"
+        }
+      ],
+      "defendants": [
+        {
+          "name": "ООО \"АЛЬТАИР\"",
+          "inn": "7799000037"
+        }
+      ],
+      "claim_amount": 356000.00,
+      "status": "PENDING",
+      "outcome": null,
+      "decision_date": null,
+      "last_event": "Назначено судебное заседание",
+      "last_event_at": "2026-09-21",
+      "next_hearing_at": "2026-11-17"
+    },
+    {
+      "case_number": "А40-160221/2026",
+      "court": "АС города Москвы",
+      "registered_at": "2026-06-09",
+      "case_type": "CIVIL",
+      "category": "О взыскании задолженности по договору поставки",
+      "role": "DEFENDANT",
+      "plaintiffs": [
+        {
+          "name": "ООО \"ПОСТАВКА-М\"",
+          "inn": "7716223344"
+        }
+      ],
+      "defendants": [
+        {
+          "name": "ООО \"АЛЬТАИР\"",
+          "inn": "7799000037"
+        }
+      ],
+      "claim_amount": 234500.00,
+      "status": "CLOSED",
+      "outcome": "SATISFIED",
+      "decision_date": "2026-08-25",
+      "last_event": "Выдан исполнительный лист",
+      "last_event_at": "2026-09-26",
+      "next_hearing_at": null
+    },
+    {
+      "case_number": "А40-98812/2026",
+      "court": "АС города Москвы",
+      "registered_at": "2026-04-21",
+      "case_type": "CIVIL",
+      "category": "О взыскании задолженности по договору поставки",
+      "role": "DEFENDANT",
+      "plaintiffs": [
+        {
+          "name": "ООО \"АГРОСНАБ\"",
+          "inn": "5024187365"
+        }
+      ],
+      "defendants": [
+        {
+          "name": "ООО \"АЛЬТАИР\"",
+          "inn": "7799000037"
+        }
+      ],
+      "claim_amount": 1184000.00,
+      "status": "CLOSED",
+      "outcome": "SATISFIED",
+      "decision_date": "2026-07-14",
+      "last_event": "Решение вступило в законную силу",
+      "last_event_at": "2026-08-15",
+      "next_hearing_at": null
+    }
+  ]
+}

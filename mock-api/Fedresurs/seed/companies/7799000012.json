@@ -1,0 +1,49 @@
+{
+  "inn": "7799000012",
+  "checked_at": "2026-10-22T10:15:06Z",
+  "summary": {
+    "bankruptcy_stage": "NONE",
+    "has_bankruptcy_intention": false,
+    "active_leasing_count": 2,
+    "liquidation": false,
+    "reorganization": false
+  },
+  "messages": [
+    {
+      "id": "FR-5C1A9E21",
+      "type": "LEASING_CONTRACT",
+      "published_at": "2026-02-03",
+      "publisher": {
+        "name": "ООО \"ЛИЗИНГ-ПРО\"",
+        "inn": "7718654321"
+      },
+      "payload": {
+        "contract_number": "ЛД-3391",
+        "contract_date": "2026-02-01",
+        "period_from": "2026-02-01",
+        "period_to": "2029-01-31",
+        "lessee_inn": "7799000012",
+        "subject_class": "VEHICLE",
+        "subject": "Грузовой фургон ГАЗель NEXT, VIN XUY27050TL0012345, 2025 г.в."
+      }
+    },
+    {
+      "id": "FR-77B0D402",
+      "type": "LEASING_CONTRACT",
+      "published_at": "2025-08-19",
+      "publisher": {
+        "name": "АО \"ТЕХЛИЗИНГ\"",
+        "inn": "7705112233"
+      },
+      "payload": {
+        "contract_number": "ТЛ-2025/118",
+        "contract_date": "2025-08-15",
+        "period_from": "2025-08-15",
+        "period_to": "2027-08-14",
+        "lessee_inn": "7799000012",
+        "subject_class": "EQUIPMENT",
+        "subject": "Холодильная камера КХН-12, 2 шт."
+      }
+    }
+  ]
+}

@@ -46,7 +46,8 @@ services:
         condition: service_started
     restart: unless-stopped
 
-  # Эмулятор внешних систем (пока только внутренние системы банка: /bank/v1/...).
+  # Эмулятор внешних систем: /core-banking/v1, /fns, /bki/v1, /compliance/v1, /fssp/v1,
+  # /kad/v1, /fedresurs/v1 и старый /bank/v1 (его вызывает data-collector).
   mock-api:
     build: ./mock-api
     environment:

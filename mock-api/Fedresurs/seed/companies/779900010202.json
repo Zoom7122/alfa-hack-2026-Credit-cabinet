@@ -1,0 +1,12 @@
+{
+  "inn": "779900010202",
+  "checked_at": "2026-10-22T10:15:06Z",
+  "summary": {
+    "bankruptcy_stage": "NONE",
+    "has_bankruptcy_intention": false,
+    "active_leasing_count": 0,
+    "liquidation": false,
+    "reorganization": false
+  },
+  "messages": []
+}

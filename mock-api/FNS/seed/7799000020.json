@@ -1,0 +1,235 @@
+{
+  "egrul": {
+    "c": "ООО \"СТРОЙРЕСУРС\"",
+    "n": "ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"СТРОЙРЕСУРС\"",
+    "i": "7799000020",
+    "o": "1197700523456",
+    "p": "779901001",
+    "r": "20.05.2019",
+    "g": "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР: Орлов Денис Павлович",
+    "k": "ul",
+    "rn": "Г.Москва",
+    "t": "MOCK-VYP-7799000020"
+  },
+  "pb": {
+    "vyp": {
+      "ИНН": "7799000020",
+      "ОГРН": "1197700523456",
+      "КПП": "779901001",
+      "НаимЮЛСокр": "ООО \"СТРОЙРЕСУРС\"",
+      "ДатаРег": "2019-05-20",
+      "КодОКВЭД": "41.20",
+      "НаимОКВЭД": "Строительство жилых и нежилых зданий",
+      "СумКап": "50000",
+      "Адрес": "117105,МОСКВА ГОРОД,,,,ВАРШАВСКОЕ ШОССЕ,26,,ОФИС 12",
+      "sulst_ex": 10,
+      "sulst_name_ex": "Действующая организация",
+      "invalid": 0,
+      "pr_zd": 0,
+      "pr_otch": 0,
+      "rsmpcategory": 1,
+      "masruk": [
+        {
+          "inn": "779900020136",
+          "name": "ОРЛОВ ДЕНИС ПАВЛОВИЧ",
+          "position": "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР",
+          "cnt": "1"
+        }
+      ]
+    },
+    "masaddress": [],
+    "vestnik": [],
+    "liquidated": false,
+    "okved2exs": [
+      "41.20 - Строительство жилых и нежилых зданий",
+      "43.99 - Работы строительные специализированные прочие, не включенные в другие группировки"
+    ]
+  },
+  "bo": {
+    "organization": {
+      "id": 90000245,
+      "inn": "7799000020",
+      "shortName": "ООО \"СТРОЙРЕСУРС\"",
+      "ogrn": "1197700523456",
+      "okved2": "41.20",
+      "statusCode": "ACTIVE",
+      "bfo": {
+        "period": "2025",
+        "gainSum": 25870,
+        "knd": "0710099"
+      }
+    },
+    "bfo": [
+      {
+        "period": "2025",
+        "actives": 18480,
+        "gainSum": 25870,
+        "typeCorrections": [
+          {
+            "correction": {
+              "balance": {
+                "current1100": 9600,
+                "current1200": 8880,
+                "current1210": 3100,
+                "current1230": 5400,
+                "current1250": 380,
+                "current1300": 2150,
+                "current1400": 6800,
+                "current1410": 6800,
+                "current1500": 9530,
+                "current1510": 4200,
+                "current1520": 5330,
+                "current1600": 18480,
+                "previous1100": 7200,
+                "previous1200": 7820,
+                "previous1210": 2700,
+                "previous1230": 4600,
+                "previous1250": 520,
+                "previous1300": 1740,
+                "previous1400": 5100,
+                "previous1410": 5100,
+                "previous1500": 8180,
+                "previous1510": 2900,
+                "previous1520": 5280,
+                "previous1600": 15020
+              },
+              "financialResult": {
+                "current2110": 25870,
+                "current2120": 23180,
+                "current2200": 1870,
+                "current2210": 820,
+                "current2300": 510,
+                "current2330": 1210,
+                "current2340": 80,
+                "current2350": 230,
+                "current2400": 410,
+                "current2410": 100,
+                "previous2110": 22140,
+                "previous2120": 19760,
+                "previous2200": 1620,
+                "previous2210": 760,
+                "previous2300": 740,
+                "previous2330": 840,
+                "previous2340": 120,
+                "previous2350": 160,
+                "previous2400": 520,
+                "previous2410": 220
+              },
+              "fundsMovement": {
+                "current4100": 1180,
+                "previous4100": 1310
+              }
+            }
+          }
+        ]
+      },
+      {
+        "period": "2024",
+        "actives": 15020,
+        "gainSum": 22140,
+        "typeCorrections": [
+          {
+            "correction": {
+              "balance": {
+                "current1100": 7200,
+                "current1200": 7820,
+                "current1210": 2700,
+                "current1230": 4600,
+                "current1250": 520,
+                "current1300": 1740,
+                "current1400": 5100,
+                "current1410": 5100,
+                "current1500": 8180,
+                "current1510": 2900,
+                "current1520": 5280,
+                "current1600": 15020,
+                "previous1100": 5400,
+                "previous1200": 6810,
+                "previous1210": 2300,
+                "previous1230": 3900,
+                "previous1250": 610,
+                "previous1300": 1220,
+                "previous1400": 3600,
+                "previous1410": 3600,
+                "previous1500": 7390,
+                "previous1510": 2100,
+                "previous1520": 5290,
+                "previous1600": 12210
+              },
+              "financialResult": {
+                "current2110": 22140,
+                "current2120": 19760,
+                "current2200": 1620,
+                "current2210": 760,
+                "current2300": 740,
+                "current2330": 840,
+                "current2340": 120,
+                "current2350": 160,
+                "current2400": 520,
+                "current2410": 220,
+                "previous2110": 19600,
+                "previous2120": 17350,
+                "previous2200": 1560,
+                "previous2210": 690,
+                "previous2300": 860,
+                "previous2330": 610,
+                "previous2340": 0,
+                "previous2350": 90,
+                "previous2400": 690,
+                "previous2410": 170
+              },
+              "fundsMovement": {
+                "current4100": 1310,
+                "previous4100": 1090
+              }
+            }
+          }
+        ]
+      },
+      {
+        "period": "2023",
+        "actives": 12210,
+        "gainSum": 19600,
+        "typeCorrections": [
+          {
+            "correction": {
+              "balance": {
+                "current1100": 5400,
+                "current1200": 6810,
+                "current1210": 2300,
+                "current1230": 3900,
+                "current1250": 610,
+                "current1300": 1220,
+                "current1400": 3600,
+                "current1410": 3600,
+                "current1500": 7390,
+                "current1510": 2100,
+                "current1520": 5290,
+                "current1600": 12210
+              },
+              "financialResult": {
+                "current2110": 19600,
+                "current2120": 17350,
+                "current2200": 1560,
+                "current2210": 690,
+                "current2300": 860,
+                "current2330": 610,
+                "current2340": 0,
+                "current2350": 90,
+                "current2400": 690,
+                "current2410": 170
+              },
+              "fundsMovement": {
+                "current4100": 1090
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "bi": {
+    "checked_at": "2026-10-22T10:15:03",
+    "by_bik": {}
+  }
+}

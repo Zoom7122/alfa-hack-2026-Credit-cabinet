@@ -1,0 +1,288 @@
+{
+  "client": {
+    "client_id": "CL-0062045",
+    "inn": "779900010202",
+    "kpp": null,
+    "ogrn": "326774600012345",
+    "name": "ИП Смирнова Анна Викторовна",
+    "client_type": "IP",
+    "segment": "MICRO",
+    "client_since": "2026-08-20",
+    "accounts": [
+      {
+        "account_number": "40802810600000062045",
+        "currency": "RUB",
+        "opened_at": "2026-08-20",
+        "status": "ACTIVE"
+      }
+    ],
+    "products": {
+      "acquiring": false,
+      "payroll": false,
+      "payroll_employees": 0,
+      "corporate_cards": 1
+    }
+  },
+  "turnover": [
+    {
+      "month": "2026-09",
+      "credit_turnover": 251350.00,
+      "debit_turnover": 296390.00,
+      "acquiring_turnover": 0.00,
+      "avg_balance": 54210.60,
+      "min_balance": 2140.00,
+      "zero_balance_days": 0,
+      "incoming_tx_count": 4,
+      "outgoing_tx_count": 6
+    },
+    {
+      "month": "2026-08",
+      "credit_turnover": 86400.00,
+      "debit_turnover": 53490.00,
+      "acquiring_turnover": 0.00,
+      "avg_balance": 31840.25,
+      "min_balance": 0.00,
+      "zero_balance_days": 20,
+      "incoming_tx_count": 2,
+      "outgoing_tx_count": 2
+    }
+  ],
+  "transactions": [
+    {
+      "id": "TX-20260930-962682",
+      "date": "2026-09-30",
+      "direction": "DEBIT",
+      "amount": 1490.00,
+      "currency": "RUB",
+      "operation_code": "01",
+      "counterparty": {
+        "inn": "7728168971",
+        "kpp": "770801001",
+        "name": "АО \"АЛЬФА-БАНК\"",
+        "bik": "044525999",
+        "account": "70601810000000001001"
+      },
+      "purpose": "Комиссия за обслуживание счета за сентябрь 2026"
+    },
+    {
+      "id": "TX-20260928-068679",
+      "date": "2026-09-28",
+      "direction": "DEBIT",
+      "amount": 12500.00,
+      "currency": "RUB",
+      "operation_code": "01",
+      "counterparty": {
+        "inn": "7727406020",
+        "kpp": "770801001",
+        "name": "Казначейство России (ФНС России)",
+        "bik": "024501901",
+        "account": "03100643000000018500"
+      },
+      "purpose": "Единый налоговый платеж (страховые взносы ИП в фиксированном размере)"
+    },
+    {
+      "id": "TX-20260926-534365",
+      "date": "2026-09-26",
+      "direction": "DEBIT",
+      "amount": 8400.00,
+      "currency": "RUB",
+      "operation_code": "01",
+      "counterparty": {
+        "inn": "7704223311",
+        "kpp": "770401001",
+        "name": "ООО \"СДЭК-ЛОГИСТИКА\"",
+        "bik": "044525225",
+        "account": "40702810438000099115"
+      },
+      "purpose": "Оплата услуг доставки по договору №Д-88120 за сентябрь 2026. НДС не облагается"
+    },
+    {
+      "id": "TX-20260924-333557",
+      "date": "2026-09-24",
+      "direction": "CREDIT",
+      "amount": 69100.00,
+      "currency": "RUB",
+      "operation_code": "01",
+      "counterparty": {
+        "inn": "7703998811",
+        "kpp": "770301001",
+        "name": "ООО \"МАРКЕТПЛЕЙС-ПЛЮС\"",
+        "bik": "044525225",
+        "account": "40702810038000066992"
+      },
+      "purpose": "Выплата по договору оферты №ОФ-55120 за период по 21.09.2026. НДС не облагается"
+    },
+    {
+      "id": "TX-20260922-335079",
+      "date": "2026-09-22",
+      "direction": "DEBIT",
+      "amount": 118000.00,
+      "currency": "RUB",
+      "operation_code": "01",
+      "counterparty": {
+        "inn": "7739001122",
+        "kpp": "773901001",
+        "name": "ООО \"ТЕКСТИЛЬ-ОПТ\"",
+        "bik": "044525974",
+        "account": "40702810310000077003"
+      },
+      "purpose": "Оплата по счету №3528 от 20.09.2026 за ткани. НДС не облагается"
+    },
+    {
+      "id": "TX-20260917-468441",
+      "date": "2026-09-17",
+      "direction": "CREDIT",
+      "amount": 72300.00,
+      "currency": "RUB",
+      "operation_code": "01",
+      "counterparty": {
+        "inn": "7703998811",
+        "kpp": "770301001",
+        "name": "ООО \"МАРКЕТПЛЕЙС-ПЛЮС\"",
+        "bik": "044525225",
+        "account": "40702810038000066992"
+      },
+      "purpose": "Выплата по договору оферты №ОФ-55120 за период по 14.09.2026. НДС не облагается"
+    },
+    {
+      "id": "TX-20260915-720411",
+      "date": "2026-09-15",
+      "direction": "DEBIT",
+      "amount": 60000.00,
+      "currency": "RUB",
+      "operation_code": "01",
+      "counterparty": {
+        "inn": "779900010202",
+        "kpp": null,
+        "name": "Смирнова Анна Викторовна",
+        "bik": "044525974",
+        "account": "40817810100004010202"
+      },
+      "purpose": "Перевод собственных средств ИП на личный счет"
+    },
+    {
+      "id": "TX-20260910-208087",
+      "date": "2026-09-10",
+      "direction": "CREDIT",
+      "amount": 61750.00,
+      "currency": "RUB",
+      "operation_code": "01",
+      "counterparty": {
+        "inn": "7703998811",
+        "kpp": "770301001",
+        "name": "ООО \"МАРКЕТПЛЕЙС-ПЛЮС\"",
+        "bik": "044525225",
+        "account": "40702810038000066992"
+      },
+      "purpose": "Выплата по договору оферты №ОФ-55120 за период по 07.09.2026. НДС не облагается"
+    },
+    {
+      "id": "TX-20260908-038067",
+      "date": "2026-09-08",
+      "direction": "DEBIT",
+      "amount": 96000.00,
+      "currency": "RUB",
+      "operation_code": "01",
+      "counterparty": {
+        "inn": "7739001122",
+        "kpp": "773901001",
+        "name": "ООО \"ТЕКСТИЛЬ-ОПТ\"",
+        "bik": "044525974",
+        "account": "40702810310000077003"
+      },
+      "purpose": "Оплата по счету №3417 от 06.09.2026 за ткани. НДС не облагается"
+    },
+    {
+      "id": "TX-20260903-816465",
+      "date": "2026-09-03",
+      "direction": "CREDIT",
+      "amount": 48200.00,
+      "currency": "RUB",
+      "operation_code": "01",
+      "counterparty": {
+        "inn": "7703998811",
+        "kpp": "770301001",
+        "name": "ООО \"МАРКЕТПЛЕЙС-ПЛЮС\"",
+        "bik": "044525225",
+        "account": "40702810038000066992"
+      },
+      "purpose": "Выплата по договору оферты №ОФ-55120 за период по 31.08.2026. НДС не облагается"
+    },
+    {
+      "id": "TX-20260831-198093",
+      "date": "2026-08-31",
+      "direction": "DEBIT",
+      "amount": 1490.00,
+      "currency": "RUB",
+      "operation_code": "01",
+      "counterparty": {
+        "inn": "7728168971",
+        "kpp": "770801001",
+        "name": "АО \"АЛЬФА-БАНК\"",
+        "bik": "044525999",
+        "account": "70601810000000001001"
+      },
+      "purpose": "Комиссия за обслуживание счета за август 2026"
+    },
+    {
+      "id": "TX-20260827-038789",
+      "date": "2026-08-27",
+      "direction": "CREDIT",
+      "amount": 21400.00,
+      "currency": "RUB",
+      "operation_code": "01",
+      "counterparty": {
+        "inn": "7703998811",
+        "kpp": "770301001",
+        "name": "ООО \"МАРКЕТПЛЕЙС-ПЛЮС\"",
+        "bik": "044525225",
+        "account": "40702810038000066992"
+      },
+      "purpose": "Выплата по договору оферты №ОФ-55120 за период по 24.08.2026. НДС не облагается"
+    },
+    {
+      "id": "TX-20260824-868483",
+      "date": "2026-08-24",
+      "direction": "DEBIT",
+      "amount": 52000.00,
+      "currency": "RUB",
+      "operation_code": "01",
+      "counterparty": {
+        "inn": "7739001122",
+        "kpp": "773901001",
+        "name": "ООО \"ТЕКСТИЛЬ-ОПТ\"",
+        "bik": "044525974",
+        "account": "40702810310000077003"
+      },
+      "purpose": "Оплата по счету №3301 от 22.08.2026 за ткани. НДС не облагается"
+    },
+    {
+      "id": "TX-20260821-579681",
+      "date": "2026-08-21",
+      "direction": "CREDIT",
+      "amount": 65000.00,
+      "currency": "RUB",
+      "operation_code": "01",
+      "counterparty": {
+        "inn": "779900010202",
+        "kpp": null,
+        "name": "Смирнова Анна Викторовна",
+        "bik": "044525974",
+        "account": "40817810100004010202"
+      },
+      "purpose": "Взнос собственных средств ИП"
+    }
+  ],
+  "loans": [],
+  "restrictions": {
+    "inn": "779900010202",
+    "checked_at": "2026-10-22T10:15:00Z",
+    "card_file": {
+      "has_unpaid_claims": false,
+      "total_amount": 0.00,
+      "items": []
+    },
+    "account_blocks": [],
+    "arrests": []
+  }
+}

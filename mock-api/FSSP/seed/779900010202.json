@@ -1,0 +1,17 @@
+{
+  "debtor": {
+    "type": "IP",
+    "inn": "779900010202",
+    "name": "Смирнова Анна Викторовна",
+    "birth_date": "1993-05-27",
+    "region": "77"
+  },
+  "checked_at": "2026-10-22T10:15:06Z",
+  "summary": {
+    "active_count": 0,
+    "active_amount": 0.00,
+    "finished_count": 0,
+    "finished_no_assets_count": 0
+  },
+  "items": []
+}
