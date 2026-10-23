@@ -2,7 +2,7 @@
 //
 //	@title			data-collector API
 //	@version		0.1
-//	@description	Сбор данных о заёмщике для скоринга: анкета клиента и данные внутренних систем банка.
+//	@description	Сбор данных о заёмщике для скоринга: анкета клиента и сырые ответы всех внешних систем (эмулятор mock-api).
 //	@description	Ошибки — RFC 9457 (`application/problem+json`).
 //	@BasePath		/api/v1
 package main
@@ -19,7 +19,9 @@ import (
 	"time"
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/client/bank"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/client/mockapi"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/repository/memory"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/repository/postgres"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/service"
 	httptransport "github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/transport/http"
 )
@@ -42,10 +44,37 @@ func run(log *slog.Logger) error {
 	if err != nil {
 		return fmt.Errorf("BANK_API_TIMEOUT: %w", err)
 	}
+	mockURL := envOr("MOCK_API_URL", "http://localhost:8090")
+	mockTimeout, err := time.ParseDuration(envOr("MOCK_API_TIMEOUT", "5s"))
+	if err != nil {
+		return fmt.Errorf("MOCK_API_TIMEOUT: %w", err)
+	}
+	collectTimeout, err := time.ParseDuration(envOr("COLLECT_TIMEOUT", "8s"))
+	if err != nil {
+		return fmt.Errorf("COLLECT_TIMEOUT: %w", err)
+	}
 
-	// анкеты: хендлер → сервис → хранилище
+	// сырые ответы систем: Postgres, если задан DATABASE_URL, иначе память процесса
+	var rawRepo service.RawCollectionRepository
+	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
+		pool, err := postgres.Connect(ctx, dbURL)
+		if err != nil {
+			return fmt.Errorf("connect postgres: %w", err)
+		}
+		defer pool.Close()
+		rawRepo = postgres.NewRawCollectionRepository(pool)
+	} else {
+		log.Warn("DATABASE_URL is not set: raw collections are kept in memory")
+		rawRepo = memory.NewRawCollectionRepository()
+	}
+
+	// сбор данных: сервис → клиент внешних систем (mock-api) + хранилище raw_collections
+	mockClient := mockapi.New(mockURL, mockTimeout, envOr("OWN_BANK_BIK", "044525999"))
+	collectionSvc := service.NewCollectionService(mockClient, rawRepo, collectTimeout)
+
+	// анкеты: хендлер → сервис → хранилище; после сохранения анкеты — сбор данных
 	questionnaireRepo := memory.NewQuestionnaireRepository()
-	questionnaireSvc := service.NewQuestionnaireService(questionnaireRepo)
+	questionnaireSvc := service.NewQuestionnaireService(questionnaireRepo, collectionSvc)
 
 	// внутренние данные банка: хендлер → сервис → клиент банка (без хранилища)
 	bankClient := bank.New(bankURL, bankTimeout)
@@ -61,13 +90,13 @@ func run(log *slog.Logger) error {
 		Handler:           router,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
-		WriteTimeout:      10 * time.Second,
+		WriteTimeout:      collectTimeout + 10*time.Second, // POST /questionnaires ждёт весь сбор
 		IdleTimeout:       60 * time.Second,
 	}
 
 	errCh := make(chan error, 1)
 	go func() {
-		log.Info("data-collector listening", "addr", addr, "bank_api", bankURL)
+		log.Info("data-collector listening", "addr", addr, "bank_api", bankURL, "mock_api", mockURL)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 		}

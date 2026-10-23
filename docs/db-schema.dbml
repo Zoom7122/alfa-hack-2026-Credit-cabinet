@@ -101,6 +101,44 @@ Table source_snapshots {
   }
 }
 
+Table raw_collections {
+  id text [pk, note: 'col_<ULID>; только вставка']
+  questionnaire_id text [not null, note: 'qst_<ULID>; анкеты пока в памяти data-collector, без FK']
+  inn text [not null]
+  director_inn text
+  request jsonb [not null, note: 'входные данные сбора без токенов']
+  sources jsonb [not null, note: 'по системе: state, reason, запросы']
+  started_at timestamptz [not null]
+  finished_at timestamptz [not null]
+  core_banking jsonb
+  fns jsonb
+  bki jsonb
+  compliance jsonb
+  fssp jsonb
+  kad jsonb
+  fedresurs jsonb
+  m4d jsonb
+  tax_reports jsonb
+  pledge_registry jsonb
+  egrn jsonb
+  gosuslugi jsonb
+  open_banking jsonb
+  marketplaces jsonb
+  ofd jsonb
+  zakupki jsonb
+  signals jsonb
+  cbr jsonb
+  hh jsonb
+  created_at timestamptz [not null]
+
+  Note: 'Сырые ответы всех внешних систем по анкете: колонка на систему, NULL — данных нет'
+
+  indexes {
+    (inn, created_at)
+    questionnaire_id
+  }
+}
+
 Table source_runs {
   id bigint [pk, increment]
   application_id text [not null, ref: > applications.id]
@@ -208,6 +246,7 @@ TableGroup application [color: #27AE60] {
 TableGroup enrichment_decision [color: #E67E22] {
   source_snapshots
   source_runs
+  raw_collections
   decisions
   offers
 }

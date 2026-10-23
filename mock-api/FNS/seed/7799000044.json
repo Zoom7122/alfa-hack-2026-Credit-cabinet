@@ -231,5 +231,47 @@
   "bi": {
     "checked_at": "2026-10-22T10:15:03",
     "by_bik": {}
+  },
+  "charter": {
+    "inn": "7799000044",
+    "document": {
+      "type": "CHARTER",
+      "version_date": "2022-09-01",
+      "registration_record": "2227700664410"
+    },
+    "head": {
+      "position": "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР",
+      "term_years": 5,
+      "acts_without_poa": true,
+      "restrictions": [
+        {
+          "type": "LOAN_LIMIT",
+          "amount": 3000000.00,
+          "text": "Займы и кредиты свыше 3 000 000 руб. — только с согласия единственного участника"
+        }
+      ]
+    },
+    "major_transaction": {
+      "threshold_pct_of_assets": 25,
+      "approval_body": "SOLE_PARTICIPANT",
+      "assets_at_last_reporting_date": 19050000.00,
+      "threshold_amount": 4762500.00
+    },
+    "related_party_approval_required": true,
+    "participants": [
+      {
+        "inn": "779900040158",
+        "full_name": "Зайцева Ольга Михайловна",
+        "share_pct": 100
+      }
+    ]
+  },
+  "rmsp": {
+    "inn": "7799000044",
+    "in_registry": true,
+    "category": "SMALL",
+    "included_at": "2018-08-10",
+    "employees": 31,
+    "support": []
   }
 }

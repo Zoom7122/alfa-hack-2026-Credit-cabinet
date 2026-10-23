@@ -242,5 +242,41 @@
         }
       ]
     }
+  },
+  "charter": {
+    "inn": "7799000037",
+    "document": {
+      "type": "CHARTER",
+      "version_date": "2020-08-17",
+      "registration_record": "2207700398120"
+    },
+    "head": {
+      "position": "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР",
+      "term_years": 5,
+      "acts_without_poa": true,
+      "restrictions": []
+    },
+    "major_transaction": {
+      "threshold_pct_of_assets": 25,
+      "approval_body": "SOLE_PARTICIPANT",
+      "assets_at_last_reporting_date": 12540000.00,
+      "threshold_amount": 3135000.00
+    },
+    "related_party_approval_required": true,
+    "participants": [
+      {
+        "inn": "779900030147",
+        "full_name": "Белов Артём Николаевич",
+        "share_pct": 100
+      }
+    ]
+  },
+  "rmsp": {
+    "inn": "7799000037",
+    "in_registry": true,
+    "category": "MICRO",
+    "included_at": "2021-08-10",
+    "employees": 9,
+    "support": []
   }
 }

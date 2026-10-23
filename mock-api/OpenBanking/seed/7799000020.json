@@ -1,0 +1,1533 @@
+{
+  "inn": "7799000020",
+  "banks": {
+    "044525777": [
+      {
+        "account": {
+          "accountId": "acc-3f20",
+          "status": "Enabled",
+          "currency": "RUB",
+          "accountType": "Business",
+          "accountSubType": "CurrentAccount",
+          "openingDate": "2024-06-10",
+          "AccountDetails": [
+            {
+              "schemeName": "RU.CBR.BBAN",
+              "identification": "40702810177700020136"
+            }
+          ],
+          "Servicer": {
+            "schemeName": "RU.CBR.BIK",
+            "identification": "044525777",
+            "name": "ПАО \"БАНК ВОСТОК\""
+          }
+        },
+        "balance": {
+          "type": "ClosingAvailable",
+          "dateTime": "2026-10-22T00:00:00+03:00",
+          "Amount": {
+            "amount": "547620.00",
+            "currency": "RUB"
+          },
+          "creditDebitIndicator": "Credit"
+        },
+        "opening_balance": 10000.0,
+        "transactions": [
+          {
+            "transactionId": "obt-20260930-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-09-30T12:00:00+03:00",
+            "Amount": {
+              "amount": "2490.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за сентябрь 2026",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7744001234",
+              "name": "ПАО \"БАНК ВОСТОК\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000002",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20260919-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-09-19T12:00:00+03:00",
+            "Amount": {
+              "amount": "274000.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №5199 за строительные материалы. В т.ч. НДС 20% 45666.67",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7729667722",
+              "name": "ООО \"СТРОЙМАТЕРИАЛЫ-ОПТ\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810210000088442",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260912-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-09-12T12:00:00+03:00",
+            "Amount": {
+              "amount": "350600.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по договору подряда №ЖС-8/2025 за сентябрь 2026. В т.ч. НДС 20% 58433.33",
+            "DebtorParty": {
+              "inn": "7728556611",
+              "name": "ООО \"ЖИЛСТРОЙ-СЕРВИС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810538000077331",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20260830-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-08-30T12:00:00+03:00",
+            "Amount": {
+              "amount": "2490.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за август 2026",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7744001234",
+              "name": "ПАО \"БАНК ВОСТОК\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000002",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20260819-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-08-19T12:00:00+03:00",
+            "Amount": {
+              "amount": "348600.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №5190 за строительные материалы. В т.ч. НДС 20% 58100.00",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7729667722",
+              "name": "ООО \"СТРОЙМАТЕРИАЛЫ-ОПТ\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810210000088442",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260812-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-08-12T12:00:00+03:00",
+            "Amount": {
+              "amount": "341200.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по договору подряда №ЖС-8/2025 за август 2026. В т.ч. НДС 20% 56866.67",
+            "DebtorParty": {
+              "inn": "7728556611",
+              "name": "ООО \"ЖИЛСТРОЙ-СЕРВИС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810538000077331",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20260730-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-07-30T12:00:00+03:00",
+            "Amount": {
+              "amount": "2490.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за июль 2026",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7744001234",
+              "name": "ПАО \"БАНК ВОСТОК\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000002",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20260719-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-07-19T12:00:00+03:00",
+            "Amount": {
+              "amount": "322800.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №5181 за строительные материалы. В т.ч. НДС 20% 53800.00",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7729667722",
+              "name": "ООО \"СТРОЙМАТЕРИАЛЫ-ОПТ\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810210000088442",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260712-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-07-12T12:00:00+03:00",
+            "Amount": {
+              "amount": "344600.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по договору подряда №ЖС-8/2025 за июль 2026. В т.ч. НДС 20% 57433.33",
+            "DebtorParty": {
+              "inn": "7728556611",
+              "name": "ООО \"ЖИЛСТРОЙ-СЕРВИС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810538000077331",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20260630-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-06-30T12:00:00+03:00",
+            "Amount": {
+              "amount": "2490.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за июнь 2026",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7744001234",
+              "name": "ПАО \"БАНК ВОСТОК\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000002",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20260619-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-06-19T12:00:00+03:00",
+            "Amount": {
+              "amount": "312200.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №5172 за строительные материалы. В т.ч. НДС 20% 52033.33",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7729667722",
+              "name": "ООО \"СТРОЙМАТЕРИАЛЫ-ОПТ\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810210000088442",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260612-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-06-12T12:00:00+03:00",
+            "Amount": {
+              "amount": "363700.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по договору подряда №ЖС-8/2025 за июнь 2026. В т.ч. НДС 20% 60616.67",
+            "DebtorParty": {
+              "inn": "7728556611",
+              "name": "ООО \"ЖИЛСТРОЙ-СЕРВИС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810538000077331",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20260530-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-05-30T12:00:00+03:00",
+            "Amount": {
+              "amount": "2490.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за май 2026",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7744001234",
+              "name": "ПАО \"БАНК ВОСТОК\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000002",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20260519-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-05-19T12:00:00+03:00",
+            "Amount": {
+              "amount": "298000.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №5163 за строительные материалы. В т.ч. НДС 20% 49666.67",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7729667722",
+              "name": "ООО \"СТРОЙМАТЕРИАЛЫ-ОПТ\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810210000088442",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260512-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-05-12T12:00:00+03:00",
+            "Amount": {
+              "amount": "330700.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по договору подряда №ЖС-8/2025 за май 2026. В т.ч. НДС 20% 55116.67",
+            "DebtorParty": {
+              "inn": "7728556611",
+              "name": "ООО \"ЖИЛСТРОЙ-СЕРВИС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810538000077331",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20260430-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-04-30T12:00:00+03:00",
+            "Amount": {
+              "amount": "2490.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за апрель 2026",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7744001234",
+              "name": "ПАО \"БАНК ВОСТОК\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000002",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20260419-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-04-19T12:00:00+03:00",
+            "Amount": {
+              "amount": "264700.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №5154 за строительные материалы. В т.ч. НДС 20% 44116.67",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7729667722",
+              "name": "ООО \"СТРОЙМАТЕРИАЛЫ-ОПТ\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810210000088442",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260412-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-04-12T12:00:00+03:00",
+            "Amount": {
+              "amount": "332000.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по договору подряда №ЖС-8/2025 за апрель 2026. В т.ч. НДС 20% 55333.33",
+            "DebtorParty": {
+              "inn": "7728556611",
+              "name": "ООО \"ЖИЛСТРОЙ-СЕРВИС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810538000077331",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20260330-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-03-30T12:00:00+03:00",
+            "Amount": {
+              "amount": "2490.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за март 2026",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7744001234",
+              "name": "ПАО \"БАНК ВОСТОК\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000002",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20260319-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-03-19T12:00:00+03:00",
+            "Amount": {
+              "amount": "299000.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №5145 за строительные материалы. В т.ч. НДС 20% 49833.33",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7729667722",
+              "name": "ООО \"СТРОЙМАТЕРИАЛЫ-ОПТ\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810210000088442",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260312-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-03-12T12:00:00+03:00",
+            "Amount": {
+              "amount": "342800.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по договору подряда №ЖС-8/2025 за март 2026. В т.ч. НДС 20% 57133.33",
+            "DebtorParty": {
+              "inn": "7728556611",
+              "name": "ООО \"ЖИЛСТРОЙ-СЕРВИС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810538000077331",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20260228-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-02-28T12:00:00+03:00",
+            "Amount": {
+              "amount": "2490.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за февраль 2026",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7744001234",
+              "name": "ПАО \"БАНК ВОСТОК\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000002",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20260219-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-02-19T12:00:00+03:00",
+            "Amount": {
+              "amount": "318900.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №5136 за строительные материалы. В т.ч. НДС 20% 53150.00",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7729667722",
+              "name": "ООО \"СТРОЙМАТЕРИАЛЫ-ОПТ\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810210000088442",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260212-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-02-12T12:00:00+03:00",
+            "Amount": {
+              "amount": "346400.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по договору подряда №ЖС-8/2025 за февраль 2026. В т.ч. НДС 20% 57733.33",
+            "DebtorParty": {
+              "inn": "7728556611",
+              "name": "ООО \"ЖИЛСТРОЙ-СЕРВИС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810538000077331",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20260130-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-01-30T12:00:00+03:00",
+            "Amount": {
+              "amount": "2490.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за январь 2026",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7744001234",
+              "name": "ПАО \"БАНК ВОСТОК\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000002",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20260119-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-01-19T12:00:00+03:00",
+            "Amount": {
+              "amount": "294300.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №5127 за строительные материалы. В т.ч. НДС 20% 49050.00",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7729667722",
+              "name": "ООО \"СТРОЙМАТЕРИАЛЫ-ОПТ\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810210000088442",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260112-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-01-12T12:00:00+03:00",
+            "Amount": {
+              "amount": "368500.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по договору подряда №ЖС-8/2025 за январь 2026. В т.ч. НДС 20% 61416.67",
+            "DebtorParty": {
+              "inn": "7728556611",
+              "name": "ООО \"ЖИЛСТРОЙ-СЕРВИС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810538000077331",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20251230-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2025-12-30T12:00:00+03:00",
+            "Amount": {
+              "amount": "2490.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за декабрь 2025",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7744001234",
+              "name": "ПАО \"БАНК ВОСТОК\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000002",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20251219-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2025-12-19T12:00:00+03:00",
+            "Amount": {
+              "amount": "256400.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №5118 за строительные материалы. В т.ч. НДС 20% 42733.33",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7729667722",
+              "name": "ООО \"СТРОЙМАТЕРИАЛЫ-ОПТ\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810210000088442",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20251212-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2025-12-12T12:00:00+03:00",
+            "Amount": {
+              "amount": "311200.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по договору подряда №ЖС-8/2025 за декабрь 2025. В т.ч. НДС 20% 51866.67",
+            "DebtorParty": {
+              "inn": "7728556611",
+              "name": "ООО \"ЖИЛСТРОЙ-СЕРВИС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810538000077331",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20251130-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2025-11-30T12:00:00+03:00",
+            "Amount": {
+              "amount": "2490.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за ноябрь 2025",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7744001234",
+              "name": "ПАО \"БАНК ВОСТОК\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000002",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20251119-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2025-11-19T12:00:00+03:00",
+            "Amount": {
+              "amount": "270700.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №5109 за строительные материалы. В т.ч. НДС 20% 45116.67",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7729667722",
+              "name": "ООО \"СТРОЙМАТЕРИАЛЫ-ОПТ\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810210000088442",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20251112-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2025-11-12T12:00:00+03:00",
+            "Amount": {
+              "amount": "343100.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по договору подряда №ЖС-8/2025 за ноябрь 2025. В т.ч. НДС 20% 57183.33",
+            "DebtorParty": {
+              "inn": "7728556611",
+              "name": "ООО \"ЖИЛСТРОЙ-СЕРВИС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810538000077331",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20251030-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2025-10-30T12:00:00+03:00",
+            "Amount": {
+              "amount": "2490.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за октябрь 2025",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7744001234",
+              "name": "ПАО \"БАНК ВОСТОК\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000002",
+              "bic": "044525777"
+            }
+          },
+          {
+            "transactionId": "obt-20251019-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2025-10-19T12:00:00+03:00",
+            "Amount": {
+              "amount": "356200.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №5100 за строительные материалы. В т.ч. НДС 20% 59366.67",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            },
+            "CreditorParty": {
+              "inn": "7729667722",
+              "name": "ООО \"СТРОЙМАТЕРИАЛЫ-ОПТ\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810210000088442",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20251012-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2025-10-12T12:00:00+03:00",
+            "Amount": {
+              "amount": "408500.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по договору подряда №ЖС-8/2025 за октябрь 2025. В т.ч. НДС 20% 68083.33",
+            "DebtorParty": {
+              "inn": "7728556611",
+              "name": "ООО \"ЖИЛСТРОЙ-СЕРВИС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810538000077331",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810177700020136",
+              "bic": "044525777"
+            }
+          }
+        ]
+      }
+    ],
+    "044525650": [
+      {
+        "account": {
+          "accountId": "acc-9c41",
+          "status": "Enabled",
+          "currency": "RUB",
+          "accountType": "Business",
+          "accountSubType": "CurrentAccount",
+          "openingDate": "2024-03-05",
+          "AccountDetails": [
+            {
+              "schemeName": "RU.CBR.BBAN",
+              "identification": "40702810565000020136"
+            }
+          ],
+          "Servicer": {
+            "schemeName": "RU.CBR.BIK",
+            "identification": "044525650",
+            "name": "АО \"РЕГИОН-КРЕДИТ\""
+          }
+        },
+        "balance": {
+          "type": "ClosingAvailable",
+          "dateTime": "2026-10-22T00:00:00+03:00",
+          "Amount": {
+            "amount": "296100.00",
+            "currency": "RUB"
+          },
+          "creditDebitIndicator": "Credit"
+        },
+        "opening_balance": 119100.0,
+        "transactions": [
+          {
+            "transactionId": "obt-20260926-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-09-26T12:00:00+03:00",
+            "Amount": {
+              "amount": "80900.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата услуг спецтехники по договору №СТ-4 за сентябрь 2026. НДС не облагается",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810565000020136",
+              "bic": "044525650"
+            },
+            "CreditorParty": {
+              "inn": "772900020455",
+              "name": "ИП Кравцов Олег Николаевич"
+            },
+            "CreditorAccount": {
+              "identification": "40802810310000099553",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260908-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-09-08T12:00:00+03:00",
+            "Amount": {
+              "amount": "212800.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по договору №Ж-112/25 на текущий ремонт за сентябрь 2026. В т.ч. НДС 20% 35466.67",
+            "DebtorParty": {
+              "inn": "7726334455",
+              "name": "ГБУ \"ЖИЛИЩНИК РАЙОНА ЧЕРТАНОВО\""
+            },
+            "DebtorAccount": {
+              "identification": "03224643450000007301",
+              "bic": "024501901"
+            },
+            "CreditorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810565000020136",
+              "bic": "044525650"
+            }
+          },
+          {
+            "transactionId": "obt-20260826-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-08-26T12:00:00+03:00",
+            "Amount": {
+              "amount": "87000.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата услуг спецтехники по договору №СТ-4 за август 2026. НДС не облагается",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810565000020136",
+              "bic": "044525650"
+            },
+            "CreditorParty": {
+              "inn": "772900020455",
+              "name": "ИП Кравцов Олег Николаевич"
+            },
+            "CreditorAccount": {
+              "identification": "40802810310000099553",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260726-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-07-26T12:00:00+03:00",
+            "Amount": {
+              "amount": "93800.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата услуг спецтехники по договору №СТ-4 за июль 2026. НДС не облагается",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810565000020136",
+              "bic": "044525650"
+            },
+            "CreditorParty": {
+              "inn": "772900020455",
+              "name": "ИП Кравцов Олег Николаевич"
+            },
+            "CreditorAccount": {
+              "identification": "40802810310000099553",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260708-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-07-08T12:00:00+03:00",
+            "Amount": {
+              "amount": "204400.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по договору №Ж-112/25 на текущий ремонт за июль 2026. В т.ч. НДС 20% 34066.67",
+            "DebtorParty": {
+              "inn": "7726334455",
+              "name": "ГБУ \"ЖИЛИЩНИК РАЙОНА ЧЕРТАНОВО\""
+            },
+            "DebtorAccount": {
+              "identification": "03224643450000007301",
+              "bic": "024501901"
+            },
+            "CreditorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810565000020136",
+              "bic": "044525650"
+            }
+          },
+          {
+            "transactionId": "obt-20260626-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-06-26T12:00:00+03:00",
+            "Amount": {
+              "amount": "101900.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата услуг спецтехники по договору №СТ-4 за июнь 2026. НДС не облагается",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810565000020136",
+              "bic": "044525650"
+            },
+            "CreditorParty": {
+              "inn": "772900020455",
+              "name": "ИП Кравцов Олег Николаевич"
+            },
+            "CreditorAccount": {
+              "identification": "40802810310000099553",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260526-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-05-26T12:00:00+03:00",
+            "Amount": {
+              "amount": "93100.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата услуг спецтехники по договору №СТ-4 за май 2026. НДС не облагается",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810565000020136",
+              "bic": "044525650"
+            },
+            "CreditorParty": {
+              "inn": "772900020455",
+              "name": "ИП Кравцов Олег Николаевич"
+            },
+            "CreditorAccount": {
+              "identification": "40802810310000099553",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260508-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-05-08T12:00:00+03:00",
+            "Amount": {
+              "amount": "255800.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по договору №Ж-112/25 на текущий ремонт за май 2026. В т.ч. НДС 20% 42633.33",
+            "DebtorParty": {
+              "inn": "7726334455",
+              "name": "ГБУ \"ЖИЛИЩНИК РАЙОНА ЧЕРТАНОВО\""
+            },
+            "DebtorAccount": {
+              "identification": "03224643450000007301",
+              "bic": "024501901"
+            },
+            "CreditorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810565000020136",
+              "bic": "044525650"
+            }
+          },
+          {
+            "transactionId": "obt-20260426-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-04-26T12:00:00+03:00",
+            "Amount": {
+              "amount": "93000.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата услуг спецтехники по договору №СТ-4 за апрель 2026. НДС не облагается",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810565000020136",
+              "bic": "044525650"
+            },
+            "CreditorParty": {
+              "inn": "772900020455",
+              "name": "ИП Кравцов Олег Николаевич"
+            },
+            "CreditorAccount": {
+              "identification": "40802810310000099553",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260326-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-03-26T12:00:00+03:00",
+            "Amount": {
+              "amount": "86000.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата услуг спецтехники по договору №СТ-4 за март 2026. НДС не облагается",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810565000020136",
+              "bic": "044525650"
+            },
+            "CreditorParty": {
+              "inn": "772900020455",
+              "name": "ИП Кравцов Олег Николаевич"
+            },
+            "CreditorAccount": {
+              "identification": "40802810310000099553",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260308-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-03-08T12:00:00+03:00",
+            "Amount": {
+              "amount": "206700.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по договору №Ж-112/25 на текущий ремонт за март 2026. В т.ч. НДС 20% 34450.00",
+            "DebtorParty": {
+              "inn": "7726334455",
+              "name": "ГБУ \"ЖИЛИЩНИК РАЙОНА ЧЕРТАНОВО\""
+            },
+            "DebtorAccount": {
+              "identification": "03224643450000007301",
+              "bic": "024501901"
+            },
+            "CreditorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810565000020136",
+              "bic": "044525650"
+            }
+          },
+          {
+            "transactionId": "obt-20260226-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-02-26T12:00:00+03:00",
+            "Amount": {
+              "amount": "96200.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата услуг спецтехники по договору №СТ-4 за февраль 2026. НДС не облагается",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810565000020136",
+              "bic": "044525650"
+            },
+            "CreditorParty": {
+              "inn": "772900020455",
+              "name": "ИП Кравцов Олег Николаевич"
+            },
+            "CreditorAccount": {
+              "identification": "40802810310000099553",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260126-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-01-26T12:00:00+03:00",
+            "Amount": {
+              "amount": "98600.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата услуг спецтехники по договору №СТ-4 за январь 2026. НДС не облагается",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810565000020136",
+              "bic": "044525650"
+            },
+            "CreditorParty": {
+              "inn": "772900020455",
+              "name": "ИП Кравцов Олег Николаевич"
+            },
+            "CreditorAccount": {
+              "identification": "40802810310000099553",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260108-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-01-08T12:00:00+03:00",
+            "Amount": {
+              "amount": "189500.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по договору №Ж-112/25 на текущий ремонт за январь 2026. В т.ч. НДС 20% 31583.33",
+            "DebtorParty": {
+              "inn": "7726334455",
+              "name": "ГБУ \"ЖИЛИЩНИК РАЙОНА ЧЕРТАНОВО\""
+            },
+            "DebtorAccount": {
+              "identification": "03224643450000007301",
+              "bic": "024501901"
+            },
+            "CreditorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810565000020136",
+              "bic": "044525650"
+            }
+          },
+          {
+            "transactionId": "obt-20251226-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2025-12-26T12:00:00+03:00",
+            "Amount": {
+              "amount": "103300.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата услуг спецтехники по договору №СТ-4 за декабрь 2025. НДС не облагается",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810565000020136",
+              "bic": "044525650"
+            },
+            "CreditorParty": {
+              "inn": "772900020455",
+              "name": "ИП Кравцов Олег Николаевич"
+            },
+            "CreditorAccount": {
+              "identification": "40802810310000099553",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20251126-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2025-11-26T12:00:00+03:00",
+            "Amount": {
+              "amount": "85200.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата услуг спецтехники по договору №СТ-4 за ноябрь 2025. НДС не облагается",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810565000020136",
+              "bic": "044525650"
+            },
+            "CreditorParty": {
+              "inn": "772900020455",
+              "name": "ИП Кравцов Олег Николаевич"
+            },
+            "CreditorAccount": {
+              "identification": "40802810310000099553",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20251108-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2025-11-08T12:00:00+03:00",
+            "Amount": {
+              "amount": "235900.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по договору №Ж-112/25 на текущий ремонт за ноябрь 2025. В т.ч. НДС 20% 39316.67",
+            "DebtorParty": {
+              "inn": "7726334455",
+              "name": "ГБУ \"ЖИЛИЩНИК РАЙОНА ЧЕРТАНОВО\""
+            },
+            "DebtorAccount": {
+              "identification": "03224643450000007301",
+              "bic": "024501901"
+            },
+            "CreditorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810565000020136",
+              "bic": "044525650"
+            }
+          },
+          {
+            "transactionId": "obt-20251026-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2025-10-26T12:00:00+03:00",
+            "Amount": {
+              "amount": "109100.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата услуг спецтехники по договору №СТ-4 за октябрь 2025. НДС не облагается",
+            "DebtorParty": {
+              "inn": "7799000020",
+              "name": "ООО \"СТРОЙРЕСУРС\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810565000020136",
+              "bic": "044525650"
+            },
+            "CreditorParty": {
+              "inn": "772900020455",
+              "name": "ИП Кравцов Олег Николаевич"
+            },
+            "CreditorAccount": {
+              "identification": "40802810310000099553",
+              "bic": "044525974"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,9 +1,125 @@
 basePath: /api/v1
 definitions:
+  Collateral:
+    properties:
+      cadastral_numbers:
+        description: недвижимость → ЕГРН
+        example:
+        - 50:21:0110203:845
+        items:
+          type: string
+        type: array
+      serials:
+        description: техника → реестр залогов
+        example:
+        - JCB3CX2023118457
+        items:
+          type: string
+        type: array
+      vins:
+        description: транспорт → реестр залогов
+        example:
+        - XTC652005N1498213
+        items:
+          type: string
+        type: array
+    type: object
+  Collection:
+    properties:
+      finished_at:
+        type: string
+      id:
+        example: col_01JB8Z5X0G6Q9T4V2W8Y3K7M1N
+        type: string
+      inn:
+        example: "7799000012"
+        type: string
+      sources:
+        items:
+          $ref: '#/definitions/CollectionSource'
+        type: array
+      started_at:
+        type: string
+    type: object
+  CollectionSource:
+    properties:
+      calls:
+        type: integer
+      duration_ms:
+        type: integer
+      failed_calls:
+        type: integer
+      reason:
+        type: string
+      source:
+        enum:
+        - CORE_BANKING
+        - FNS
+        - BKI
+        - COMPLIANCE
+        - FSSP
+        - KAD
+        - FEDRESURS
+        - M4D
+        - TAX_REPORTS
+        - PLEDGE_REGISTRY
+        - EGRN
+        - GOSUSLUGI
+        - OPEN_BANKING
+        - MARKETPLACES
+        - OFD
+        - ZAKUPKI
+        - SIGNALS
+        - CBR
+        - HH
+        type: string
+      state:
+        enum:
+        - DONE
+        - PARTIAL
+        - FAILED
+        - SKIPPED
+        type: string
+    type: object
+  Consent:
+    properties:
+      id:
+        example: CNS-2026-000781
+        type: string
+      scope:
+        description: только у consents.tax
+        items:
+          enum:
+          - DECLARATIONS
+          - ENS_BALANCE
+          type: string
+        type: array
+      signed_at:
+        example: "2026-10-21T14:02:11Z"
+        type: string
+      valid_until:
+        example: "2027-04-21"
+        type: string
+    type: object
+  Consents:
+    properties:
+      bki_company:
+        allOf:
+        - $ref: '#/definitions/Consent'
+        description: компании на запрос в БКИ
+      bki_person:
+        allOf:
+        - $ref: '#/definitions/Consent'
+        description: руководителя на запрос в БКИ
+      tax:
+        allOf:
+        - $ref: '#/definitions/Consent'
+        description: на налоговую отчётность
+    type: object
   CreateQuestionnaireRequest:
     properties:
       age:
-        example: 34
+        example: 42
         maximum: 100
         minimum: 18
         type: integer
@@ -12,6 +128,20 @@ definitions:
         maximum: 20
         minimum: 0
         type: integer
+      collateral:
+        $ref: '#/definitions/Collateral'
+      consents:
+        $ref: '#/definitions/Consents'
+      director:
+        allOf:
+        - $ref: '#/definitions/Person'
+        description: |-
+          Руководитель; у ИП — сам предприниматель. Без него не запрашиваются данные физлица:
+          БКИ, ФССП, Федресурс, Госуслуги, дисквалификация, санкции.
+      inn:
+        description: ИНН компании (10 цифр) или ИП (12 цифр) — ключ ко всем системам.
+        example: "7799000012"
+        type: string
       marital_status:
         enum:
         - SINGLE
@@ -20,9 +150,33 @@ definitions:
         - DIVORCED_MULTIPLE
         example: MARRIED
         type: string
+      marketplace_tokens:
+        description: 'Токены продавца: {"wildberries": "…", "ozon": "…"}. Мок принимает
+          любой непустой токен (кроме начинающегося с invalid).'
+        type: object
+      ofd_token:
+        description: Токен оператора фискальных данных (онлайн-кассы).
+        example: demo-ofd-token
+        type: string
+      other_bank_biks:
+        description: 'БИК банков, где у клиента ещё есть счета: мультибанкинг и блокировки
+          ФНС.'
+        example:
+        - "044525225"
+        items:
+          type: string
+        type: array
+      poa_number:
+        description: Номер МЧД, если заявку подаёт представитель, и его ИНН.
+        example: 0f5a2c1e-7b3d-4e8a-9c21-6d4b8e0a1f37
+        type: string
+      representative_inn:
+        example: "779900010333"
+        type: string
     required:
     - age
     - children_count
+    - inn
     - marital_status
     type: object
   InternalData:
@@ -43,6 +197,24 @@ definitions:
         items:
           $ref: '#/definitions/SourceResult'
         type: array
+    type: object
+  Person:
+    properties:
+      birth_date:
+        example: "1984-07-19"
+        type: string
+      first_name:
+        example: Игорь
+        type: string
+      inn:
+        example: "779900010139"
+        type: string
+      last_name:
+        example: Ковалёв
+        type: string
+      middle_name:
+        example: Сергеевич
+        type: string
     type: object
   Problem:
     properties:
@@ -76,6 +248,8 @@ definitions:
         type: integer
       children_count:
         type: integer
+      collection:
+        $ref: '#/definitions/Collection'
       created_at:
         type: string
       id:
@@ -454,7 +628,7 @@ definitions:
 info:
   contact: {}
   description: |-
-    Сбор данных о заёмщике для скоринга: анкета клиента и данные внутренних систем банка.
+    Сбор данных о заёмщике для скоринга: анкета клиента и сырые ответы всех внешних систем (эмулятор mock-api).
     Ошибки — RFC 9457 (`application/problem+json`).
   title: data-collector API
   version: "0.1"
@@ -497,10 +671,13 @@ paths:
     post:
       consumes:
       - application/json
-      description: Проверяет правила и сохраняет анкету. Возраст — полных лет, бакеты
-        считает скоринг.
+      description: |-
+        Проверяет анкету и данные для сбора, сохраняет анкету и опрашивает все внешние системы (эмулятор mock-api).
+        Сырые ответы систем сохраняются строкой в таблицу raw_collections: одна система — одна колонка.
+        В ответе — только состояние по каждой системе. Отказ системы не ошибка запроса: ответ всё равно 201.
+        Системы без нужных данных (нет согласия, токена, залога) пропускаются со state=SKIPPED.
       parameters:
-      - description: Анкета
+      - description: Анкета и данные для сбора
         in: body
         name: body
         required: true
@@ -514,19 +691,20 @@ paths:
           schema:
             $ref: '#/definitions/Questionnaire'
         "400":
-          description: битый JSON, нет поля или неверный тип
+          description: битый JSON, нет обязательного поля (age, marital_status, children_count,
+            inn) или неверный тип
           schema:
             $ref: '#/definitions/Problem'
         "422":
-          description: 'нарушено правило: возраст 18–100, статус из перечня, детей
-            0–20'
+          description: нарушено правило анкеты или неверный формат данных для сбора
+            (ИНН, БИК, VIN, даты)
           schema:
             $ref: '#/definitions/Problem'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/Problem'
-      summary: Принять анкету заёмщика
+      summary: Принять анкету и собрать данные о компании
       tags:
       - questionnaires
 swagger: "2.0"

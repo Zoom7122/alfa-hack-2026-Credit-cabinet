@@ -6,7 +6,8 @@ run:
 test:
 	go test ./...
 
-# нужен запущенный mock-api (BANK_API_URL, по умолчанию http://localhost:8090/bank/v1)
+# нужен запущенный mock-api (MOCK_API_URL, BANK_API_URL; по умолчанию localhost:8090);
+# запись в raw_collections проверяется, если задан DATABASE_URL (схема из модуля db)
 test-integration:
 	go test -tags integration -count=1 ./...
 

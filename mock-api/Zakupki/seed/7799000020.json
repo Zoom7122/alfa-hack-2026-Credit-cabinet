@@ -1,0 +1,14 @@
+{
+  "inn": "7799000020",
+  "summary": {
+    "active_count": 0,
+    "active_amount": 0.00,
+    "active_unpaid_amount": 0.00,
+    "completed_count_36m": 0,
+    "completed_amount_36m": 0.00,
+    "terminated_count_36m": 0,
+    "penalties_amount_36m": 0.00
+  },
+  "contracts": [],
+  "rnp": []
+}

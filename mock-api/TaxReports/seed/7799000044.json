@@ -1,0 +1,116 @@
+{
+  "inn": "7799000044",
+  "taxpayer_type": "LEGAL",
+  "tax_regime": {
+    "current": "OSN",
+    "history": [
+      {
+        "regime": "OSN",
+        "from": "2018-04-09",
+        "to": null
+      }
+    ]
+  },
+  "documents": [
+    {
+      "type": "PROFIT",
+      "period": "2025",
+      "period_type": "YEAR",
+      "submitted_at": "2026-03-20",
+      "correction": 0,
+      "status": "ACCEPTED",
+      "data": {
+        "revenue_from_sales": 39800000.00,
+        "non_operating_income": 120000.00,
+        "expenses": 37920000.00,
+        "tax_base": 2000000.00,
+        "tax_rate_pct": 25,
+        "tax_amount": 500000.00
+      }
+    },
+    {
+      "type": "PROFIT",
+      "period": "2024",
+      "period_type": "YEAR",
+      "submitted_at": "2025-03-24",
+      "correction": 0,
+      "status": "ACCEPTED",
+      "data": {
+        "revenue_from_sales": 36500000.00,
+        "non_operating_income": 90000.00,
+        "expenses": 34690000.00,
+        "tax_base": 1900000.00,
+        "tax_rate_pct": 20,
+        "tax_amount": 380000.00
+      }
+    },
+    {
+      "type": "VAT",
+      "period": "2025-Q4",
+      "period_type": "QUARTER",
+      "submitted_at": "2026-01-23",
+      "correction": 0,
+      "status": "ACCEPTED",
+      "data": {
+        "sales_base": 9080000.00,
+        "vat_accrued": 1816000.00,
+        "vat_deductions": 1561800.00,
+        "vat_payable": 254200.00
+      }
+    },
+    {
+      "type": "VAT",
+      "period": "2026-Q1",
+      "period_type": "QUARTER",
+      "submitted_at": "2026-04-24",
+      "correction": 0,
+      "status": "ACCEPTED",
+      "data": {
+        "sales_base": 8350000.00,
+        "vat_accrued": 1670000.00,
+        "vat_deductions": 1452900.00,
+        "vat_payable": 217100.00
+      }
+    },
+    {
+      "type": "VAT",
+      "period": "2026-Q2",
+      "period_type": "QUARTER",
+      "submitted_at": "2026-07-24",
+      "correction": 0,
+      "status": "ACCEPTED",
+      "data": {
+        "sales_base": 9760000.00,
+        "vat_accrued": 1952000.00,
+        "vat_deductions": 1678700.00,
+        "vat_payable": 273300.00
+      }
+    },
+    {
+      "type": "ENS_BALANCE",
+      "as_of": "2026-10-22",
+      "data": {
+        "balance": 3150.00,
+        "debt": 0.00,
+        "penalties": 0.00,
+        "fines": 0.00
+      }
+    }
+  ],
+  "not_available": [
+    {
+      "type": "USN",
+      "reason": "NOT_APPLICABLE"
+    },
+    {
+      "type": "NPD_INCOME",
+      "reason": "NOT_APPLICABLE"
+    },
+    {
+      "type": "VAT",
+      "period": "2026-Q3",
+      "reason": "NOT_DUE",
+      "due_date": "2026-10-26"
+    }
+  ]
+}

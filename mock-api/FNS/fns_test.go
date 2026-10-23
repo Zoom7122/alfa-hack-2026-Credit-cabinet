@@ -184,3 +184,73 @@ func TestCaptcha(t *testing.T) {
 		t.Fatal("captchaRequired = false")
 	}
 }
+
+func TestCharter(t *testing.T) {
+	type charter struct {
+		INN  string `json:"inn"`
+		Head struct {
+			Restrictions []struct {
+				Type   string  `json:"type"`
+				Amount float64 `json:"amount"`
+			} `json:"restrictions"`
+		} `json:"head"`
+		Major struct {
+			Pct       float64 `json:"threshold_pct_of_assets"`
+			Assets    float64 `json:"assets_at_last_reporting_date"`
+			Threshold float64 `json:"threshold_amount"`
+		} `json:"major_transaction"`
+		Participants []struct {
+			SharePct float64 `json:"share_pct"`
+		} `json:"participants"`
+	}
+	for _, inn := range []string{mt.InnA, mt.InnB, mt.InnC, mt.InnE} {
+		ch := mt.Decode[charter](t, mt.Get(router, "/fns/puchdoc/v1/"+inn), http.StatusOK)
+		var shares float64
+		for _, p := range ch.Participants {
+			shares += p.SharePct
+		}
+		if ch.INN != inn || shares != 100 || ch.Major.Threshold != ch.Major.Assets*ch.Major.Pct/100 {
+			t.Errorf("%s: %+v", inn, ch)
+		}
+	}
+	if a := mt.Decode[charter](t, mt.Get(router, "/fns/puchdoc/v1/"+mt.InnA), http.StatusOK); a.Major.Threshold != 5357500 {
+		t.Errorf("A threshold %.2f, doc says 5 357 500", a.Major.Threshold)
+	}
+	if e := mt.Decode[charter](t, mt.Get(router, "/fns/puchdoc/v1/"+mt.InnE), http.StatusOK); len(e.Head.Restrictions) != 1 ||
+		e.Head.Restrictions[0].Type != "LOAN_LIMIT" {
+		t.Errorf("E restrictions: %+v", e.Head.Restrictions)
+	}
+	mt.ErrorCode(t, mt.Get(router, "/fns/puchdoc/v1/"+mt.InnD), http.StatusNotFound) // у ИП устава нет
+	mt.ErrorCode(t, mt.Get(router, "/fns/puchdoc/v1/"+mt.Unknown), http.StatusNotFound)
+}
+
+func TestRMSPAndDisqualified(t *testing.T) {
+	type rmsp struct {
+		InRegistry bool    `json:"in_registry"`
+		Category   *string `json:"category"`
+	}
+	want := map[string]string{mt.InnA: "MICRO", mt.InnB: "SMALL", mt.InnC: "MICRO", mt.InnD: "MICRO", mt.InnE: "SMALL"}
+	for inn, cat := range want {
+		r := mt.Decode[rmsp](t, mt.Get(router, "/fns/rmsp/v1/"+inn), http.StatusOK)
+		if !r.InRegistry || r.Category == nil || *r.Category != cat {
+			t.Errorf("%s: %+v", inn, r)
+		}
+	}
+	if u := mt.Decode[rmsp](t, mt.Get(router, "/fns/rmsp/v1/"+mt.Unknown), http.StatusOK); u.InRegistry || u.Category != nil {
+		t.Errorf("unknown: %+v", u)
+	}
+
+	type disq struct {
+		Listed  bool  `json:"listed"`
+		Entries []any `json:"entries"`
+	}
+	for _, inn := range append(append([]string{}, mt.Directors...), mt.Unknown+"00") {
+		if r := mt.Decode[disq](t, mt.Get(router, "/fns/disqualified/v1?inn="+inn), http.StatusOK); r.Listed || r.Entries == nil {
+			t.Errorf("%s: %+v", inn, r)
+		}
+	}
+	if r := mt.Decode[disq](t, mt.Get(router, "/fns/disqualified/v1?inn="+mt.Laptev), http.StatusOK); !r.Listed || len(r.Entries) != 1 {
+		t.Errorf("Laptev: %+v", r)
+	}
+	mt.ErrorCode(t, mt.Get(router, "/fns/disqualified/v1?inn="+mt.InnA), http.StatusBadRequest) // нужен ИНН физлица
+}

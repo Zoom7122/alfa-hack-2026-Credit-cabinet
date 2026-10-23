@@ -2,7 +2,7 @@
 
 PostgreSQL 16. Одна БД на API, воркеры pgqueue и WS-хаб, поэтому переход FSM, запись в журнал и постановка следующей таски выполняются в одной транзакции ([fsm.md](fsm.md)).
 
-13 таблиц. ERD — [db-schema.dbml](db-schema.dbml): вставьте файл целиком на [dbdiagram.io](https://dbdiagram.io/d). Таблицы раскрашены по доменам. Диаграмма и справочник ниже содержат одни и те же колонки. Источник правды — миграции в [db/migrations](../db/migrations), оба файла обновляются вместе с ними.
+14 таблиц. ERD — [db-schema.dbml](db-schema.dbml): вставьте файл целиком на [dbdiagram.io](https://dbdiagram.io/d). Таблицы раскрашены по доменам. Диаграмма и справочник ниже содержат одни и те же колонки. Источник правды — миграции в [db/migrations](../db/migrations), оба файла обновляются вместе с ними.
 
 Проверка синтаксиса диаграммы:
 
@@ -13,7 +13,7 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 ## Принципы
 
 - **Колонка — только если по ней фильтруем, джойним или её охраняет FSM.** Всё, что пишется и читается целиком (анкета, расчёт скоринга, отчёт проверки ЭП), лежит в `jsonb`. Структура jsonb совпадает со схемами [openapi.yaml](../api/openapi.yaml), валидация и связи с таблицами — на Go-структурах.
-- **История не перезаписывается.** `application_events`, `source_snapshots` и `signature_reports` пишутся только вставкой. Решения хранятся строкой на каждый раунд рассмотрения.
+- **История не перезаписывается.** `application_events`, `source_snapshots`, `raw_collections` и `signature_reports` пишутся только вставкой. Решения хранятся строкой на каждый раунд рассмотрения.
 - PK — `text` вида `<prefix>_<ULID>` (`app_01JB8Z…`), как в API. Исключение — `source_runs`: наружу без id, PK `bigint identity`.
 - Деньги — `bigint` в рублях, ставки — `numeric`, время — `timestamptz`.
 - PG-enum не заводим: перечисления хранятся в `text` с `CHECK` на значения одноимённой схемы OpenAPI. Новое значение не требует `ALTER TYPE`.
@@ -161,6 +161,44 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 | `finished_at` | timestamptz | ✔ | |
 
 Критичность источника (`CRITICAL`/`NORMAL`) берётся из конфига, а не из БД.
+
+### raw_collections
+
+Сырые ответы всех внешних систем (моков) по одному сбору данных: строка на анкету, принятую `POST /api/v1/questionnaires` в data-collector. Только вставка. Колонка на систему, в ней — ответы её эндпоинтов как есть, по ключам запросов (ключи — в [data-collector/README.md](../data-collector/README.md)). `NULL` в колонке системы — данных нет: система пропущена или не ответила, причина — в `sources`.
+
+| Колонка | Тип | Null | Описание |
+|---|---|---|---|
+| `id` | text | | PK, `col_<ULID>` |
+| `questionnaire_id` | text | | `qst_<ULID>`. Без FK: анкеты пока хранятся в памяти data-collector |
+| `inn` | text | | ИНН компании или ИП, `CHECK` 10 или 12 цифр |
+| `director_inn` | text | ✔ | ИНН руководителя, `CHECK` 12 цифр |
+| `request` | jsonb | | входные данные сбора: руководитель, согласия, банки, залог. Токены не хранятся |
+| `sources` | jsonb | | по системе: `state` (`DONE`, `PARTIAL`, `FAILED`, `SKIPPED`), `reason`, все HTTP-запросы со статусом и временем |
+| `started_at`, `finished_at` | timestamptz | | |
+| `core_banking` | jsonb | ✔ | АБС банка |
+| `fns` | jsonb | ✔ | ЕГРЮЛ, «Прозрачный бизнес», ГИР БО, блокировки, устав, реестр МСП, дисквалификация |
+| `bki` | jsonb | ✔ | отчёты БКИ по компании и руководителю |
+| `compliance` | jsonb | ✔ | ЗСК и санкционные списки |
+| `fssp` | jsonb | ✔ | исполнительные производства |
+| `kad` | jsonb | ✔ | арбитражные дела |
+| `fedresurs` | jsonb | ✔ | Федресурс |
+| `m4d` | jsonb | ✔ | МЧД |
+| `tax_reports` | jsonb | ✔ | налоговая отчётность |
+| `pledge_registry` | jsonb | ✔ | реестр залогов |
+| `egrn` | jsonb | ✔ | выписки ЕГРН |
+| `gosuslugi` | jsonb | ✔ | «Цифровой профиль» руководителя |
+| `open_banking` | jsonb | ✔ | счета в других банках |
+| `marketplaces` | jsonb | ✔ | Wildberries, Ozon |
+| `ofd` | jsonb | ✔ | онлайн-кассы |
+| `zakupki` | jsonb | ✔ | госконтракты и РНП |
+| `signals` | jsonb | ✔ | проверки, товарные знаки, новости |
+| `cbr` | jsonb | ✔ | ключевая ставка: SOAP-ответ ЦБ строкой |
+| `hh` | jsonb | ✔ | hh.ru |
+| `created_at` | timestamptz | | |
+
+Индексы: `(inn, created_at desc)`, `(questionnaire_id)`.
+
+Это временная форма хранения: сбор пишет всё одной строкой, а нормализованные `source_snapshots` и `source_runs` по заявке появятся вместе с FSM. jsonb хранит содержимое ответов без изменений, но не исходный текст: порядок ключей и пробелы нормализуются.
 
 ### decisions
 

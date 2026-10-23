@@ -65,7 +65,7 @@ const docTemplate = `{
         },
         "/questionnaires": {
             "post": {
-                "description": "Проверяет правила и сохраняет анкету. Возраст — полных лет, бакеты считает скоринг.",
+                "description": "Проверяет анкету и данные для сбора, сохраняет анкету и опрашивает все внешние системы (эмулятор mock-api).\nСырые ответы систем сохраняются строкой в таблицу raw_collections: одна система — одна колонка.\nВ ответе — только состояние по каждой системе. Отказ системы не ошибка запроса: ответ всё равно 201.\nСистемы без нужных данных (нет согласия, токена, залога) пропускаются со state=SKIPPED.",
                 "consumes": [
                     "application/json"
                 ],
@@ -75,10 +75,10 @@ const docTemplate = `{
                 "tags": [
                     "questionnaires"
                 ],
-                "summary": "Принять анкету заёмщика",
+                "summary": "Принять анкету и собрать данные о компании",
                 "parameters": [
                     {
-                        "description": "Анкета",
+                        "description": "Анкета и данные для сбора",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -95,13 +95,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "битый JSON, нет поля или неверный тип",
+                        "description": "битый JSON, нет обязательного поля (age, marital_status, children_count, inn) или неверный тип",
                         "schema": {
                             "$ref": "#/definitions/Problem"
                         }
                     },
                     "422": {
-                        "description": "нарушено правило: возраст 18–100, статус из перечня, детей 0–20",
+                        "description": "нарушено правило анкеты или неверный формат данных для сбора (ИНН, БИК, VIN, даты)",
                         "schema": {
                             "$ref": "#/definitions/Problem"
                         }
@@ -117,11 +117,179 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "Collateral": {
+            "type": "object",
+            "properties": {
+                "cadastral_numbers": {
+                    "description": "недвижимость → ЕГРН",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "50:21:0110203:845"
+                    ]
+                },
+                "serials": {
+                    "description": "техника → реестр залогов",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "JCB3CX2023118457"
+                    ]
+                },
+                "vins": {
+                    "description": "транспорт → реестр залогов",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "XTC652005N1498213"
+                    ]
+                }
+            }
+        },
+        "Collection": {
+            "type": "object",
+            "properties": {
+                "finished_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "col_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"
+                },
+                "inn": {
+                    "type": "string",
+                    "example": "7799000012"
+                },
+                "sources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CollectionSource"
+                    }
+                },
+                "started_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "CollectionSource": {
+            "type": "object",
+            "properties": {
+                "calls": {
+                    "type": "integer"
+                },
+                "duration_ms": {
+                    "type": "integer"
+                },
+                "failed_calls": {
+                    "type": "integer"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string",
+                    "enum": [
+                        "CORE_BANKING",
+                        "FNS",
+                        "BKI",
+                        "COMPLIANCE",
+                        "FSSP",
+                        "KAD",
+                        "FEDRESURS",
+                        "M4D",
+                        "TAX_REPORTS",
+                        "PLEDGE_REGISTRY",
+                        "EGRN",
+                        "GOSUSLUGI",
+                        "OPEN_BANKING",
+                        "MARKETPLACES",
+                        "OFD",
+                        "ZAKUPKI",
+                        "SIGNALS",
+                        "CBR",
+                        "HH"
+                    ]
+                },
+                "state": {
+                    "type": "string",
+                    "enum": [
+                        "DONE",
+                        "PARTIAL",
+                        "FAILED",
+                        "SKIPPED"
+                    ]
+                }
+            }
+        },
+        "Consent": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "CNS-2026-000781"
+                },
+                "scope": {
+                    "description": "только у consents.tax",
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "DECLARATIONS",
+                            "ENS_BALANCE"
+                        ]
+                    }
+                },
+                "signed_at": {
+                    "type": "string",
+                    "example": "2026-10-21T14:02:11Z"
+                },
+                "valid_until": {
+                    "type": "string",
+                    "example": "2027-04-21"
+                }
+            }
+        },
+        "Consents": {
+            "type": "object",
+            "properties": {
+                "bki_company": {
+                    "description": "компании на запрос в БКИ",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/Consent"
+                        }
+                    ]
+                },
+                "bki_person": {
+                    "description": "руководителя на запрос в БКИ",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/Consent"
+                        }
+                    ]
+                },
+                "tax": {
+                    "description": "на налоговую отчётность",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/Consent"
+                        }
+                    ]
+                }
+            }
+        },
         "CreateQuestionnaireRequest": {
             "type": "object",
             "required": [
                 "age",
                 "children_count",
+                "inn",
                 "marital_status"
             ],
             "properties": {
@@ -129,13 +297,32 @@ const docTemplate = `{
                     "type": "integer",
                     "maximum": 100,
                     "minimum": 18,
-                    "example": 34
+                    "example": 42
                 },
                 "children_count": {
                     "type": "integer",
                     "maximum": 20,
                     "minimum": 0,
                     "example": 2
+                },
+                "collateral": {
+                    "$ref": "#/definitions/Collateral"
+                },
+                "consents": {
+                    "$ref": "#/definitions/Consents"
+                },
+                "director": {
+                    "description": "Руководитель; у ИП — сам предприниматель. Без него не запрашиваются данные физлица:\nБКИ, ФССП, Федресурс, Госуслуги, дисквалификация, санкции.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/Person"
+                        }
+                    ]
+                },
+                "inn": {
+                    "description": "ИНН компании (10 цифр) или ИП (12 цифр) — ключ ко всем системам.",
+                    "type": "string",
+                    "example": "7799000012"
                 },
                 "marital_status": {
                     "type": "string",
@@ -146,6 +333,34 @@ const docTemplate = `{
                         "DIVORCED_MULTIPLE"
                     ],
                     "example": "MARRIED"
+                },
+                "marketplace_tokens": {
+                    "description": "Токены продавца: {\"wildberries\": \"…\", \"ozon\": \"…\"}. Мок принимает любой непустой токен (кроме начинающегося с invalid).",
+                    "type": "object"
+                },
+                "ofd_token": {
+                    "description": "Токен оператора фискальных данных (онлайн-кассы).",
+                    "type": "string",
+                    "example": "demo-ofd-token"
+                },
+                "other_bank_biks": {
+                    "description": "БИК банков, где у клиента ещё есть счета: мультибанкинг и блокировки ФНС.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "044525225"
+                    ]
+                },
+                "poa_number": {
+                    "description": "Номер МЧД, если заявку подаёт представитель, и его ИНН.",
+                    "type": "string",
+                    "example": "0f5a2c1e-7b3d-4e8a-9c21-6d4b8e0a1f37"
+                },
+                "representative_inn": {
+                    "type": "string",
+                    "example": "779900010333"
                 }
             }
         },
@@ -175,6 +390,31 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/SourceResult"
                     }
+                }
+            }
+        },
+        "Person": {
+            "type": "object",
+            "properties": {
+                "birth_date": {
+                    "type": "string",
+                    "example": "1984-07-19"
+                },
+                "first_name": {
+                    "type": "string",
+                    "example": "Игорь"
+                },
+                "inn": {
+                    "type": "string",
+                    "example": "779900010139"
+                },
+                "last_name": {
+                    "type": "string",
+                    "example": "Ковалёв"
+                },
+                "middle_name": {
+                    "type": "string",
+                    "example": "Сергеевич"
                 }
             }
         },
@@ -226,6 +466,9 @@ const docTemplate = `{
                 },
                 "children_count": {
                     "type": "integer"
+                },
+                "collection": {
+                    "$ref": "#/definitions/Collection"
                 },
                 "created_at": {
                     "type": "string"
@@ -806,7 +1049,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "data-collector API",
-	Description:      "Сбор данных о заёмщике для скоринга: анкета клиента и данные внутренних систем банка.\nОшибки — RFC 9457 (`application/problem+json`).",
+	Description:      "Сбор данных о заёмщике для скоринга: анкета клиента и сырые ответы всех внешних систем (эмулятор mock-api).\nОшибки — RFC 9457 (`application/problem+json`).",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

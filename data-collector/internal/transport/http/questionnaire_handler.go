@@ -14,7 +14,7 @@ import (
 
 // QuestionnaireService — то, что хендлеру нужно от бизнес-слоя.
 type QuestionnaireService interface {
-	Create(ctx context.Context, in service.CreateInput) (domain.Questionnaire, error)
+	Create(ctx context.Context, in service.CreateInput) (service.Created, error)
 }
 
 // QuestionnaireHandler принимает анкеты заёмщика. Маршруты — в router.go.
@@ -29,15 +29,18 @@ func NewQuestionnaireHandler(svc QuestionnaireService, log *slog.Logger) *Questi
 
 // create — POST /api/v1/questionnaires.
 //
-//	@Summary		Принять анкету заёмщика
-//	@Description	Проверяет правила и сохраняет анкету. Возраст — полных лет, бакеты считает скоринг.
+//	@Summary		Принять анкету и собрать данные о компании
+//	@Description	Проверяет анкету и данные для сбора, сохраняет анкету и опрашивает все внешние системы (эмулятор mock-api).
+//	@Description	Сырые ответы систем сохраняются строкой в таблицу raw_collections: одна система — одна колонка.
+//	@Description	В ответе — только состояние по каждой системе. Отказ системы не ошибка запроса: ответ всё равно 201.
+//	@Description	Системы без нужных данных (нет согласия, токена, залога) пропускаются со state=SKIPPED.
 //	@Tags			questionnaires
 //	@Accept			json
 //	@Produce		json
-//	@Param			body	body		createQuestionnaireRequest	true	"Анкета"
+//	@Param			body	body		createQuestionnaireRequest	true	"Анкета и данные для сбора"
 //	@Success		201		{object}	questionnaireResponse
-//	@Failure		400		{object}	problem	"битый JSON, нет поля или неверный тип"
-//	@Failure		422		{object}	problem	"нарушено правило: возраст 18–100, статус из перечня, детей 0–20"
+//	@Failure		400		{object}	problem	"битый JSON, нет обязательного поля (age, marital_status, children_count, inn) или неверный тип"
+//	@Failure		422		{object}	problem	"нарушено правило анкеты или неверный формат данных для сбора (ИНН, БИК, VIN, даты)"
 //	@Failure		500		{object}	problem
 //	@Router			/questionnaires [post]
 func (h *QuestionnaireHandler) create(c *gin.Context) {
@@ -47,10 +50,11 @@ func (h *QuestionnaireHandler) create(c *gin.Context) {
 		return
 	}
 
-	q, err := h.svc.Create(c.Request.Context(), service.CreateInput{
+	res, err := h.svc.Create(c.Request.Context(), service.CreateInput{
 		Age:           *req.Age,
 		MaritalStatus: domain.MaritalStatus(*req.MaritalStatus),
 		ChildrenCount: *req.ChildrenCount,
+		Company:       req.toCollectInput(),
 	})
 	if err != nil {
 		var verr *service.ValidationError
@@ -63,5 +67,11 @@ func (h *QuestionnaireHandler) create(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, toQuestionnaireResponse(q))
+	for _, s := range res.Collection.Systems {
+		if s.State == domain.CollectFailed || s.State == domain.CollectPartial {
+			h.log.WarnContext(c.Request.Context(), "external system failed", "collection", res.Collection.ID,
+				"source", s.System, "state", s.State, "reason", s.Reason)
+		}
+	}
+	c.JSON(http.StatusCreated, toQuestionnaireResponse(res))
 }

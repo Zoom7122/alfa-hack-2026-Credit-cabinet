@@ -17,12 +17,12 @@
       "model": "MOCK-SME-v1"
     },
     "summary": {
-      "active_accounts": 2,
+      "active_accounts": 3,
       "closed_accounts": 2,
-      "total_limit": 3900000.00,
-      "total_outstanding": 2416000.00,
-      "total_monthly_payment": 151500.00,
-      "current_overdue_amount": 351700.00,
+      "total_limit": 4500000.00,
+      "total_outstanding": 2964000.00,
+      "total_monthly_payment": 219900.00,
+      "current_overdue_amount": 420100.00,
       "max_overdue_days_ever": 64,
       "overdue_30p_24m": 2,
       "overdue_60p_24m": 1,
@@ -53,6 +53,24 @@
       },
       {
         "account_id": "ACC-2",
+        "creditor_type": "MFO",
+        "creditor_name": "ООО \"МФК ТОРГФИНАНС\"",
+        "product_type": "TERM_LOAN",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2026-08-12",
+        "planned_close_at": "2027-08-12",
+        "limit": 600000.00,
+        "outstanding": 548000.00,
+        "monthly_payment": 68400.00,
+        "status": "ACTIVE",
+        "current_overdue_days": 10,
+        "current_overdue_amount": 68400.00,
+        "payment_history_24m": "100---------------------",
+        "collateral": true
+      },
+      {
+        "account_id": "ACC-3",
         "creditor_type": "BANK",
         "creditor_name": "АО \"АЛЬФА-БАНК\"",
         "product_type": "TERM_LOAN",
@@ -70,7 +88,7 @@
         "collateral": false
       },
       {
-        "account_id": "ACC-3",
+        "account_id": "ACC-4",
         "creditor_type": "BANK",
         "creditor_name": "АО \"ПРОМКРЕДИТБАНК\"",
         "product_type": "OVERDRAFT",
@@ -88,7 +106,7 @@
         "collateral": false
       },
       {
-        "account_id": "ACC-4",
+        "account_id": "ACC-5",
         "creditor_type": "BANK",
         "creditor_name": "АО \"АЛЬФА-БАНК\"",
         "product_type": "TERM_LOAN",

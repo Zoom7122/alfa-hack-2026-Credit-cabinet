@@ -1,0 +1,28 @@
+{
+  "person": {
+    "last_name": "Лаптев",
+    "first_name": "Сергей",
+    "middle_name": "Юрьевич",
+    "birth_date": "1975-12-01",
+    "inn": "779900099018"
+  },
+  "data": {
+    "passport": {
+      "series": "4505",
+      "number": "118822",
+      "issued_at": "2005-01-20",
+      "issuer": "ГУ МВД России по г. Москве",
+      "division_code": "772-010",
+      "valid": false
+    },
+    "inn": "779900099018",
+    "snils": "089-441-552 63",
+    "registration_address": "г. Москва, ул. Перовская, д. 44, кв. 9",
+    "income": [],
+    "employment": [],
+    "npd_status": {
+      "registered": false,
+      "history": []
+    }
+  }
+}

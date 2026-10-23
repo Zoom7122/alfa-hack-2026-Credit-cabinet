@@ -2,7 +2,7 @@
 
 Общая схема PostgreSQL для всех модулей кабинета. Отдельный Go-модуль: миграции Goose и команда `migrate`, которая их накатывает и завершается. Сервисы схему не трогают — они стартуют после `migrate`.
 
-Схема перенесена из [docs/db-schema.dbml](../docs/db-schema.dbml) и [docs/db-schema.md](../docs/db-schema.md): 13 таблиц, перечисления — `text` + `CHECK` со значениями из `api/openapi.yaml`. С этого момента источник правды — миграции; ERD и справочник обновляются вместе с ними.
+Начальная схема (`00001_init.sql`) перенесена из [docs/db-schema.dbml](../docs/db-schema.dbml) и [docs/db-schema.md](../docs/db-schema.md): 13 таблиц, перечисления — `text` + `CHECK` со значениями из `api/openapi.yaml`. `00002_raw_collections.sql` добавляет `raw_collections` — сырые ответы внешних систем, которые собирает data-collector. С этого момента источник правды — миграции; ERD и справочник обновляются вместе с ними.
 
 ## Запуск
 

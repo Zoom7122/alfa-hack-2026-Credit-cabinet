@@ -39,8 +39,11 @@ migrate-status: env ## статус миграций
 test: ## тесты и vet всех Go-модулей
 	@for m in $(MODULES); do echo "== $$m"; (cd $$m && go vet ./... && go test ./...) || exit 1; done
 
-test-integration: ## контрактные тесты data-collector против запущенного mock-api (сначала make up)
-	$(MAKE) -C data-collector test-integration BANK_API_URL=http://localhost:$(or $(MOCK_API_PORT),8090)/bank/v1
+test-integration: ## интеграционные тесты data-collector против запущенных mock-api и Postgres (сначала make up)
+	$(MAKE) -C data-collector test-integration \
+		BANK_API_URL=http://localhost:$(or $(MOCK_API_PORT),8090)/bank/v1 \
+		MOCK_API_URL=http://localhost:$(or $(MOCK_API_PORT),8090) \
+		DATABASE_URL=postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(or $(POSTGRES_PORT),5432)/$(POSTGRES_DB)?sslmode=disable
 
 clean: ## остановить и удалить данные БД
 	docker compose down -v

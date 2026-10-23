@@ -231,5 +231,50 @@
   "bi": {
     "checked_at": "2026-10-22T10:15:03",
     "by_bik": {}
+  },
+  "charter": {
+    "inn": "7799000012",
+    "document": {
+      "type": "CHARTER",
+      "version_date": "2021-03-14",
+      "registration_record": "2217700187654"
+    },
+    "head": {
+      "position": "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР",
+      "term_years": 5,
+      "acts_without_poa": true,
+      "restrictions": []
+    },
+    "major_transaction": {
+      "threshold_pct_of_assets": 25,
+      "approval_body": "SOLE_PARTICIPANT",
+      "assets_at_last_reporting_date": 21430000.00,
+      "threshold_amount": 5357500.00
+    },
+    "related_party_approval_required": true,
+    "participants": [
+      {
+        "inn": "779900010139",
+        "full_name": "Ковалёв Игорь Сергеевич",
+        "share_pct": 100
+      }
+    ]
+  },
+  "rmsp": {
+    "inn": "7799000012",
+    "in_registry": true,
+    "category": "MICRO",
+    "included_at": "2022-08-10",
+    "employees": 14,
+    "support": [
+      {
+        "provider": "Фонд содействия кредитованию МСП г. Москвы",
+        "form": "GUARANTEE",
+        "amount": 1500000.00,
+        "date": "2024-11-15",
+        "term_until": "2027-11-15",
+        "violation": false
+      }
+    ]
   }
 }

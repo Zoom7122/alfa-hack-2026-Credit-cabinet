@@ -54,20 +54,20 @@
       {
         "account_id": "ACC-2",
         "creditor_type": "BANK",
-        "creditor_name": "АО \"ПРОМКРЕДИТБАНК\"",
+        "creditor_name": "АО \"РЕГИОН-КРЕДИТ\"",
         "product_type": "CREDIT_LINE",
         "role": "BORROWER",
         "currency": "RUB",
-        "opened_at": "2025-04-01",
-        "planned_close_at": "2027-04-01",
+        "opened_at": "2024-03-05",
+        "planned_close_at": "2029-03-05",
         "limit": 2500000.00,
         "outstanding": 2300000.00,
         "monthly_payment": 112000.00,
         "status": "ACTIVE",
         "current_overdue_days": 0,
         "current_overdue_amount": 0.00,
-        "payment_history_24m": "0000010000000000000-----",
-        "collateral": false
+        "payment_history_24m": "000001000000000000000000",
+        "collateral": true
       },
       {
         "account_id": "ACC-3",

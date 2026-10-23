@@ -1,12 +1,15 @@
 // Package fns эмулирует сервисы ФНС: ЕГРЮЛ/ЕГРИП (egrul.nalog.ru),
-// «Прозрачный бизнес» (pb.nalog.ru), ГИР БО (bo.nalog.gov.ru) и блокировки
-// счетов (service.nalog.ru/bi2-proc.json).
+// «Прозрачный бизнес» (pb.nalog.ru), ГИР БО (bo.nalog.gov.ru), блокировки
+// счетов (service.nalog.ru/bi2-proc.json), а также копии устава, реестр МСП
+// и реестр дисквалифицированных лиц.
 //
-// Пути и поля повторяют реальные сервисы: один адаптер парсит и мок, и живой
-// ответ, переключение — смена base URL. Двухшаговые запросы (токен → результат)
-// мок отрабатывает сразу. Блокировки — формат свой, реальный неизвестен.
+// Пути и поля ЕГРЮЛ, ПБ и ГИР БО повторяют реальные сервисы: один адаптер парсит
+// и мок, и живой ответ, переключение — смена base URL. Двухшаговые запросы
+// (токен → результат) мок отрабатывает сразу. У блокировок, устава, реестра МСП
+// и дисквалифицированных формат свой.
 //
-// Данные — seed/<inn>.json, встроены в бинарник. Суммы ГИР БО в тыс. руб.
+// Данные: seed/<inn>.json — по компании; seed/disqualified/<inn>.json — по физлицу.
+// Суммы ГИР БО в тыс. руб.
 package fns
 
 import (
@@ -44,13 +47,16 @@ type company struct {
 		CheckedAt string                     `json:"checked_at"`
 		ByBIK     map[string]json.RawMessage `json:"by_bik"` // БИК → решения о приостановлении
 	} `json:"bi"`
+	Charter json.RawMessage `json:"charter"` // устав; у ИП нет
+	RMSP    json.RawMessage `json:"rmsp"`    // запись в реестре МСП
 
 	inn, ogrn, name string // из строки ЕГРЮЛ, для поиска в «Прозрачном бизнесе»
 }
 
 type handler struct {
-	companies map[string]*company
-	boByID    map[int64]*company
+	companies    map[string]*company
+	boByID       map[int64]*company
+	disqualified map[string][]byte
 }
 
 // Captcha — ответ на X-Mock-Fault: captcha, как у реального egrul.nalog.ru.
@@ -68,10 +74,14 @@ func Register(rg *gin.RouterGroup) {
 	rg.GET("/bo/advanced-search/organizations/search", h.boSearch)
 	rg.GET("/bo/nbo/organizations/:id/bfo/", h.boReports)
 	rg.POST("/bi/bi2-proc.json", h.blocks)
+	rg.GET("/puchdoc/v1/:inn", h.charter)
+	rg.GET("/rmsp/v1/:inn", h.rmsp)
+	rg.GET("/disqualified/v1", h.disqualifiedPerson)
 }
 
 func load() *handler {
-	h := &handler{companies: map[string]*company{}, boByID: map[int64]*company{}}
+	h := &handler{companies: map[string]*company{}, boByID: map[int64]*company{},
+		disqualified: mockkit.Seeds(seedFS, "seed/disqualified")}
 	for inn, body := range mockkit.Seeds(seedFS, "seed") {
 		var co company
 		mockkit.MustDecode(inn, body, &co)
@@ -229,4 +239,55 @@ func (h *handler) blocks(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, resp)
+}
+
+// charter: устав — ограничения директора и порог крупной сделки. У ИП и неизвестных ИНН — 404.
+func (h *handler) charter(c *gin.Context) {
+	inn, ok := mockkit.INNParam(c)
+	if !ok {
+		return
+	}
+	if co := h.companies[inn]; co != nil && co.Charter != nil {
+		mockkit.JSON(c, co.Charter)
+		return
+	}
+	mockkit.Error(c, http.StatusNotFound, mockkit.CodeNotFound, "no charter for this inn")
+}
+
+// rmsp: запись в реестре МСП; кого нет в реестре — in_registry=false.
+func (h *handler) rmsp(c *gin.Context) {
+	inn, ok := mockkit.INNParam(c)
+	if !ok {
+		return
+	}
+	if co := h.companies[inn]; co != nil && co.RMSP != nil {
+		mockkit.JSON(c, co.RMSP)
+		return
+	}
+	c.JSON(http.StatusOK, struct {
+		INN        string `json:"inn"`
+		InRegistry bool   `json:"in_registry"`
+		Category   any    `json:"category"`
+		IncludedAt any    `json:"included_at"`
+		Employees  any    `json:"employees"`
+		Support    []any  `json:"support"`
+	}{inn, false, nil, nil, nil, []any{}})
+}
+
+// disqualifiedPerson: есть ли физлицо в реестре дисквалифицированных.
+func (h *handler) disqualifiedPerson(c *gin.Context) {
+	inn := c.Query("inn")
+	if len(inn) != 12 || !mockkit.ValidINN(inn) {
+		mockkit.Error(c, http.StatusBadRequest, mockkit.CodeInvalidINN, "inn of a person must be 12 digits")
+		return
+	}
+	if body, ok := h.disqualified[inn]; ok {
+		mockkit.JSON(c, body)
+		return
+	}
+	c.JSON(http.StatusOK, struct {
+		INN     string `json:"inn"`
+		Listed  bool   `json:"listed"`
+		Entries []any  `json:"entries"`
+	}{inn, false, []any{}})
 }

@@ -24,18 +24,32 @@ type Repository interface {
 	Save(ctx context.Context, q domain.Questionnaire) error
 }
 
+// Collector — сбор данных о компании по анкете (CollectionService).
+type Collector interface {
+	Validate(in domain.CollectInput) []FieldError
+	Collect(ctx context.Context, questionnaireID string, in domain.CollectInput) (domain.RawCollection, error)
+}
+
 // CreateInput — данные анкеты, пришедшие с формы.
 type CreateInput struct {
 	Age           int
 	MaritalStatus domain.MaritalStatus
 	ChildrenCount int
+	Company       domain.CollectInput // по чему собирать данные: ИНН, руководитель, согласия, токены, залог
 }
 
-// QuestionnaireService принимает анкеты и сохраняет их.
+// Created — сохранённая анкета и итог сбора данных по ней.
+type Created struct {
+	Questionnaire domain.Questionnaire
+	Collection    domain.RawCollection
+}
+
+// QuestionnaireService принимает анкеты, сохраняет их и запускает сбор данных о компании.
 type QuestionnaireService struct {
-	repo  Repository
-	now   func() time.Time
-	newID func() string
+	repo      Repository
+	collector Collector
+	now       func() time.Time
+	newID     func() string
 }
 
 // Option настраивает QuestionnaireService (используется в тестах).
@@ -49,11 +63,12 @@ func WithIDGenerator(newID func() string) Option {
 	return func(s *QuestionnaireService) { s.newID = newID }
 }
 
-func NewQuestionnaireService(repo Repository, opts ...Option) *QuestionnaireService {
+func NewQuestionnaireService(repo Repository, collector Collector, opts ...Option) *QuestionnaireService {
 	s := &QuestionnaireService{
-		repo:  repo,
-		now:   time.Now,
-		newID: func() string { return "qst_" + ulid.MustNew(ulid.Now(), rand.Reader).String() },
+		repo:      repo,
+		collector: collector,
+		now:       time.Now,
+		newID:     func() string { return "qst_" + ulid.MustNew(ulid.Now(), rand.Reader).String() },
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -61,11 +76,14 @@ func NewQuestionnaireService(repo Repository, opts ...Option) *QuestionnaireServ
 	return s
 }
 
-// Create проверяет бизнес-правила и сохраняет анкету.
-// Нарушения возвращаются как *ValidationError.
-func (s *QuestionnaireService) Create(ctx context.Context, in CreateInput) (domain.Questionnaire, error) {
-	if err := validate(in); err != nil {
-		return domain.Questionnaire{}, err
+// Create проверяет анкету и данные для сбора, сохраняет анкету и собирает данные о компании.
+// Нарушения возвращаются как *ValidationError — все сразу, и ничего не сохраняется.
+// Отказ отдельной внешней системы ошибкой не считается: он виден в Collection.
+func (s *QuestionnaireService) Create(ctx context.Context, in CreateInput) (Created, error) {
+	fields := validate(in)
+	fields = append(fields, s.collector.Validate(in.Company)...)
+	if len(fields) > 0 {
+		return Created{}, &ValidationError{Fields: fields}
 	}
 
 	q := domain.Questionnaire{
@@ -76,12 +94,17 @@ func (s *QuestionnaireService) Create(ctx context.Context, in CreateInput) (doma
 		CreatedAt:     s.now().UTC(),
 	}
 	if err := s.repo.Save(ctx, q); err != nil {
-		return domain.Questionnaire{}, fmt.Errorf("save questionnaire: %w", err)
+		return Created{}, fmt.Errorf("save questionnaire: %w", err)
 	}
-	return q, nil
+
+	rc, err := s.collector.Collect(ctx, q.ID, in.Company)
+	if err != nil {
+		return Created{Questionnaire: q}, fmt.Errorf("collect company data: %w", err)
+	}
+	return Created{Questionnaire: q, Collection: rc}, nil
 }
 
-func validate(in CreateInput) error {
+func validate(in CreateInput) []FieldError {
 	var fields []FieldError
 	if in.Age < minAge || in.Age > maxAge {
 		fields = append(fields, FieldError{
@@ -104,8 +127,5 @@ func validate(in CreateInput) error {
 			Message: fmt.Sprintf("количество детей и иждивенцев должно быть от 0 до %d", maxChildren),
 		})
 	}
-	if len(fields) > 0 {
-		return &ValidationError{Fields: fields}
-	}
-	return nil
+	return fields
 }

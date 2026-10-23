@@ -35,6 +35,10 @@ services:
     build: ./data-collector
     environment:
       HTTP_ADDR: :8081
+      # сырые ответы всех систем по анкете → таблица raw_collections
+      DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
+      MOCK_API_URL: http://mock-api:8090
+      MOCK_API_TIMEOUT: 5s
       BANK_API_URL: http://mock-api:8090/bank/v1
       BANK_API_TIMEOUT: 5s
     ports:
@@ -46,8 +50,8 @@ services:
         condition: service_started
     restart: unless-stopped
 
-  # Эмулятор внешних систем: /core-banking/v1, /fns, /bki/v1, /compliance/v1, /fssp/v1,
-  # /kad/v1, /fedresurs/v1 и старый /bank/v1 (его вызывает data-collector).
+  # Эмулятор внешних систем: свой префикс на каждую систему (список — mock-api/README.md)
+  # и старый /bank/v1, который вызывает data-collector.
   mock-api:
     build: ./mock-api
     environment:

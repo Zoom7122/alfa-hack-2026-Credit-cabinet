@@ -1,0 +1,1830 @@
+{
+  "wildberries": {
+    "profile": {
+      "marketplace": "wildberries",
+      "seller_id": "WB-1184520",
+      "inn": "779900010202",
+      "name": "ИП Смирнова Анна Викторовна",
+      "registered_at": "2024-03-11",
+      "legal_status_history": [
+        {
+          "status": "SELF_EMPLOYED",
+          "from": "2024-03-11",
+          "to": "2026-07-27"
+        },
+        {
+          "status": "IP",
+          "from": "2026-07-28",
+          "to": null
+        }
+      ],
+      "rating": 4.8,
+      "reviews_count": 3127,
+      "active_sku": 46,
+      "category": "Товары для дома"
+    },
+    "months": [
+      {
+        "month": "2026-09",
+        "orders_count": 512,
+        "sales_count": 447,
+        "returns_count": 21,
+        "gross_sales": 402300.00,
+        "returns_amount": 18900.00,
+        "commission": 92850.00,
+        "logistics": 39200.00,
+        "payout": 251350.00
+      },
+      {
+        "month": "2026-08",
+        "orders_count": 468,
+        "sales_count": 409,
+        "returns_count": 18,
+        "gross_sales": 371800.00,
+        "returns_amount": 15400.00,
+        "commission": 84950.00,
+        "logistics": 34650.00,
+        "payout": 236800.00
+      },
+      {
+        "month": "2026-07",
+        "orders_count": 455,
+        "sales_count": 398,
+        "returns_count": 22,
+        "gross_sales": 366100.00,
+        "returns_amount": 17300.00,
+        "commission": 83700.00,
+        "logistics": 33900.00,
+        "payout": 231200.00
+      },
+      {
+        "month": "2026-06",
+        "orders_count": 440,
+        "sales_count": 371,
+        "returns_count": 18,
+        "gross_sales": 334348.39,
+        "returns_amount": 15900.00,
+        "commission": 76900.00,
+        "logistics": 31760.00,
+        "payout": 209788.39
+      },
+      {
+        "month": "2026-05",
+        "orders_count": 400,
+        "sales_count": 338,
+        "returns_count": 16,
+        "gross_sales": 304500.00,
+        "returns_amount": 14500.00,
+        "commission": 70040.00,
+        "logistics": 28930.00,
+        "payout": 191030.00
+      },
+      {
+        "month": "2026-04",
+        "orders_count": 373,
+        "sales_count": 315,
+        "returns_count": 15,
+        "gross_sales": 283500.00,
+        "returns_amount": 13500.00,
+        "commission": 65200.00,
+        "logistics": 26930.00,
+        "payout": 177870.00
+      },
+      {
+        "month": "2026-03",
+        "orders_count": 353,
+        "sales_count": 298,
+        "returns_count": 14,
+        "gross_sales": 267800.00,
+        "returns_amount": 12800.00,
+        "commission": 61590.00,
+        "logistics": 25440.00,
+        "payout": 167970.00
+      },
+      {
+        "month": "2026-02",
+        "orders_count": 331,
+        "sales_count": 280,
+        "returns_count": 13,
+        "gross_sales": 252000.00,
+        "returns_amount": 12000.00,
+        "commission": 57960.00,
+        "logistics": 23940.00,
+        "payout": 158100.00
+      },
+      {
+        "month": "2026-01",
+        "orders_count": 310,
+        "sales_count": 262,
+        "returns_count": 12,
+        "gross_sales": 236200.00,
+        "returns_amount": 11200.00,
+        "commission": 54330.00,
+        "logistics": 22440.00,
+        "payout": 148230.00
+      },
+      {
+        "month": "2025-12",
+        "orders_count": 318,
+        "sales_count": 268,
+        "returns_count": 13,
+        "gross_sales": 241500.00,
+        "returns_amount": 11500.00,
+        "commission": 55540.00,
+        "logistics": 22940.00,
+        "payout": 151520.00
+      },
+      {
+        "month": "2025-11",
+        "orders_count": 318,
+        "sales_count": 268,
+        "returns_count": 13,
+        "gross_sales": 241500.00,
+        "returns_amount": 11500.00,
+        "commission": 55540.00,
+        "logistics": 22940.00,
+        "payout": 151520.00
+      },
+      {
+        "month": "2025-10",
+        "orders_count": 282,
+        "sales_count": 239,
+        "returns_count": 11,
+        "gross_sales": 215200.00,
+        "returns_amount": 10200.00,
+        "commission": 49500.00,
+        "logistics": 20440.00,
+        "payout": 135060.00
+      },
+      {
+        "month": "2025-09",
+        "orders_count": 270,
+        "sales_count": 228,
+        "returns_count": 11,
+        "gross_sales": 204800.00,
+        "returns_amount": 9800.00,
+        "commission": 47100.00,
+        "logistics": 19460.00,
+        "payout": 128440.00
+      },
+      {
+        "month": "2025-08",
+        "orders_count": 255,
+        "sales_count": 216,
+        "returns_count": 10,
+        "gross_sales": 194200.00,
+        "returns_amount": 9200.00,
+        "commission": 44670.00,
+        "logistics": 18450.00,
+        "payout": 121880.00
+      },
+      {
+        "month": "2025-07",
+        "orders_count": 242,
+        "sales_count": 204,
+        "returns_count": 10,
+        "gross_sales": 183800.00,
+        "returns_amount": 8800.00,
+        "commission": 42270.00,
+        "logistics": 17460.00,
+        "payout": 115270.00
+      },
+      {
+        "month": "2025-06",
+        "orders_count": 234,
+        "sales_count": 198,
+        "returns_count": 9,
+        "gross_sales": 178500.00,
+        "returns_amount": 8500.00,
+        "commission": 41060.00,
+        "logistics": 16960.00,
+        "payout": 111980.00
+      },
+      {
+        "month": "2025-05",
+        "orders_count": 227,
+        "sales_count": 192,
+        "returns_count": 9,
+        "gross_sales": 173200.00,
+        "returns_amount": 8200.00,
+        "commission": 39840.00,
+        "logistics": 16450.00,
+        "payout": 108710.00
+      },
+      {
+        "month": "2025-04",
+        "orders_count": 221,
+        "sales_count": 187,
+        "returns_count": 9,
+        "gross_sales": 168000.00,
+        "returns_amount": 8000.00,
+        "commission": 38640.00,
+        "logistics": 15960.00,
+        "payout": 105400.00
+      },
+      {
+        "month": "2025-03",
+        "orders_count": 207,
+        "sales_count": 175,
+        "returns_count": 8,
+        "gross_sales": 157500.00,
+        "returns_amount": 7500.00,
+        "commission": 36220.00,
+        "logistics": 14960.00,
+        "payout": 98820.00
+      },
+      {
+        "month": "2025-02",
+        "orders_count": 188,
+        "sales_count": 158,
+        "returns_count": 8,
+        "gross_sales": 141800.00,
+        "returns_amount": 6800.00,
+        "commission": 32610.00,
+        "logistics": 13470.00,
+        "payout": 88920.00
+      },
+      {
+        "month": "2025-01",
+        "orders_count": 180,
+        "sales_count": 152,
+        "returns_count": 7,
+        "gross_sales": 136500.00,
+        "returns_amount": 6500.00,
+        "commission": 31400.00,
+        "logistics": 12970.00,
+        "payout": 85630.00
+      },
+      {
+        "month": "2024-12",
+        "orders_count": 270,
+        "sales_count": 228,
+        "returns_count": 11,
+        "gross_sales": 204800.00,
+        "returns_amount": 9800.00,
+        "commission": 47100.00,
+        "logistics": 19460.00,
+        "payout": 128440.00
+      },
+      {
+        "month": "2024-11",
+        "orders_count": 227,
+        "sales_count": 192,
+        "returns_count": 9,
+        "gross_sales": 173200.00,
+        "returns_amount": 8200.00,
+        "commission": 39840.00,
+        "logistics": 16450.00,
+        "payout": 108710.00
+      },
+      {
+        "month": "2024-10",
+        "orders_count": 207,
+        "sales_count": 175,
+        "returns_count": 8,
+        "gross_sales": 157500.00,
+        "returns_amount": 7500.00,
+        "commission": 36220.00,
+        "logistics": 14960.00,
+        "payout": 98820.00
+      },
+      {
+        "month": "2024-09",
+        "orders_count": 188,
+        "sales_count": 158,
+        "returns_count": 8,
+        "gross_sales": 141800.00,
+        "returns_amount": 6800.00,
+        "commission": 32610.00,
+        "logistics": 13470.00,
+        "payout": 88920.00
+      },
+      {
+        "month": "2024-08",
+        "orders_count": 166,
+        "sales_count": 140,
+        "returns_count": 7,
+        "gross_sales": 126000.00,
+        "returns_amount": 6000.00,
+        "commission": 28980.00,
+        "logistics": 11970.00,
+        "payout": 79050.00
+      },
+      {
+        "month": "2024-07",
+        "orders_count": 145,
+        "sales_count": 122,
+        "returns_count": 6,
+        "gross_sales": 110200.00,
+        "returns_amount": 5200.00,
+        "commission": 25350.00,
+        "logistics": 10470.00,
+        "payout": 69180.00
+      },
+      {
+        "month": "2024-06",
+        "orders_count": 124,
+        "sales_count": 105,
+        "returns_count": 5,
+        "gross_sales": 94500.00,
+        "returns_amount": 4500.00,
+        "commission": 21740.00,
+        "logistics": 8980.00,
+        "payout": 59280.00
+      },
+      {
+        "month": "2024-05",
+        "orders_count": 104,
+        "sales_count": 88,
+        "returns_count": 4,
+        "gross_sales": 78800.00,
+        "returns_amount": 3800.00,
+        "commission": 18120.00,
+        "logistics": 7490.00,
+        "payout": 49390.00
+      },
+      {
+        "month": "2024-04",
+        "orders_count": 82,
+        "sales_count": 70,
+        "returns_count": 3,
+        "gross_sales": 63000.00,
+        "returns_amount": 3000.00,
+        "commission": 14490.00,
+        "logistics": 5980.00,
+        "payout": 39530.00
+      },
+      {
+        "month": "2024-03",
+        "orders_count": 61,
+        "sales_count": 52,
+        "returns_count": 2,
+        "gross_sales": 47200.00,
+        "returns_amount": 2200.00,
+        "commission": 10860.00,
+        "logistics": 4480.00,
+        "payout": 29660.00
+      }
+    ],
+    "payouts": [
+      {
+        "date": "2024-03-04",
+        "amount": 7400.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-03-11",
+        "amount": 7400.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-03-18",
+        "amount": 7400.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-03-25",
+        "amount": 7460.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-04-01",
+        "amount": 7900.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-04-08",
+        "amount": 7900.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-04-15",
+        "amount": 7900.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-04-22",
+        "amount": 7900.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-04-29",
+        "amount": 7930.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-05-06",
+        "amount": 12300.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-05-13",
+        "amount": 12300.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-05-20",
+        "amount": 12300.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-05-27",
+        "amount": 12490.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-06-03",
+        "amount": 14800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-06-10",
+        "amount": 14800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-06-17",
+        "amount": 14800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-06-24",
+        "amount": 14880.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-07-01",
+        "amount": 13800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-07-08",
+        "amount": 13800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-07-15",
+        "amount": 13800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-07-22",
+        "amount": 13800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-07-29",
+        "amount": 13980.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-08-05",
+        "amount": 19800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-08-12",
+        "amount": 19800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-08-19",
+        "amount": 19800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-08-26",
+        "amount": 19650.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-09-02",
+        "amount": 17800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-09-09",
+        "amount": 17800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-09-16",
+        "amount": 17800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-09-23",
+        "amount": 17800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-09-30",
+        "amount": 17720.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-10-07",
+        "amount": 24700.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-10-14",
+        "amount": 24700.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-10-21",
+        "amount": 24700.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-10-28",
+        "amount": 24720.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-11-04",
+        "amount": 27200.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-11-11",
+        "amount": 27200.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-11-18",
+        "amount": 27200.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-11-25",
+        "amount": 27110.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-12-02",
+        "amount": 25700.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-12-09",
+        "amount": 25700.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-12-16",
+        "amount": 25700.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-12-23",
+        "amount": 25700.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2024-12-30",
+        "amount": 25640.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-01-06",
+        "amount": 21400.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-01-13",
+        "amount": 21400.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-01-20",
+        "amount": 21400.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-01-27",
+        "amount": 21430.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-02-03",
+        "amount": 22200.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-02-10",
+        "amount": 22200.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-02-17",
+        "amount": 22200.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-02-24",
+        "amount": 22320.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-03-03",
+        "amount": 19800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-03-10",
+        "amount": 19800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-03-17",
+        "amount": 19800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-03-24",
+        "amount": 19800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-03-31",
+        "amount": 19620.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-04-07",
+        "amount": 26400.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-04-14",
+        "amount": 26400.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-04-21",
+        "amount": 26400.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-04-28",
+        "amount": 26200.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-05-05",
+        "amount": 27200.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-05-12",
+        "amount": 27200.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-05-19",
+        "amount": 27200.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-05-26",
+        "amount": 27110.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-06-02",
+        "amount": 22400.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-06-09",
+        "amount": 22400.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-06-16",
+        "amount": 22400.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-06-23",
+        "amount": 22400.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-06-30",
+        "amount": 22380.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-07-07",
+        "amount": 28800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-07-14",
+        "amount": 28800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-07-21",
+        "amount": 28800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-07-28",
+        "amount": 28870.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-08-04",
+        "amount": 30500.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-08-11",
+        "amount": 30500.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-08-18",
+        "amount": 30500.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-08-25",
+        "amount": 30380.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-09-01",
+        "amount": 25700.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-09-08",
+        "amount": 25700.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-09-15",
+        "amount": 25700.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-09-22",
+        "amount": 25700.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-09-29",
+        "amount": 25640.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-10-06",
+        "amount": 33800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-10-13",
+        "amount": 33800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-10-20",
+        "amount": 33800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-10-27",
+        "amount": 33660.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-11-03",
+        "amount": 37900.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-11-10",
+        "amount": 37900.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-11-17",
+        "amount": 37900.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-11-24",
+        "amount": 37820.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-12-01",
+        "amount": 30300.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-12-08",
+        "amount": 30300.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-12-15",
+        "amount": 30300.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-12-22",
+        "amount": 30300.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-12-29",
+        "amount": 30320.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-01-05",
+        "amount": 37100.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-01-12",
+        "amount": 37100.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-01-19",
+        "amount": 37100.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-01-26",
+        "amount": 36930.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-02-02",
+        "amount": 39500.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-02-09",
+        "amount": 39500.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-02-16",
+        "amount": 39500.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-02-23",
+        "amount": 39600.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-03-02",
+        "amount": 33600.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-03-09",
+        "amount": 33600.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-03-16",
+        "amount": 33600.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-03-23",
+        "amount": 33600.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-03-30",
+        "amount": 33570.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-04-06",
+        "amount": 44500.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-04-13",
+        "amount": 44500.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-04-20",
+        "amount": 44500.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-04-27",
+        "amount": 44370.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-05-04",
+        "amount": 47800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-05-11",
+        "amount": 47800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-05-18",
+        "amount": 47800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-05-25",
+        "amount": 47630.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-06-01",
+        "amount": 42000.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-06-08",
+        "amount": 42000.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-06-15",
+        "amount": 42000.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-06-22",
+        "amount": 42000.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-06-29",
+        "amount": 41788.39,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-07-06",
+        "amount": 57800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-07-13",
+        "amount": 57800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-07-20",
+        "amount": 57800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-07-27",
+        "amount": 57800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-08-05",
+        "amount": 74600.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-08-12",
+        "amount": 75800.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-08-24",
+        "amount": 41700.00,
+        "destination": {
+          "type": "ACCOUNT",
+          "account": "40802810600000062045",
+          "bik": "044525999"
+        }
+      },
+      {
+        "date": "2026-08-31",
+        "amount": 44700.00,
+        "destination": {
+          "type": "ACCOUNT",
+          "account": "40802810600000062045",
+          "bik": "044525999"
+        }
+      },
+      {
+        "date": "2026-09-07",
+        "amount": 58900.00,
+        "destination": {
+          "type": "ACCOUNT",
+          "account": "40802810600000062045",
+          "bik": "044525999"
+        }
+      },
+      {
+        "date": "2026-09-14",
+        "amount": 63450.00,
+        "destination": {
+          "type": "ACCOUNT",
+          "account": "40802810600000062045",
+          "bik": "044525999"
+        }
+      },
+      {
+        "date": "2026-09-21",
+        "amount": 61200.00,
+        "destination": {
+          "type": "ACCOUNT",
+          "account": "40802810600000062045",
+          "bik": "044525999"
+        }
+      },
+      {
+        "date": "2026-09-28",
+        "amount": 67800.00,
+        "destination": {
+          "type": "ACCOUNT",
+          "account": "40802810600000062045",
+          "bik": "044525999"
+        }
+      }
+    ]
+  },
+  "ozon": {
+    "profile": {
+      "marketplace": "ozon",
+      "seller_id": "OZ-77120458",
+      "inn": "779900010202",
+      "name": "ИП Смирнова Анна Викторовна",
+      "registered_at": "2025-09-08",
+      "legal_status_history": [
+        {
+          "status": "SELF_EMPLOYED",
+          "from": "2025-09-08",
+          "to": "2026-07-27"
+        },
+        {
+          "status": "IP",
+          "from": "2026-07-28",
+          "to": null
+        }
+      ],
+      "rating": 4.7,
+      "reviews_count": 412,
+      "active_sku": 18,
+      "category": "Товары для дома"
+    },
+    "months": [
+      {
+        "month": "2026-09",
+        "orders_count": 70,
+        "sales_count": 59,
+        "returns_count": 3,
+        "gross_sales": 68200.00,
+        "returns_amount": 3200.00,
+        "commission": 17050.00,
+        "logistics": 5460.00,
+        "payout": 42490.00
+      },
+      {
+        "month": "2026-08",
+        "orders_count": 68,
+        "sales_count": 57,
+        "returns_count": 3,
+        "gross_sales": 65100.00,
+        "returns_amount": 3100.00,
+        "commission": 16280.00,
+        "logistics": 5210.00,
+        "payout": 40510.00
+      },
+      {
+        "month": "2026-07",
+        "orders_count": 66,
+        "sales_count": 55,
+        "returns_count": 3,
+        "gross_sales": 63000.00,
+        "returns_amount": 3000.00,
+        "commission": 15750.00,
+        "logistics": 5040.00,
+        "payout": 39210.00
+      },
+      {
+        "month": "2026-06",
+        "orders_count": 66,
+        "sales_count": 55,
+        "returns_count": 3,
+        "gross_sales": 63000.00,
+        "returns_amount": 3000.00,
+        "commission": 15750.00,
+        "logistics": 5040.00,
+        "payout": 39210.00
+      },
+      {
+        "month": "2026-05",
+        "orders_count": 63,
+        "sales_count": 53,
+        "returns_count": 3,
+        "gross_sales": 60900.00,
+        "returns_amount": 2900.00,
+        "commission": 15220.00,
+        "logistics": 4870.00,
+        "payout": 37910.00
+      },
+      {
+        "month": "2026-04",
+        "orders_count": 61,
+        "sales_count": 52,
+        "returns_count": 2,
+        "gross_sales": 59800.00,
+        "returns_amount": 2800.00,
+        "commission": 14950.00,
+        "logistics": 4780.00,
+        "payout": 37270.00
+      },
+      {
+        "month": "2026-03",
+        "orders_count": 59,
+        "sales_count": 50,
+        "returns_count": 2,
+        "gross_sales": 57800.00,
+        "returns_amount": 2800.00,
+        "commission": 14450.00,
+        "logistics": 4620.00,
+        "payout": 35930.00
+      },
+      {
+        "month": "2026-02",
+        "orders_count": 55,
+        "sales_count": 47,
+        "returns_count": 2,
+        "gross_sales": 54600.00,
+        "returns_amount": 2600.00,
+        "commission": 13650.00,
+        "logistics": 4370.00,
+        "payout": 33980.00
+      },
+      {
+        "month": "2026-01",
+        "orders_count": 54,
+        "sales_count": 46,
+        "returns_count": 2,
+        "gross_sales": 52500.00,
+        "returns_amount": 2500.00,
+        "commission": 13120.00,
+        "logistics": 4200.00,
+        "payout": 32680.00
+      },
+      {
+        "month": "2025-12",
+        "orders_count": 55,
+        "sales_count": 47,
+        "returns_count": 2,
+        "gross_sales": 53600.00,
+        "returns_amount": 2600.00,
+        "commission": 13400.00,
+        "logistics": 4290.00,
+        "payout": 33310.00
+      },
+      {
+        "month": "2025-11",
+        "orders_count": 51,
+        "sales_count": 43,
+        "returns_count": 2,
+        "gross_sales": 49400.00,
+        "returns_amount": 2400.00,
+        "commission": 12350.00,
+        "logistics": 3950.00,
+        "payout": 30700.00
+      },
+      {
+        "month": "2025-10",
+        "orders_count": 47,
+        "sales_count": 40,
+        "returns_count": 2,
+        "gross_sales": 46200.00,
+        "returns_amount": 2200.00,
+        "commission": 11550.00,
+        "logistics": 3700.00,
+        "payout": 28750.00
+      },
+      {
+        "month": "2025-09",
+        "orders_count": 42,
+        "sales_count": 35,
+        "returns_count": 2,
+        "gross_sales": 39900.00,
+        "returns_amount": 1900.00,
+        "commission": 9980.00,
+        "logistics": 3190.00,
+        "payout": 24830.00
+      }
+    ],
+    "payouts": [
+      {
+        "date": "2025-09-10",
+        "amount": 12400.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-09-25",
+        "amount": 12430.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-10-10",
+        "amount": 14400.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-10-25",
+        "amount": 14350.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-11-10",
+        "amount": 15400.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-11-25",
+        "amount": 15300.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-12-10",
+        "amount": 16700.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2025-12-25",
+        "amount": 16610.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-01-10",
+        "amount": 16300.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-01-25",
+        "amount": 16380.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-02-10",
+        "amount": 17000.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-02-25",
+        "amount": 16980.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-03-10",
+        "amount": 18000.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-03-25",
+        "amount": 17930.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-04-10",
+        "amount": 18600.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-04-25",
+        "amount": 18670.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-05-10",
+        "amount": 19000.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-05-25",
+        "amount": 18910.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-06-10",
+        "amount": 19600.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-06-25",
+        "amount": 19610.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-07-10",
+        "amount": 19600.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-07-25",
+        "amount": 19610.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-08-10",
+        "amount": 20300.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-08-25",
+        "amount": 20210.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-09-10",
+        "amount": 21200.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      },
+      {
+        "date": "2026-09-25",
+        "amount": 21290.00,
+        "destination": {
+          "type": "CARD",
+          "mask": "220015******4471"
+        }
+      }
+    ]
+  }
+}

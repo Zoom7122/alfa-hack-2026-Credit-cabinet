@@ -27,7 +27,7 @@
       "invalid": 0,
       "pr_zd": 0,
       "pr_otch": 0,
-      "rsmpcategory": 1,
+      "rsmpcategory": 2,
       "masruk": [
         {
           "inn": "779900020136",
@@ -62,13 +62,13 @@
     "bfo": [
       {
         "period": "2025",
-        "actives": 18480,
+        "actives": 30480,
         "gainSum": 25870,
         "typeCorrections": [
           {
             "correction": {
               "balance": {
-                "current1100": 9600,
+                "current1100": 21600,
                 "current1200": 8880,
                 "current1210": 3100,
                 "current1230": 5400,
@@ -76,11 +76,11 @@
                 "current1300": 2150,
                 "current1400": 6800,
                 "current1410": 6800,
-                "current1500": 9530,
+                "current1500": 21530,
                 "current1510": 4200,
-                "current1520": 5330,
-                "current1600": 18480,
-                "previous1100": 7200,
+                "current1520": 17330,
+                "current1600": 30480,
+                "previous1100": 19200,
                 "previous1200": 7820,
                 "previous1210": 2700,
                 "previous1230": 4600,
@@ -88,10 +88,10 @@
                 "previous1300": 1740,
                 "previous1400": 5100,
                 "previous1410": 5100,
-                "previous1500": 8180,
+                "previous1500": 20180,
                 "previous1510": 2900,
-                "previous1520": 5280,
-                "previous1600": 15020
+                "previous1520": 17280,
+                "previous1600": 27020
               },
               "financialResult": {
                 "current2110": 25870,
@@ -125,13 +125,13 @@
       },
       {
         "period": "2024",
-        "actives": 15020,
+        "actives": 27020,
         "gainSum": 22140,
         "typeCorrections": [
           {
             "correction": {
               "balance": {
-                "current1100": 7200,
+                "current1100": 19200,
                 "current1200": 7820,
                 "current1210": 2700,
                 "current1230": 4600,
@@ -139,11 +139,11 @@
                 "current1300": 1740,
                 "current1400": 5100,
                 "current1410": 5100,
-                "current1500": 8180,
+                "current1500": 20180,
                 "current1510": 2900,
-                "current1520": 5280,
-                "current1600": 15020,
-                "previous1100": 5400,
+                "current1520": 17280,
+                "current1600": 27020,
+                "previous1100": 17400,
                 "previous1200": 6810,
                 "previous1210": 2300,
                 "previous1230": 3900,
@@ -151,10 +151,10 @@
                 "previous1300": 1220,
                 "previous1400": 3600,
                 "previous1410": 3600,
-                "previous1500": 7390,
+                "previous1500": 19390,
                 "previous1510": 2100,
-                "previous1520": 5290,
-                "previous1600": 12210
+                "previous1520": 17290,
+                "previous1600": 24210
               },
               "financialResult": {
                 "current2110": 22140,
@@ -188,13 +188,13 @@
       },
       {
         "period": "2023",
-        "actives": 12210,
+        "actives": 24210,
         "gainSum": 19600,
         "typeCorrections": [
           {
             "correction": {
               "balance": {
-                "current1100": 5400,
+                "current1100": 17400,
                 "current1200": 6810,
                 "current1210": 2300,
                 "current1230": 3900,
@@ -202,10 +202,10 @@
                 "current1300": 1220,
                 "current1400": 3600,
                 "current1410": 3600,
-                "current1500": 7390,
+                "current1500": 19390,
                 "current1510": 2100,
-                "current1520": 5290,
-                "current1600": 12210
+                "current1520": 17290,
+                "current1600": 24210
               },
               "financialResult": {
                 "current2110": 19600,
@@ -231,5 +231,46 @@
   "bi": {
     "checked_at": "2026-10-22T10:15:03",
     "by_bik": {}
+  },
+  "charter": {
+    "inn": "7799000020",
+    "document": {
+      "type": "CHARTER",
+      "version_date": "2023-04-12",
+      "registration_record": "2237700512210"
+    },
+    "head": {
+      "position": "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР",
+      "term_years": 3,
+      "acts_without_poa": true,
+      "restrictions": []
+    },
+    "major_transaction": {
+      "threshold_pct_of_assets": 25,
+      "approval_body": "GENERAL_MEETING",
+      "assets_at_last_reporting_date": 30480000.00,
+      "threshold_amount": 7620000.00
+    },
+    "related_party_approval_required": true,
+    "participants": [
+      {
+        "inn": "779900020136",
+        "full_name": "Орлов Денис Павлович",
+        "share_pct": 60
+      },
+      {
+        "inn": "779900020211",
+        "full_name": "Тимофеев Андрей Сергеевич",
+        "share_pct": 40
+      }
+    ]
+  },
+  "rmsp": {
+    "inn": "7799000020",
+    "in_registry": true,
+    "category": "SMALL",
+    "included_at": "2019-08-10",
+    "employees": 22,
+    "support": []
   }
 }

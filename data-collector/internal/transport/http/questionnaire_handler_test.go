@@ -17,11 +17,12 @@ import (
 	httptransport "github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/transport/http"
 )
 
-func newRouter(t *testing.T) (*gin.Engine, *memory.QuestionnaireRepository) {
+func newRouter(t *testing.T) (*gin.Engine, *memory.QuestionnaireRepository, *memory.RawCollectionRepository) {
 	t.Helper()
 
 	repo := memory.NewQuestionnaireRepository()
-	svc := service.NewQuestionnaireService(repo,
+	raw := memory.NewRawCollectionRepository()
+	svc := newQuestionnaireService(repo, raw,
 		service.WithClock(func() time.Time { return time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC) }),
 		service.WithIDGenerator(func() string { return "qst_test" }),
 	)
@@ -29,7 +30,7 @@ func newRouter(t *testing.T) (*gin.Engine, *memory.QuestionnaireRepository) {
 		httptransport.NewQuestionnaireHandler(svc, discardLog),
 		httptransport.NewInternalDataHandler(stubInternalData{}, discardLog),
 	)
-	return r, repo
+	return r, repo, raw
 }
 
 func post(r http.Handler, body string) *httptest.ResponseRecorder {
@@ -49,21 +50,102 @@ type problemBody struct {
 	} `json:"errors"`
 }
 
-func TestCreateQuestionnaire(t *testing.T) {
-	r, repo := newRouter(t)
+const fullRequest = `{
+	"age": 42, "marital_status": "MARRIED", "children_count": 2,
+	"inn": "7799000012",
+	"director": {"inn": "779900010139", "last_name": "Ковалёв", "first_name": "Игорь", "middle_name": "Сергеевич",
+		"birth_date": "1984-07-19"},
+	"consents": {
+		"bki_company": {"id": "CNS-1", "signed_at": "2026-10-21T14:02:11Z", "valid_until": "2027-04-21"},
+		"bki_person": {"id": "CNS-2", "valid_until": "2027-04-21"},
+		"tax": {"id": "TAX-1", "valid_until": "2027-04-21", "scope": ["DECLARATIONS", "ENS_BALANCE"]}
+	},
+	"other_bank_biks": ["044525225"],
+	"marketplace_tokens": {"wildberries": "secret-wb"},
+	"ofd_token": "secret-ofd",
+	"collateral": {"cadastral_numbers": ["50:21:0110203:845"], "vins": ["xtc652005n1498213"], "serials": []},
+	"poa_number": "0f5a2c1e-7b3d-4e8a-9c21-6d4b8e0a1f37",
+	"representative_inn": "779900010333"
+}`
 
-	w := post(r, `{"age":34,"marital_status":"MARRIED","children_count":0}`)
+type createdBody struct {
+	ID            string    `json:"id"`
+	Age           int       `json:"age"`
+	MaritalStatus string    `json:"marital_status"`
+	ChildrenCount int       `json:"children_count"`
+	CreatedAt     time.Time `json:"created_at"`
+	Collection    struct {
+		ID      string `json:"id"`
+		INN     string `json:"inn"`
+		Sources []struct {
+			Source      string `json:"source"`
+			State       string `json:"state"`
+			Reason      string `json:"reason"`
+			Calls       int    `json:"calls"`
+			FailedCalls int    `json:"failed_calls"`
+			DurationMs  int64  `json:"duration_ms"`
+		} `json:"sources"`
+	} `json:"collection"`
+}
+
+func TestCreateQuestionnaire(t *testing.T) {
+	r, repo, raw := newRouter(t)
+
+	w := post(r, fullRequest)
 
 	if w.Code != http.StatusCreated {
 		t.Fatalf("status = %d, body = %s", w.Code, w.Body)
 	}
-	want := `{"id":"qst_test","age":34,"marital_status":"MARRIED","children_count":0,"created_at":"2026-10-22T12:00:00Z"}`
-	if got := w.Body.String(); got != want {
-		t.Fatalf("body = %s, want %s", got, want)
+	var body createdBody
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
 	}
-	saved, ok := repo.Get(context.Background(), "qst_test")
-	if !ok || saved.MaritalStatus != domain.MaritalMarried || saved.ChildrenCount != 0 {
-		t.Fatalf("saved = %+v (found %v)", saved, ok)
+	if body.ID != "qst_test" || body.Age != 42 || body.MaritalStatus != "MARRIED" || body.ChildrenCount != 2 ||
+		!body.CreatedAt.Equal(time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC)) {
+		t.Fatalf("questionnaire = %+v", body)
+	}
+	c := body.Collection
+	if c.ID != "col_test" || c.INN != "7799000012" || len(c.Sources) != len(domain.Systems) {
+		t.Fatalf("collection = %+v", c)
+	}
+	states := map[string]string{}
+	for _, s := range c.Sources {
+		states[s.Source] = s.State
+	}
+	if states["CORE_BANKING"] != "DONE" || states["MARKETPLACES"] != "SKIPPED" || states["FSSP"] != "FAILED" {
+		t.Fatalf("states = %v", states)
+	}
+	// в ответе только состояние, сами данные и токены — нет
+	if strings.Contains(w.Body.String(), "secret") || strings.Contains(w.Body.String(), `"data"`) {
+		t.Fatalf("response leaks data or tokens: %s", w.Body)
+	}
+
+	if _, ok := repo.Get(context.Background(), "qst_test"); !ok {
+		t.Fatal("questionnaire is not saved")
+	}
+	saved, ok := raw.Get(context.Background(), "col_test")
+	if !ok || saved.QuestionnaireID != "qst_test" {
+		t.Fatalf("raw collection = %+v (found %v)", saved, ok)
+	}
+	in := saved.Input
+	if in.Director == nil || in.Director.LastName != "Ковалёв" || in.BKIPersonConsent == nil || in.TaxConsent.Scope[1] != "ENS_BALANCE" ||
+		in.MarketplaceTokens["wildberries"] != "secret-wb" || in.Collateral.VINs[0] != "XTC652005N1498213" ||
+		in.RepresentativeINN != "779900010333" {
+		t.Fatalf("collect input = %+v", in)
+	}
+}
+
+// Достаточно ИНН: остальное необязательно, системы без данных пропускаются.
+func TestCreateQuestionnaireOnlyINN(t *testing.T) {
+	r, _, raw := newRouter(t)
+
+	w := post(r, `{"age":34,"marital_status":"SINGLE","children_count":0,"inn":"779900010202"}`)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("status = %d, body = %s", w.Code, w.Body)
+	}
+	if saved, ok := raw.Get(context.Background(), "col_test"); !ok || saved.Input.INN != "779900010202" || saved.Input.Director != nil {
+		t.Fatalf("raw collection = %+v (found %v)", saved, ok)
 	}
 }
 
@@ -76,15 +158,24 @@ func TestCreateQuestionnaireErrors(t *testing.T) {
 	}{
 		{name: "empty body", body: ``, wantStatus: http.StatusBadRequest},
 		{name: "broken json", body: `{"age":`, wantStatus: http.StatusBadRequest},
-		{name: "missing children_count", body: `{"age":34,"marital_status":"SINGLE"}`, wantStatus: http.StatusBadRequest, wantFields: []string{"children_count"}},
-		{name: "wrong type", body: `{"age":"34","marital_status":"SINGLE","children_count":1}`, wantStatus: http.StatusBadRequest, wantFields: []string{"age"}},
-		{name: "unknown marital status", body: `{"age":34,"marital_status":"UNKNOWN","children_count":1}`, wantStatus: http.StatusUnprocessableEntity, wantFields: []string{"marital_status"}},
-		{name: "age out of range", body: `{"age":12,"marital_status":"SINGLE","children_count":1}`, wantStatus: http.StatusUnprocessableEntity, wantFields: []string{"age"}},
+		{name: "missing children_count", body: `{"age":34,"marital_status":"SINGLE","inn":"7799000012"}`, wantStatus: http.StatusBadRequest, wantFields: []string{"children_count"}},
+		{name: "missing inn", body: `{"age":34,"marital_status":"SINGLE","children_count":1}`, wantStatus: http.StatusBadRequest, wantFields: []string{"inn"}},
+		{name: "wrong type", body: `{"age":"34","marital_status":"SINGLE","children_count":1,"inn":"7799000012"}`, wantStatus: http.StatusBadRequest, wantFields: []string{"age"}},
+		{name: "wrong nested type", body: `{"age":34,"marital_status":"SINGLE","children_count":1,"inn":"7799000012","director":{"inn":779900010139}}`, wantStatus: http.StatusBadRequest, wantFields: []string{"director.inn"}},
+		{name: "unknown marital status", body: `{"age":34,"marital_status":"UNKNOWN","children_count":1,"inn":"7799000012"}`, wantStatus: http.StatusUnprocessableEntity, wantFields: []string{"marital_status"}},
+		{name: "age out of range", body: `{"age":12,"marital_status":"SINGLE","children_count":1,"inn":"7799000012"}`, wantStatus: http.StatusUnprocessableEntity, wantFields: []string{"age"}},
+		{name: "bad inn", body: `{"age":34,"marital_status":"SINGLE","children_count":1,"inn":"123"}`, wantStatus: http.StatusUnprocessableEntity, wantFields: []string{"inn"}},
+		{
+			name:       "questionnaire and collection errors together",
+			body:       `{"age":12,"marital_status":"SINGLE","children_count":1,"inn":"7799000012","other_bank_biks":["1"],"collateral":{"vins":["short"]}}`,
+			wantStatus: http.StatusUnprocessableEntity,
+			wantFields: []string{"age", "other_bank_biks[0]", "collateral.vins[0]"},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r, repo := newRouter(t)
+			r, repo, raw := newRouter(t)
 
 			w := post(r, tt.body)
 
@@ -101,13 +192,19 @@ func TestCreateQuestionnaireErrors(t *testing.T) {
 			if p.Code != "VALIDATION_FAILED" || p.Status != tt.wantStatus {
 				t.Fatalf("problem = %+v", p)
 			}
+			if tt.wantFields != nil && len(p.Errors) != len(tt.wantFields) {
+				t.Fatalf("errors = %+v, want fields %v", p.Errors, tt.wantFields)
+			}
 			for i, f := range tt.wantFields {
-				if i >= len(p.Errors) || p.Errors[i].Field != f {
+				if p.Errors[i].Field != f {
 					t.Fatalf("errors = %+v, want fields %v", p.Errors, tt.wantFields)
 				}
 			}
 			if _, ok := repo.Get(context.Background(), "qst_test"); ok {
 				t.Fatal("invalid request must not be saved")
+			}
+			if _, ok := raw.Get(context.Background(), "col_test"); ok {
+				t.Fatal("invalid request must not start a collection")
 			}
 		})
 	}

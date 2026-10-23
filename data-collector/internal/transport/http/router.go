@@ -3,8 +3,12 @@ package httptransport
 
 import (
 	"net/http"
+	"reflect"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
@@ -14,6 +18,8 @@ import (
 // NewRouter — единственное место, где перечислены все эндпоинты data-collector.
 // Новая ручка = метод в хендлере + строка здесь.
 func NewRouter(questionnaires *QuestionnaireHandler, internalData *InternalDataHandler) *gin.Engine {
+	useJSONFieldNames()
+
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
 
@@ -39,6 +45,22 @@ func swagger() gin.HandlerFunc {
 			return
 		}
 		ui(c)
+	}
+}
+
+// useJSONFieldNames: в ошибках валидации поле называется как в JSON (inn, а не INN).
+func useJSONFieldNames() {
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterTagNameFunc(func(f reflect.StructField) string {
+			name, _, _ := strings.Cut(f.Tag.Get("json"), ",")
+			switch name {
+			case "-":
+				return ""
+			case "":
+				return f.Name
+			}
+			return name
+		})
 	}
 }
 

@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -108,4 +110,31 @@ func ErrorCode(t testing.TB, w *httptest.ResponseRecorder, status int) string {
 		} `json:"error"`
 	}](t, w, status)
 	return e.Error.Code
+}
+
+// Лаптев — тестовый субъект вне сценариев: дисквалифицирован, паспорт недействителен.
+const Laptev = "779900099018"
+
+// SeedFiles — пути seed-файлов пакета по шаблону (тест запускается из папки пакета).
+func SeedFiles(t testing.TB, pattern string) []string {
+	t.Helper()
+	files, err := filepath.Glob(pattern)
+	if err != nil || len(files) == 0 {
+		t.Fatalf("no seed files for %s", pattern)
+	}
+	return files
+}
+
+// ReadSeed разбирает seed-файл в T.
+func ReadSeed[T any](t testing.TB, path string) T {
+	t.Helper()
+	var out T
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(body, &out); err != nil {
+		t.Fatalf("%s: %v", path, err)
+	}
+	return out
 }

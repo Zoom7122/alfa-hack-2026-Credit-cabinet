@@ -357,13 +357,23 @@ func TestFaultsScope(t *testing.T) {
 		"/compliance/v1/zsk/" + mt.InnA,
 		"/fssp/v1/proceedings?inn=" + mt.InnA,
 		"/fedresurs/v1/persons/" + mt.DirA + "/bankruptcy",
+		"/fns/puchdoc/v1/" + mt.InnA,
+		"/m4d/v1/poa?principal_inn=" + mt.InnA,
+		"/pledge-registry/v1/notifications?pledgor_inn=" + mt.InnB,
+		"/open-banking/v1/accounts",
+		"/marketplaces/v1/wildberries/sellers/" + mt.InnD,
+		"/ofd/v1/organizations/" + mt.InnA + "/kkt",
+		"/zakupki/v1/rnp?inn=" + mt.InnC,
+		"/signals/v1/" + mt.InnC + "/news",
+		"/hh/employers?text=x",
 	}
 	for _, p := range paths {
 		if w := mt.Get(r, p, "X-Mock-Fault", "500"); w.Code != http.StatusInternalServerError {
 			t.Errorf("%s: status %d", p, w.Code)
 		}
 	}
-	for _, p := range []string{"/bki/v1/reports", "/kad/v1/cases/search"} {
+	for _, p := range []string{"/bki/v1/reports", "/kad/v1/cases/search", "/tax-reports/v1/requests", "/egrn/v1/extracts",
+		"/gosuslugi/v1/profile-requests", "/cbr/DailyInfoWebServ/DailyInfo.asmx"} {
 		if w := mt.PostJSON(t, r, p, "{}", "X-Mock-Fault", "503"); w.Code != http.StatusServiceUnavailable {
 			t.Errorf("%s: status %d", p, w.Code)
 		}
