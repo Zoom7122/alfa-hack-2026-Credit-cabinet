@@ -46,6 +46,30 @@ Invoke-RestMethod http://localhost:8083/healthz
 
 Для остановки используйте `Ctrl+C`.
 
+## Запуск в Docker
+
+Один образ содержит оба сервиса. Для сборки нужен Docker; локальная установка Go не требуется. Команда из каталога `credit-engine/`:
+
+```powershell
+docker build -t credit-engine:local .
+```
+
+Запустите два контейнера в одной сети:
+
+```powershell
+docker network create credit-engine-demo
+docker run -d --name bank-state-service --network credit-engine-demo -p 8083:8083 -e ADMIN_URL=http://admin:8080 --entrypoint /bank-state-service credit-engine:local
+docker run -d --name scoring-service --network credit-engine-demo -p 8082:8082 -e BANK_URL=http://bank-state-service:8083 -e STATEMENTS_URL=http://statements:8080 credit-engine:local
+```
+
+Адреса `admin` и `statements` — примеры: замените их адресами реализаций МС3 и Б, доступных из этой сети. Эти зависимости должны поддерживать [контракты интеграции](docs/05_integration.md). Для подключения к существующему стеку используйте его сеть вместо создания `credit-engine-demo`. Внутри контейнера `localhost` указывает на сам контейнер.
+
+По умолчанию запускается `/scoring-service`; МС2 выбирается через `--entrypoint /bank-state-service`. Сервисы работают от непривилегированного пользователя. Образ включает `config/policy.json` и все три стартовых снимка банка в `/app/config`; рабочий каталог — `/app`, поэтому настройки путей по умолчанию сохраняются. Для другого встроенного снимка задайте МС2 `BANK_STATE_FILE=config/bank.capital_boundary.json` либо `config/bank.liquidity_boundary.json`.
+
+При замене конфигурации подключайте JSON-файлы через bind mount с доступом на чтение и указывайте их пути через `POLICY_FILE`/`BANK_STATE_FILE`. Оба сервиса должны использовать одну политику. Состояние МС2 остаётся в памяти: перезапуск контейнера сбрасывает выдачи, результаты операций и недоставленные события к стартовому состоянию.
+
+Проверка `/healthz` выполняется по тем же адресам `http://localhost:8082/healthz` и `http://localhost:8083/healthz`. В образе нет shell, `curl` и `wget`; проверяйте HTTP с хоста или другого контейнера. Для остановки используйте `docker stop scoring-service bank-state-service`, для удаления остановленных контейнеров — `docker rm scoring-service bank-state-service`.
+
 ## Настройки
 
 | Переменная | Сервис | Значение по умолчанию / назначение |
