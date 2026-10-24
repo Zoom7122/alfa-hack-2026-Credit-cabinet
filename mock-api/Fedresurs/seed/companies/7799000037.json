@@ -1,0 +1,90 @@
+{
+  "inn": "7799000037",
+  "checked_at": "2026-10-22T10:15:06Z",
+  "summary": {
+    "bankruptcy_stage": "PETITION_FILED",
+    "has_bankruptcy_intention": true,
+    "active_leasing_count": 0,
+    "liquidation": false,
+    "reorganization": false
+  },
+  "messages": [
+    {
+      "id": "FR-C2F00915",
+      "type": "BANKRUPTCY",
+      "published_at": "2026-10-20",
+      "publisher": {
+        "name": "АС города Москвы",
+        "inn": null
+      },
+      "payload": {
+        "case_number": "А40-245903/2026",
+        "stage": "PETITION_FILED",
+        "decision_date": "2026-10-20",
+        "arbitration_manager": null
+      }
+    },
+    {
+      "id": "FR-A91E3377",
+      "type": "BANKRUPTCY_INTENTION",
+      "published_at": "2026-10-02",
+      "publisher": {
+        "name": "ООО \"АГРОСНАБ\"",
+        "inn": "5024187365"
+      },
+      "payload": {
+        "debtor_inn": "7799000037",
+        "claim_amount": 1184000.00,
+        "planned_filing_after": "2026-10-17"
+      }
+    },
+    {
+      "id": "FR-8B44C0E2",
+      "type": "LEASING_TERMINATION",
+      "published_at": "2026-09-12",
+      "publisher": {
+        "name": "ООО \"ЛИЗИНГ-ПРО\"",
+        "inn": "7718654321"
+      },
+      "payload": {
+        "contract_number": "ЛД-2890",
+        "contract_date": "2025-01-20",
+        "termination_date": "2026-09-10",
+        "lessee_inn": "7799000037",
+        "reason": "Односторонний отказ лизингодателя из-за просрочки лизинговых платежей"
+      }
+    },
+    {
+      "id": "FR-6D3E1B70",
+      "type": "NET_ASSETS_DECREASE",
+      "published_at": "2026-04-28",
+      "publisher": {
+        "name": "ООО \"АЛЬТАИР\"",
+        "inn": "7799000037"
+      },
+      "payload": {
+        "period": "2025",
+        "net_assets": -1210000.00,
+        "authorized_capital": 10000.00
+      }
+    },
+    {
+      "id": "FR-2E7B4410",
+      "type": "LEASING_CONTRACT",
+      "published_at": "2025-01-22",
+      "publisher": {
+        "name": "ООО \"ЛИЗИНГ-ПРО\"",
+        "inn": "7718654321"
+      },
+      "payload": {
+        "contract_number": "ЛД-2890",
+        "contract_date": "2025-01-20",
+        "period_from": "2025-01-20",
+        "period_to": "2027-01-19",
+        "lessee_inn": "7799000037",
+        "subject_class": "VEHICLE",
+        "subject": "Фургон изотермический ГАЗон NEXT, VIN X96C41RB0N1023344, 2024 г.в."
+      }
+    }
+  ]
+}

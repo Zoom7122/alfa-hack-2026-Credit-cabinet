@@ -1,0 +1,15 @@
+{
+  "debtor": {
+    "type": "LEGAL",
+    "inn": "7799000044",
+    "name": "ООО \"ТЕХНО-СЕРВИС\""
+  },
+  "checked_at": "2026-10-22T10:15:06Z",
+  "summary": {
+    "active_count": 0,
+    "active_amount": 0.00,
+    "finished_count": 0,
+    "finished_no_assets_count": 0
+  },
+  "items": []
+}

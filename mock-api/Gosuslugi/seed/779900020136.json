@@ -1,0 +1,59 @@
+{
+  "person": {
+    "last_name": "Орлов",
+    "first_name": "Денис",
+    "middle_name": "Павлович",
+    "birth_date": "1979-02-11",
+    "inn": "779900020136"
+  },
+  "data": {
+    "passport": {
+      "series": "4511",
+      "number": "902317",
+      "issued_at": "2024-03-01",
+      "issuer": "ГУ МВД России по г. Москве",
+      "division_code": "770-012",
+      "valid": true
+    },
+    "inn": "779900020136",
+    "snils": "118-205-773 40",
+    "registration_address": "г. Москва, Варшавское ш., д. 118, к. 2, кв. 305",
+    "income": [
+      {
+        "year": "2025",
+        "sources": [
+          {
+            "type": "NDFL",
+            "payer": "ООО \"СТРОЙРЕСУРС\"",
+            "payer_inn": "7799000020",
+            "amount": 1800000.00
+          }
+        ]
+      },
+      {
+        "year": "2024",
+        "sources": [
+          {
+            "type": "NDFL",
+            "payer": "ООО \"СТРОЙРЕСУРС\"",
+            "payer_inn": "7799000020",
+            "amount": 1650000.00
+          }
+        ]
+      }
+    ],
+    "employment": [
+      {
+        "employer": "ООО \"СТРОЙРЕСУРС\"",
+        "employer_inn": "7799000020",
+        "position": "Генеральный директор",
+        "from": "2019-05-20",
+        "to": null
+      }
+    ],
+    "npd_status": {
+      "registered": false,
+      "history": []
+    }
+  }
+}

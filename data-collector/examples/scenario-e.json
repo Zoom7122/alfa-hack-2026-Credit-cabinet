@@ -1,0 +1,34 @@
+{
+  "age": 45,
+  "marital_status": "MARRIED",
+  "children_count": 2,
+  "inn": "7799000044",
+  "director": {
+    "inn": "779900040158",
+    "last_name": "Зайцева",
+    "first_name": "Ольга",
+    "middle_name": "Михайловна",
+    "birth_date": "1981-09-14"
+  },
+  "consents": {
+    "bki_company": {
+      "id": "CNS-2026-000861",
+      "signed_at": "2026-10-21T14:02:11Z",
+      "valid_until": "2027-04-21"
+    },
+    "bki_person": {
+      "id": "CNS-2026-000862",
+      "signed_at": "2026-10-21T14:02:40Z",
+      "valid_until": "2027-04-21"
+    },
+    "tax": {
+      "id": "TAX-CNS-2026-000861",
+      "signed_at": "2026-10-21T14:03:02Z",
+      "valid_until": "2027-04-21",
+      "scope": [
+        "DECLARATIONS",
+        "ENS_BALANCE"
+      ]
+    }
+  }
+}

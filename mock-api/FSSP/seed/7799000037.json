@@ -1,0 +1,91 @@
+{
+  "debtor": {
+    "type": "LEGAL",
+    "inn": "7799000037",
+    "name": "ООО \"АЛЬТАИР\""
+  },
+  "checked_at": "2026-10-22T10:15:06Z",
+  "summary": {
+    "active_count": 3,
+    "active_amount": 900000.00,
+    "finished_count": 2,
+    "finished_no_assets_count": 1
+  },
+  "items": [
+    {
+      "number": "551207/26/77099-ИП",
+      "opened_at": "2026-09-28",
+      "executive_document": "Исполнительный лист ФС №041298813 от 26.09.2026, Арбитражный суд г. Москвы, дело №А40-160221/2026",
+      "subject_code": "CONTRACT_DEBT",
+      "subject": "Задолженность по договору поставки",
+      "amount_initial": 234500.00,
+      "amount_remaining": 234500.00,
+      "status": "ACTIVE",
+      "finished_at": null,
+      "finish_reason_code": null,
+      "finish_reason": null,
+      "department": "ОСП по Юго-Восточному АО ГУФССП России по г. Москве",
+      "bailiff": "Соколова Е.В."
+    },
+    {
+      "number": "548812/26/77099-ИП",
+      "opened_at": "2026-09-15",
+      "executive_document": "Постановление налогового органа №4410 от 01.09.2026",
+      "subject_code": "TAX",
+      "subject": "Налоги и сборы, включая пени",
+      "amount_initial": 186300.00,
+      "amount_remaining": 186300.00,
+      "status": "ACTIVE",
+      "finished_at": null,
+      "finish_reason_code": null,
+      "finish_reason": null,
+      "department": "ОСП по Юго-Восточному АО ГУФССП России по г. Москве",
+      "bailiff": "Соколова Е.В."
+    },
+    {
+      "number": "530115/26/77099-ИП",
+      "opened_at": "2026-08-03",
+      "executive_document": "Судебный приказ №2-1187/2026 от 15.07.2026, мировой судья судебного участка №112 г. Москвы",
+      "subject_code": "SALARY",
+      "subject": "Задолженность по заработной плате",
+      "amount_initial": 479200.00,
+      "amount_remaining": 479200.00,
+      "status": "ACTIVE",
+      "finished_at": null,
+      "finish_reason_code": null,
+      "finish_reason": null,
+      "department": "ОСП по Юго-Восточному АО ГУФССП России по г. Москве",
+      "bailiff": "Соколова Е.В."
+    },
+    {
+      "number": "401877/25/77099-ИП",
+      "opened_at": "2025-10-20",
+      "executive_document": "Исполнительный лист ФС №039914420 от 02.10.2025, Арбитражный суд г. Москвы, дело №А40-171244/2025",
+      "subject_code": "CONTRACT_DEBT",
+      "subject": "Задолженность по договору оказания услуг",
+      "amount_initial": 95400.00,
+      "amount_remaining": 95400.00,
+      "status": "FINISHED",
+      "finished_at": "2026-04-10",
+      "finish_reason_code": "46-1-4",
+      "finish_reason": "ст. 46 ч. 1 п. 4 — у должника нет имущества, на которое можно обратить взыскание",
+      "department": "ОСП по Юго-Восточному АО ГУФССП России по г. Москве",
+      "bailiff": "Кузнецов А.А."
+    },
+    {
+      "number": "288410/25/77099-ИП",
+      "opened_at": "2025-07-02",
+      "executive_document": "Постановление ГИТ в г. Москве по делу об АП №77/7-2290-25-ППР",
+      "subject_code": "FINE",
+      "subject": "Административный штраф (трудовое законодательство)",
+      "amount_initial": 30000.00,
+      "amount_remaining": 0.00,
+      "status": "FINISHED",
+      "finished_at": "2025-08-11",
+      "finish_reason_code": "47-1-1",
+      "finish_reason": "ст. 47 ч. 1 п. 1 — фактическое исполнение",
+      "department": "ОСП по Юго-Восточному АО ГУФССП России по г. Москве",
+      "bailiff": "Кузнецов А.А."
+    }
+  ]
+}

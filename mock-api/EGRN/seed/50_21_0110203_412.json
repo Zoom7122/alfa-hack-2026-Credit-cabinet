@@ -1,0 +1,28 @@
+{
+  "extract_id": "КУВИ-001/2026-41820412",
+  "generated_at": "2026-10-22T10:17:05+03:00",
+  "object": {
+    "cadastral_number": "50:21:0110203:412",
+    "type": "LAND",
+    "land_category": "Земли населённых пунктов",
+    "permitted_use": "Для индивидуального жилищного строительства",
+    "address": "Московская обл., г.о. Ленинский, д. Мисайлово, уч. 412",
+    "area_m2": 1500.0,
+    "cadastral_value": 6720000.00
+  },
+  "rights": [
+    {
+      "holder": {
+        "type": "PERSON",
+        "inn": "779900020136",
+        "full_name": "Орлов Денис Павлович"
+      },
+      "right_type": "OWNERSHIP",
+      "share": "1/1",
+      "registration_number": "50:21:0110203:412-50/215/2017-1",
+      "registered_at": "2017-09-04"
+    }
+  ],
+  "encumbrances": [],
+  "claims": []
+}

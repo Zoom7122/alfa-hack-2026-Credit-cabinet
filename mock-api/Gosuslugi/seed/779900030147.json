@@ -1,0 +1,59 @@
+{
+  "person": {
+    "last_name": "Белов",
+    "first_name": "Артём",
+    "middle_name": "Николаевич",
+    "birth_date": "1988-11-03",
+    "inn": "779900030147"
+  },
+  "data": {
+    "passport": {
+      "series": "4515",
+      "number": "640281",
+      "issued_at": "2015-12-10",
+      "issuer": "ГУ МВД России по г. Москве",
+      "division_code": "770-033",
+      "valid": true
+    },
+    "inn": "779900030147",
+    "snils": "131-877-002 15",
+    "registration_address": "г. Москва, Волгоградский пр-т, д. 120, кв. 64",
+    "income": [
+      {
+        "year": "2025",
+        "sources": [
+          {
+            "type": "NDFL",
+            "payer": "ООО \"АЛЬТАИР\"",
+            "payer_inn": "7799000037",
+            "amount": 960000.00
+          }
+        ]
+      },
+      {
+        "year": "2024",
+        "sources": [
+          {
+            "type": "NDFL",
+            "payer": "ООО \"АЛЬТАИР\"",
+            "payer_inn": "7799000037",
+            "amount": 1080000.00
+          }
+        ]
+      }
+    ],
+    "employment": [
+      {
+        "employer": "ООО \"АЛЬТАИР\"",
+        "employer_inn": "7799000037",
+        "position": "Генеральный директор",
+        "from": "2020-08-17",
+        "to": null
+      }
+    ],
+    "npd_status": {
+      "registered": false,
+      "history": []
+    }
+  }
+}

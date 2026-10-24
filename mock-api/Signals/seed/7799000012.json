@@ -1,0 +1,32 @@
+{
+  "inn": "7799000012",
+  "inspections": [],
+  "trademarks": [
+    {
+      "number": "1023456",
+      "name": "СЕВЕРНЫЙ ВЕТЕР",
+      "classes": [
+        29,
+        30,
+        35
+      ],
+      "registered_at": "2023-08-15",
+      "valid_until": "2032-11-02",
+      "status": "ACTIVE"
+    }
+  ],
+  "news": [
+    {
+      "id": "NEWS-7710",
+      "published_at": "2026-05-14T11:00:00+03:00",
+      "source": "Ритейл-обзор (mock)",
+      "title": "«Северный ветер» открыл второй склад в Новой Москве",
+      "url": "https://news.mock/articles/7710",
+      "sentiment": "POSITIVE",
+      "tags": [
+        "EXPANSION"
+      ],
+      "summary": "Оптовый поставщик продуктов расширил складские площади до 2 400 м²."
+    }
+  ]
+}

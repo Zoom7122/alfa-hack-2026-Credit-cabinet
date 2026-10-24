@@ -1,0 +1,282 @@
+{
+  "egrul": {
+    "c": "ООО \"АЛЬТАИР\"",
+    "n": "ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"АЛЬТАИР\"",
+    "i": "7799000037",
+    "o": "1207700634567",
+    "p": "779901001",
+    "r": "17.08.2020",
+    "g": "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР: Белов Артём Николаевич",
+    "k": "ul",
+    "rn": "Г.Москва",
+    "t": "MOCK-VYP-7799000037"
+  },
+  "pb": {
+    "vyp": {
+      "ИНН": "7799000037",
+      "ОГРН": "1207700634567",
+      "КПП": "779901001",
+      "НаимЮЛСокр": "ООО \"АЛЬТАИР\"",
+      "ДатаРег": "2020-08-17",
+      "КодОКВЭД": "46.90",
+      "НаимОКВЭД": "Торговля оптовая неспециализированная",
+      "СумКап": "10000",
+      "Адрес": "109316,МОСКВА ГОРОД,,,,ВОЛГОГРАДСКИЙ ПРОСПЕКТ,42,,ПОМЕЩ. 7",
+      "sulst_ex": 10,
+      "sulst_name_ex": "Действующая организация",
+      "invalid": 0,
+      "pr_zd": 1,
+      "pr_otch": 0,
+      "rsmpcategory": 1,
+      "masruk": [
+        {
+          "inn": "779900030147",
+          "name": "БЕЛОВ АРТЁМ НИКОЛАЕВИЧ",
+          "position": "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР",
+          "cnt": "1"
+        }
+      ]
+    },
+    "masaddress": [],
+    "vestnik": [],
+    "liquidated": false,
+    "okved2exs": [
+      "46.90 - Торговля оптовая неспециализированная",
+      "46.73 - Торговля оптовая лесоматериалами, строительными материалами и санитарно-техническим оборудованием"
+    ]
+  },
+  "bo": {
+    "organization": {
+      "id": 90000371,
+      "inn": "7799000037",
+      "shortName": "ООО \"АЛЬТАИР\"",
+      "ogrn": "1207700634567",
+      "okved2": "46.90",
+      "statusCode": "ACTIVE",
+      "bfo": {
+        "period": "2025",
+        "gainSum": 31200,
+        "knd": "0710099"
+      }
+    },
+    "bfo": [
+      {
+        "period": "2025",
+        "actives": 12540,
+        "gainSum": 31200,
+        "typeCorrections": [
+          {
+            "correction": {
+              "balance": {
+                "current1100": 1450,
+                "current1200": 11090,
+                "current1210": 4100,
+                "current1230": 6900,
+                "current1250": 90,
+                "current1300": -1210,
+                "current1400": 0,
+                "current1410": 0,
+                "current1500": 13750,
+                "current1510": 3800,
+                "current1520": 9950,
+                "current1600": 12540,
+                "previous1100": 1780,
+                "previous1200": 13240,
+                "previous1210": 5200,
+                "previous1230": 7400,
+                "previous1250": 640,
+                "previous1300": 630,
+                "previous1400": 1200,
+                "previous1410": 1200,
+                "previous1500": 13190,
+                "previous1510": 2400,
+                "previous1520": 10790,
+                "previous1600": 15020
+              },
+              "financialResult": {
+                "current2110": 31200,
+                "current2120": 29950,
+                "current2200": -390,
+                "current2210": 1640,
+                "current2300": -1580,
+                "current2330": 820,
+                "current2340": 40,
+                "current2350": 410,
+                "current2400": -1840,
+                "current2410": 260,
+                "previous2110": 36900,
+                "previous2120": 33480,
+                "previous2200": 1210,
+                "previous2210": 2210,
+                "previous2300": 530,
+                "previous2330": 540,
+                "previous2340": 60,
+                "previous2350": 200,
+                "previous2400": 420,
+                "previous2410": 110
+              },
+              "fundsMovement": {
+                "current4100": -2260,
+                "previous4100": 880
+              }
+            }
+          }
+        ]
+      },
+      {
+        "period": "2024",
+        "actives": 15020,
+        "gainSum": 36900,
+        "typeCorrections": [
+          {
+            "correction": {
+              "balance": {
+                "current1100": 1780,
+                "current1200": 13240,
+                "current1210": 5200,
+                "current1230": 7400,
+                "current1250": 640,
+                "current1300": 630,
+                "current1400": 1200,
+                "current1410": 1200,
+                "current1500": 13190,
+                "current1510": 2400,
+                "current1520": 10790,
+                "current1600": 15020,
+                "previous1100": 1920,
+                "previous1200": 11510,
+                "previous1210": 4600,
+                "previous1230": 6200,
+                "previous1250": 710,
+                "previous1300": 210,
+                "previous1400": 1500,
+                "previous1410": 1500,
+                "previous1500": 11720,
+                "previous1510": 1600,
+                "previous1520": 10120,
+                "previous1600": 13430
+              },
+              "financialResult": {
+                "current2110": 36900,
+                "current2120": 33480,
+                "current2200": 1210,
+                "current2210": 2210,
+                "current2300": 530,
+                "current2330": 540,
+                "current2340": 60,
+                "current2350": 200,
+                "current2400": 420,
+                "current2410": 110,
+                "previous2110": 33400,
+                "previous2120": 30310,
+                "previous2200": 1040,
+                "previous2210": 2050,
+                "previous2300": 350,
+                "previous2330": 300,
+                "previous2340": 0,
+                "previous2350": 390,
+                "previous2400": 280,
+                "previous2410": 70
+              },
+              "fundsMovement": {
+                "current4100": 880,
+                "previous4100": 610
+              }
+            }
+          }
+        ]
+      },
+      {
+        "period": "2023",
+        "actives": 13430,
+        "gainSum": 33400,
+        "typeCorrections": [
+          {
+            "correction": {
+              "balance": {
+                "current1100": 1920,
+                "current1200": 11510,
+                "current1210": 4600,
+                "current1230": 6200,
+                "current1250": 710,
+                "current1300": 210,
+                "current1400": 1500,
+                "current1410": 1500,
+                "current1500": 11720,
+                "current1510": 1600,
+                "current1520": 10120,
+                "current1600": 13430
+              },
+              "financialResult": {
+                "current2110": 33400,
+                "current2120": 30310,
+                "current2200": 1040,
+                "current2210": 2050,
+                "current2300": 350,
+                "current2330": 300,
+                "current2340": 0,
+                "current2350": 390,
+                "current2400": 280,
+                "current2410": 70
+              },
+              "fundsMovement": {
+                "current4100": 610
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "bi": {
+    "checked_at": "2026-10-22T10:15:03",
+    "by_bik": {
+      "044525999": [
+        {
+          "number": "12873",
+          "date": "2026-09-30",
+          "tax_authority_code": "7799",
+          "tax_authority_name": "ИФНС России №99 по г. Москве",
+          "type": "FULL",
+          "amount": null
+        }
+      ]
+    }
+  },
+  "charter": {
+    "inn": "7799000037",
+    "document": {
+      "type": "CHARTER",
+      "version_date": "2020-08-17",
+      "registration_record": "2207700398120"
+    },
+    "head": {
+      "position": "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР",
+      "term_years": 5,
+      "acts_without_poa": true,
+      "restrictions": []
+    },
+    "major_transaction": {
+      "threshold_pct_of_assets": 25,
+      "approval_body": "SOLE_PARTICIPANT",
+      "assets_at_last_reporting_date": 12540000.00,
+      "threshold_amount": 3135000.00
+    },
+    "related_party_approval_required": true,
+    "participants": [
+      {
+        "inn": "779900030147",
+        "full_name": "Белов Артём Николаевич",
+        "share_pct": 100
+      }
+    ]
+  },
+  "rmsp": {
+    "inn": "7799000037",
+    "in_registry": true,
+    "category": "MICRO",
+    "included_at": "2021-08-10",
+    "employees": 9,
+    "support": []
+  }
+}

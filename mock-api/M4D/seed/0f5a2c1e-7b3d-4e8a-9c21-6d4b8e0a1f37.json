@@ -1,0 +1,43 @@
+{
+  "number": "0f5a2c1e-7b3d-4e8a-9c21-6d4b8e0a1f37",
+  "format_version": "5.02",
+  "status": "ACTIVE",
+  "issued_at": "2026-01-15",
+  "valid_from": "2026-01-15",
+  "valid_until": "2027-01-14",
+  "revoked_at": null,
+  "principal": {
+    "type": "LEGAL",
+    "inn": "7799000012",
+    "ogrn": "1217700412345",
+    "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\"",
+    "signed_by": {
+      "inn": "779900010139",
+      "full_name": "Ковалёв Игорь Сергеевич",
+      "position": "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР"
+    }
+  },
+  "representative": {
+    "type": "PERSON",
+    "inn": "779900010333",
+    "snils": "148-562-907 41",
+    "full_name": "Литвинова Марина Олеговна",
+    "position": "ГЛАВНЫЙ БУХГАЛТЕР"
+  },
+  "powers": [
+    {
+      "code": "LOAN_APPLICATION_SUBMIT",
+      "text": "Подавать заявки на кредитные продукты и сопутствующие документы"
+    },
+    {
+      "code": "FINANCIAL_DOCS_SIGN",
+      "text": "Подписывать бухгалтерскую и налоговую отчётность, выписки, справки"
+    },
+    {
+      "code": "BANK_DOCS_RECEIVE",
+      "text": "Получать документы и уведомления банка"
+    }
+  ],
+  "retrust_allowed": false,
+  "registry_record_at": "2026-01-15T12:44:09+03:00"
+}

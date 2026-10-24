@@ -1,0 +1,92 @@
+{
+  "PERSON": {
+    "report_id": "NBKI-RPT-3075E0",
+    "bureau": "NBKI",
+    "generated_at": "2026-10-22T10:15:07Z",
+    "subject": {
+      "type": "PERSON",
+      "inn": "779900020136",
+      "name": "Орлов Денис Павлович",
+      "birth_date": "1979-02-11"
+    },
+    "has_history": true,
+    "score": {
+      "value": 655,
+      "min": 300,
+      "max": 850,
+      "grade": "C",
+      "model": "MOCK-RETAIL-v1"
+    },
+    "summary": {
+      "active_accounts": 2,
+      "closed_accounts": 0,
+      "total_limit": 2300000.00,
+      "total_outstanding": 1350000.00,
+      "total_monthly_payment": 54200.00,
+      "current_overdue_amount": 0.00,
+      "max_overdue_days_ever": 9,
+      "overdue_30p_24m": 0,
+      "overdue_60p_24m": 0,
+      "overdue_90p_24m": 0,
+      "restructured_count": 0,
+      "inquiries_7d": 0,
+      "inquiries_30d": 3,
+      "inquiries_90d": 3
+    },
+    "accounts": [
+      {
+        "account_id": "ACC-1",
+        "creditor_type": "BANK",
+        "creditor_name": "АО \"БАНК ЮГ-КРЕДИТ\"",
+        "product_type": "TERM_LOAN",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2024-03-18",
+        "planned_close_at": "2029-03-18",
+        "limit": 1800000.00,
+        "outstanding": 920000.00,
+        "monthly_payment": 41300.00,
+        "status": "ACTIVE",
+        "current_overdue_days": 0,
+        "current_overdue_amount": 0.00,
+        "payment_history_24m": "000000000000000000000000",
+        "collateral": true
+      },
+      {
+        "account_id": "ACC-2",
+        "creditor_type": "BANK",
+        "creditor_name": "ПАО \"БАНК ВОСТОК\"",
+        "product_type": "CREDIT_CARD",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2022-11-01",
+        "planned_close_at": "2027-11-01",
+        "limit": 500000.00,
+        "outstanding": 430000.00,
+        "monthly_payment": 12900.00,
+        "status": "ACTIVE",
+        "current_overdue_days": 0,
+        "current_overdue_amount": 0.00,
+        "payment_history_24m": "000001000000000000000000",
+        "collateral": false
+      }
+    ],
+    "inquiries": [
+      {
+        "date": "2026-10-14",
+        "creditor_type": "BANK",
+        "purpose": "LOAN_APPLICATION"
+      },
+      {
+        "date": "2026-10-03",
+        "creditor_type": "BANK",
+        "purpose": "LOAN_APPLICATION"
+      },
+      {
+        "date": "2026-09-27",
+        "creditor_type": "MFO",
+        "purpose": "LOAN_APPLICATION"
+      }
+    ]
+  }
+}

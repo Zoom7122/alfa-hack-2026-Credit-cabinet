@@ -1,0 +1,77 @@
+{
+  "Data": {
+    "Account": [
+      {
+        "accountId": "acc-7f3a9c",
+        "status": "Enabled",
+        "statusUpdateDateTime": "2025-03-14T10:00:00+03:00",
+        "currency": "RUB",
+        "accountType": "Business",
+        "accountSubType": "CurrentAccount",
+        "accountDescription": "Расчётный счёт",
+        "openingDate": "2021-06-01",
+        "AccountDetails": [
+          {
+            "schemeName": "RU.CBR.PAN",
+            "identification": "40702810900000012345",
+            "name": "ООО «Ромашка»"
+          }
+        ],
+        "Servicer": {
+          "schemeName": "RU.CBR.BICFI",
+          "identification": "044525000"
+        }
+      }
+    ],
+    "Balance": [
+      {
+        "accountId": "acc-7f3a9c",
+        "creditDebitIndicator": "Credit",
+        "type": "InterimAvailable",
+        "dateTime": "2026-10-22T17:00:00+03:00",
+        "Amount": {
+          "amount": "1254300.50",
+          "currency": "RUB"
+        }
+      }
+    ],
+    "Transaction": [
+      {
+        "accountId": "acc-7f3a9c",
+        "transactionId": "trx-000981",
+        "creditDebitIndicator": "Credit",
+        "status": "Booked",
+        "bookingDateTime": "2026-10-21T12:30:00+03:00",
+        "Amount": {
+          "amount": "48210.00",
+          "currency": "RUB"
+        },
+        "transactionInformation": "Возмещение по операциям с картами за 20.10.2026, комиссия 1050.00",
+        "CounterpartyAccount": {
+          "identification": "30233810000000000001",
+          "name": "АО «Банк-эквайрер»"
+        },
+        "documentNumber": "5512"
+      },
+      {
+        "accountId": "acc-7f3a9c",
+        "transactionId": "trx-000982",
+        "creditDebitIndicator": "Debit",
+        "status": "Booked",
+        "bookingDateTime": "2026-10-10T09:15:00+03:00",
+        "Amount": {
+          "amount": "612000.00",
+          "currency": "RUB"
+        },
+        "transactionInformation": "Перечисление заработной платы по реестру №10 от 10.10.2026",
+        "documentNumber": "318"
+      }
+    ]
+  },
+  "Links": {
+    "self": "/accounts/acc-7f3a9c/transactions?fromBookingDateTime=2026-10-01"
+  },
+  "Meta": {
+    "totalPages": 1
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "age": 47,
+  "marital_status": "MARRIED",
+  "children_count": 3,
+  "inn": "7799000020",
+  "director": {
+    "inn": "779900020136",
+    "last_name": "Орлов",
+    "first_name": "Денис",
+    "middle_name": "Павлович",
+    "birth_date": "1979-02-11"
+  },
+  "consents": {
+    "bki_company": {
+      "id": "CNS-2026-000801",
+      "signed_at": "2026-10-21T14:02:11Z",
+      "valid_until": "2027-04-21"
+    },
+    "bki_person": {
+      "id": "CNS-2026-000802",
+      "signed_at": "2026-10-21T14:02:40Z",
+      "valid_until": "2027-04-21"
+    },
+    "tax": {
+      "id": "TAX-CNS-2026-000801",
+      "signed_at": "2026-10-21T14:03:02Z",
+      "valid_until": "2027-04-21",
+      "scope": [
+        "DECLARATIONS",
+        "ENS_BALANCE"
+      ]
+    }
+  },
+  "other_bank_biks": [
+    "044525777",
+    "044525650"
+  ],
+  "collateral": {
+    "cadastral_numbers": [
+      "50:21:0110203:845",
+      "50:21:0110203:412"
+    ],
+    "vins": [
+      "XTC652005N1498213"
+    ],
+    "serials": [
+      "JCB3CX2023118457"
+    ]
+  }
+}

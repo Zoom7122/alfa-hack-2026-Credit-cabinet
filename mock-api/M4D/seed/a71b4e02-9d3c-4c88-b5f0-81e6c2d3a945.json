@@ -1,0 +1,39 @@
+{
+  "number": "a71b4e02-9d3c-4c88-b5f0-81e6c2d3a945",
+  "format_version": "5.02",
+  "status": "REVOKED",
+  "issued_at": "2025-11-03",
+  "valid_from": "2025-11-03",
+  "valid_until": "2026-11-02",
+  "revoked_at": "2026-05-12",
+  "principal": {
+    "type": "LEGAL",
+    "inn": "7799000012",
+    "ogrn": "1217700412345",
+    "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\"",
+    "signed_by": {
+      "inn": "779900010139",
+      "full_name": "Ковалёв Игорь Сергеевич",
+      "position": "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР"
+    }
+  },
+  "representative": {
+    "type": "PERSON",
+    "inn": "779900010417",
+    "snils": "152-118-644 09",
+    "full_name": "Гусев Роман Ильич",
+    "position": "МЕНЕДЖЕР ПО РАБОТЕ С БАНКАМИ"
+  },
+  "powers": [
+    {
+      "code": "LOAN_APPLICATION_SUBMIT",
+      "text": "Подавать заявки на кредитные продукты и сопутствующие документы"
+    },
+    {
+      "code": "FINANCIAL_DOCS_SIGN",
+      "text": "Подписывать бухгалтерскую и налоговую отчётность, выписки, справки"
+    }
+  ],
+  "retrust_allowed": false,
+  "registry_record_at": "2025-11-03T16:20:14+03:00"
+}

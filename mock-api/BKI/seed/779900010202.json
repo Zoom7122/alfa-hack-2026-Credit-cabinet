@@ -1,0 +1,117 @@
+{
+  "LEGAL": {
+    "report_id": "NBKI-RPT-89A0A2",
+    "bureau": "NBKI",
+    "generated_at": "2026-10-22T10:15:07Z",
+    "subject": {
+      "type": "LEGAL",
+      "inn": "779900010202",
+      "name": "ИП Смирнова Анна Викторовна"
+    },
+    "has_history": false,
+    "score": null,
+    "summary": {
+      "active_accounts": 0,
+      "closed_accounts": 0,
+      "total_limit": 0.00,
+      "total_outstanding": 0.00,
+      "total_monthly_payment": 0.00,
+      "current_overdue_amount": 0.00,
+      "max_overdue_days_ever": 0,
+      "overdue_30p_24m": 0,
+      "overdue_60p_24m": 0,
+      "overdue_90p_24m": 0,
+      "restructured_count": 0,
+      "inquiries_7d": 0,
+      "inquiries_30d": 0,
+      "inquiries_90d": 0
+    },
+    "accounts": [],
+    "inquiries": []
+  },
+  "PERSON": {
+    "report_id": "NBKI-RPT-70E882",
+    "bureau": "NBKI",
+    "generated_at": "2026-10-22T10:15:07Z",
+    "subject": {
+      "type": "PERSON",
+      "inn": "779900010202",
+      "name": "Смирнова Анна Викторовна",
+      "birth_date": "1993-05-27"
+    },
+    "has_history": true,
+    "score": {
+      "value": 731,
+      "min": 300,
+      "max": 850,
+      "grade": "B",
+      "model": "MOCK-RETAIL-v1"
+    },
+    "summary": {
+      "active_accounts": 1,
+      "closed_accounts": 1,
+      "total_limit": 150000.00,
+      "total_outstanding": 23400.00,
+      "total_monthly_payment": 702.00,
+      "current_overdue_amount": 0.00,
+      "max_overdue_days_ever": 0,
+      "overdue_30p_24m": 0,
+      "overdue_60p_24m": 0,
+      "overdue_90p_24m": 0,
+      "restructured_count": 0,
+      "inquiries_7d": 1,
+      "inquiries_30d": 1,
+      "inquiries_90d": 2
+    },
+    "accounts": [
+      {
+        "account_id": "ACC-1",
+        "creditor_type": "BANK",
+        "creditor_name": "АО \"БАНК ТОЧКА РОСТА\"",
+        "product_type": "CREDIT_CARD",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2024-02-12",
+        "planned_close_at": "2028-02-12",
+        "limit": 150000.00,
+        "outstanding": 23400.00,
+        "monthly_payment": 702.00,
+        "status": "ACTIVE",
+        "current_overdue_days": 0,
+        "current_overdue_amount": 0.00,
+        "payment_history_24m": "000000000000000000000000",
+        "collateral": false
+      },
+      {
+        "account_id": "ACC-2",
+        "creditor_type": "BANK",
+        "creditor_name": "ПАО \"СТОЛИЧНЫЙ БАНК\"",
+        "product_type": "TERM_LOAN",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2022-06-20",
+        "planned_close_at": "2025-06-20",
+        "limit": 400000.00,
+        "outstanding": 0.00,
+        "monthly_payment": null,
+        "status": "CLOSED",
+        "current_overdue_days": 0,
+        "current_overdue_amount": 0.00,
+        "payment_history_24m": "----------00000000000000",
+        "collateral": false
+      }
+    ],
+    "inquiries": [
+      {
+        "date": "2026-10-21",
+        "creditor_type": "BANK",
+        "purpose": "LOAN_APPLICATION"
+      },
+      {
+        "date": "2026-07-29",
+        "creditor_type": "BANK",
+        "purpose": "LOAN_APPLICATION"
+      }
+    ]
+  }
+}

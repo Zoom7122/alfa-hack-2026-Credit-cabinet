@@ -1,0 +1,33 @@
+{
+  "debtor": {
+    "type": "PERSON",
+    "inn": "779900030147",
+    "name": "Белов Артём Николаевич",
+    "birth_date": "1988-11-03",
+    "region": "77"
+  },
+  "checked_at": "2026-10-22T10:15:06Z",
+  "summary": {
+    "active_count": 1,
+    "active_amount": 156000.00,
+    "finished_count": 0,
+    "finished_no_assets_count": 0
+  },
+  "items": [
+    {
+      "number": "402288/26/77055-ИП",
+      "opened_at": "2026-06-17",
+      "executive_document": "Судебный приказ №2-845/2026 от 20.05.2026, мировой судья судебного участка №245 г. Москвы",
+      "subject_code": "CREDIT",
+      "subject": "Задолженность по кредитным платежам",
+      "amount_initial": 156000.00,
+      "amount_remaining": 156000.00,
+      "status": "ACTIVE",
+      "finished_at": null,
+      "finish_reason_code": null,
+      "finish_reason": null,
+      "department": "ОСП по Юго-Восточному АО №2 ГУФССП России по г. Москве",
+      "bailiff": "Морозова Т.С."
+    }
+  ]
+}

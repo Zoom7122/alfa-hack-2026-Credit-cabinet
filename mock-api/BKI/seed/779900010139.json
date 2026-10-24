@@ -1,0 +1,100 @@
+{
+  "PERSON": {
+    "report_id": "NBKI-RPT-487823",
+    "bureau": "NBKI",
+    "generated_at": "2026-10-22T10:15:07Z",
+    "subject": {
+      "type": "PERSON",
+      "inn": "779900010139",
+      "name": "Ковалёв Игорь Сергеевич",
+      "birth_date": "1984-07-19"
+    },
+    "has_history": true,
+    "score": {
+      "value": 768,
+      "min": 300,
+      "max": 850,
+      "grade": "A",
+      "model": "MOCK-RETAIL-v1"
+    },
+    "summary": {
+      "active_accounts": 2,
+      "closed_accounts": 1,
+      "total_limit": 6800000.00,
+      "total_outstanding": 4912100.00,
+      "total_monthly_payment": 62463.00,
+      "current_overdue_amount": 0.00,
+      "max_overdue_days_ever": 0,
+      "overdue_30p_24m": 0,
+      "overdue_60p_24m": 0,
+      "overdue_90p_24m": 0,
+      "restructured_count": 0,
+      "inquiries_7d": 1,
+      "inquiries_30d": 1,
+      "inquiries_90d": 1
+    },
+    "accounts": [
+      {
+        "account_id": "ACC-1",
+        "creditor_type": "BANK",
+        "creditor_name": "ПАО \"СТОЛИЧНЫЙ БАНК\"",
+        "product_type": "TERM_LOAN",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2021-05-14",
+        "planned_close_at": "2041-05-14",
+        "limit": 6500000.00,
+        "outstanding": 4870000.00,
+        "monthly_payment": 61200.00,
+        "status": "ACTIVE",
+        "current_overdue_days": 0,
+        "current_overdue_amount": 0.00,
+        "payment_history_24m": "000000000000000000000000",
+        "collateral": true
+      },
+      {
+        "account_id": "ACC-2",
+        "creditor_type": "BANK",
+        "creditor_name": "АО \"АЛЬФА-БАНК\"",
+        "product_type": "CREDIT_CARD",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2023-03-02",
+        "planned_close_at": "2027-03-02",
+        "limit": 300000.00,
+        "outstanding": 42100.00,
+        "monthly_payment": 1263.00,
+        "status": "ACTIVE",
+        "current_overdue_days": 0,
+        "current_overdue_amount": 0.00,
+        "payment_history_24m": "000000000000000000000000",
+        "collateral": false
+      },
+      {
+        "account_id": "ACC-3",
+        "creditor_type": "BANK",
+        "creditor_name": "АО \"БАНК ЮГ-КРЕДИТ\"",
+        "product_type": "TERM_LOAN",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2019-08-01",
+        "planned_close_at": "2022-08-01",
+        "limit": 900000.00,
+        "outstanding": 0.00,
+        "monthly_payment": null,
+        "status": "CLOSED",
+        "current_overdue_days": 0,
+        "current_overdue_amount": 0.00,
+        "payment_history_24m": "------------------------",
+        "collateral": false
+      }
+    ],
+    "inquiries": [
+      {
+        "date": "2026-10-21",
+        "creditor_type": "BANK",
+        "purpose": "LOAN_APPLICATION"
+      }
+    ]
+  }
+}

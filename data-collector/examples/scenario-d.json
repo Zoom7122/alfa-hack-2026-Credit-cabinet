@@ -1,0 +1,38 @@
+{
+  "age": 33,
+  "marital_status": "SINGLE",
+  "children_count": 0,
+  "inn": "779900010202",
+  "director": {
+    "inn": "779900010202",
+    "last_name": "Смирнова",
+    "first_name": "Анна",
+    "middle_name": "Викторовна",
+    "birth_date": "1993-05-27"
+  },
+  "consents": {
+    "bki_company": {
+      "id": "CNS-2026-000841",
+      "signed_at": "2026-10-21T14:02:11Z",
+      "valid_until": "2027-04-21"
+    },
+    "bki_person": {
+      "id": "CNS-2026-000842",
+      "signed_at": "2026-10-21T14:02:40Z",
+      "valid_until": "2027-04-21"
+    },
+    "tax": {
+      "id": "TAX-CNS-2026-000841",
+      "signed_at": "2026-10-21T14:03:02Z",
+      "valid_until": "2027-04-21",
+      "scope": [
+        "DECLARATIONS",
+        "ENS_BALANCE"
+      ]
+    }
+  },
+  "marketplace_tokens": {
+    "wildberries": "demo-wb-token",
+    "ozon": "demo-ozon-token"
+  }
+}
