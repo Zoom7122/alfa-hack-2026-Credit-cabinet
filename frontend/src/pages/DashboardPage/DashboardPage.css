@@ -1,0 +1,95 @@
+.dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-24);
+    padding: var(--gap-32) var(--gap-40) var(--gap-56);
+}
+
+.dashboard__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-24);
+}
+
+.dashboard__tasks {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-12);
+}
+
+.dashboard__tasks-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--gap-16);
+}
+
+.dashboard__columns {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--gap-24);
+}
+
+.dashboard__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-16);
+    padding: var(--gap-24);
+    border-radius: var(--border-radius-24);
+    background: var(--color-light-base-bg-primary);
+}
+
+/* компактная карточка в правой колонке */
+.dashboard__card_size_s {
+    gap: var(--gap-12);
+    padding: var(--gap-20);
+    border-radius: var(--border-radius-20);
+}
+
+.dashboard__applications {
+    flex: 1;
+    min-width: 0;
+}
+
+.dashboard__card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-16);
+}
+
+.dashboard__filters {
+    display: flex;
+    gap: var(--gap-8);
+}
+
+.dashboard__list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.dashboard__list-item_divided {
+    border-top: 1px solid var(--color-light-neutral-300);
+}
+
+.dashboard__row-skeleton {
+    height: 64px;
+    margin: var(--gap-8) 0;
+    border-radius: var(--border-radius-12);
+}
+
+.dashboard__empty {
+    padding: var(--gap-32) 0;
+    text-align: center;
+}
+
+.dashboard__aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-16);
+    width: 360px;
+    flex: none;
+}

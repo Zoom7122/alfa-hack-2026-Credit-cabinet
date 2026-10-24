@@ -1,0 +1,40 @@
+.company-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-12);
+    padding: var(--gap-20);
+    border-radius: var(--border-radius-20);
+    background: var(--color-light-base-bg-primary);
+}
+
+.company-card__facts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-8);
+    margin: 0;
+}
+
+.company-card__fact {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--gap-16);
+}
+
+.company-card__label {
+    margin: 0;
+}
+
+.company-card__value {
+    margin: 0;
+    text-align: right;
+}
+
+.company-card__skeleton {
+    width: 96px;
+    height: 16px;
+    border-radius: var(--border-radius-4);
+}
+
+.company-card__add {
+    align-self: flex-start;
+}

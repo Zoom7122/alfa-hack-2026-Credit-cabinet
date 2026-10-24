@@ -4,7 +4,7 @@
 DOZZLE_PORT ?= 8888
 MODULES := data-collector db
 
-.PHONY: help env up down restart build ps logs migrate migrate-status test clean
+.PHONY: help env up down restart build ps logs migrate migrate-status test clean front
 
 help: ## список команд
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-16s %s\n", $$1, $$2}'
@@ -15,6 +15,10 @@ env: ## создать .env из шаблона, если его нет
 up: env ## собрать и поднять все сервисы
 	docker compose up -d --build
 	@echo "Логи: http://localhost:$(DOZZLE_PORT)"
+
+front: env ## собрать и поднять только frontend
+	docker compose up -d --build frontend
+	@echo "Frontend: http://localhost:$(or $(FRONTEND_PORT),3000)"
 
 down: ## остановить сервисы (данные БД сохраняются)
 	docker compose down

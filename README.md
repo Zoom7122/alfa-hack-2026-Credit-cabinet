@@ -14,6 +14,7 @@ make help    # остальные команды
 | postgres | `localhost:${POSTGRES_PORT}` (5432) | общая БД |
 | migrate | — | накатывает миграции из [db/](db/) и завершается |
 | data-collector | http://localhost:8081 | сбор данных для скоринга, [data-collector/](data-collector/) |
+| frontend | http://localhost:3000 | кабинет клиента и рабочее место банка, [frontend/](frontend/); пока работает на моках |
 | dozzle | http://localhost:8888 | логи всех контейнеров в браузере |
 
 Порты и доступы к БД — в `.env`.

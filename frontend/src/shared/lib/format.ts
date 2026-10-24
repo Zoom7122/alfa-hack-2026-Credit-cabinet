@@ -1,0 +1,51 @@
+const money = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 });
+
+/** 5000000 → «5 000 000 ₽». Деньги в API — целые рубли. */
+export const formatMoney = (rub: number) => money.format(rub);
+
+export function formatMonths(n: number) {
+    return `${n} мес.`;
+}
+
+const dayFmt = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' });
+const timeFmt = new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+/** «сегодня в 14:20», «вчера», «12 мая». */
+export function formatUpdated(iso: string, now = new Date()) {
+    const d = new Date(iso);
+    const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const days = Math.round((startOfDay(now) - startOfDay(d)) / 86_400_000);
+    if (days === 0) return `сегодня в ${timeFmt.format(d)}`;
+    if (days === 1) return 'вчера';
+    return dayFmt.format(d);
+}
+
+export function formatDay(iso: string) {
+    return dayFmt.format(new Date(iso));
+}
+
+/** «Петров Пётр Петрович» → { last: 'Петров', first: 'Пётр', middle: 'Петрович' } */
+export function splitName(full: string) {
+    const [last = '', first = '', middle = ''] = full.trim().split(/\s+/);
+    return { last, first, middle };
+}
+
+/** «Петров Пётр Петрович» → «Петров П. П.» */
+export function shortName(full: string) {
+    const { last, first, middle } = splitName(full);
+    return [last, first && `${first[0]}.`, middle && `${middle[0]}.`].filter(Boolean).join(' ');
+}
+
+/** «Петров Пётр Петрович» → «ПП» */
+export function initials(full: string) {
+    const { last, first } = splitName(full);
+    return `${last.charAt(0)}${first.charAt(0)}`.toUpperCase();
+}
+
+export function pluralize(n: number, one: string, few: string, many: string) {
+    const mod10 = n % 10;
+    const mod100 = n % 100;
+    if (mod10 === 1 && mod100 !== 11) return one;
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
+    return many;
+}
