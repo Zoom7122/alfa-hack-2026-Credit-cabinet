@@ -10,12 +10,14 @@ import (
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/config"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/economics"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/httpapi"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/optimizer"
 )
 
 type Scoring struct {
 	Settings       config.Scoring
 	Policy         config.Policy
 	Economics      *economics.Calculator
+	Optimizer      *optimizer.Selector
 	Clock          clock.Clock
 	BankHTTP       *http.Client
 	StatementsHTTP *http.Client
@@ -44,6 +46,10 @@ func NewScoring(cfg config.Scoring, source clock.Clock) (*Scoring, error) {
 	if err != nil {
 		return nil, err
 	}
+	selector, err := optimizer.New(policy)
+	if err != nil {
+		return nil, err
+	}
 	if source == nil {
 		source = clock.System{}
 	}
@@ -51,7 +57,7 @@ func NewScoring(cfg config.Scoring, source clock.Clock) (*Scoring, error) {
 		source = clock.Fixed{Time: *cfg.EvaluationDate}
 	}
 	return &Scoring{
-		Settings: cfg, Policy: policy, Economics: calculator, Clock: source,
+		Settings: cfg, Policy: policy, Economics: calculator, Optimizer: selector, Clock: source,
 		BankHTTP:       &http.Client{Timeout: cfg.BankTimeout},
 		StatementsHTTP: &http.Client{Timeout: cfg.StatementsTimeout},
 		Server:         httpapi.NewServer(cfg.Addr, cfg.WriteTimeout, httpapi.NewRouter()),

@@ -25,6 +25,9 @@ func TestScoringDependencies(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if a.Optimizer == nil {
+		t.Fatal("scoring startup must initialize offer selection")
+	}
 	if a.Clock.Now() != fixed.Now() || a.BankHTTP.Timeout != 4*time.Second || a.StatementsHTTP.Timeout != 2*time.Second || a.Server.WriteTimeout != 15*time.Second || a.Server.Addr != ":8082" {
 		t.Fatalf("incorrect scoring dependencies: %+v", a)
 	}

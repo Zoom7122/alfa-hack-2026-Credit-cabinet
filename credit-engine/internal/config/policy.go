@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"math"
+	"math/big"
+	"strconv"
 	"strings"
 )
 
@@ -69,8 +71,8 @@ func (p Policy) Validate() error {
 	if o.AmountStepRUB <= 0 {
 		return fmt.Errorf("optimizer.amount_step_rub must be positive")
 	}
-	if !finite(o.RateStep) || o.RateStep <= 0 || o.RateStep > 1 || math.Trunc(o.RateStep*10000) != o.RateStep*10000 {
-		return fmt.Errorf("optimizer.rate_step must be a positive whole number of basis points, at most 1")
+	if _, err := o.RateStepBasisPoints(); err != nil {
+		return err
 	}
 	if o.MaxTermMonths < 1 || o.MaxTermMonths > 36 {
 		return fmt.Errorf("optimizer.max_term_months must be between 1 and 36")
@@ -95,6 +97,24 @@ func (p Policy) Validate() error {
 		}
 	}
 	return nil
+}
+
+// RateStepBasisPoints converts the configured annual fraction exactly at the
+// decimal boundary. A valid step such as 0.0003 must not fail because its binary
+// float product with 10000 is slightly below 3.
+func (o Optimizer) RateStepBasisPoints() (int, error) {
+	if !finite(o.RateStep) || o.RateStep <= 0 || o.RateStep > 1 {
+		return 0, fmt.Errorf("optimizer.rate_step must be a positive whole number of basis points, at most 1")
+	}
+	ratio, ok := new(big.Rat).SetString(strconv.FormatFloat(o.RateStep, 'f', -1, 64))
+	if !ok {
+		return 0, fmt.Errorf("optimizer.rate_step is invalid")
+	}
+	ratio.Mul(ratio, big.NewRat(10000, 1))
+	if !ratio.IsInt() {
+		return 0, fmt.Errorf("optimizer.rate_step must be a positive whole number of basis points, at most 1")
+	}
+	return int(ratio.Num().Int64()), nil
 }
 
 // Validate is shared by startup loading and the pure economics calculator.
