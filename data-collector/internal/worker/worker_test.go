@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -63,6 +64,15 @@ func (f *fakeSystems) CollectAll(ctx context.Context, requestID string, in domai
 	return out
 }
 
+// CompanyCard — реквизиты из ЕГРЮЛ, если ФНС ответила.
+func (f *fakeSystems) CompanyCard(fnsData json.RawMessage) (domain.CompanyCard, bool) {
+	if len(fnsData) == 0 {
+		return domain.CompanyCard{}, false
+	}
+	return domain.CompanyCard{INN: "7799000012", Type: domain.CompanyLegalEntity, OGRN: "1217700412345",
+		ShortName: `ООО "СЕВЕРНЫЙ ВЕТЕР"`}, true
+}
+
 func (f *fakeSystems) callCount() int {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -75,7 +85,9 @@ type failingComplete struct {
 	err error
 }
 
-func (r failingComplete) Complete(context.Context, domain.RawCollection) error { return r.err }
+func (r failingComplete) Complete(context.Context, domain.RawCollection, *domain.CompanyCard) error {
+	return r.err
+}
 
 func input() domain.CollectInput {
 	return domain.CollectInput{
@@ -317,4 +329,47 @@ func mustJSON(t *testing.T, v any) []byte {
 		t.Fatal(err)
 	}
 	return b
+}
+
+// Задача по заявке: заявка идёт SUBMITTED → ENRICHING → VERIFYING, реквизиты компании дописываются.
+func TestHandleMovesApplication(t *testing.T) {
+	tasks := memory.NewCollectionTaskRepository()
+	apps := memory.NewApplicationRepository(tasks)
+	ctx := context.Background()
+	app, err := apps.Register(ctx, domain.Registration{UserID: "usr_1", CompanyID: "apl_1", ApplicationID: "app_1",
+		Representative: domain.Representative{FullName: "Ковалёв Игорь Сергеевич", Role: domain.RoleDirector, CanSign: true},
+		Company:        domain.Company{INN: "7799000012", Type: domain.CompanyLegalEntity, Name: "ИНН 7799000012"},
+		CreatedAt:      time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	task := domain.CollectionTask{ID: "tsk_app", ApplicationID: app.ID, QuestionnaireID: "qst_1", Input: input(),
+		CreatedAt: time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC)}
+	if err := apps.Submit(ctx, domain.Submission{ApplicationID: app.ID, Task: task, SubmittedAt: task.CreatedAt}); err != nil {
+		t.Fatal(err)
+	}
+	systems := &fakeSystems{started: make(chan struct{}), release: make(chan struct{})}
+	done := make(chan error, 1)
+	go func() { done <- newWorker(systems, tasks, 3).Handle(ctx, tasks.Outbox()[0].Payload) }()
+
+	<-systems.started
+	if got, _, _ := apps.Get(ctx, app.ID); got.Status != domain.ApplicationEnriching {
+		t.Fatalf("while collecting: %s", got.Status)
+	}
+	close(systems.release)
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+
+	got, _, _ := apps.Get(ctx, app.ID)
+	if got.Status != domain.ApplicationVerifying || got.Company.Name != `ООО "СЕВЕРНЫЙ ВЕТЕР"` || got.Company.OGRN != "1217700412345" {
+		t.Fatalf("application = %+v", got)
+	}
+	want := []string{"application.created", "application.submitted", "enrich.started", "enrich.completed"}
+	if ev := apps.Events(app.ID); !slices.Equal(ev, want) {
+		t.Fatalf("events = %v, want %v", ev, want)
+	}
+	if card, ok := tasks.CompanyCard("7799000012"); !ok || card.OGRN != "1217700412345" {
+		t.Fatalf("company card = %+v (found %v)", card, ok)
+	}
 }

@@ -15,6 +15,203 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/applicants": {
+            "post": {
+                "description": "Одной транзакцией создаёт пользователя (с тем же ИНН физлица — находит существующего), компанию\n(с тем же ИНН — переиспользует вместе с собранными данными), связь с ролью в company_members\nи черновик заявки (DRAFT). Если у этого пользователя по этой компании уже есть черновик, возвращается он.\nПодписывать договор без доверенности может директор, у ИП — сам предприниматель (can_sign).\nДальше — анкета: POST /applications/{id}/questionnaire выводит заявку из DRAFT и запускает сбор данных.\n\n**Примеры** — заявители сценариев mock-api A–E (` + "`" + `examples/scenario-X.applicant.json` + "`" + `), в теле по умолчанию — сценарий A. Данные в моках привязаны к компании, поэтому анкету берите того же сценария: они в описании POST /applications/{id}/questionnaire.\n\n**A** — ООО «Северный ветер», ИНН 7799000012, опт продуктов — ожидается OFFERED.\n\n` + "`" + `` + "`" + `` + "`" + `json\n{\n  \"representative\": {\n    \"full_name\": \"Литвинова Марина Олеговна\",\n    \"inn\": \"779900010333\",\n    \"role\": \"ACCOUNTANT\"\n  },\n  \"company\": {\n    \"inn\": \"7799000012\",\n    \"name\": \"ООО «Северный ветер»\"\n  }\n}\n` + "`" + `` + "`" + `` + "`" + `\n\n**B** — ООО «Стройресурс», ИНН 7799000020, стройка — OFFERED, но меньше сумма или дольше срок.\n\n` + "`" + `` + "`" + `` + "`" + `json\n{\n  \"representative\": {\n    \"full_name\": \"Орлов Денис Павлович\",\n    \"inn\": \"779900020136\",\n    \"role\": \"DIRECTOR\"\n  },\n  \"company\": {\n    \"inn\": \"7799000020\",\n    \"name\": \"ООО «Стройресурс»\"\n  }\n}\n` + "`" + `` + "`" + `` + "`" + `\n\n**C** — ООО «Альтаир», ИНН 7799000037, опт — REJECTED.\n\n` + "`" + `` + "`" + `` + "`" + `json\n{\n  \"representative\": {\n    \"full_name\": \"Белов Артём Николаевич\",\n    \"inn\": \"779900030147\",\n    \"role\": \"DIRECTOR\"\n  },\n  \"company\": {\n    \"inn\": \"7799000037\"\n  }\n}\n` + "`" + `` + "`" + `` + "`" + `\n\n**D** — ИП Смирнова А. В., ИНН 779900010202, интернет-торговля — WAITING_FOR_INFO.\n\n` + "`" + `` + "`" + `` + "`" + `json\n{\n  \"representative\": {\n    \"full_name\": \"Смирнова Анна Викторовна\",\n    \"inn\": \"779900010202\",\n    \"role\": \"OWNER\"\n  },\n  \"company\": {\n    \"inn\": \"779900010202\"\n  }\n}\n` + "`" + `` + "`" + `` + "`" + `\n\n**E** — ООО «Техно-Сервис», ИНН 7799000044, ремонт оборудования — MANUAL_REVIEW.\n\n` + "`" + `` + "`" + `` + "`" + `json\n{\n  \"representative\": {\n    \"full_name\": \"Кузнецов Павел Андреевич\",\n    \"role\": \"FINANCE_EMPLOYEE\"\n  },\n  \"company\": {\n    \"inn\": \"7799000044\",\n    \"name\": \"ООО «Техно-Сервис»\"\n  }\n}\n` + "`" + `` + "`" + `` + "`" + `\n",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applicants"
+                ],
+                "summary": "Зарегистрировать заявителя: кто оформляет кредит и за какую компанию",
+                "parameters": [
+                    {
+                        "description": "Представитель и компания",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/RegisterApplicantRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/Application"
+                        },
+                        "headers": {
+                            "Location": {
+                                "type": "string",
+                                "description": "/api/v1/applications/{id}"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "битый JSON, нет обязательного поля (representative.full_name, representative.role, company.inn)",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "неверный ИНН или роль",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}": {
+            "get": {
+                "description": "Статус заявки (DRAFT → SUBMITTED → ENRICHING → VERIFYING), компания (реквизиты из ЕГРЮЛ — после сбора),\nпредставитель с ролью, сумма и срок, документы и последняя задача на сбор.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Заявка",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки (app_…)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/Application"
+                        }
+                    },
+                    "404": {
+                        "description": "заявки нет",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/questionnaire": {
+            "post": {
+                "description": "Анкета переводит заявку DRAFT → SUBMITTED и ставит задачу на сбор. Worker опрашивает моки\n(заявка ENRICHING, задача RUNNING) и сохраняет ответы (VERIFYING, задача COMPLETED). Следить —\nGET /applications/{id} или GET /collections/{id} из заголовка Location. Анкета по заявке\nотправляется один раз (повтор — 409); для нового сбора зарегистрируйте заявителя ещё раз — будет новый черновик.\n\n**Из Swagger UI:** Try it out → id заявки из ответа POST /applicants → в questionnaire уже подставлена\nанкета сценария A (заявка на ИНН 7799000012; анкеты других сценариев — ниже) → Execute.\nФайлы — в files через Add item: по одному полю на файл.\n\n**Анкета** (часть questionnaire, JSON; ИНН компании берётся из заявки): обязательны age, marital_status,\nchildren_count; product_code, requested, purpose пишутся в заявку. Без остальных данных система\nне опрашивается и попадает в skipped_sources: consents.bki_company и bki_person — БКИ, consents.tax —\nналоговая отчётность, director — Госуслуги и проверки руководителя, other_bank_biks — мультибанкинг,\nmarketplace_tokens — маркетплейсы, ofd_token — ОФД, collateral.cadastral_numbers — ЕГРН.\n\n**Файлы** (части files): до 10, считая подписи, каждый до 20 МБ: pdf, docx, xlsx, jpg, png, xml,\nподписи sig и p7s. Файл приходит целым или парой «документ + открепленная подпись»: balance.pdf +\nbalance.pdf.sig (или balance.sig); подпись без пары — присоединённая (документ внутри). Тип файла —\nв documents анкеты: ` + "`" + `[{\"file_name\": \"balance.pdf\", \"type\": \"FINANCIAL_STATEMENTS\"}]` + "`" + `, без него — OTHER.\nБез файлов анкету можно прислать и как application/json. Одной транзакцией пишутся документы, анкета,\nзадача на сбор и события в outbox (о задаче и о документах — для будущих worker'ов подписи и OCR).\n\n**Примеры анкет** — сценарии mock-api A–E (` + "`" + `examples/scenario-X.json` + "`" + `). Заявку регистрируйте примером того же сценария из POST /applicants: данные в моках привязаны к компании.\n\n**A** — ООО «Северный ветер», ИНН 7799000012, опт продуктов — ожидается OFFERED. В documents указан тип файла: приложите в files ` + "`" + `balance.pdf` + "`" + ` и подпись ` + "`" + `balance.pdf.sig` + "`" + ` из ` + "`" + `examples/files` + "`" + ` или уберите documents.\n\n` + "`" + `` + "`" + `` + "`" + `json\n{\n  \"age\": 42,\n  \"marital_status\": \"MARRIED\",\n  \"children_count\": 2,\n  \"product_code\": \"WORKING_CAPITAL\",\n  \"requested\": {\n    \"amount\": 5000000,\n    \"term_months\": 24\n  },\n  \"purpose\": {\n    \"code\": \"WORKING_CAPITAL\",\n    \"description\": \"Закупка товара под сезон\"\n  },\n  \"documents\": [\n    {\n      \"file_name\": \"balance.pdf\",\n      \"type\": \"FINANCIAL_STATEMENTS\"\n    }\n  ],\n  \"director\": {\n    \"inn\": \"779900010139\",\n    \"last_name\": \"Ковалёв\",\n    \"first_name\": \"Игорь\",\n    \"middle_name\": \"Сергеевич\",\n    \"birth_date\": \"1984-07-19\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000781\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000782\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000781\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  },\n  \"other_bank_biks\": [\n    \"044525225\"\n  ],\n  \"ofd_token\": \"demo-ofd-token\",\n  \"poa_number\": \"0f5a2c1e-7b3d-4e8a-9c21-6d4b8e0a1f37\",\n  \"representative_inn\": \"779900010333\"\n}\n` + "`" + `` + "`" + `` + "`" + `\n\n**B** — ООО «Стройресурс», ИНН 7799000020, стройка — OFFERED, но меньше сумма или дольше срок.\n\n` + "`" + `` + "`" + `` + "`" + `json\n{\n  \"age\": 47,\n  \"marital_status\": \"MARRIED\",\n  \"children_count\": 3,\n  \"director\": {\n    \"inn\": \"779900020136\",\n    \"last_name\": \"Орлов\",\n    \"first_name\": \"Денис\",\n    \"middle_name\": \"Павлович\",\n    \"birth_date\": \"1979-02-11\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000801\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000802\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000801\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  },\n  \"other_bank_biks\": [\n    \"044525777\",\n    \"044525650\"\n  ],\n  \"collateral\": {\n    \"cadastral_numbers\": [\n      \"50:21:0110203:845\",\n      \"50:21:0110203:412\"\n    ],\n    \"vins\": [\n      \"XTC652005N1498213\"\n    ],\n    \"serials\": [\n      \"JCB3CX2023118457\"\n    ]\n  }\n}\n` + "`" + `` + "`" + `` + "`" + `\n\n**C** — ООО «Альтаир», ИНН 7799000037, опт — REJECTED.\n\n` + "`" + `` + "`" + `` + "`" + `json\n{\n  \"age\": 37,\n  \"marital_status\": \"DIVORCED\",\n  \"children_count\": 1,\n  \"director\": {\n    \"inn\": \"779900030147\",\n    \"last_name\": \"Белов\",\n    \"first_name\": \"Артём\",\n    \"middle_name\": \"Николаевич\",\n    \"birth_date\": \"1988-11-03\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000821\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000822\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000821\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  }\n}\n` + "`" + `` + "`" + `` + "`" + `\n\n**D** — ИП Смирнова А. В., ИНН 779900010202, интернет-торговля — WAITING_FOR_INFO.\n\n` + "`" + `` + "`" + `` + "`" + `json\n{\n  \"age\": 33,\n  \"marital_status\": \"SINGLE\",\n  \"children_count\": 0,\n  \"director\": {\n    \"inn\": \"779900010202\",\n    \"last_name\": \"Смирнова\",\n    \"first_name\": \"Анна\",\n    \"middle_name\": \"Викторовна\",\n    \"birth_date\": \"1993-05-27\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000841\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000842\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000841\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  },\n  \"marketplace_tokens\": {\n    \"wildberries\": \"demo-wb-token\",\n    \"ozon\": \"demo-ozon-token\"\n  }\n}\n` + "`" + `` + "`" + `` + "`" + `\n\n**E** — ООО «Техно-Сервис», ИНН 7799000044, ремонт оборудования — MANUAL_REVIEW.\n\n` + "`" + `` + "`" + `` + "`" + `json\n{\n  \"age\": 45,\n  \"marital_status\": \"MARRIED\",\n  \"children_count\": 2,\n  \"director\": {\n    \"inn\": \"779900040158\",\n    \"last_name\": \"Зайцева\",\n    \"first_name\": \"Ольга\",\n    \"middle_name\": \"Михайловна\",\n    \"birth_date\": \"1981-09-14\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000861\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000862\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000861\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  }\n}\n` + "`" + `` + "`" + `` + "`" + `\n",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "questionnaires"
+                ],
+                "summary": "Отправить анкету: заявка выходит из DRAFT, начинается сбор данных из моков",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки (app_…)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "x-example": "{\"age\":42,\"marital_status\":\"MARRIED\",\"children_count\":2,\"product_code\":\"WORKING_CAPITAL\",\"requested\":{\"amount\":5000000,\"term_months\":24},\"purpose\":{\"code\":\"WORKING_CAPITAL\",\"description\":\"Закупка товара под сезон\"},\"director\":{\"inn\":\"779900010139\",\"last_name\":\"Ковалёв\",\"first_name\":\"Игорь\",\"middle_name\":\"Сергеевич\",\"birth_date\":\"1984-07-19\"},\"consents\":{\"bki_company\":{\"id\":\"CNS-2026-000781\",\"signed_at\":\"2026-10-21T14:02:11Z\",\"valid_until\":\"2027-04-21\"},\"bki_person\":{\"id\":\"CNS-2026-000782\",\"signed_at\":\"2026-10-21T14:02:40Z\",\"valid_until\":\"2027-04-21\"},\"tax\":{\"id\":\"TAX-CNS-2026-000781\",\"signed_at\":\"2026-10-21T14:03:02Z\",\"valid_until\":\"2027-04-21\",\"scope\":[\"DECLARATIONS\",\"ENS_BALANCE\"]}},\"other_bank_biks\":[\"044525225\"],\"ofd_token\":\"demo-ofd-token\",\"poa_number\":\"0f5a2c1e-7b3d-4e8a-9c21-6d4b8e0a1f37\",\"representative_inn\":\"779900010333\"}",
+                        "description": "JSON анкеты. Подставлен сценарий A без файлов — для заявки на ИНН 7799000012; другие сценарии — в описании",
+                        "name": "questionnaire",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "file"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "до 10 файлов, считая подписи; документ и его подпись — balance.pdf и balance.pdf.sig",
+                        "name": "files",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/QuestionnaireSubmitted"
+                        },
+                        "headers": {
+                            "Location": {
+                                "type": "string",
+                                "description": "/api/v1/collections/{id} — состояние задачи на сбор"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "битый JSON или multipart, нет обязательного поля (age, marital_status, children_count) или неверный тип",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "заявки нет",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "анкету по заявке уже отправили",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "413": {
+                        "description": "запрос больше лимита",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "415": {
+                        "description": "не multipart/form-data и не application/json",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "нарушено правило анкеты или файлов: формат, размер, пары подписей, больше 10 файлов",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/check-mock": {
             "get": {
                 "description": "Параллельно опрашивает 5 систем банка (эмулятор mock-api) и возвращает их ответы как есть.\nСекция системы, которая не ответила, — null; причина — в sources.",
@@ -103,99 +300,99 @@ const docTemplate = `{
                     }
                 }
             }
-        },
-        "/questionnaires": {
-            "post": {
-                "description": "Проверяет анкету и данные для сбора, сохраняет анкету и создаёт задачу на сбор (status=PENDING)\nвместе с событием в outbox — одной транзакцией. Publisher отправляет событие в Kafka, worker\nопрашивает все внешние системы (эмулятор mock-api) и пишет сырые ответы строкой в raw_collections.\nСостояние сбора — GET /collections/{id} (ссылка в заголовке Location).\nСистемы без нужных данных (нет согласия, токена, залога, банков) не опрашиваются: они перечислены в skipped_sources.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "questionnaires"
-                ],
-                "summary": "Принять анкету и поставить сбор данных о компании в очередь",
-                "parameters": [
-                    {
-                        "description": "Анкета и данные для сбора",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/CreateQuestionnaireRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "202": {
-                        "description": "Accepted",
-                        "schema": {
-                            "$ref": "#/definitions/Questionnaire"
-                        },
-                        "headers": {
-                            "Location": {
-                                "type": "string",
-                                "description": "/api/v1/collections/{id} — состояние задачи на сбор"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "битый JSON, нет обязательного поля (age, marital_status, children_count, inn) или неверный тип",
-                        "schema": {
-                            "$ref": "#/definitions/Problem"
-                        }
-                    },
-                    "422": {
-                        "description": "нарушено правило анкеты или неверный формат данных для сбора (ИНН, БИК, VIN, даты)",
-                        "schema": {
-                            "$ref": "#/definitions/Problem"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/Problem"
-                        }
-                    }
-                }
-            }
         }
     },
     "definitions": {
-        "Collateral": {
+        "Applicant": {
             "type": "object",
             "properties": {
-                "cadastral_numbers": {
-                    "description": "недвижимость → ЕГРН",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "50:21:0110203:845"
-                    ]
+                "already_known": {
+                    "description": "Только в ответе на регистрацию: компания уже была в системе и переиспользована.",
+                    "type": "boolean"
                 },
-                "serials": {
-                    "description": "техника → реестр залогов",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "JCB3CX2023118457"
-                    ]
+                "id": {
+                    "type": "string",
+                    "example": "apl_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"
                 },
-                "vins": {
-                    "description": "транспорт → реестр залогов",
+                "inn": {
+                    "type": "string",
+                    "example": "7799000012"
+                },
+                "name": {
+                    "description": "До сбора — из регистрации (или «ИНН …»), после — из ЕГРЮЛ.",
+                    "type": "string",
+                    "example": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+                },
+                "ogrn": {
+                    "type": "string",
+                    "example": "1217700412345"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "LEGAL_ENTITY",
+                        "SOLE_PROPRIETOR"
+                    ]
+                }
+            }
+        },
+        "Application": {
+            "type": "object",
+            "properties": {
+                "applicant": {
+                    "$ref": "#/definitions/Applicant"
+                },
+                "collection_task_id": {
+                    "description": "Последняя задача на сбор: GET /collections/{id}.",
+                    "type": "string",
+                    "example": "tsk_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "documents": {
                     "type": "array",
                     "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "XTC652005N1498213"
-                    ]
+                        "$ref": "#/definitions/Document"
+                    }
+                },
+                "id": {
+                    "type": "string",
+                    "example": "app_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"
+                },
+                "number": {
+                    "type": "string",
+                    "example": "A-2026-000001"
+                },
+                "product_code": {
+                    "type": "string",
+                    "example": "WORKING_CAPITAL"
+                },
+                "purpose": {
+                    "$ref": "#/definitions/Purpose"
+                },
+                "representative": {
+                    "$ref": "#/definitions/Representative"
+                },
+                "requested": {
+                    "$ref": "#/definitions/RequestedTerms"
+                },
+                "status": {
+                    "description": "DRAFT — создана при регистрации, SUBMITTED — анкета отправлена, ENRICHING — идёт сбор данных,\nVERIFYING — данные собраны.",
+                    "type": "string",
+                    "enum": [
+                        "DRAFT",
+                        "SUBMITTED",
+                        "ENRICHING",
+                        "VERIFYING"
+                    ],
+                    "example": "DRAFT"
+                },
+                "submitted_at": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -252,6 +449,10 @@ const docTemplate = `{
         "CollectionTask": {
             "type": "object",
             "properties": {
+                "application_id": {
+                    "type": "string",
+                    "example": "app_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"
+                },
                 "attempts": {
                     "description": "сколько раз worker брал задачу",
                     "type": "integer",
@@ -259,6 +460,13 @@ const docTemplate = `{
                 },
                 "created_at": {
                     "type": "string"
+                },
+                "document_ids": {
+                    "description": "Документы, пришедшие с анкетой.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "error": {
                     "description": "почему FAILED",
@@ -317,140 +525,75 @@ const docTemplate = `{
                 }
             }
         },
-        "Consent": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string",
-                    "example": "CNS-2026-000781"
-                },
-                "scope": {
-                    "description": "только у consents.tax",
-                    "type": "array",
-                    "items": {
-                        "type": "string",
-                        "enum": [
-                            "DECLARATIONS",
-                            "ENS_BALANCE"
-                        ]
-                    }
-                },
-                "signed_at": {
-                    "type": "string",
-                    "example": "2026-10-21T14:02:11Z"
-                },
-                "valid_until": {
-                    "type": "string",
-                    "example": "2027-04-21"
-                }
-            }
-        },
-        "Consents": {
-            "type": "object",
-            "properties": {
-                "bki_company": {
-                    "description": "компании на запрос в БКИ",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/Consent"
-                        }
-                    ]
-                },
-                "bki_person": {
-                    "description": "руководителя на запрос в БКИ",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/Consent"
-                        }
-                    ]
-                },
-                "tax": {
-                    "description": "на налоговую отчётность",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/Consent"
-                        }
-                    ]
-                }
-            }
-        },
-        "CreateQuestionnaireRequest": {
+        "CompanyInput": {
             "type": "object",
             "required": [
-                "age",
-                "children_count",
-                "inn",
-                "marital_status"
+                "inn"
             ],
             "properties": {
-                "age": {
-                    "type": "integer",
-                    "maximum": 100,
-                    "minimum": 18,
-                    "example": 42
-                },
-                "children_count": {
-                    "type": "integer",
-                    "maximum": 20,
-                    "minimum": 0,
-                    "example": 2
-                },
-                "collateral": {
-                    "$ref": "#/definitions/Collateral"
-                },
-                "consents": {
-                    "$ref": "#/definitions/Consents"
-                },
-                "director": {
-                    "description": "Руководитель; у ИП — сам предприниматель. Без него не запрашиваются данные физлица:\nБКИ, ФССП, Федресурс, Госуслуги, дисквалификация, санкции.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/Person"
-                        }
-                    ]
-                },
                 "inn": {
-                    "description": "ИНН компании (10 цифр) или ИП (12 цифр) — ключ ко всем системам.",
+                    "description": "10 цифр — ЮЛ, 12 — ИП",
                     "type": "string",
                     "example": "7799000012"
                 },
-                "marital_status": {
+                "name": {
+                    "description": "Название, если известно. После сбора данных заменится названием из ЕГРЮЛ.",
+                    "type": "string",
+                    "example": "ООО «Северный ветер»"
+                }
+            }
+        },
+        "Document": {
+            "type": "object",
+            "properties": {
+                "file_name": {
+                    "type": "string",
+                    "example": "balance.pdf"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "doc_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"
+                },
+                "mime_type": {
+                    "type": "string",
+                    "example": "application/pdf"
+                },
+                "recognition_state": {
                     "type": "string",
                     "enum": [
-                        "SINGLE",
-                        "MARRIED",
-                        "DIVORCED",
-                        "DIVORCED_MULTIPLE"
-                    ],
-                    "example": "MARRIED"
-                },
-                "marketplace_tokens": {
-                    "description": "Токены продавца: {\"wildberries\": \"…\", \"ozon\": \"…\"}. Мок принимает любой непустой токен (кроме начинающегося с invalid).",
-                    "type": "object"
-                },
-                "ofd_token": {
-                    "description": "Токен оператора фискальных данных (онлайн-кассы).",
-                    "type": "string",
-                    "example": "demo-ofd-token"
-                },
-                "other_bank_biks": {
-                    "description": "БИК банков, где у клиента ещё есть счета: мультибанкинг и блокировки ФНС.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "044525225"
+                        "NOT_APPLICABLE",
+                        "PENDING",
+                        "PROCESSING",
+                        "DONE",
+                        "FAILED"
                     ]
                 },
-                "poa_number": {
-                    "description": "Номер МЧД, если заявку подаёт представитель, и его ИНН.",
-                    "type": "string",
-                    "example": "0f5a2c1e-7b3d-4e8a-9c21-6d4b8e0a1f37"
+                "sha256": {
+                    "type": "string"
                 },
-                "representative_inn": {
+                "signature_state": {
                     "type": "string",
-                    "example": "779900010333"
+                    "enum": [
+                        "NOT_SIGNED",
+                        "PENDING",
+                        "DONE",
+                        "FAILED"
+                    ]
+                },
+                "signed_document_id": {
+                    "description": "У открепленной подписи (type=SIGNATURE) — какой документ она подписывает.",
+                    "type": "string"
+                },
+                "size_bytes": {
+                    "type": "integer",
+                    "example": 48213
+                },
+                "type": {
+                    "type": "string",
+                    "example": "FINANCIAL_STATEMENTS"
+                },
+                "uploaded_at": {
+                    "type": "string"
                 }
             }
         },
@@ -480,31 +623,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/SourceResult"
                     }
-                }
-            }
-        },
-        "Person": {
-            "type": "object",
-            "properties": {
-                "birth_date": {
-                    "type": "string",
-                    "example": "1984-07-19"
-                },
-                "first_name": {
-                    "type": "string",
-                    "example": "Игорь"
-                },
-                "inn": {
-                    "type": "string",
-                    "example": "779900010139"
-                },
-                "last_name": {
-                    "type": "string",
-                    "example": "Ковалёв"
-                },
-                "middle_name": {
-                    "type": "string",
-                    "example": "Сергеевич"
                 }
             }
         },
@@ -548,6 +666,29 @@ const docTemplate = `{
                 }
             }
         },
+        "Purpose": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "enum": [
+                        "WORKING_CAPITAL",
+                        "EQUIPMENT",
+                        "VEHICLE",
+                        "REAL_ESTATE",
+                        "REFINANCING",
+                        "BUSINESS_EXPANSION",
+                        "TENDER",
+                        "OTHER"
+                    ],
+                    "example": "WORKING_CAPITAL"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Закупка товара под сезон"
+                }
+            }
+        },
         "Questionnaire": {
             "type": "object",
             "properties": {
@@ -557,17 +698,122 @@ const docTemplate = `{
                 "children_count": {
                     "type": "integer"
                 },
-                "collection": {
-                    "$ref": "#/definitions/CollectionTask"
-                },
                 "created_at": {
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "qst_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"
                 },
                 "marital_status": {
                     "type": "string"
+                }
+            }
+        },
+        "QuestionnaireSubmitted": {
+            "type": "object",
+            "properties": {
+                "application": {
+                    "$ref": "#/definitions/Application"
+                },
+                "collection": {
+                    "$ref": "#/definitions/CollectionTask"
+                },
+                "questionnaire": {
+                    "$ref": "#/definitions/Questionnaire"
+                }
+            }
+        },
+        "RegisterApplicantRequest": {
+            "type": "object",
+            "required": [
+                "company",
+                "representative"
+            ],
+            "properties": {
+                "company": {
+                    "$ref": "#/definitions/CompanyInput"
+                },
+                "representative": {
+                    "$ref": "#/definitions/RepresentativeInput"
+                }
+            }
+        },
+        "Representative": {
+            "type": "object",
+            "properties": {
+                "can_sign": {
+                    "description": "Может подписать договор без доверенности: директор, у ИП — сам предприниматель.",
+                    "type": "boolean"
+                },
+                "full_name": {
+                    "type": "string",
+                    "example": "Литвинова Марина Олеговна"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "usr_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"
+                },
+                "inn": {
+                    "type": "string",
+                    "example": "779900010333"
+                },
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "OWNER",
+                        "DIRECTOR",
+                        "CFO",
+                        "ACCOUNTANT",
+                        "FINANCE_EMPLOYEE",
+                        "BANKING_EMPLOYEE",
+                        "AUTHORIZED_EMPLOYEE"
+                    ]
+                }
+            }
+        },
+        "RepresentativeInput": {
+            "type": "object",
+            "required": [
+                "full_name",
+                "role"
+            ],
+            "properties": {
+                "full_name": {
+                    "type": "string",
+                    "example": "Литвинова Марина Олеговна"
+                },
+                "inn": {
+                    "description": "ИНН физлица (12 цифр), необязательно. По нему находится уже зарегистрированный пользователь.",
+                    "type": "string",
+                    "example": "779900010333"
+                },
+                "role": {
+                    "description": "OWNER — собственник бизнеса, DIRECTOR — генеральный директор, CFO / ACCOUNTANT — финансовый директор\nили бухгалтер, FINANCE_EMPLOYEE — сотрудник, отвечающий за финансирование, BANKING_EMPLOYEE — сотрудник,\nработающий с банковскими продуктами, AUTHORIZED_EMPLOYEE — иной уполномоченный сотрудник.",
+                    "type": "string",
+                    "enum": [
+                        "OWNER",
+                        "DIRECTOR",
+                        "CFO",
+                        "ACCOUNTANT",
+                        "FINANCE_EMPLOYEE",
+                        "BANKING_EMPLOYEE",
+                        "AUTHORIZED_EMPLOYEE"
+                    ],
+                    "example": "ACCOUNTANT"
+                }
+            }
+        },
+        "RequestedTerms": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 5000000
+                },
+                "term_months": {
+                    "type": "integer",
+                    "example": 24
                 }
             }
         },
@@ -1139,7 +1385,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "data-collector API",
-	Description:      "Сбор данных о заёмщике для скоринга: анкета клиента и сырые ответы всех внешних систем (эмулятор mock-api).\nСбор асинхронный: анкета ставит задачу в очередь (outbox → Kafka), системы опрашивает worker.\nОшибки — RFC 9457 (`application/problem+json`).",
+	Description:      "Сбор данных о заёмщике для скоринга: заявитель и компания, анкета с документами и сырые ответы\nвсех внешних систем (эмулятор mock-api). Сначала регистрация (POST /applicants → черновик заявки),\nзатем анкета с файлами (POST /applications/{id}/questionnaire). Сбор асинхронный: анкета ставит\nзадачу в очередь (outbox → Kafka), системы опрашивает worker.\nОшибки — RFC 9457 (`application/problem+json`).",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

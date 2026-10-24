@@ -16,9 +16,9 @@ const maxErrorBackoff = 5 * time.Second
 
 // Store — таблица outbox. Объявлено у потребителя.
 type Store interface {
-	// PublishBatch берёт до limit неопубликованных событий топика, вызывает publish и при
+	// PublishBatch берёт до limit неопубликованных событий топиков, вызывает publish и при
 	// успехе помечает их опубликованными. Возвращает, сколько опубликовано.
-	PublishBatch(ctx context.Context, topic string, limit int, publish func(context.Context, []events.Message) error) (int, error)
+	PublishBatch(ctx context.Context, topics []string, limit int, publish func(context.Context, []events.Message) error) (int, error)
 }
 
 // Producer — брокер сообщений.
@@ -28,7 +28,7 @@ type Producer interface {
 
 // Config — настройки публикации.
 type Config struct {
-	Topic          string        // какие события публиковать
+	Topics         []string      // события каких топиков публиковать
 	BatchSize      int           // событий за один круг
 	PollInterval   time.Duration // пауза, когда публиковать нечего или публикация не удалась
 	PublishTimeout time.Duration // на отправку пачки брокеру
@@ -62,7 +62,7 @@ func (p *Publisher) Run(ctx context.Context) error {
 		case err != nil:
 			pause = backoff
 			backoff = min(2*backoff, max(p.cfg.PollInterval, maxErrorBackoff))
-			p.log.ErrorContext(ctx, "publish outbox", "topic", p.cfg.Topic, "err", err, "retry_in", pause)
+			p.log.ErrorContext(ctx, "publish outbox", "topics", p.cfg.Topics, "err", err, "retry_in", pause)
 		case n == p.cfg.BatchSize:
 			backoff = p.cfg.PollInterval
 			continue
@@ -79,13 +79,13 @@ func (p *Publisher) Run(ctx context.Context) error {
 
 // PublishOnce публикует одну пачку событий и возвращает, сколько опубликовано.
 func (p *Publisher) PublishOnce(ctx context.Context) (int, error) {
-	n, err := p.store.PublishBatch(ctx, p.cfg.Topic, p.cfg.BatchSize, func(ctx context.Context, msgs []events.Message) error {
+	n, err := p.store.PublishBatch(ctx, p.cfg.Topics, p.cfg.BatchSize, func(ctx context.Context, msgs []events.Message) error {
 		ctx, cancel := context.WithTimeout(ctx, p.cfg.PublishTimeout)
 		defer cancel()
 		return p.producer.Publish(ctx, msgs)
 	})
 	if n > 0 {
-		p.log.InfoContext(ctx, "outbox published", "topic", p.cfg.Topic, "events", n)
+		p.log.InfoContext(ctx, "outbox published", "topics", p.cfg.Topics, "events", n)
 	}
 	return n, err
 }

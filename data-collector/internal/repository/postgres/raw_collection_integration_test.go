@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/domain"
@@ -37,6 +38,15 @@ func testPool(t *testing.T) *pgxpool.Pool {
 // testSuffix — уникальная часть id и топиков теста.
 func testSuffix() string { return "it_" + time.Now().UTC().Format("20060102150405.000000000") }
 
+// createTask вставляет задачу и событие о ней так же, как это делает отправка анкеты.
+func createTask(t *testing.T, pool *pgxpool.Pool, topic string, task domain.CollectionTask) {
+	t.Helper()
+	ctx := context.Background()
+	if err := pgx.BeginFunc(ctx, pool, func(tx pgx.Tx) error { return insertTask(ctx, tx, task, topic) }); err != nil {
+		t.Fatal(err)
+	}
+}
+
 // cleanupTasks удаляет после теста результаты, события и сами задачи (до закрытия пула).
 func cleanupTasks(t *testing.T, pool *pgxpool.Pool, topic string, taskIDs ...string) {
 	t.Helper()
@@ -58,14 +68,12 @@ func TestIntegrationComplete(t *testing.T) {
 	ctx := context.Background()
 	suffix := testSuffix()
 	taskID, topic := "tsk_"+suffix, "it.collection-tasks."+suffix
-	repo := NewCollectionTaskRepository(pool, topic)
+	repo := NewCollectionTaskRepository(pool)
 	cleanupTasks(t, pool, topic, taskID)
 
 	in := domain.CollectInput{INN: "7799000012", OFDToken: "secret-ofd",
 		Director: &domain.Person{INN: "779900010139", LastName: "Ковалёв", FirstName: "Игорь", BirthDate: "1984-07-19"}}
-	if err := repo.Create(ctx, domain.CollectionTask{ID: taskID, QuestionnaireID: "qst_it", Input: in, CreatedAt: time.Now().UTC()}); err != nil {
-		t.Fatal(err)
-	}
+	createTask(t, pool, topic, domain.CollectionTask{ID: taskID, QuestionnaireID: "qst_it", Input: in, CreatedAt: time.Now().UTC()})
 	task, ok, err := repo.Claim(ctx, taskID, 3)
 	if err != nil || !ok {
 		t.Fatalf("claim: %v (ok %v)", err, ok)
@@ -80,7 +88,7 @@ func TestIntegrationComplete(t *testing.T) {
 		},
 		StartedAt: time.Now().UTC(), FinishedAt: time.Now().UTC(),
 	}
-	if err := repo.Complete(ctx, rc); err != nil {
+	if err := repo.Complete(ctx, rc, nil); err != nil {
 		t.Fatal(err)
 	}
 

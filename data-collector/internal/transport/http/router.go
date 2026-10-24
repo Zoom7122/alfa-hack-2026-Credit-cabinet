@@ -15,12 +15,16 @@ import (
 	_ "github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/docs" // спецификация, сгенерированная `make swagger`
 )
 
-// collectionsPath — путь задач на сбор; POST /questionnaires отдаёт ссылку на задачу в Location.
-const collectionsPath = "/api/v1/collections"
+// Пути для заголовка Location: регистрация ссылается на заявку, анкета — на задачу на сбор.
+const (
+	applicationsPath = "/api/v1/applications"
+	collectionsPath  = "/api/v1/collections"
+)
 
 // NewRouter — единственное место, где перечислены все эндпоинты data-collector.
 // Новая ручка = метод в хендлере + строка здесь.
-func NewRouter(questionnaires *QuestionnaireHandler, collections *CollectionHandler, internalData *InternalDataHandler) *gin.Engine {
+func NewRouter(applications *ApplicationHandler, questionnaires *QuestionnaireHandler, collections *CollectionHandler,
+	internalData *InternalDataHandler) *gin.Engine {
 	useJSONFieldNames()
 
 	r := gin.New()
@@ -31,7 +35,9 @@ func NewRouter(questionnaires *QuestionnaireHandler, collections *CollectionHand
 
 	api := r.Group("/api/v1")
 	{
-		api.POST("/questionnaires", questionnaires.create)
+		api.POST("/applicants", applications.register)
+		api.GET("/applications/:id", applications.get)
+		api.POST("/applications/:id/questionnaire", questionnaires.submit)
 		api.GET("/collections/:id", collections.get)
 		api.GET("/check-mock", internalData.checkMock)
 	}

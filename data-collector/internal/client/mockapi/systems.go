@@ -497,6 +497,42 @@ func companyName(fnsData json.RawMessage) string {
 	return strings.TrimSpace(strings.TrimPrefix(name, "Индивидуальный предприниматель"))
 }
 
+// CompanyCard — реквизиты компании из первой строки выписки ЕГРЮЛ/ЕГРИП в данных ФНС.
+// false — ЕГРЮЛ не ответил или компании там нет.
+func (*Client) CompanyCard(fnsData json.RawMessage) (domain.CompanyCard, bool) {
+	var d struct {
+		EGRUL struct {
+			Rows []struct {
+				C  string `json:"c"`  // короткое имя
+				N  string `json:"n"`  // полное имя
+				I  string `json:"i"`  // ИНН
+				O  string `json:"o"`  // ОГРН / ОГРНИП
+				P  string `json:"p"`  // КПП
+				R  string `json:"r"`  // дата регистрации ДД.ММ.ГГГГ
+				G  string `json:"g"`  // «ГЕНЕРАЛЬНЫЙ ДИРЕКТОР: ФИО»
+				K  string `json:"k"`  // ul — юрлицо, fl — ИП
+				RN string `json:"rn"` // регион
+			} `json:"rows"`
+		} `json:"egrul"`
+	}
+	if len(fnsData) == 0 || json.Unmarshal(fnsData, &d) != nil || len(d.EGRUL.Rows) == 0 || d.EGRUL.Rows[0].I == "" {
+		return domain.CompanyCard{}, false
+	}
+	row := d.EGRUL.Rows[0]
+	card := domain.CompanyCard{INN: row.I, Type: domain.CompanyLegalEntity, OGRN: row.O, KPP: row.P,
+		FullName: row.N, ShortName: row.C, Region: row.RN}
+	if row.K == "fl" {
+		card.Type = domain.CompanySoleProprietor
+	}
+	if t, err := time.Parse("02.01.2006", row.R); err == nil {
+		card.RegistrationDate = t.Format(time.DateOnly)
+	}
+	if _, name, ok := strings.Cut(row.G, ":"); ok {
+		card.DirectorName = strings.TrimSpace(name)
+	}
+	return card, true
+}
+
 // matchEmployer — id работодателя с тем же названием, что у компании; "" — совпадения нет.
 func matchEmployer(raw json.RawMessage, name string) string {
 	var s struct {

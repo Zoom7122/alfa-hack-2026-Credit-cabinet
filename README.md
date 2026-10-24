@@ -13,8 +13,8 @@ make help    # остальные команды
 |---|---|---|
 | postgres | `localhost:${POSTGRES_PORT}` (5432) | общая БД |
 | migrate | — | накатывает миграции из [db/](db/) и завершается |
-| data-collector | http://localhost:8081 | сбор данных для скоринга: `POST /api/v1/questionnaires` ставит задачу на сбор (outbox → Kafka), состояние — `GET /api/v1/collections/{id}`; [data-collector/](data-collector/), Swagger UI — http://localhost:8081/swagger/index.html |
-| data-collector-publisher | — | переносит события о задачах из таблицы `outbox` в Kafka |
+| data-collector | http://localhost:8081 | сбор данных для скоринга: регистрация заявителя `POST /api/v1/applicants`, анкета с документами `POST /api/v1/applications/{id}/questionnaire` ставит задачу на сбор (outbox → Kafka), состояние — `GET /api/v1/applications/{id}`, `GET /api/v1/collections/{id}`; файлы — в volume `documents`; [data-collector/](data-collector/), Swagger UI — http://localhost:8081/swagger/index.html |
+| data-collector-publisher | — | переносит события о задачах и документах из таблицы `outbox` в Kafka |
 | data-collector-worker | — | читает задачи из Kafka, опрашивает все моки и пишет сырые ответы в `raw_collections` |
 | kafka | `localhost:${KAFKA_PORT}` (9094) | брокер сообщений (KRaft, один узел); внутри compose — `kafka:9092` |
 | kafka-ui | http://localhost:8086 | топики, сообщения и лаг consumer group в браузере |

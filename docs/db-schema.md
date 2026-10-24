@@ -36,6 +36,8 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 | `persona` | text | ✔ | что демонстрирует пользователь (`/auth/test-users`) |
 | `created_at` | timestamptz | | |
 
+Индексы: уникальный `(inn) where role = 'CLIENT' and inn is not null` — клиент с тем же ИНН ФЛ один (регистрация в data-collector его находит).
+
 ### companies
 
 Компания или ИП, одна строка на ИНН. Вторая заявка той же компании переиспользует строку и свежие снапшоты.
@@ -62,7 +64,7 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 |---|---|---|---|
 | `user_id` | text | | PK, FK → `users` |
 | `company_id` | text | | PK, FK → `companies` |
-| `role` | text | | `DIRECTOR`, `OWNER`, `CFO`, `ACCOUNTANT`, `AUTHORIZED_EMPLOYEE` |
+| `role` | text | | `OWNER` (собственник), `DIRECTOR` (генеральный директор), `CFO` / `ACCOUNTANT` (финансовый директор или бухгалтер), `FINANCE_EMPLOYEE` (отвечает за финансирование), `BANKING_EMPLOYEE` (работает с банковскими продуктами), `AUTHORIZED_EMPLOYEE` (иной уполномоченный сотрудник) |
 | `can_sign` | boolean | | `true` только у действующего директора ЮЛ или у самого ИП |
 
 ### applications
@@ -164,13 +166,15 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 
 ### collection_tasks
 
-Задача на сбор данных data-collector: строка на анкету, принятую `POST /api/v1/questionnaires`. Создаётся одной транзакцией с событием в `outbox`. Выполняет её worker по событию из Kafka: `PENDING` → `RUNNING` → `COMPLETED`, результат — строка `raw_collections`.
+Задача на сбор данных data-collector: строка на анкету, принятую `POST /api/v1/applications/{id}/questionnaire`. Создаётся одной транзакцией с отправкой заявки и событием в `outbox`. Выполняет её worker по событию из Kafka: `PENDING` → `RUNNING` → `COMPLETED` (заявка — `ENRICHING` → `VERIFYING`), результат — строка `raw_collections`.
 
 | Колонка | Тип | Null | Описание |
 |---|---|---|---|
 | `id` | text | | PK, `tsk_<ULID>` |
-| `questionnaire_id` | text | | `qst_<ULID>`. Без FK: анкеты пока хранятся в памяти data-collector |
+| `application_id` | text | ✔ | FK → `applications`. `NULL` — задачи, созданные до заявок |
+| `questionnaire_id` | text | | `qst_<ULID>`; анкета лежит в `applications.form` |
 | `inn` | text | | ИНН компании или ИП, `CHECK` 10 или 12 цифр |
+| `document_ids` | text[] | | документы (`documents.id`), пришедшие с анкетой |
 | `status` | text | | `PENDING`, `RUNNING`, `COMPLETED`, `FAILED` |
 | `request` | jsonb | | входные данные сбора без токенов, как `raw_collections.request` |
 | `secrets` | jsonb | ✔ | токены маркетплейсов и ОФД для worker'а. `NULL` — токенов нет или задача завершена |
@@ -182,7 +186,7 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 | `finished_at` | timestamptz | ✔ | |
 | `updated_at` | timestamptz | | |
 
-Индексы: `(questionnaire_id)`, `(status, created_at)`.
+Индексы: `(questionnaire_id)`, `(status, created_at)`, `(application_id)`.
 
 ### outbox
 

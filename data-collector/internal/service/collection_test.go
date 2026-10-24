@@ -81,23 +81,6 @@ func TestValidateCollectInput(t *testing.T) {
 	}
 }
 
-// ctxTasks — хранилище задач, которое запоминает контекст записи; err — ошибка записи.
-type ctxTasks struct {
-	*memory.CollectionTaskRepository
-	err         error
-	gotCanceled bool
-	gotDeadline bool
-}
-
-func (r *ctxTasks) Create(ctx context.Context, task domain.CollectionTask) error {
-	r.gotCanceled = ctx.Err() != nil
-	_, r.gotDeadline = ctx.Deadline()
-	if r.err != nil {
-		return r.err
-	}
-	return r.CollectionTaskRepository.Create(ctx, task)
-}
-
 func newCollectionService(tasks service.TaskRepository) *service.CollectionService {
 	return service.NewCollectionService(tasks,
 		service.WithCollectionClock(func() time.Time { return time.Date(2026, 10, 22, 12, 0, 0, 0, time.FixedZone("MSK", 3*3600)) }),
@@ -105,18 +88,15 @@ func newCollectionService(tasks service.TaskRepository) *service.CollectionServi
 	)
 }
 
-func TestEnqueue(t *testing.T) {
-	tasks := memory.NewCollectionTaskRepository()
+func TestNewTask(t *testing.T) {
 	in := fullInput()
 	in.INN = " 7799000020 "
 	in.OtherBankBIKs = []string{"044525777", " 044525777", "044525650"}
 	in.Collateral.VINs = []string{"xtc652005n1498213"}
 	in.POANumber = "0F5A2C1E-7B3D-4E8A-9C21-6D4B8E0A1F37"
 
-	task, err := newCollectionService(tasks).Enqueue(context.Background(), "qst_test", in)
-	if err != nil {
-		t.Fatal(err)
-	}
+	task := newCollectionService(memory.NewCollectionTaskRepository()).NewTask("qst_test", in)
+
 	if task.ID != "tsk_test" || task.QuestionnaireID != "qst_test" || task.Status != domain.TaskPending ||
 		!task.CreatedAt.Equal(time.Date(2026, 10, 22, 9, 0, 0, 0, time.UTC)) || task.CreatedAt.Location() != time.UTC {
 		t.Fatalf("task = %+v", task)
@@ -128,52 +108,15 @@ func TestEnqueue(t *testing.T) {
 		got.MarketplaceTokens["wildberries"] != "wb-token" || len(task.Skipped) != 0 {
 		t.Fatalf("task input = %+v, skipped %v", got, task.Skipped)
 	}
-
-	saved, ok, err := tasks.Get(context.Background(), "tsk_test")
-	if err != nil || !ok || saved.Status != domain.TaskPending || saved.Input.INN != "7799000020" {
-		t.Fatalf("saved = %+v (found %v, err %v)", saved, ok, err)
-	}
-	if out := tasks.Outbox(); len(out) != 1 || out[0].Key != "tsk_test" {
-		t.Fatalf("outbox = %+v", out)
-	}
 }
 
 // Только ИНН: системы без данных перечислены в Skipped в порядке колонок raw_collections.
-func TestEnqueueSkipsSystemsWithoutInput(t *testing.T) {
-	task, err := newCollectionService(memory.NewCollectionTaskRepository()).Enqueue(context.Background(), "qst_test",
-		domain.CollectInput{INN: "7799000012"})
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestNewTaskSkipsSystemsWithoutInput(t *testing.T) {
+	task := newCollectionService(memory.NewCollectionTaskRepository()).NewTask("qst_test", domain.CollectInput{INN: "7799000012"})
 	want := []domain.System{domain.SystemBKI, domain.SystemTaxReports, domain.SystemEGRN, domain.SystemGosuslugi,
 		domain.SystemOpenBanking, domain.SystemMarketplaces, domain.SystemOFD}
 	if !slices.Equal(task.Skipped, want) {
 		t.Fatalf("skipped = %v, want %v", task.Skipped, want)
-	}
-}
-
-// Клиент отключился — задача всё равно ставится: анкета уже сохранена.
-func TestEnqueueIgnoresClientCancel(t *testing.T) {
-	tasks := &ctxTasks{CollectionTaskRepository: memory.NewCollectionTaskRepository()}
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	if _, err := newCollectionService(tasks).Enqueue(ctx, "qst_test", fullInput()); err != nil {
-		t.Fatal(err)
-	}
-	if tasks.gotCanceled || !tasks.gotDeadline {
-		t.Fatalf("create context: canceled %v, deadline %v", tasks.gotCanceled, tasks.gotDeadline)
-	}
-	if _, ok, _ := tasks.Get(context.Background(), "tsk_test"); !ok {
-		t.Fatal("task must be created")
-	}
-}
-
-func TestEnqueueSaveError(t *testing.T) {
-	boom := errors.New("db down")
-	tasks := &ctxTasks{CollectionTaskRepository: memory.NewCollectionTaskRepository(), err: boom}
-	if _, err := newCollectionService(tasks).Enqueue(context.Background(), "qst_test", fullInput()); !errors.Is(err, boom) {
-		t.Fatalf("want wrapped repo error, got %v", err)
 	}
 }
 
@@ -184,7 +127,7 @@ func TestGet(t *testing.T) {
 	if _, err := svc.Get(context.Background(), "tsk_test"); !errors.Is(err, service.ErrNotFound) {
 		t.Fatalf("want ErrNotFound, got %v", err)
 	}
-	if _, err := svc.Enqueue(context.Background(), "qst_test", fullInput()); err != nil {
+	if err := tasks.Create(context.Background(), svc.NewTask("qst_test", fullInput())); err != nil {
 		t.Fatal(err)
 	}
 	task, err := svc.Get(context.Background(), "tsk_test")
@@ -194,11 +137,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestDefaultTaskIDPrefix(t *testing.T) {
-	task, err := service.NewCollectionService(memory.NewCollectionTaskRepository()).Enqueue(context.Background(), "qst_test",
-		domain.CollectInput{INN: "7799000012"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	task := service.NewCollectionService(memory.NewCollectionTaskRepository()).NewTask("qst_test", domain.CollectInput{INN: "7799000012"})
 	if len(task.ID) != len("tsk_")+26 || task.ID[:4] != "tsk_" {
 		t.Fatalf("unexpected id %q", task.ID)
 	}

@@ -12,9 +12,13 @@ Table users {
   id text [pk, note: 'usr_<ULID>']
   full_name text [not null]
   role text [not null, note: 'CLIENT | UNDERWRITER']
-  inn text [note: 'ИНН ФЛ, для проверки подписанта']
+  inn text [note: 'ИНН ФЛ, для проверки подписанта; у CLIENT уникален']
   persona text [note: 'описание для /auth/test-users']
   created_at timestamptz [not null]
+
+  indexes {
+    inn [unique, note: 'WHERE role = CLIENT AND inn IS NOT NULL']
+  }
 }
 
 Table companies {
@@ -32,7 +36,7 @@ Table companies {
 Table company_members {
   user_id text [not null, ref: > users.id]
   company_id text [not null, ref: > companies.id]
-  role text [not null, note: 'RepresentativeRole']
+  role text [not null, note: 'RepresentativeRole: OWNER | DIRECTOR | CFO | ACCOUNTANT | FINANCE_EMPLOYEE | BANKING_EMPLOYEE | AUTHORIZED_EMPLOYEE']
   can_sign boolean [not null]
 
   indexes {
@@ -103,8 +107,10 @@ Table source_snapshots {
 
 Table collection_tasks {
   id text [pk, note: 'tsk_<ULID>']
-  questionnaire_id text [not null, note: 'qst_<ULID>; анкеты пока в памяти data-collector, без FK']
+  application_id text [ref: > applications.id, note: 'NULL — задачи до заявок']
+  questionnaire_id text [not null, note: 'qst_<ULID>; анкета — в applications.form']
   inn text [not null]
+  document_ids "text[]" [not null, note: 'документы, пришедшие с анкетой']
   status text [not null, default: 'PENDING', note: 'PENDING | RUNNING | COMPLETED | FAILED']
   request jsonb [not null, note: 'входные данные сбора без токенов']
   secrets jsonb [note: 'токены маркетплейсов и ОФД для worker; NULL после завершения']
@@ -121,6 +127,7 @@ Table collection_tasks {
   indexes {
     questionnaire_id
     (status, created_at)
+    application_id
   }
 }
 
