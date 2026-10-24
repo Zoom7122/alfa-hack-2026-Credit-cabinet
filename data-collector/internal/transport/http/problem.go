@@ -30,6 +30,7 @@ type problemField struct {
 
 const (
 	codeValidationFailed = "VALIDATION_FAILED"
+	codeNotFound         = "NOT_FOUND"
 	codeInternal         = "INTERNAL"
 	problemTypeBase      = "https://errors.credit-cabinet.local/"
 )
@@ -57,6 +58,16 @@ func fromValidationError(verr *service.ValidationError, detail string) problem {
 		fields = append(fields, problemField{Field: f.Field, Message: f.Message, Code: f.Code})
 	}
 	return validationProblem(http.StatusUnprocessableEntity, detail, fields)
+}
+
+func notFoundProblem(detail string) problem {
+	return problem{
+		Type:   problemTypeBase + "not-found",
+		Title:  "Not found",
+		Status: http.StatusNotFound,
+		Detail: detail,
+		Code:   codeNotFound,
+	}
 }
 
 func internalProblem() problem {

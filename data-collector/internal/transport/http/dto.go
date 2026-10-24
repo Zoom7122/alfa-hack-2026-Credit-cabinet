@@ -93,24 +93,34 @@ func (c *consentRequest) toDomain() *domain.Consent {
 	return &domain.Consent{ID: c.ID, SignedAt: c.SignedAt, ValidUntil: c.ValidUntil, Scope: c.Scope}
 }
 
+// questionnaireResponse — ответ POST /questionnaires: анкета и поставленная задача на сбор.
 type questionnaireResponse struct {
-	ID            string             `json:"id"`
-	Age           int                `json:"age"`
-	MaritalStatus string             `json:"marital_status"`
-	ChildrenCount int                `json:"children_count"`
-	CreatedAt     time.Time          `json:"created_at"`
-	Collection    collectionResponse `json:"collection"`
+	ID            string                 `json:"id"`
+	Age           int                    `json:"age"`
+	MaritalStatus string                 `json:"marital_status"`
+	ChildrenCount int                    `json:"children_count"`
+	CreatedAt     time.Time              `json:"created_at"`
+	Collection    collectionTaskResponse `json:"collection"`
 } //	@name	Questionnaire
 
-// collectionResponse — итог сбора данных по анкете. Сами ответы систем лежат
-// в таблице raw_collections (строка с этим id), здесь — только состояние.
-type collectionResponse struct {
-	ID         string                 `json:"id" example:"col_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"`
-	INN        string                 `json:"inn" example:"7799000012"`
-	StartedAt  time.Time              `json:"started_at"`
-	FinishedAt time.Time              `json:"finished_at"`
-	Sources    []systemResultResponse `json:"sources"`
-} //	@name	Collection
+// collectionTaskResponse — задача на сбор данных о компании. Сами ответы систем лежат
+// в таблице raw_collections (строка raw_collection_id), здесь — только состояние.
+type collectionTaskResponse struct {
+	ID              string `json:"id" example:"tsk_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"`
+	QuestionnaireID string `json:"questionnaire_id" example:"qst_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"`
+	INN             string `json:"inn" example:"7799000012"`
+	// PENDING — ждёт worker, RUNNING — системы опрашиваются, COMPLETED — сбор сохранён, FAILED — не выполнена.
+	Status   string `json:"status" enums:"PENDING,RUNNING,COMPLETED,FAILED" example:"PENDING"`
+	Attempts int    `json:"attempts" example:"0"` // сколько раз worker брал задачу
+	Error    string `json:"error,omitempty"`      // почему FAILED
+	// Системы, для которых в анкете нет данных (согласия, токена, залога, банков): они не опрашиваются.
+	SkippedSources  []string               `json:"skipped_sources" example:"EGRN,MARKETPLACES"`
+	CreatedAt       time.Time              `json:"created_at"`
+	StartedAt       *time.Time             `json:"started_at,omitempty"`
+	FinishedAt      *time.Time             `json:"finished_at,omitempty"`
+	RawCollectionID string                 `json:"raw_collection_id,omitempty" example:"col_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"`
+	Sources         []systemResultResponse `json:"sources,omitempty"` // только у COMPLETED: состояние по каждой системе
+} //	@name	CollectionTask
 
 type systemResultResponse struct {
 	Source      string `json:"source" enums:"CORE_BANKING,FNS,BKI,COMPLIANCE,FSSP,KAD,FEDRESURS,M4D,TAX_REPORTS,PLEDGE_REGISTRY,EGRN,GOSUSLUGI,OPEN_BANKING,MARKETPLACES,OFD,ZAKUPKI,SIGNALS,CBR,HH"`
@@ -122,32 +132,56 @@ type systemResultResponse struct {
 } //	@name	CollectionSource
 
 func toQuestionnaireResponse(res service.Created) questionnaireResponse {
-	q, rc := res.Questionnaire, res.Collection
-	sources := make([]systemResultResponse, 0, len(rc.Systems))
-	for _, s := range rc.Systems {
-		sources = append(sources, systemResultResponse{
-			Source:      string(s.System),
-			State:       string(s.State),
-			Reason:      s.Reason,
-			Calls:       len(s.Calls),
-			FailedCalls: s.FailedCalls(),
-			DurationMs:  s.Duration.Milliseconds(),
-		})
-	}
+	q := res.Questionnaire
 	return questionnaireResponse{
 		ID:            q.ID,
 		Age:           q.Age,
 		MaritalStatus: string(q.MaritalStatus),
 		ChildrenCount: q.ChildrenCount,
 		CreatedAt:     q.CreatedAt,
-		Collection: collectionResponse{
-			ID:         rc.ID,
-			INN:        rc.Input.INN,
-			StartedAt:  rc.StartedAt,
-			FinishedAt: rc.FinishedAt,
-			Sources:    sources,
-		},
+		Collection:    toCollectionTaskResponse(res.Task),
 	}
+}
+
+func toCollectionTaskResponse(t domain.CollectionTask) collectionTaskResponse {
+	resp := collectionTaskResponse{
+		ID:              t.ID,
+		QuestionnaireID: t.QuestionnaireID,
+		INN:             t.Input.INN,
+		Status:          string(t.Status),
+		Attempts:        t.Attempts,
+		Error:           t.Error,
+		SkippedSources:  make([]string, 0, len(t.Skipped)),
+		CreatedAt:       t.CreatedAt,
+		StartedAt:       optionalTime(t.StartedAt),
+		FinishedAt:      optionalTime(t.FinishedAt),
+	}
+	for _, sys := range t.Skipped {
+		resp.SkippedSources = append(resp.SkippedSources, string(sys))
+	}
+	if rc := t.Result; rc != nil {
+		resp.RawCollectionID = rc.ID
+		resp.Sources = make([]systemResultResponse, 0, len(rc.Systems))
+		for _, s := range rc.Systems {
+			resp.Sources = append(resp.Sources, systemResultResponse{
+				Source:      string(s.System),
+				State:       string(s.State),
+				Reason:      s.Reason,
+				Calls:       len(s.Calls),
+				FailedCalls: s.FailedCalls(),
+				DurationMs:  s.Duration.Milliseconds(),
+			})
+		}
+	}
+	return resp
+}
+
+// optionalTime — nil для нулевого времени: поле не попадает в ответ.
+func optionalTime(t time.Time) *time.Time {
+	if t.IsZero() {
+		return nil
+	}
+	return &t
 }
 
 // internalDataResponse — ответ GET /check-mock. Верхний уровень в snake_case,

@@ -24,23 +24,6 @@ definitions:
           type: string
         type: array
     type: object
-  Collection:
-    properties:
-      finished_at:
-        type: string
-      id:
-        example: col_01JB8Z5X0G6Q9T4V2W8Y3K7M1N
-        type: string
-      inn:
-        example: "7799000012"
-        type: string
-      sources:
-        items:
-          $ref: '#/definitions/CollectionSource'
-        type: array
-      started_at:
-        type: string
-    type: object
   CollectionSource:
     properties:
       calls:
@@ -79,6 +62,58 @@ definitions:
         - PARTIAL
         - FAILED
         - SKIPPED
+        type: string
+    type: object
+  CollectionTask:
+    properties:
+      attempts:
+        description: сколько раз worker брал задачу
+        example: 0
+        type: integer
+      created_at:
+        type: string
+      error:
+        description: почему FAILED
+        type: string
+      finished_at:
+        type: string
+      id:
+        example: tsk_01JB8Z5X0G6Q9T4V2W8Y3K7M1N
+        type: string
+      inn:
+        example: "7799000012"
+        type: string
+      questionnaire_id:
+        example: qst_01JB8Z5X0G6Q9T4V2W8Y3K7M1N
+        type: string
+      raw_collection_id:
+        example: col_01JB8Z5X0G6Q9T4V2W8Y3K7M1N
+        type: string
+      skipped_sources:
+        description: 'Системы, для которых в анкете нет данных (согласия, токена,
+          залога, банков): они не опрашиваются.'
+        example:
+        - EGRN
+        - MARKETPLACES
+        items:
+          type: string
+        type: array
+      sources:
+        description: 'только у COMPLETED: состояние по каждой системе'
+        items:
+          $ref: '#/definitions/CollectionSource'
+        type: array
+      started_at:
+        type: string
+      status:
+        description: PENDING — ждёт worker, RUNNING — системы опрашиваются, COMPLETED
+          — сбор сохранён, FAILED — не выполнена.
+        enum:
+        - PENDING
+        - RUNNING
+        - COMPLETED
+        - FAILED
+        example: PENDING
         type: string
     type: object
   Consent:
@@ -249,7 +284,7 @@ definitions:
       children_count:
         type: integer
       collection:
-        $ref: '#/definitions/Collection'
+        $ref: '#/definitions/CollectionTask'
       created_at:
         type: string
       id:
@@ -629,9 +664,10 @@ info:
   contact: {}
   description: |-
     Сбор данных о заёмщике для скоринга: анкета клиента и сырые ответы всех внешних систем (эмулятор mock-api).
+    Сбор асинхронный: анкета ставит задачу в очередь (outbox → Kafka), системы опрашивает worker.
     Ошибки — RFC 9457 (`application/problem+json`).
   title: data-collector API
-  version: "0.1"
+  version: "0.2"
 paths:
   /check-mock:
     get:
@@ -667,15 +703,46 @@ paths:
       summary: Проверить данные внутренних систем банка
       tags:
       - internal-data
+  /collections/{id}:
+    get:
+      description: |-
+        Задача на сбор, созданная POST /questionnaires. PENDING — ждёт worker, RUNNING — системы опрашиваются,
+        COMPLETED — сбор сохранён в raw_collections (строка raw_collection_id), FAILED — не выполнена, причина в error.
+        У COMPLETED в sources — состояние по каждой системе: DONE, PARTIAL, FAILED, SKIPPED.
+      parameters:
+      - description: id задачи (tsk_…)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/CollectionTask'
+        "404":
+          description: задачи нет
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Problem'
+      summary: Состояние сбора данных по анкете
+      tags:
+      - collections
   /questionnaires:
     post:
       consumes:
       - application/json
       description: |-
-        Проверяет анкету и данные для сбора, сохраняет анкету и опрашивает все внешние системы (эмулятор mock-api).
-        Сырые ответы систем сохраняются строкой в таблицу raw_collections: одна система — одна колонка.
-        В ответе — только состояние по каждой системе. Отказ системы не ошибка запроса: ответ всё равно 201.
-        Системы без нужных данных (нет согласия, токена, залога) пропускаются со state=SKIPPED.
+        Проверяет анкету и данные для сбора, сохраняет анкету и создаёт задачу на сбор (status=PENDING)
+        вместе с событием в outbox — одной транзакцией. Publisher отправляет событие в Kafka, worker
+        опрашивает все внешние системы (эмулятор mock-api) и пишет сырые ответы строкой в raw_collections.
+        Состояние сбора — GET /collections/{id} (ссылка в заголовке Location).
+        Системы без нужных данных (нет согласия, токена, залога, банков) не опрашиваются: они перечислены в skipped_sources.
       parameters:
       - description: Анкета и данные для сбора
         in: body
@@ -686,8 +753,12 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "202":
+          description: Accepted
+          headers:
+            Location:
+              description: /api/v1/collections/{id} — состояние задачи на сбор
+              type: string
           schema:
             $ref: '#/definitions/Questionnaire'
         "400":
@@ -704,7 +775,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/Problem'
-      summary: Принять анкету и собрать данные о компании
+      summary: Принять анкету и поставить сбор данных о компании в очередь
       tags:
       - questionnaires
 swagger: "2.0"

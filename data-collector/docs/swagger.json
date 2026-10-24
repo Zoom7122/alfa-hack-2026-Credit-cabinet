@@ -1,10 +1,10 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "Сбор данных о заёмщике для скоринга: анкета клиента и сырые ответы всех внешних систем (эмулятор mock-api).\nОшибки — RFC 9457 (`application/problem+json`).",
+        "description": "Сбор данных о заёмщике для скоринга: анкета клиента и сырые ответы всех внешних систем (эмулятор mock-api).\nСбор асинхронный: анкета ставит задачу в очередь (outbox → Kafka), системы опрашивает worker.\nОшибки — RFC 9457 (`application/problem+json`).",
         "title": "data-collector API",
         "contact": {},
-        "version": "0.1"
+        "version": "0.2"
     },
     "basePath": "/api/v1",
     "paths": {
@@ -56,9 +56,50 @@
                 }
             }
         },
+        "/collections/{id}": {
+            "get": {
+                "description": "Задача на сбор, созданная POST /questionnaires. PENDING — ждёт worker, RUNNING — системы опрашиваются,\nCOMPLETED — сбор сохранён в raw_collections (строка raw_collection_id), FAILED — не выполнена, причина в error.\nУ COMPLETED в sources — состояние по каждой системе: DONE, PARTIAL, FAILED, SKIPPED.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "collections"
+                ],
+                "summary": "Состояние сбора данных по анкете",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id задачи (tsk_…)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/CollectionTask"
+                        }
+                    },
+                    "404": {
+                        "description": "задачи нет",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/questionnaires": {
             "post": {
-                "description": "Проверяет анкету и данные для сбора, сохраняет анкету и опрашивает все внешние системы (эмулятор mock-api).\nСырые ответы систем сохраняются строкой в таблицу raw_collections: одна система — одна колонка.\nВ ответе — только состояние по каждой системе. Отказ системы не ошибка запроса: ответ всё равно 201.\nСистемы без нужных данных (нет согласия, токена, залога) пропускаются со state=SKIPPED.",
+                "description": "Проверяет анкету и данные для сбора, сохраняет анкету и создаёт задачу на сбор (status=PENDING)\nвместе с событием в outbox — одной транзакцией. Publisher отправляет событие в Kafka, worker\nопрашивает все внешние системы (эмулятор mock-api) и пишет сырые ответы строкой в raw_collections.\nСостояние сбора — GET /collections/{id} (ссылка в заголовке Location).\nСистемы без нужных данных (нет согласия, токена, залога, банков) не опрашиваются: они перечислены в skipped_sources.",
                 "consumes": [
                     "application/json"
                 ],
@@ -68,7 +109,7 @@
                 "tags": [
                     "questionnaires"
                 ],
-                "summary": "Принять анкету и собрать данные о компании",
+                "summary": "Принять анкету и поставить сбор данных о компании в очередь",
                 "parameters": [
                     {
                         "description": "Анкета и данные для сбора",
@@ -81,10 +122,16 @@
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created",
+                    "202": {
+                        "description": "Accepted",
                         "schema": {
                             "$ref": "#/definitions/Questionnaire"
+                        },
+                        "headers": {
+                            "Location": {
+                                "type": "string",
+                                "description": "/api/v1/collections/{id} — состояние задачи на сбор"
+                            }
                         }
                     },
                     "400": {
@@ -145,31 +192,6 @@
                 }
             }
         },
-        "Collection": {
-            "type": "object",
-            "properties": {
-                "finished_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "col_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"
-                },
-                "inn": {
-                    "type": "string",
-                    "example": "7799000012"
-                },
-                "sources": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/CollectionSource"
-                    }
-                },
-                "started_at": {
-                    "type": "string"
-                }
-            }
-        },
         "CollectionSource": {
             "type": "object",
             "properties": {
@@ -217,6 +239,74 @@
                         "FAILED",
                         "SKIPPED"
                     ]
+                }
+            }
+        },
+        "CollectionTask": {
+            "type": "object",
+            "properties": {
+                "attempts": {
+                    "description": "сколько раз worker брал задачу",
+                    "type": "integer",
+                    "example": 0
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "error": {
+                    "description": "почему FAILED",
+                    "type": "string"
+                },
+                "finished_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "tsk_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"
+                },
+                "inn": {
+                    "type": "string",
+                    "example": "7799000012"
+                },
+                "questionnaire_id": {
+                    "type": "string",
+                    "example": "qst_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"
+                },
+                "raw_collection_id": {
+                    "type": "string",
+                    "example": "col_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"
+                },
+                "skipped_sources": {
+                    "description": "Системы, для которых в анкете нет данных (согласия, токена, залога, банков): они не опрашиваются.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "EGRN",
+                        "MARKETPLACES"
+                    ]
+                },
+                "sources": {
+                    "description": "только у COMPLETED: состояние по каждой системе",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CollectionSource"
+                    }
+                },
+                "started_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "PENDING — ждёт worker, RUNNING — системы опрашиваются, COMPLETED — сбор сохранён, FAILED — не выполнена.",
+                    "type": "string",
+                    "enum": [
+                        "PENDING",
+                        "RUNNING",
+                        "COMPLETED",
+                        "FAILED"
+                    ],
+                    "example": "PENDING"
                 }
             }
         },
@@ -461,7 +551,7 @@
                     "type": "integer"
                 },
                 "collection": {
-                    "$ref": "#/definitions/Collection"
+                    "$ref": "#/definitions/CollectionTask"
                 },
                 "created_at": {
                     "type": "string"

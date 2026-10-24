@@ -52,11 +52,15 @@ var SystemColumns = map[domain.System]string{
 	domain.SystemHH:             "hh",
 }
 
+// fixedColumns — служебные колонки raw_collections перед колонками систем.
+var fixedColumns = []string{"id", "task_id", "questionnaire_id", "inn", "director_inn", "request", "sources",
+	"started_at", "finished_at"}
+
 var insertRawCollection = buildInsert()
 
 // buildInsert собирает INSERT по domain.Systems. Система без колонки — паника при старте.
 func buildInsert() string {
-	cols := []string{"id", "questionnaire_id", "inn", "director_inn", "request", "sources", "started_at", "finished_at"}
+	cols := append([]string{}, fixedColumns...)
 	for _, sys := range domain.Systems {
 		col, ok := SystemColumns[sys]
 		if !ok {
@@ -69,26 +73,6 @@ func buildInsert() string {
 		params[i] = fmt.Sprintf("$%d", i+1)
 	}
 	return "INSERT INTO raw_collections (" + strings.Join(cols, ", ") + ") VALUES (" + strings.Join(params, ", ") + ")"
-}
-
-// RawCollectionRepository пишет сборы в raw_collections. Только вставка.
-type RawCollectionRepository struct {
-	pool *pgxpool.Pool
-}
-
-func NewRawCollectionRepository(pool *pgxpool.Pool) *RawCollectionRepository {
-	return &RawCollectionRepository{pool: pool}
-}
-
-func (r *RawCollectionRepository) Save(ctx context.Context, rc domain.RawCollection) error {
-	args, err := insertArgs(rc)
-	if err != nil {
-		return err
-	}
-	if _, err := r.pool.Exec(ctx, insertRawCollection, args...); err != nil {
-		return fmt.Errorf("insert raw_collections: %w", err)
-	}
-	return nil
 }
 
 // insertArgs — значения в порядке колонок insertRawCollection.
@@ -106,7 +90,7 @@ func insertArgs(rc domain.RawCollection) ([]any, error) {
 	if rc.Input.Director != nil {
 		directorINN = rc.Input.Director.INN
 	}
-	args := []any{rc.ID, rc.QuestionnaireID, rc.Input.INN, directorINN, string(request), string(sources),
+	args := []any{rc.ID, rc.TaskID, rc.QuestionnaireID, rc.Input.INN, directorINN, string(request), string(sources),
 		rc.StartedAt, rc.FinishedAt}
 
 	data := make(map[domain.System]json.RawMessage, len(rc.Systems))
@@ -194,11 +178,67 @@ func toRequestRecord(in domain.CollectInput) requestRecord {
 	return rec
 }
 
+// fromRequestRecord — входные данные сбора из колонки request, токены — из secrets
+// (nil — токенов нет или они уже стёрты).
+func fromRequestRecord(rec requestRecord, sec *secretsRecord) domain.CollectInput {
+	in := domain.CollectInput{
+		INN:               rec.INN,
+		BKICompanyConsent: rec.Consents.BKICompany.toDomain(),
+		BKIPersonConsent:  rec.Consents.BKIPerson.toDomain(),
+		TaxConsent:        rec.Consents.Tax.toDomain(),
+		OtherBankBIKs:     nilIfEmpty(rec.OtherBankBIKs),
+		Collateral: domain.Collateral{
+			CadastralNumbers: nilIfEmpty(rec.Collateral.CadastralNumbers),
+			VINs:             nilIfEmpty(rec.Collateral.VINs),
+			Serials:          nilIfEmpty(rec.Collateral.Serials),
+		},
+		POANumber:         rec.POANumber,
+		RepresentativeINN: rec.RepresentativeINN,
+	}
+	if d := rec.Director; d != nil {
+		in.Director = &domain.Person{INN: d.INN, LastName: d.LastName, FirstName: d.FirstName,
+			MiddleName: d.MiddleName, BirthDate: d.BirthDate}
+	}
+	if sec != nil {
+		if len(sec.MarketplaceTokens) > 0 {
+			in.MarketplaceTokens = sec.MarketplaceTokens
+		}
+		in.OFDToken = sec.OFDToken
+	}
+	return in
+}
+
 func toConsentRecord(c *domain.Consent) *consentRecord {
 	if c == nil {
 		return nil
 	}
 	return &consentRecord{ID: c.ID, SignedAt: c.SignedAt, ValidUntil: c.ValidUntil, Scope: c.Scope}
+}
+
+func (c *consentRecord) toDomain() *domain.Consent {
+	if c == nil {
+		return nil
+	}
+	return &domain.Consent{ID: c.ID, SignedAt: c.SignedAt, ValidUntil: c.ValidUntil, Scope: c.Scope}
+}
+
+// secretsRecord — токены в collection_tasks.secrets: нужны worker'у для запросов
+// к маркетплейсам и ОФД, после завершения задачи стираются.
+type secretsRecord struct {
+	MarketplaceTokens map[string]string `json:"marketplace_tokens,omitempty"`
+	OFDToken          string            `json:"ofd_token,omitempty"`
+}
+
+// encodeSecrets — значение колонки secrets: nil (NULL), если токенов нет.
+func encodeSecrets(in domain.CollectInput) (any, error) {
+	if len(in.MarketplaceTokens) == 0 && in.OFDToken == "" {
+		return nil, nil
+	}
+	raw, err := json.Marshal(secretsRecord{MarketplaceTokens: in.MarketplaceTokens, OFDToken: in.OFDToken})
+	if err != nil {
+		return nil, fmt.Errorf("encode secrets: %w", err)
+	}
+	return string(raw), nil
 }
 
 // sourceRecord — итог по системе в колонке sources: состояние, причина и все запросы.
@@ -233,9 +273,31 @@ func toSourceRecords(results []domain.SystemResult) []sourceRecord {
 	return out
 }
 
+// fromSourceRecords — итог по системам из колонки sources, без сырых данных.
+func fromSourceRecords(records []sourceRecord) []domain.SystemResult {
+	out := make([]domain.SystemResult, 0, len(records))
+	for _, rec := range records {
+		res := domain.SystemResult{System: domain.System(rec.Source), State: domain.CollectState(rec.State), Reason: rec.Reason,
+			Duration: time.Duration(rec.DurationMs) * time.Millisecond}
+		for _, c := range rec.Calls {
+			res.Calls = append(res.Calls, domain.Call{Key: c.Key, Method: c.Method, Path: c.Path, Status: c.Status,
+				Duration: time.Duration(c.DurationMs) * time.Millisecond, Error: c.Error})
+		}
+		out = append(out, res)
+	}
+	return out
+}
+
 func nonNil(s []string) []string {
 	if s == nil {
 		return []string{}
+	}
+	return s
+}
+
+func nilIfEmpty(s []string) []string {
+	if len(s) == 0 {
+		return nil
 	}
 	return s
 }

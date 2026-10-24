@@ -28,25 +28,24 @@ var (
 	uuidRe      = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 )
 
-// ExternalSystems — опрос всех внешних систем. Объявлен у потребителя:
-// сервису всё равно, эмулятор это или настоящие источники.
-type ExternalSystems interface {
-	CollectAll(ctx context.Context, requestID string, in domain.CollectInput) []domain.SystemResult
+// saveTimeout — на запись задачи, когда клиент уже отключился.
+const saveTimeout = 5 * time.Second
+
+// TaskRepository — хранилище задач на сбор (таблица collection_tasks). Объявлено у потребителя.
+type TaskRepository interface {
+	// Create сохраняет задачу вместе с событием о ней в outbox — атомарно:
+	// событие не теряется и не публикуется без задачи.
+	Create(ctx context.Context, task domain.CollectionTask) error
+	// Get возвращает задачу и, если она выполнена, итог сбора. false — задачи нет.
+	Get(ctx context.Context, id string) (domain.CollectionTask, bool, error)
 }
 
-// RawCollectionRepository — хранилище сборов (таблица raw_collections).
-type RawCollectionRepository interface {
-	Save(ctx context.Context, rc domain.RawCollection) error
-}
-
-// CollectionService собирает данные о компании из всех внешних систем
-// и сохраняет сырые ответы одной строкой.
+// CollectionService ставит сбор данных о компании в очередь и отдаёт его состояние.
+// Сами системы опрашивает worker (internal/worker) по событию из Kafka.
 type CollectionService struct {
-	systems ExternalSystems
-	repo    RawCollectionRepository
-	timeout time.Duration
-	now     func() time.Time
-	newID   func() string
+	tasks TaskRepository
+	now   func() time.Time
+	newID func() string
 }
 
 // CollectionOption настраивает CollectionService (используется в тестах).
@@ -57,20 +56,16 @@ func WithCollectionClock(now func() time.Time) CollectionOption {
 	return func(s *CollectionService) { s.now = now }
 }
 
-// WithCollectionIDGenerator подменяет генератор идентификаторов сбора.
+// WithCollectionIDGenerator подменяет генератор идентификаторов задач.
 func WithCollectionIDGenerator(newID func() string) CollectionOption {
 	return func(s *CollectionService) { s.newID = newID }
 }
 
-// NewCollectionService: timeout — на весь сбор, включая медленные системы.
-func NewCollectionService(systems ExternalSystems, repo RawCollectionRepository, timeout time.Duration,
-	opts ...CollectionOption) *CollectionService {
+func NewCollectionService(tasks TaskRepository, opts ...CollectionOption) *CollectionService {
 	s := &CollectionService{
-		systems: systems,
-		repo:    repo,
-		timeout: timeout,
-		now:     time.Now,
-		newID:   func() string { return "col_" + ulid.MustNew(ulid.Now(), rand.Reader).String() },
+		tasks: tasks,
+		now:   time.Now,
+		newID: func() string { return "tsk_" + ulid.MustNew(ulid.Now(), rand.Reader).String() },
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -83,26 +78,44 @@ func (s *CollectionService) Validate(in domain.CollectInput) []FieldError {
 	return validateCollect(normalize(in))
 }
 
-// Collect опрашивает все системы и сохраняет сырые ответы.
-// Отказ отдельной системы — не ошибка: он записан в её SystemResult.
-// Ошибку возвращает только сбой сохранения.
-func (s *CollectionService) Collect(ctx context.Context, questionnaireID string, in domain.CollectInput) (domain.RawCollection, error) {
-	// Сбор доводим до конца, даже если клиент отключился: анкета уже сохранена.
-	base := context.WithoutCancel(ctx)
-	collectCtx, cancel := context.WithTimeout(base, s.timeout)
+// Enqueue создаёт задачу на сбор по анкете (PENDING) и событие о ней для worker.
+// Системы без входных данных сразу попадают в Skipped: worker их не опрашивает.
+func (s *CollectionService) Enqueue(ctx context.Context, questionnaireID string, in domain.CollectInput) (domain.CollectionTask, error) {
+	// Задачу ставим, даже если клиент отключился: анкета уже сохранена.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), saveTimeout)
 	defer cancel()
 
 	in = normalize(in)
-	rc := domain.RawCollection{ID: s.newID(), QuestionnaireID: questionnaireID, Input: in, StartedAt: s.now().UTC()}
-	rc.Systems = s.systems.CollectAll(collectCtx, rc.ID, in)
-	rc.FinishedAt = s.now().UTC()
-
-	saveCtx, cancelSave := context.WithTimeout(base, 5*time.Second)
-	defer cancelSave()
-	if err := s.repo.Save(saveCtx, rc); err != nil {
-		return rc, fmt.Errorf("save raw collection: %w", err)
+	task := domain.CollectionTask{
+		ID:              s.newID(),
+		QuestionnaireID: questionnaireID,
+		Input:           in,
+		Status:          domain.TaskPending,
+		CreatedAt:       s.now().UTC(),
 	}
-	return rc, nil
+	skipped := domain.SkippedSystems(in)
+	for _, sys := range domain.Systems {
+		if _, ok := skipped[sys]; ok {
+			task.Skipped = append(task.Skipped, sys)
+		}
+	}
+	if err := s.tasks.Create(ctx, task); err != nil {
+		return domain.CollectionTask{}, fmt.Errorf("create collection task: %w", err)
+	}
+	return task, nil
+}
+
+// Get возвращает задачу на сбор, у выполненной — с итогом по системам.
+// ErrNotFound — задачи с таким id нет.
+func (s *CollectionService) Get(ctx context.Context, id string) (domain.CollectionTask, error) {
+	task, ok, err := s.tasks.Get(ctx, id)
+	if err != nil {
+		return domain.CollectionTask{}, fmt.Errorf("get collection task: %w", err)
+	}
+	if !ok {
+		return domain.CollectionTask{}, ErrNotFound
+	}
+	return task, nil
 }
 
 // normalize убирает пробелы, повторы и регистр там, где он не важен.

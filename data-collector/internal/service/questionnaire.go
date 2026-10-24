@@ -24,10 +24,10 @@ type Repository interface {
 	Save(ctx context.Context, q domain.Questionnaire) error
 }
 
-// Collector — сбор данных о компании по анкете (CollectionService).
+// Collector — постановка сбора данных о компании в очередь (CollectionService).
 type Collector interface {
 	Validate(in domain.CollectInput) []FieldError
-	Collect(ctx context.Context, questionnaireID string, in domain.CollectInput) (domain.RawCollection, error)
+	Enqueue(ctx context.Context, questionnaireID string, in domain.CollectInput) (domain.CollectionTask, error)
 }
 
 // CreateInput — данные анкеты, пришедшие с формы.
@@ -38,13 +38,13 @@ type CreateInput struct {
 	Company       domain.CollectInput // по чему собирать данные: ИНН, руководитель, согласия, токены, залог
 }
 
-// Created — сохранённая анкета и итог сбора данных по ней.
+// Created — сохранённая анкета и задача на сбор данных по ней.
 type Created struct {
 	Questionnaire domain.Questionnaire
-	Collection    domain.RawCollection
+	Task          domain.CollectionTask
 }
 
-// QuestionnaireService принимает анкеты, сохраняет их и запускает сбор данных о компании.
+// QuestionnaireService принимает анкеты, сохраняет их и ставит сбор данных о компании в очередь.
 type QuestionnaireService struct {
 	repo      Repository
 	collector Collector
@@ -76,9 +76,9 @@ func NewQuestionnaireService(repo Repository, collector Collector, opts ...Optio
 	return s
 }
 
-// Create проверяет анкету и данные для сбора, сохраняет анкету и собирает данные о компании.
-// Нарушения возвращаются как *ValidationError — все сразу, и ничего не сохраняется.
-// Отказ отдельной внешней системы ошибкой не считается: он виден в Collection.
+// Create проверяет анкету и данные для сбора, сохраняет анкету и ставит сбор данных о компании
+// в очередь. Нарушения возвращаются как *ValidationError — все сразу, и ничего не сохраняется.
+// Системы опрашивает worker; состояние сбора — в задаче (CollectionService.Get).
 func (s *QuestionnaireService) Create(ctx context.Context, in CreateInput) (Created, error) {
 	fields := validate(in)
 	fields = append(fields, s.collector.Validate(in.Company)...)
@@ -97,11 +97,11 @@ func (s *QuestionnaireService) Create(ctx context.Context, in CreateInput) (Crea
 		return Created{}, fmt.Errorf("save questionnaire: %w", err)
 	}
 
-	rc, err := s.collector.Collect(ctx, q.ID, in.Company)
+	task, err := s.collector.Enqueue(ctx, q.ID, in.Company)
 	if err != nil {
-		return Created{Questionnaire: q}, fmt.Errorf("collect company data: %w", err)
+		return Created{Questionnaire: q}, fmt.Errorf("enqueue company data collection: %w", err)
 	}
-	return Created{Questionnaire: q, Collection: rc}, nil
+	return Created{Questionnaire: q, Task: task}, nil
 }
 
 func validate(in CreateInput) []FieldError {

@@ -216,10 +216,6 @@ func (c *Client) m4d(ctx context.Context, r *run, in domain.CollectInput) {
 // Запрашиваются только документы, на которые есть право в согласии.
 func (c *Client) taxReports(ctx context.Context, r *run, in domain.CollectInput) {
 	cs := in.TaxConsent
-	if cs == nil {
-		r.skip("нет согласия на налоговую отчётность consents.tax")
-		return
-	}
 	var docs []string
 	if slices.Contains(cs.Scope, domain.TaxScopeDeclarations) {
 		docs = append(docs, "PROFIT", "VAT", "USN", "NPD_INCOME")
@@ -260,10 +256,6 @@ func (c *Client) pledgeRegistry(ctx context.Context, r *run, in domain.CollectIn
 
 // egrn — выписки по каждому объекту недвижимости, предложенному в залог.
 func (c *Client) egrn(ctx context.Context, r *run, in domain.CollectInput) {
-	if len(in.Collateral.CadastralNumbers) == 0 {
-		r.skip("нет недвижимости в залог collateral.cadastral_numbers")
-		return
-	}
 	for _, num := range in.Collateral.CadastralNumbers {
 		raw, _ := r.postJSON(ctx, "extract", "/egrn/v1/extracts", map[string]any{
 			"cadastral_number": num, "purpose": "COLLATERAL_ASSESSMENT", "application_id": r.requestID,
@@ -274,10 +266,6 @@ func (c *Client) egrn(ctx context.Context, r *run, in domain.CollectInput) {
 
 // gosuslugi — «Цифровой профиль» руководителя: запрос → результат (мок одобряет сразу).
 func (c *Client) gosuslugi(ctx context.Context, r *run, in domain.CollectInput) {
-	if in.Director == nil {
-		r.skip("нет данных руководителя")
-		return
-	}
 	created, ok := r.postJSON(ctx, "request", "/gosuslugi/v1/profile-requests", map[string]any{
 		"person":         personBody(in.Director),
 		"scopes":         []string{"PASSPORT", "INN", "SNILS", "ADDRESS", "INCOME", "EMPLOYMENT", "NPD_STATUS"},
@@ -297,10 +285,6 @@ func (c *Client) gosuslugi(ctx context.Context, r *run, in domain.CollectInput) 
 
 // openBanking — по каждому банку из анкеты: согласие → счета → остатки и транзакции за 12 месяцев.
 func (c *Client) openBanking(ctx context.Context, r *run, in domain.CollectInput) {
-	if len(in.OtherBankBIKs) == 0 {
-		r.skip("нет счетов в других банках other_bank_biks")
-		return
-	}
 	now := c.now().In(msk)
 	from := time.Date(now.Year(), now.Month()-12, 1, 0, 0, 0, 0, msk)
 	for _, bik := range in.OtherBankBIKs {
@@ -349,10 +333,6 @@ func (c *Client) openBanking(ctx context.Context, r *run, in domain.CollectInput
 
 // marketplaces — профиль, продажи за 36 месяцев и выплаты на каждой площадке, где есть токен.
 func (c *Client) marketplaces(ctx context.Context, r *run, in domain.CollectInput) {
-	if len(in.MarketplaceTokens) == 0 {
-		r.skip("нет токенов продавца marketplace_tokens")
-		return
-	}
 	for _, mp := range sortedKeys(in.MarketplaceTokens) {
 		h := http.Header{"X-Seller-Token": {in.MarketplaceTokens[mp]}}
 		base := "/marketplaces/v1/" + url.PathEscape(mp) + "/sellers/" + url.PathEscape(in.INN)
@@ -367,10 +347,6 @@ func (c *Client) marketplaces(ctx context.Context, r *run, in domain.CollectInpu
 
 // ofd — кассы и выручка по чекам за 12 месяцев.
 func (c *Client) ofd(ctx context.Context, r *run, in domain.CollectInput) {
-	if in.OFDToken == "" {
-		r.skip("нет токена ОФД ofd_token")
-		return
-	}
 	h := http.Header{"X-OFD-Token": {in.OFDToken}}
 	base := "/ofd/v1/organizations/" + url.PathEscape(in.INN)
 	raw, _ := r.get(ctx, "kkt", base+"/kkt", nil, h)

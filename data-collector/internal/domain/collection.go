@@ -109,6 +109,42 @@ type CollectInput struct {
 	RepresentativeINN string // ИНН представителя по МЧД
 }
 
+// SkippedSystems — системы, которые не по чему опрашивать: во входных данных нет согласия,
+// токена, залога, банков или руководителя. Такие системы не опрашиваются вовсе: их колонка
+// в raw_collections остаётся NULL, в sources — SKIPPED с причиной. Значение — причина.
+// Пропуски части запросов внутри системы (БКИ по руководителю, дисквалификация) и hh.ru,
+// которому нужно название из ЕГРЮЛ, решаются при опросе.
+func SkippedSystems(in CollectInput) map[System]string {
+	skipped := map[System]string{}
+	if in.BKICompanyConsent == nil {
+		switch {
+		case in.Director == nil:
+			skipped[SystemBKI] = "отчёт по компании: нет согласия consents.bki_company; отчёт по руководителю: нет данных руководителя"
+		case in.BKIPersonConsent == nil:
+			skipped[SystemBKI] = "отчёт по компании: нет согласия consents.bki_company; отчёт по руководителю: нет согласия consents.bki_person"
+		}
+	}
+	if in.TaxConsent == nil {
+		skipped[SystemTaxReports] = "нет согласия на налоговую отчётность consents.tax"
+	}
+	if len(in.Collateral.CadastralNumbers) == 0 {
+		skipped[SystemEGRN] = "нет недвижимости в залог collateral.cadastral_numbers"
+	}
+	if in.Director == nil {
+		skipped[SystemGosuslugi] = "нет данных руководителя"
+	}
+	if len(in.OtherBankBIKs) == 0 {
+		skipped[SystemOpenBanking] = "нет счетов в других банках other_bank_biks"
+	}
+	if len(in.MarketplaceTokens) == 0 {
+		skipped[SystemMarketplaces] = "нет токенов продавца marketplace_tokens"
+	}
+	if in.OFDToken == "" {
+		skipped[SystemOFD] = "нет токена ОФД ofd_token"
+	}
+	return skipped
+}
+
 // Call — один HTTP-запрос к системе.
 type Call struct {
 	Key      string // что запрашивали: client, turnover, egrul…
@@ -146,6 +182,7 @@ func (r SystemResult) FailedCalls() int {
 // RawCollection — один сбор данных по анкете: строка таблицы raw_collections.
 type RawCollection struct {
 	ID              string // col_<ULID>
+	TaskID          string // задача, результатом которой стал сбор
 	QuestionnaireID string
 	Input           CollectInput
 	Systems         []SystemResult // в порядке Systems

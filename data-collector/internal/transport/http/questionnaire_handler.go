@@ -29,18 +29,20 @@ func NewQuestionnaireHandler(svc QuestionnaireService, log *slog.Logger) *Questi
 
 // create — POST /api/v1/questionnaires.
 //
-//	@Summary		Принять анкету и собрать данные о компании
-//	@Description	Проверяет анкету и данные для сбора, сохраняет анкету и опрашивает все внешние системы (эмулятор mock-api).
-//	@Description	Сырые ответы систем сохраняются строкой в таблицу raw_collections: одна система — одна колонка.
-//	@Description	В ответе — только состояние по каждой системе. Отказ системы не ошибка запроса: ответ всё равно 201.
-//	@Description	Системы без нужных данных (нет согласия, токена, залога) пропускаются со state=SKIPPED.
+//	@Summary		Принять анкету и поставить сбор данных о компании в очередь
+//	@Description	Проверяет анкету и данные для сбора, сохраняет анкету и создаёт задачу на сбор (status=PENDING)
+//	@Description	вместе с событием в outbox — одной транзакцией. Publisher отправляет событие в Kafka, worker
+//	@Description	опрашивает все внешние системы (эмулятор mock-api) и пишет сырые ответы строкой в raw_collections.
+//	@Description	Состояние сбора — GET /collections/{id} (ссылка в заголовке Location).
+//	@Description	Системы без нужных данных (нет согласия, токена, залога, банков) не опрашиваются: они перечислены в skipped_sources.
 //	@Tags			questionnaires
 //	@Accept			json
 //	@Produce		json
 //	@Param			body	body		createQuestionnaireRequest	true	"Анкета и данные для сбора"
-//	@Success		201		{object}	questionnaireResponse
-//	@Failure		400		{object}	problem	"битый JSON, нет обязательного поля (age, marital_status, children_count, inn) или неверный тип"
-//	@Failure		422		{object}	problem	"нарушено правило анкеты или неверный формат данных для сбора (ИНН, БИК, VIN, даты)"
+//	@Success		202		{object}	questionnaireResponse
+//	@Header			202		{string}	Location	"/api/v1/collections/{id} — состояние задачи на сбор"
+//	@Failure		400		{object}	problem		"битый JSON, нет обязательного поля (age, marital_status, children_count, inn) или неверный тип"
+//	@Failure		422		{object}	problem		"нарушено правило анкеты или неверный формат данных для сбора (ИНН, БИК, VIN, даты)"
 //	@Failure		500		{object}	problem
 //	@Router			/questionnaires [post]
 func (h *QuestionnaireHandler) create(c *gin.Context) {
@@ -67,11 +69,6 @@ func (h *QuestionnaireHandler) create(c *gin.Context) {
 		return
 	}
 
-	for _, s := range res.Collection.Systems {
-		if s.State == domain.CollectFailed || s.State == domain.CollectPartial {
-			h.log.WarnContext(c.Request.Context(), "external system failed", "collection", res.Collection.ID,
-				"source", s.System, "state", s.State, "reason", s.Reason)
-		}
-	}
-	c.JSON(http.StatusCreated, toQuestionnaireResponse(res))
+	c.Header("Location", collectionsPath+"/"+res.Task.ID)
+	c.JSON(http.StatusAccepted, toQuestionnaireResponse(res))
 }

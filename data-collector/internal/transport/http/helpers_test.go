@@ -13,6 +13,7 @@ import (
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/domain"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/repository/memory"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/service"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/worker"
 )
 
 var discardLog = slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -58,11 +59,22 @@ func (stubSystems) CollectAll(_ context.Context, _ string, in domain.CollectInpu
 	return out
 }
 
-// newQuestionnaireService — сервис анкет со сбором через stubSystems и хранилищами в памяти.
-func newQuestionnaireService(repo *memory.QuestionnaireRepository, raw *memory.RawCollectionRepository, opts ...service.Option) *service.QuestionnaireService {
-	collection := service.NewCollectionService(stubSystems{}, raw, time.Second,
+// newCollectionService — задачи на сбор в памяти, id задачи tsk_test.
+func newCollectionService(tasks *memory.CollectionTaskRepository) *service.CollectionService {
+	return service.NewCollectionService(tasks,
 		service.WithCollectionClock(func() time.Time { return time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC) }),
-		service.WithCollectionIDGenerator(func() string { return "col_test" }),
+		service.WithCollectionIDGenerator(func() string { return "tsk_test" }),
 	)
-	return service.NewQuestionnaireService(repo, collection, opts...)
+}
+
+// runWorker выполняет все задачи из outbox так, как это сделал бы worker по событиям из Kafka.
+func runWorker(t *testing.T, systems worker.Systems, tasks *memory.CollectionTaskRepository) {
+	t.Helper()
+	w := worker.New(systems, tasks, worker.Config{CollectTimeout: 15 * time.Second, MaxAttempts: 3}, discardLog,
+		worker.WithIDGenerator(func() string { return "col_test" }))
+	for _, m := range tasks.Outbox() {
+		if err := w.Handle(context.Background(), m.Payload); err != nil {
+			t.Fatalf("worker: %v", err)
+		}
+	}
 }

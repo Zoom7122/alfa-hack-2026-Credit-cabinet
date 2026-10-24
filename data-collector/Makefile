@@ -1,13 +1,22 @@
-.PHONY: run test test-integration lint swagger
+.PHONY: run run-publisher run-worker test test-integration lint swagger
 
+# API; нужен DATABASE_URL (задачи на сбор и outbox — в Postgres)
 run:
 	go run ./cmd/data-collector
+
+# outbox → Kafka; нужны DATABASE_URL и KAFKA_BROKERS (по умолчанию localhost:9094)
+run-publisher:
+	go run ./cmd/outbox-publisher
+
+# Kafka → сбор со всех моков → raw_collections; нужны DATABASE_URL, KAFKA_BROKERS, MOCK_API_URL
+run-worker:
+	go run ./cmd/worker
 
 test:
 	go test ./...
 
 # нужен запущенный mock-api (MOCK_API_URL, BANK_API_URL; по умолчанию localhost:8090);
-# запись в raw_collections проверяется, если задан DATABASE_URL (схема из модуля db)
+# Postgres (схема из модуля db) — если задан DATABASE_URL, Kafka — если задан KAFKA_BROKERS
 test-integration:
 	go test -tags integration -count=1 ./...
 

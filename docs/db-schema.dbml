@@ -101,8 +101,49 @@ Table source_snapshots {
   }
 }
 
+Table collection_tasks {
+  id text [pk, note: 'tsk_<ULID>']
+  questionnaire_id text [not null, note: 'qst_<ULID>; анкеты пока в памяти data-collector, без FK']
+  inn text [not null]
+  status text [not null, default: 'PENDING', note: 'PENDING | RUNNING | COMPLETED | FAILED']
+  request jsonb [not null, note: 'входные данные сбора без токенов']
+  secrets jsonb [note: 'токены маркетплейсов и ОФД для worker; NULL после завершения']
+  skipped_sources "text[]" [not null, note: 'системы без входных данных: не опрашиваются']
+  attempts smallint [not null, default: 0]
+  error text
+  created_at timestamptz [not null]
+  started_at timestamptz
+  finished_at timestamptz
+  updated_at timestamptz [not null]
+
+  Note: 'Задача на сбор по анкете; создаётся одной транзакцией с событием в outbox, выполняет worker'
+
+  indexes {
+    questionnaire_id
+    (status, created_at)
+  }
+}
+
+Table outbox {
+  id bigint [pk, increment]
+  topic text [not null]
+  key text [not null, note: 'ключ сообщения Kafka: id задачи']
+  payload jsonb [not null]
+  attempts int [not null, default: 0]
+  last_error text
+  created_at timestamptz [not null]
+  published_at timestamptz [note: 'NULL — ещё не опубликовано']
+
+  Note: 'Исходящие события для Kafka (transactional outbox), публикует outbox-publisher'
+
+  indexes {
+    (topic, id) [note: 'WHERE published_at IS NULL']
+  }
+}
+
 Table raw_collections {
   id text [pk, note: 'col_<ULID>; только вставка']
+  task_id text [not null, unique, ref: - collection_tasks.id, note: 'один результат на задачу']
   questionnaire_id text [not null, note: 'qst_<ULID>; анкеты пока в памяти data-collector, без FK']
   inn text [not null]
   director_inn text
@@ -246,6 +287,8 @@ TableGroup application [color: #27AE60] {
 TableGroup enrichment_decision [color: #E67E22] {
   source_snapshots
   source_runs
+  collection_tasks
+  outbox
   raw_collections
   decisions
   offers

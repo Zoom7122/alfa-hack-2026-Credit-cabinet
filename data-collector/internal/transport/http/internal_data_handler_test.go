@@ -18,9 +18,11 @@ import (
 )
 
 func newCheckMockRouter(svc httptransport.InternalDataService) *gin.Engine {
+	collections := newCollectionService(memory.NewCollectionTaskRepository())
 	return httptransport.NewRouter(
 		httptransport.NewQuestionnaireHandler(
-			newQuestionnaireService(memory.NewQuestionnaireRepository(), memory.NewRawCollectionRepository()), discardLog),
+			service.NewQuestionnaireService(memory.NewQuestionnaireRepository(), collections), discardLog),
+		httptransport.NewCollectionHandler(collections, discardLog),
 		httptransport.NewInternalDataHandler(svc, discardLog),
 	)
 }

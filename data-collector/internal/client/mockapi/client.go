@@ -45,10 +45,12 @@ func New(baseURL string, timeout time.Duration, ownBankBIK string) *Client {
 }
 
 // step собирает одну систему: делает запросы через run и кладёт ответы в r.put.
+// Шаг вызывается, только если для системы есть входные данные (domain.SkippedSystems).
 type step func(ctx context.Context, r *run, in domain.CollectInput)
 
 // CollectAll опрашивает все системы параллельно. Исключение — hh.ru: ему нужно
 // название компании из ЕГРЮЛ, поэтому он идёт после остальных.
+// Системы без входных данных не опрашиваются: сразу SKIPPED с причиной.
 // Отказ системы не роняет сбор: он виден в её SystemResult.
 func (c *Client) CollectAll(ctx context.Context, requestID string, in domain.CollectInput) []domain.SystemResult {
 	steps := map[domain.System]step{
@@ -77,7 +79,14 @@ func (c *Client) CollectAll(ctx context.Context, requestID string, in domain.Col
 		wg      sync.WaitGroup
 		results = make(map[domain.System]domain.SystemResult, len(domain.Systems))
 	)
+	skipped := domain.SkippedSystems(in)
+	for sys, reason := range skipped {
+		results[sys] = domain.SystemResult{System: sys, State: domain.CollectSkipped, Reason: reason}
+	}
 	for sys, st := range steps {
+		if _, ok := skipped[sys]; ok {
+			continue
+		}
 		wg.Go(func() {
 			res := c.collect(ctx, sys, requestID, in, st)
 			mu.Lock()

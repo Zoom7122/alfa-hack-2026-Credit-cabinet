@@ -31,14 +31,56 @@ services:
       postgres:
         condition: service_healthy
 
+  # Брокер сообщений (KRaft, один узел): события о задачах на сбор данных.
+  # Внутри compose — kafka:9092, с хоста — localhost:${KAFKA_PORT:-9094}.
+  kafka:
+    image: apache/kafka:4.1.2
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:${KAFKA_PORT:-9094}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      # топики создают publisher и worker при старте
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    ports:
+      - "${KAFKA_PORT:-9094}:9094"
+    volumes:
+      - kafkadata:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+    restart: unless-stopped
+
+  # Топики, сообщения и лаг consumer group в браузере: http://localhost:${KAFKA_UI_PORT:-8086}
+  kafka-ui:
+    image: ghcr.io/kafbat/kafka-ui:latest
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    ports:
+      - "${KAFKA_UI_PORT:-8086}:8080"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # API: анкета → задача на сбор (collection_tasks) + событие в outbox одной транзакцией.
   data-collector:
     build: ./data-collector
     environment:
       HTTP_ADDR: :8081
-      # сырые ответы всех систем по анкете → таблица raw_collections
       DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
-      MOCK_API_URL: http://mock-api:8090
-      MOCK_API_TIMEOUT: 5s
       BANK_API_URL: http://mock-api:8090/bank/v1
       BANK_API_TIMEOUT: 5s
     ports:
@@ -46,6 +88,40 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      mock-api:
+        condition: service_started
+    restart: unless-stopped
+
+  # outbox → Kafka: публикует события о новых задачах на сбор.
+  data-collector-publisher:
+    build: ./data-collector
+    entrypoint: ["/data-collector-publisher"]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
+      KAFKA_BROKERS: kafka:9092
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Kafka → задача RUNNING → опрос всех моков → raw_collections, задача COMPLETED.
+  data-collector-worker:
+    build: ./data-collector
+    entrypoint: ["/data-collector-worker"]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
+      KAFKA_BROKERS: kafka:9092
+      MOCK_API_URL: http://mock-api:8090
+      MOCK_API_TIMEOUT: 5s
+      COLLECT_TIMEOUT: 8s
+      WORKER_CONCURRENCY: 4
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
       mock-api:
         condition: service_started
     restart: unless-stopped
@@ -73,3 +149,4 @@ services:
 
 volumes:
   pgdata:
+  kafkadata:

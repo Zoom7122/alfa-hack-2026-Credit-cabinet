@@ -14,21 +14,21 @@ import (
 
 var company = domain.CollectInput{INN: "7799000012"}
 
-// fakeCollector запоминает вызовы; fields — ошибки валидации, err — ошибка сбора.
+// fakeCollector запоминает вызовы; fields — ошибки валидации, err — ошибка постановки сбора.
 type fakeCollector struct {
 	fields []service.FieldError
 	err    error
-	calls  []string // id анкет, по которым запускали сбор
+	calls  []string // id анкет, по которым ставили сбор
 }
 
 func (f *fakeCollector) Validate(domain.CollectInput) []service.FieldError { return f.fields }
 
-func (f *fakeCollector) Collect(_ context.Context, questionnaireID string, in domain.CollectInput) (domain.RawCollection, error) {
+func (f *fakeCollector) Enqueue(_ context.Context, questionnaireID string, in domain.CollectInput) (domain.CollectionTask, error) {
 	f.calls = append(f.calls, questionnaireID)
 	if f.err != nil {
-		return domain.RawCollection{}, f.err
+		return domain.CollectionTask{}, f.err
 	}
-	return domain.RawCollection{ID: "col_test", QuestionnaireID: questionnaireID, Input: in}, nil
+	return domain.CollectionTask{ID: "tsk_test", QuestionnaireID: questionnaireID, Input: in, Status: domain.TaskPending}, nil
 }
 
 func TestCreate(t *testing.T) {
@@ -75,7 +75,7 @@ func TestCreate(t *testing.T) {
 					t.Fatal("invalid questionnaire must not be saved")
 				}
 				if len(collector.calls) != 0 {
-					t.Fatal("collection must not start for an invalid questionnaire")
+					t.Fatal("collection must not be enqueued for an invalid questionnaire")
 				}
 				return
 			}
@@ -96,9 +96,9 @@ func TestCreate(t *testing.T) {
 			if saved, ok := repo.Get(context.Background(), "qst_test"); !ok || saved != want {
 				t.Fatalf("saved = %+v (found %v), want %+v", saved, ok, want)
 			}
-			if !slices.Equal(collector.calls, []string{"qst_test"}) || res.Collection.ID != "col_test" ||
-				res.Collection.Input.INN != company.INN {
-				t.Fatalf("collection = %+v, calls %v", res.Collection, collector.calls)
+			if !slices.Equal(collector.calls, []string{"qst_test"}) || res.Task.ID != "tsk_test" ||
+				res.Task.Input.INN != company.INN {
+				t.Fatalf("task = %+v, calls %v", res.Task, collector.calls)
 			}
 		})
 	}
@@ -130,25 +130,25 @@ func TestCreateRepositoryError(t *testing.T) {
 		t.Fatalf("want wrapped repo error, got %v", err)
 	}
 	if len(collector.calls) != 0 {
-		t.Fatal("collection must not start when the questionnaire is not saved")
+		t.Fatal("collection must not be enqueued when the questionnaire is not saved")
 	}
 }
 
-func TestCreateCollectionError(t *testing.T) {
-	boom := errors.New("raw_collections insert failed")
+func TestCreateEnqueueError(t *testing.T) {
+	boom := errors.New("collection_tasks insert failed")
 	repo := memory.NewQuestionnaireRepository()
 	svc := service.NewQuestionnaireService(repo, &fakeCollector{err: boom},
 		service.WithIDGenerator(func() string { return "qst_test" }))
 
 	res, err := svc.Create(context.Background(), service.CreateInput{Age: 30, MaritalStatus: domain.MaritalSingle, Company: company})
 	if !errors.Is(err, boom) {
-		t.Fatalf("want wrapped collection error, got %v", err)
+		t.Fatalf("want wrapped enqueue error, got %v", err)
 	}
 	if res.Questionnaire.ID != "qst_test" {
 		t.Fatalf("questionnaire must be returned: %+v", res)
 	}
 	if _, ok := repo.Get(context.Background(), "qst_test"); !ok {
-		t.Fatal("questionnaire is saved before the collection")
+		t.Fatal("questionnaire is saved before the collection is enqueued")
 	}
 }
 

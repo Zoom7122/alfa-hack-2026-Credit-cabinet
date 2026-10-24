@@ -2,6 +2,7 @@
 -include .env
 
 DOZZLE_PORT ?= 8888
+KAFKA_UI_PORT ?= 8086
 MODULES := data-collector db mock-api
 
 .PHONY: help env up down restart build ps logs migrate migrate-status test test-integration clean
@@ -15,8 +16,9 @@ env: ## создать .env из шаблона, если его нет
 up: env ## собрать и поднять все сервисы
 	docker compose up -d --build
 	@echo "Логи: http://localhost:$(DOZZLE_PORT)"
+	@echo "Kafka UI: http://localhost:$(KAFKA_UI_PORT)"
 
-down: ## остановить сервисы (данные БД сохраняются)
+down: ## остановить сервисы (данные БД и Kafka сохраняются)
 	docker compose down
 
 restart: down up ## перезапустить всё
@@ -39,11 +41,12 @@ migrate-status: env ## статус миграций
 test: ## тесты и vet всех Go-модулей
 	@for m in $(MODULES); do echo "== $$m"; (cd $$m && go vet ./... && go test ./...) || exit 1; done
 
-test-integration: ## интеграционные тесты data-collector против запущенных mock-api и Postgres (сначала make up)
+test-integration: ## интеграционные тесты data-collector против запущенных mock-api, Postgres и Kafka (сначала make up)
 	$(MAKE) -C data-collector test-integration \
 		BANK_API_URL=http://localhost:$(or $(MOCK_API_PORT),8090)/bank/v1 \
 		MOCK_API_URL=http://localhost:$(or $(MOCK_API_PORT),8090) \
-		DATABASE_URL=postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(or $(POSTGRES_PORT),5432)/$(POSTGRES_DB)?sslmode=disable
+		DATABASE_URL=postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(or $(POSTGRES_PORT),5432)/$(POSTGRES_DB)?sslmode=disable \
+		KAFKA_BROKERS=localhost:$(or $(KAFKA_PORT),9094)
 
-clean: ## остановить и удалить данные БД
+clean: ## остановить и удалить данные БД и Kafka
 	docker compose down -v

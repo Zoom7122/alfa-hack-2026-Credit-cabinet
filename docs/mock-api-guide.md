@@ -10,7 +10,7 @@
 
 Адрес мока локально: `http://localhost:8090` (`make up` в корне). Ниже в примерах он сокращён до `$MOCK`.
 
-Опросить все моки разом по одной компании можно через data-collector: `POST /api/v1/questionnaires`. Сырые ответы ложатся в таблицу `raw_collections`, по колонке на мок. Тела запросов и ключи внутри колонок — в [data-collector/README.md](../data-collector/README.md).
+Опросить все моки разом по одной компании можно через data-collector: `POST /api/v1/questionnaires`. Сбор асинхронный: ответ `202` со ссылкой на задачу, состояние — `GET /api/v1/collections/{id}`. Сырые ответы ложатся в таблицу `raw_collections`, по колонке на мок. Тела запросов и ключи внутри колонок — в [data-collector/README.md](../data-collector/README.md).
 
 ---
 

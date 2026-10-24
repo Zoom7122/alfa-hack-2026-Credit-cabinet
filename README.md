@@ -13,7 +13,11 @@ make help    # остальные команды
 |---|---|---|
 | postgres | `localhost:${POSTGRES_PORT}` (5432) | общая БД |
 | migrate | — | накатывает миграции из [db/](db/) и завершается |
-| data-collector | http://localhost:8081 | сбор данных для скоринга: `POST /api/v1/questionnaires` опрашивает все моки и пишет сырые ответы в `raw_collections`; [data-collector/](data-collector/), Swagger UI — http://localhost:8081/swagger/index.html |
+| data-collector | http://localhost:8081 | сбор данных для скоринга: `POST /api/v1/questionnaires` ставит задачу на сбор (outbox → Kafka), состояние — `GET /api/v1/collections/{id}`; [data-collector/](data-collector/), Swagger UI — http://localhost:8081/swagger/index.html |
+| data-collector-publisher | — | переносит события о задачах из таблицы `outbox` в Kafka |
+| data-collector-worker | — | читает задачи из Kafka, опрашивает все моки и пишет сырые ответы в `raw_collections` |
+| kafka | `localhost:${KAFKA_PORT}` (9094) | брокер сообщений (KRaft, один узел); внутри compose — `kafka:9092` |
+| kafka-ui | http://localhost:8086 | топики, сообщения и лаг consumer group в браузере |
 | mock-api | http://localhost:8090 | эмулятор внешних систем: АБС банка, ФНС, БКИ, Compliance, ФССП, КАД, Федресурс, МЧД, налоговая отчётность, залоги, ЕГРН, Госуслуги, мультибанкинг, маркетплейсы, ОФД, закупки, сигналы, ЦБ, hh.ru; [mock-api/](mock-api/) |
 | dozzle | http://localhost:8888 | логи всех контейнеров в браузере |
 

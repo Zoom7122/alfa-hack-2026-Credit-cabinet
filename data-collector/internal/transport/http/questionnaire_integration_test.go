@@ -1,7 +1,9 @@
 //go:build integration
 
 // Сквозной тест сбора против живого mock-api: POST /questionnaires с примерами
-// из examples/ (сценарии A–E), ответы систем — настоящие.
+// из examples/ (сценарии A–E) → событие из outbox → worker → GET /collections/{id}.
+// Ответы систем — настоящие; очередь и хранилище — в памяти (Kafka и Postgres
+// проверяются в internal/worker/pipeline_integration_test.go).
 //
 //	make test-integration                                # mock-api на localhost:8090
 //	MOCK_API_URL=http://host:port make test-integration
@@ -71,22 +73,38 @@ func TestIntegrationCollectScenarios(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			raw := memory.NewRawCollectionRepository()
-			collection := service.NewCollectionService(mockapi.New(mockAPIURL(), 5*time.Second, "044525999"), raw, 15*time.Second)
+			tasks := memory.NewCollectionTaskRepository()
+			collections := service.NewCollectionService(tasks)
 			r := httptransport.NewRouter(
-				httptransport.NewQuestionnaireHandler(service.NewQuestionnaireService(memory.NewQuestionnaireRepository(), collection), discardLog),
+				httptransport.NewQuestionnaireHandler(service.NewQuestionnaireService(memory.NewQuestionnaireRepository(), collections), discardLog),
+				httptransport.NewCollectionHandler(collections, discardLog),
 				httptransport.NewInternalDataHandler(stubInternalData{}, discardLog),
 			)
 
 			w := post(r, string(body))
-			if w.Code != http.StatusCreated {
+			if w.Code != http.StatusAccepted {
 				t.Fatalf("status = %d, body = %s", w.Code, w.Body)
 			}
 			var created createdBody
 			if err := json.Unmarshal(w.Body.Bytes(), &created); err != nil {
 				t.Fatal(err)
 			}
-			for _, s := range created.Collection.Sources {
+			// системы без данных видны сразу, до сбора
+			var wantSkipped []string
+			for _, sys := range skipped[sc] {
+				wantSkipped = append(wantSkipped, string(sys))
+			}
+			if c := created.Collection; c.Status != "PENDING" || !slices.Equal(c.SkippedSources, wantSkipped) {
+				t.Fatalf("created collection = %+v, want skipped %v", c, wantSkipped)
+			}
+
+			runWorker(t, mockapi.New(mockAPIURL(), 5*time.Second, "044525999"), tasks)
+
+			code, c, _ := getCollection(t, r, created.Collection.ID)
+			if code != http.StatusOK || c.Status != "COMPLETED" || len(c.Sources) != len(domain.Systems) {
+				t.Fatalf("collection: %d %+v", code, c)
+			}
+			for _, s := range c.Sources {
 				want := "DONE"
 				if slices.Contains(skipped[sc], domain.System(s.Source)) {
 					want = "SKIPPED"
@@ -96,7 +114,7 @@ func TestIntegrationCollectScenarios(t *testing.T) {
 				}
 			}
 
-			rc, ok := raw.Get(context.Background(), created.Collection.ID)
+			rc, ok := tasks.Result(created.Collection.ID)
 			if !ok {
 				t.Fatal("collection is not saved")
 			}
@@ -167,11 +185,15 @@ func TestIntegrationCollectScenarios(t *testing.T) {
 
 // Неизвестная компания: АБС её не знает, ЕГРЮЛ пуст, hh не с чем искать.
 func TestIntegrationUnknownCompany(t *testing.T) {
-	raw := memory.NewRawCollectionRepository()
-	collection := service.NewCollectionService(mockapi.New(mockAPIURL(), 5*time.Second, "044525999"), raw, 15*time.Second)
-	rc, err := collection.Collect(context.Background(), "qst_test", domain.CollectInput{INN: "7799000999"})
+	tasks := memory.NewCollectionTaskRepository()
+	task, err := service.NewCollectionService(tasks).Enqueue(context.Background(), "qst_test", domain.CollectInput{INN: "7799000999"})
 	if err != nil {
 		t.Fatal(err)
+	}
+	runWorker(t, mockapi.New(mockAPIURL(), 5*time.Second, "044525999"), tasks)
+	rc, ok := tasks.Result(task.ID)
+	if !ok {
+		t.Fatal("collection is not saved")
 	}
 	states := map[domain.System]domain.CollectState{}
 	for _, s := range rc.Systems {

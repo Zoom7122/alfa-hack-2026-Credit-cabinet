@@ -1,9 +1,13 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
+
+// ErrNotFound — запрошенной сущности нет.
+var ErrNotFound = errors.New("not found")
 
 // FieldError — нарушение правила для одного поля анкеты.
 type FieldError struct {
