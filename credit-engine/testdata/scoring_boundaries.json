@@ -1,0 +1,5633 @@
+{
+  "version": 2,
+  "questionnaire_cases": [
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 19
+      },
+      "expected_points": 5.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 20
+      },
+      "expected_points": 10.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 26
+      },
+      "expected_points": 15.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 31
+      },
+      "expected_points": 30.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 36
+      },
+      "expected_points": 25.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 50
+      },
+      "expected_points": 20.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 66
+      },
+      "expected_points": 5.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q02",
+      "raw_fields": {
+        "marital_status": "MARRIED"
+      },
+      "expected_points": 25.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q02",
+      "raw_fields": {
+        "marital_status": "NEVER_MARRIED"
+      },
+      "expected_points": 20.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q02",
+      "raw_fields": {
+        "marital_status": "DIVORCED_ONCE"
+      },
+      "expected_points": 15.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q02",
+      "raw_fields": {
+        "marital_status": "DIVORCED_MULTIPLE"
+      },
+      "expected_points": 5.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q02",
+      "raw_fields": {
+        "marital_status": "WIDOWED"
+      },
+      "expected_points": 20.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q03",
+      "raw_fields": {
+        "dependents": 0
+      },
+      "expected_points": 25.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q03",
+      "raw_fields": {
+        "dependents": 1
+      },
+      "expected_points": 20.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q03",
+      "raw_fields": {
+        "dependents": 2
+      },
+      "expected_points": 15.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q03",
+      "raw_fields": {
+        "dependents": 3
+      },
+      "expected_points": 10.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q03",
+      "raw_fields": {
+        "dependents": 4
+      },
+      "expected_points": 5.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q04",
+      "raw_fields": {
+        "primary_income_source": "BUSINESS"
+      },
+      "expected_points": 25.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q04",
+      "raw_fields": {
+        "primary_income_source": "PUBLIC_EMPLOYMENT"
+      },
+      "expected_points": 25.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q04",
+      "raw_fields": {
+        "primary_income_source": "PRIVATE_EMPLOYMENT"
+      },
+      "expected_points": 20.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q04",
+      "raw_fields": {
+        "primary_income_source": "PENSION"
+      },
+      "expected_points": 15.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q04",
+      "raw_fields": {
+        "primary_income_source": "SELF_EMPLOYED_OR_GPH"
+      },
+      "expected_points": 15.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q04",
+      "raw_fields": {
+        "primary_income_source": "NONE"
+      },
+      "expected_points": 0.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q05",
+      "raw_fields": {
+        "qualification": "NONE"
+      },
+      "expected_points": 0.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q05",
+      "raw_fields": {
+        "qualification": "SUPPORT"
+      },
+      "expected_points": 5.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q05",
+      "raw_fields": {
+        "qualification": "SPECIALIST"
+      },
+      "expected_points": 15.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q05",
+      "raw_fields": {
+        "qualification": "MANAGER_OR_HIGHLY_QUALIFIED"
+      },
+      "expected_points": 25.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q06",
+      "raw_fields": {
+        "total_experience_months": 0
+      },
+      "expected_points": 0.0,
+      "max_points": 35,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q06",
+      "raw_fields": {
+        "total_experience_months": 1
+      },
+      "expected_points": 10.0,
+      "max_points": 35,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q06",
+      "raw_fields": {
+        "total_experience_months": 36
+      },
+      "expected_points": 25.0,
+      "max_points": 35,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q06",
+      "raw_fields": {
+        "total_experience_months": 72
+      },
+      "expected_points": 35.0,
+      "max_points": 35,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q07",
+      "raw_fields": {
+        "net_monthly_income_rub": 15000
+      },
+      "expected_points": 0.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q07",
+      "raw_fields": {
+        "net_monthly_income_rub": 15001
+      },
+      "expected_points": 15.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q07",
+      "raw_fields": {
+        "net_monthly_income_rub": 30001
+      },
+      "expected_points": 30.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q07",
+      "raw_fields": {
+        "net_monthly_income_rub": 60001
+      },
+      "expected_points": 40.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q07",
+      "raw_fields": {
+        "net_monthly_income_rub": 90001
+      },
+      "expected_points": 50.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q08",
+      "raw_fields": {
+        "car_class": "NONE"
+      },
+      "expected_points": 10.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q08",
+      "raw_fields": {
+        "car_class": "ECONOMY"
+      },
+      "expected_points": 10.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q08",
+      "raw_fields": {
+        "car_class": "COMFORT"
+      },
+      "expected_points": 15.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q08",
+      "raw_fields": {
+        "car_class": "PREMIUM"
+      },
+      "expected_points": 25.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 0
+      },
+      "expected_points": 0.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 1
+      },
+      "expected_points": 10.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 12
+      },
+      "expected_points": 20.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 24
+      },
+      "expected_points": 30.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q10",
+      "raw_fields": {
+        "education_level": "BELOW_GENERAL"
+      },
+      "expected_points": 0.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q10",
+      "raw_fields": {
+        "education_level": "GENERAL"
+      },
+      "expected_points": 5.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q10",
+      "raw_fields": {
+        "education_level": "VOCATIONAL"
+      },
+      "expected_points": 10.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q10",
+      "raw_fields": {
+        "education_level": "HIGHER"
+      },
+      "expected_points": 20.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q10",
+      "raw_fields": {
+        "education_level": "ACADEMIC_DEGREE"
+      },
+      "expected_points": 25.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q11",
+      "raw_fields": {
+        "real_estate_status": "UNENCUMBERED_WHOLE"
+      },
+      "expected_points": 25.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q11",
+      "raw_fields": {
+        "real_estate_status": "UNENCUMBERED_SHARE"
+      },
+      "expected_points": 15.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q11",
+      "raw_fields": {
+        "real_estate_status": "ENCUMBERED_ONLY"
+      },
+      "expected_points": 10.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q11",
+      "raw_fields": {
+        "real_estate_status": "NONE"
+      },
+      "expected_points": 0.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q12",
+      "raw_fields": {
+        "credit_history_months": 0
+      },
+      "expected_points": 0.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q12",
+      "raw_fields": {
+        "credit_history_months": 1
+      },
+      "expected_points": 10.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q12",
+      "raw_fields": {
+        "credit_history_months": 6
+      },
+      "expected_points": 25.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q12",
+      "raw_fields": {
+        "credit_history_months": 18
+      },
+      "expected_points": 40.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q12",
+      "raw_fields": {
+        "credit_history_months": 36
+      },
+      "expected_points": 50.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 0
+      },
+      "expected_points": 100.0,
+      "max_points": 100,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 1
+      },
+      "expected_points": 75.0,
+      "max_points": 100,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 8
+      },
+      "expected_points": 50.0,
+      "max_points": 100,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 30
+      },
+      "expected_points": 25.0,
+      "max_points": 100,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 60
+      },
+      "expected_points": 0.0,
+      "max_points": 100,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 90
+      },
+      "expected_points": 0.0,
+      "max_points": 100,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q14",
+      "raw_fields": {
+        "current_dpd_days": 0
+      },
+      "expected_points": 25.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q14",
+      "raw_fields": {
+        "current_dpd_days": 1
+      },
+      "expected_points": 15.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q14",
+      "raw_fields": {
+        "current_dpd_days": 8
+      },
+      "expected_points": 5.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q14",
+      "raw_fields": {
+        "current_dpd_days": 30
+      },
+      "expected_points": 0.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q15",
+      "raw_fields": {
+        "applications_90d": 0
+      },
+      "expected_points": 30.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q15",
+      "raw_fields": {
+        "applications_90d": 1
+      },
+      "expected_points": 20.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q15",
+      "raw_fields": {
+        "applications_90d": 3
+      },
+      "expected_points": 15.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q15",
+      "raw_fields": {
+        "applications_90d": 5
+      },
+      "expected_points": 5.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q15",
+      "raw_fields": {
+        "applications_90d": 8
+      },
+      "expected_points": 0.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q16",
+      "raw_fields": {
+        "business_age_months": 0
+      },
+      "expected_points": 0.0,
+      "max_points": 60,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q16",
+      "raw_fields": {
+        "business_age_months": 12
+      },
+      "expected_points": 15.0,
+      "max_points": 60,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q16",
+      "raw_fields": {
+        "business_age_months": 24
+      },
+      "expected_points": 30.0,
+      "max_points": 60,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q16",
+      "raw_fields": {
+        "business_age_months": 36
+      },
+      "expected_points": 45.0,
+      "max_points": 60,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q16",
+      "raw_fields": {
+        "business_age_months": 60
+      },
+      "expected_points": 60.0,
+      "max_points": 60,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q17",
+      "raw_fields": {
+        "owner_experience_years": 0
+      },
+      "expected_points": 0.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q17",
+      "raw_fields": {
+        "owner_experience_years": 1
+      },
+      "expected_points": 15.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q17",
+      "raw_fields": {
+        "owner_experience_years": 3
+      },
+      "expected_points": 25.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q17",
+      "raw_fields": {
+        "owner_experience_years": 5
+      },
+      "expected_points": 40.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q17",
+      "raw_fields": {
+        "owner_experience_years": 8
+      },
+      "expected_points": 50.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q18",
+      "raw_fields": {
+        "business_location": "VERIFIED_PHYSICAL",
+        "location_stability_months": 24
+      },
+      "expected_points": 20.0,
+      "max_points": 20,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q18",
+      "raw_fields": {
+        "business_location": "VERIFIED_PHYSICAL",
+        "location_stability_months": 12
+      },
+      "expected_points": 15.0,
+      "max_points": 20,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q18",
+      "raw_fields": {
+        "business_location": "VERIFIED_PHYSICAL",
+        "location_stability_months": 0
+      },
+      "expected_points": 5.0,
+      "max_points": 20,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q18",
+      "raw_fields": {
+        "business_location": "VERIFIED_ONLINE_OR_MOBILE"
+      },
+      "expected_points": 20.0,
+      "max_points": 20,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q18",
+      "raw_fields": {
+        "business_location": "UNVERIFIED"
+      },
+      "expected_points": 0.0,
+      "max_points": 20,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q19",
+      "raw_fields": {
+        "overdue_taxes_rub": 0
+      },
+      "expected_points": 45.0,
+      "max_points": 45,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q19",
+      "raw_fields": {
+        "overdue_taxes_rub": 1
+      },
+      "expected_points": 30.0,
+      "max_points": 45,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q19",
+      "raw_fields": {
+        "overdue_taxes_rub": 50001
+      },
+      "expected_points": 15.0,
+      "max_points": 45,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q19",
+      "raw_fields": {
+        "overdue_taxes_rub": 200001
+      },
+      "expected_points": 0.0,
+      "max_points": 45,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q20",
+      "raw_fields": {
+        "income_evidence": "VERIFIED"
+      },
+      "expected_points": 30.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q20",
+      "raw_fields": {
+        "income_evidence": "DOCUMENTS_PENDING_CROSSCHECK"
+      },
+      "expected_points": 15.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q20",
+      "raw_fields": {
+        "income_evidence": "NONE"
+      },
+      "expected_points": 0.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q21",
+      "raw_fields": {
+        "buyer_contracts": "ACTIVE_AND_PERFORMED"
+      },
+      "expected_points": 20.0,
+      "max_points": 20,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q21",
+      "raw_fields": {
+        "buyer_contracts": "REPEAT_ORDERS"
+      },
+      "expected_points": 10.0,
+      "max_points": 20,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q21",
+      "raw_fields": {
+        "buyer_contracts": "PLANS_ONLY"
+      },
+      "expected_points": 0.0,
+      "max_points": 20,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q01",
+      "raw_fields": {
+        "business_age_months": 0
+      },
+      "expected_points": 0.0,
+      "max_points": 60,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q01",
+      "raw_fields": {
+        "business_age_months": 12
+      },
+      "expected_points": 15.0,
+      "max_points": 60,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q01",
+      "raw_fields": {
+        "business_age_months": 24
+      },
+      "expected_points": 30.0,
+      "max_points": 60,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q01",
+      "raw_fields": {
+        "business_age_months": 36
+      },
+      "expected_points": 45.0,
+      "max_points": 60,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q01",
+      "raw_fields": {
+        "business_age_months": 60
+      },
+      "expected_points": 60.0,
+      "max_points": 60,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q02",
+      "raw_fields": {
+        "credit_history_months": 0
+      },
+      "expected_points": 0.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q02",
+      "raw_fields": {
+        "credit_history_months": 1
+      },
+      "expected_points": 10.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q02",
+      "raw_fields": {
+        "credit_history_months": 6
+      },
+      "expected_points": 25.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q02",
+      "raw_fields": {
+        "credit_history_months": 18
+      },
+      "expected_points": 40.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q02",
+      "raw_fields": {
+        "credit_history_months": 36
+      },
+      "expected_points": 50.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 0
+      },
+      "expected_points": 100.0,
+      "max_points": 100,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 1
+      },
+      "expected_points": 75.0,
+      "max_points": 100,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 8
+      },
+      "expected_points": 50.0,
+      "max_points": 100,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 30
+      },
+      "expected_points": 25.0,
+      "max_points": 100,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 60
+      },
+      "expected_points": 0.0,
+      "max_points": 100,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 90
+      },
+      "expected_points": 0.0,
+      "max_points": 100,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q04",
+      "raw_fields": {
+        "current_dpd_days": 0
+      },
+      "expected_points": 25.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q04",
+      "raw_fields": {
+        "current_dpd_days": 1
+      },
+      "expected_points": 15.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q04",
+      "raw_fields": {
+        "current_dpd_days": 8
+      },
+      "expected_points": 5.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q04",
+      "raw_fields": {
+        "current_dpd_days": 30
+      },
+      "expected_points": 0.0,
+      "max_points": 25,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q05",
+      "raw_fields": {
+        "applications_90d": 0
+      },
+      "expected_points": 30.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q05",
+      "raw_fields": {
+        "applications_90d": 1
+      },
+      "expected_points": 20.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q05",
+      "raw_fields": {
+        "applications_90d": 3
+      },
+      "expected_points": 15.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q05",
+      "raw_fields": {
+        "applications_90d": 5
+      },
+      "expected_points": 5.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q05",
+      "raw_fields": {
+        "applications_90d": 8
+      },
+      "expected_points": 0.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q06",
+      "raw_fields": {
+        "manager_experience_years": 0
+      },
+      "expected_points": 0.0,
+      "max_points": 35,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q06",
+      "raw_fields": {
+        "manager_experience_years": 1
+      },
+      "expected_points": 10.0,
+      "max_points": 35,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q06",
+      "raw_fields": {
+        "manager_experience_years": 3
+      },
+      "expected_points": 20.0,
+      "max_points": 35,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q06",
+      "raw_fields": {
+        "manager_experience_years": 5
+      },
+      "expected_points": 30.0,
+      "max_points": 35,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q06",
+      "raw_fields": {
+        "manager_experience_years": 8
+      },
+      "expected_points": 35.0,
+      "max_points": 35,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q07",
+      "raw_fields": {
+        "overdue_taxes_rub": 0
+      },
+      "expected_points": 50.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q07",
+      "raw_fields": {
+        "overdue_taxes_rub": 1
+      },
+      "expected_points": 35.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q07",
+      "raw_fields": {
+        "overdue_taxes_rub": 100001
+      },
+      "expected_points": 15.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q07",
+      "raw_fields": {
+        "overdue_taxes_rub": 500001
+      },
+      "expected_points": 0.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q08",
+      "raw_fields": {
+        "report_verification_level": 0
+      },
+      "expected_points": 0.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q08",
+      "raw_fields": {
+        "report_verification_level": 1
+      },
+      "expected_points": 15.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q08",
+      "raw_fields": {
+        "report_verification_level": 2
+      },
+      "expected_points": 35.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q08",
+      "raw_fields": {
+        "report_verification_level": 3
+      },
+      "expected_points": 50.0,
+      "max_points": 50,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 0
+      },
+      "expected_points": 0.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 1
+      },
+      "expected_points": 10.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 12
+      },
+      "expected_points": 20.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 24
+      },
+      "expected_points": 30.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q10",
+      "raw_fields": {
+        "organization_and_related_debts_complete": true
+      },
+      "expected_points": 30.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q10",
+      "raw_fields": {
+        "organization_and_related_debts_complete": false
+      },
+      "expected_points": 0.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q10",
+      "raw_fields": {
+        "organization_and_related_debts_complete": null
+      },
+      "expected_points": 0.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q11",
+      "raw_fields": {
+        "material_register_inaccuracy": false
+      },
+      "expected_points": 30.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q11",
+      "raw_fields": {
+        "material_register_inaccuracy": true
+      },
+      "expected_points": 0.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q11",
+      "raw_fields": {
+        "material_register_inaccuracy": null
+      },
+      "expected_points": 0.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q12",
+      "raw_fields": {
+        "auditor_opinion": "UNMODIFIED"
+      },
+      "expected_points": 35.0,
+      "max_points": 35,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q12",
+      "raw_fields": {
+        "auditor_opinion": "NOT_REQUIRED"
+      },
+      "expected_points": 35.0,
+      "max_points": 35,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q12",
+      "raw_fields": {
+        "auditor_opinion": "MATERIAL_MODIFICATION"
+      },
+      "expected_points": 0.0,
+      "max_points": 35,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q12",
+      "raw_fields": {
+        "auditor_opinion": "REQUIRED_MISSING"
+      },
+      "expected_points": 0.0,
+      "max_points": 35,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q13",
+      "raw_fields": {
+        "material_account_restriction": false
+      },
+      "expected_points": 35.0,
+      "max_points": 35,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q13",
+      "raw_fields": {
+        "material_account_restriction": true
+      },
+      "expected_points": 0.0,
+      "max_points": 35,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q13",
+      "raw_fields": {
+        "material_account_restriction": null
+      },
+      "expected_points": 0.0,
+      "max_points": 35,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q14",
+      "raw_fields": {
+        "material_dispute_or_enforcement": false
+      },
+      "expected_points": 35.0,
+      "max_points": 35,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q14",
+      "raw_fields": {
+        "material_dispute_or_enforcement": true
+      },
+      "expected_points": 0.0,
+      "max_points": 35,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q14",
+      "raw_fields": {
+        "material_dispute_or_enforcement": null
+      },
+      "expected_points": 0.0,
+      "max_points": 35,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q15",
+      "raw_fields": {
+        "key_buyer_loss": false
+      },
+      "expected_points": 30.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q15",
+      "raw_fields": {
+        "key_buyer_loss": true
+      },
+      "expected_points": 0.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q15",
+      "raw_fields": {
+        "key_buyer_loss": null
+      },
+      "expected_points": 0.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q16",
+      "raw_fields": {
+        "structural_business_change": false
+      },
+      "expected_points": 30.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q16",
+      "raw_fields": {
+        "structural_business_change": true
+      },
+      "expected_points": 0.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q16",
+      "raw_fields": {
+        "structural_business_change": null
+      },
+      "expected_points": 0.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q17",
+      "raw_fields": {
+        "need_evidence": "CONTRACT_AND_COST"
+      },
+      "expected_points": 30.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q17",
+      "raw_fields": {
+        "need_evidence": "VERIFIED_ESTIMATE"
+      },
+      "expected_points": 20.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q17",
+      "raw_fields": {
+        "need_evidence": "ORAL_ONLY"
+      },
+      "expected_points": 0.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q18",
+      "raw_fields": {
+        "documents_complete": true
+      },
+      "expected_points": 30.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q18",
+      "raw_fields": {
+        "documents_complete": false
+      },
+      "expected_points": 0.0,
+      "max_points": 30,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q19",
+      "raw_fields": {
+        "free_cash_source_verified": true
+      },
+      "expected_points": 20.0,
+      "max_points": 20,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q19",
+      "raw_fields": {
+        "free_cash_source_verified": false
+      },
+      "expected_points": 0.0,
+      "max_points": 20,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q20",
+      "raw_fields": {
+        "operating_nonfinancial_company": true
+      },
+      "expected_points": 15.0,
+      "max_points": 15,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q20",
+      "raw_fields": {
+        "operating_nonfinancial_company": false
+      },
+      "expected_points": 0.0,
+      "max_points": 15,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "LE_Q20",
+      "raw_fields": {
+        "operating_nonfinancial_company": null
+      },
+      "expected_points": 0.0,
+      "max_points": 15,
+      "note": "Test the field classifier in isolation; full decision may instead stop or request data."
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 19
+      },
+      "expected_points": 5.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 20
+      },
+      "expected_points": 10.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 21
+      },
+      "expected_points": 10.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 25
+      },
+      "expected_points": 10.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 26
+      },
+      "expected_points": 15.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 27
+      },
+      "expected_points": 15.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 30
+      },
+      "expected_points": 15.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 31
+      },
+      "expected_points": 30.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 32
+      },
+      "expected_points": 30.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 35
+      },
+      "expected_points": 30.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 36
+      },
+      "expected_points": 25.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 37
+      },
+      "expected_points": 25.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 49
+      },
+      "expected_points": 25.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 50
+      },
+      "expected_points": 20.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 51
+      },
+      "expected_points": 20.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 65
+      },
+      "expected_points": 20.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 66
+      },
+      "expected_points": 5.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q01",
+      "raw_fields": {
+        "owner_age": 67
+      },
+      "expected_points": 5.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q03",
+      "raw_fields": {
+        "dependents": 0
+      },
+      "expected_points": 25.0,
+      "max_points": 25
+    },
+    {
+      "id": "IP_Q03",
+      "raw_fields": {
+        "dependents": 1
+      },
+      "expected_points": 20.0,
+      "max_points": 25
+    },
+    {
+      "id": "IP_Q03",
+      "raw_fields": {
+        "dependents": 2
+      },
+      "expected_points": 15.0,
+      "max_points": 25
+    },
+    {
+      "id": "IP_Q03",
+      "raw_fields": {
+        "dependents": 3
+      },
+      "expected_points": 10.0,
+      "max_points": 25
+    },
+    {
+      "id": "IP_Q03",
+      "raw_fields": {
+        "dependents": 4
+      },
+      "expected_points": 5.0,
+      "max_points": 25
+    },
+    {
+      "id": "IP_Q03",
+      "raw_fields": {
+        "dependents": 5
+      },
+      "expected_points": 5.0,
+      "max_points": 25
+    },
+    {
+      "id": "IP_Q06",
+      "raw_fields": {
+        "total_experience_months": 0
+      },
+      "expected_points": 0.0,
+      "max_points": 35
+    },
+    {
+      "id": "IP_Q06",
+      "raw_fields": {
+        "total_experience_months": 1
+      },
+      "expected_points": 10.0,
+      "max_points": 35
+    },
+    {
+      "id": "IP_Q06",
+      "raw_fields": {
+        "total_experience_months": 2
+      },
+      "expected_points": 10.0,
+      "max_points": 35
+    },
+    {
+      "id": "IP_Q06",
+      "raw_fields": {
+        "total_experience_months": 35
+      },
+      "expected_points": 10.0,
+      "max_points": 35
+    },
+    {
+      "id": "IP_Q06",
+      "raw_fields": {
+        "total_experience_months": 36
+      },
+      "expected_points": 25.0,
+      "max_points": 35
+    },
+    {
+      "id": "IP_Q06",
+      "raw_fields": {
+        "total_experience_months": 37
+      },
+      "expected_points": 25.0,
+      "max_points": 35
+    },
+    {
+      "id": "IP_Q06",
+      "raw_fields": {
+        "total_experience_months": 71
+      },
+      "expected_points": 25.0,
+      "max_points": 35
+    },
+    {
+      "id": "IP_Q06",
+      "raw_fields": {
+        "total_experience_months": 72
+      },
+      "expected_points": 35.0,
+      "max_points": 35
+    },
+    {
+      "id": "IP_Q06",
+      "raw_fields": {
+        "total_experience_months": 73
+      },
+      "expected_points": 35.0,
+      "max_points": 35
+    },
+    {
+      "id": "IP_Q07",
+      "raw_fields": {
+        "net_monthly_income_rub": 15000
+      },
+      "expected_points": 0.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q07",
+      "raw_fields": {
+        "net_monthly_income_rub": 15001
+      },
+      "expected_points": 15.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q07",
+      "raw_fields": {
+        "net_monthly_income_rub": 15002
+      },
+      "expected_points": 15.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q07",
+      "raw_fields": {
+        "net_monthly_income_rub": 30000
+      },
+      "expected_points": 15.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q07",
+      "raw_fields": {
+        "net_monthly_income_rub": 30001
+      },
+      "expected_points": 30.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q07",
+      "raw_fields": {
+        "net_monthly_income_rub": 30002
+      },
+      "expected_points": 30.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q07",
+      "raw_fields": {
+        "net_monthly_income_rub": 60000
+      },
+      "expected_points": 30.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q07",
+      "raw_fields": {
+        "net_monthly_income_rub": 60001
+      },
+      "expected_points": 40.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q07",
+      "raw_fields": {
+        "net_monthly_income_rub": 60002
+      },
+      "expected_points": 40.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q07",
+      "raw_fields": {
+        "net_monthly_income_rub": 90000
+      },
+      "expected_points": 40.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q07",
+      "raw_fields": {
+        "net_monthly_income_rub": 90001
+      },
+      "expected_points": 50.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q07",
+      "raw_fields": {
+        "net_monthly_income_rub": 90002
+      },
+      "expected_points": 50.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 0
+      },
+      "expected_points": 0.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 1
+      },
+      "expected_points": 10.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 2
+      },
+      "expected_points": 10.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 11
+      },
+      "expected_points": 10.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 12
+      },
+      "expected_points": 20.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 13
+      },
+      "expected_points": 20.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 23
+      },
+      "expected_points": 20.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 24
+      },
+      "expected_points": 30.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 25
+      },
+      "expected_points": 30.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q12",
+      "raw_fields": {
+        "credit_history_months": 0
+      },
+      "expected_points": 0.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q12",
+      "raw_fields": {
+        "credit_history_months": 1
+      },
+      "expected_points": 10.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q12",
+      "raw_fields": {
+        "credit_history_months": 2
+      },
+      "expected_points": 10.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q12",
+      "raw_fields": {
+        "credit_history_months": 5
+      },
+      "expected_points": 10.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q12",
+      "raw_fields": {
+        "credit_history_months": 6
+      },
+      "expected_points": 25.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q12",
+      "raw_fields": {
+        "credit_history_months": 7
+      },
+      "expected_points": 25.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q12",
+      "raw_fields": {
+        "credit_history_months": 17
+      },
+      "expected_points": 25.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q12",
+      "raw_fields": {
+        "credit_history_months": 18
+      },
+      "expected_points": 40.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q12",
+      "raw_fields": {
+        "credit_history_months": 19
+      },
+      "expected_points": 40.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q12",
+      "raw_fields": {
+        "credit_history_months": 35
+      },
+      "expected_points": 40.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q12",
+      "raw_fields": {
+        "credit_history_months": 36
+      },
+      "expected_points": 50.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q12",
+      "raw_fields": {
+        "credit_history_months": 37
+      },
+      "expected_points": 50.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 0
+      },
+      "expected_points": 100.0,
+      "max_points": 100
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 1
+      },
+      "expected_points": 75.0,
+      "max_points": 100
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 2
+      },
+      "expected_points": 75.0,
+      "max_points": 100
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 7
+      },
+      "expected_points": 75.0,
+      "max_points": 100
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 8
+      },
+      "expected_points": 50.0,
+      "max_points": 100
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 9
+      },
+      "expected_points": 50.0,
+      "max_points": 100
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 29
+      },
+      "expected_points": 50.0,
+      "max_points": 100
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 30
+      },
+      "expected_points": 25.0,
+      "max_points": 100
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 31
+      },
+      "expected_points": 25.0,
+      "max_points": 100
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 59
+      },
+      "expected_points": 25.0,
+      "max_points": 100
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 60
+      },
+      "expected_points": 0.0,
+      "max_points": 100
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 61
+      },
+      "expected_points": 0.0,
+      "max_points": 100
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 89
+      },
+      "expected_points": 0.0,
+      "max_points": 100
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 90
+      },
+      "expected_points": 0.0,
+      "max_points": 100
+    },
+    {
+      "id": "IP_Q13",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 91
+      },
+      "expected_points": 0.0,
+      "max_points": 100
+    },
+    {
+      "id": "IP_Q14",
+      "raw_fields": {
+        "current_dpd_days": 0
+      },
+      "expected_points": 25.0,
+      "max_points": 25
+    },
+    {
+      "id": "IP_Q14",
+      "raw_fields": {
+        "current_dpd_days": 1
+      },
+      "expected_points": 15.0,
+      "max_points": 25
+    },
+    {
+      "id": "IP_Q14",
+      "raw_fields": {
+        "current_dpd_days": 2
+      },
+      "expected_points": 15.0,
+      "max_points": 25
+    },
+    {
+      "id": "IP_Q14",
+      "raw_fields": {
+        "current_dpd_days": 7
+      },
+      "expected_points": 15.0,
+      "max_points": 25
+    },
+    {
+      "id": "IP_Q14",
+      "raw_fields": {
+        "current_dpd_days": 8
+      },
+      "expected_points": 5.0,
+      "max_points": 25
+    },
+    {
+      "id": "IP_Q14",
+      "raw_fields": {
+        "current_dpd_days": 9
+      },
+      "expected_points": 5.0,
+      "max_points": 25
+    },
+    {
+      "id": "IP_Q14",
+      "raw_fields": {
+        "current_dpd_days": 29
+      },
+      "expected_points": 5.0,
+      "max_points": 25
+    },
+    {
+      "id": "IP_Q14",
+      "raw_fields": {
+        "current_dpd_days": 30
+      },
+      "expected_points": 0.0,
+      "max_points": 25
+    },
+    {
+      "id": "IP_Q14",
+      "raw_fields": {
+        "current_dpd_days": 31
+      },
+      "expected_points": 0.0,
+      "max_points": 25
+    },
+    {
+      "id": "IP_Q15",
+      "raw_fields": {
+        "applications_90d": 0
+      },
+      "expected_points": 30.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q15",
+      "raw_fields": {
+        "applications_90d": 1
+      },
+      "expected_points": 20.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q15",
+      "raw_fields": {
+        "applications_90d": 2
+      },
+      "expected_points": 20.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q15",
+      "raw_fields": {
+        "applications_90d": 3
+      },
+      "expected_points": 15.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q15",
+      "raw_fields": {
+        "applications_90d": 4
+      },
+      "expected_points": 15.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q15",
+      "raw_fields": {
+        "applications_90d": 5
+      },
+      "expected_points": 5.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q15",
+      "raw_fields": {
+        "applications_90d": 6
+      },
+      "expected_points": 5.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q15",
+      "raw_fields": {
+        "applications_90d": 7
+      },
+      "expected_points": 5.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q15",
+      "raw_fields": {
+        "applications_90d": 8
+      },
+      "expected_points": 0.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q15",
+      "raw_fields": {
+        "applications_90d": 9
+      },
+      "expected_points": 0.0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_Q16",
+      "raw_fields": {
+        "business_age_months": 11
+      },
+      "expected_points": 0.0,
+      "max_points": 60
+    },
+    {
+      "id": "IP_Q16",
+      "raw_fields": {
+        "business_age_months": 12
+      },
+      "expected_points": 15.0,
+      "max_points": 60
+    },
+    {
+      "id": "IP_Q16",
+      "raw_fields": {
+        "business_age_months": 13
+      },
+      "expected_points": 15.0,
+      "max_points": 60
+    },
+    {
+      "id": "IP_Q16",
+      "raw_fields": {
+        "business_age_months": 23
+      },
+      "expected_points": 15.0,
+      "max_points": 60
+    },
+    {
+      "id": "IP_Q16",
+      "raw_fields": {
+        "business_age_months": 24
+      },
+      "expected_points": 30.0,
+      "max_points": 60
+    },
+    {
+      "id": "IP_Q16",
+      "raw_fields": {
+        "business_age_months": 25
+      },
+      "expected_points": 30.0,
+      "max_points": 60
+    },
+    {
+      "id": "IP_Q16",
+      "raw_fields": {
+        "business_age_months": 35
+      },
+      "expected_points": 30.0,
+      "max_points": 60
+    },
+    {
+      "id": "IP_Q16",
+      "raw_fields": {
+        "business_age_months": 36
+      },
+      "expected_points": 45.0,
+      "max_points": 60
+    },
+    {
+      "id": "IP_Q16",
+      "raw_fields": {
+        "business_age_months": 37
+      },
+      "expected_points": 45.0,
+      "max_points": 60
+    },
+    {
+      "id": "IP_Q16",
+      "raw_fields": {
+        "business_age_months": 59
+      },
+      "expected_points": 45.0,
+      "max_points": 60
+    },
+    {
+      "id": "IP_Q16",
+      "raw_fields": {
+        "business_age_months": 60
+      },
+      "expected_points": 60.0,
+      "max_points": 60
+    },
+    {
+      "id": "IP_Q16",
+      "raw_fields": {
+        "business_age_months": 61
+      },
+      "expected_points": 60.0,
+      "max_points": 60
+    },
+    {
+      "id": "IP_Q17",
+      "raw_fields": {
+        "owner_experience_years": 0
+      },
+      "expected_points": 0.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q17",
+      "raw_fields": {
+        "owner_experience_years": 1
+      },
+      "expected_points": 15.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q17",
+      "raw_fields": {
+        "owner_experience_years": 2
+      },
+      "expected_points": 15.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q17",
+      "raw_fields": {
+        "owner_experience_years": 3
+      },
+      "expected_points": 25.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q17",
+      "raw_fields": {
+        "owner_experience_years": 4
+      },
+      "expected_points": 25.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q17",
+      "raw_fields": {
+        "owner_experience_years": 5
+      },
+      "expected_points": 40.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q17",
+      "raw_fields": {
+        "owner_experience_years": 6
+      },
+      "expected_points": 40.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q17",
+      "raw_fields": {
+        "owner_experience_years": 7
+      },
+      "expected_points": 40.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q17",
+      "raw_fields": {
+        "owner_experience_years": 8
+      },
+      "expected_points": 50.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q17",
+      "raw_fields": {
+        "owner_experience_years": 9
+      },
+      "expected_points": 50.0,
+      "max_points": 50
+    },
+    {
+      "id": "IP_Q19",
+      "raw_fields": {
+        "overdue_taxes_rub": 0
+      },
+      "expected_points": 45.0,
+      "max_points": 45
+    },
+    {
+      "id": "IP_Q19",
+      "raw_fields": {
+        "overdue_taxes_rub": 1
+      },
+      "expected_points": 30.0,
+      "max_points": 45
+    },
+    {
+      "id": "IP_Q19",
+      "raw_fields": {
+        "overdue_taxes_rub": 2
+      },
+      "expected_points": 30.0,
+      "max_points": 45
+    },
+    {
+      "id": "IP_Q19",
+      "raw_fields": {
+        "overdue_taxes_rub": 50000
+      },
+      "expected_points": 30.0,
+      "max_points": 45
+    },
+    {
+      "id": "IP_Q19",
+      "raw_fields": {
+        "overdue_taxes_rub": 50001
+      },
+      "expected_points": 15.0,
+      "max_points": 45
+    },
+    {
+      "id": "IP_Q19",
+      "raw_fields": {
+        "overdue_taxes_rub": 50002
+      },
+      "expected_points": 15.0,
+      "max_points": 45
+    },
+    {
+      "id": "IP_Q19",
+      "raw_fields": {
+        "overdue_taxes_rub": 200000
+      },
+      "expected_points": 15.0,
+      "max_points": 45
+    },
+    {
+      "id": "IP_Q19",
+      "raw_fields": {
+        "overdue_taxes_rub": 200001
+      },
+      "expected_points": 0.0,
+      "max_points": 45
+    },
+    {
+      "id": "IP_Q19",
+      "raw_fields": {
+        "overdue_taxes_rub": 200002
+      },
+      "expected_points": 0.0,
+      "max_points": 45
+    },
+    {
+      "id": "LE_Q01",
+      "raw_fields": {
+        "business_age_months": 11
+      },
+      "expected_points": 0.0,
+      "max_points": 60
+    },
+    {
+      "id": "LE_Q01",
+      "raw_fields": {
+        "business_age_months": 12
+      },
+      "expected_points": 15.0,
+      "max_points": 60
+    },
+    {
+      "id": "LE_Q01",
+      "raw_fields": {
+        "business_age_months": 13
+      },
+      "expected_points": 15.0,
+      "max_points": 60
+    },
+    {
+      "id": "LE_Q01",
+      "raw_fields": {
+        "business_age_months": 23
+      },
+      "expected_points": 15.0,
+      "max_points": 60
+    },
+    {
+      "id": "LE_Q01",
+      "raw_fields": {
+        "business_age_months": 24
+      },
+      "expected_points": 30.0,
+      "max_points": 60
+    },
+    {
+      "id": "LE_Q01",
+      "raw_fields": {
+        "business_age_months": 25
+      },
+      "expected_points": 30.0,
+      "max_points": 60
+    },
+    {
+      "id": "LE_Q01",
+      "raw_fields": {
+        "business_age_months": 35
+      },
+      "expected_points": 30.0,
+      "max_points": 60
+    },
+    {
+      "id": "LE_Q01",
+      "raw_fields": {
+        "business_age_months": 36
+      },
+      "expected_points": 45.0,
+      "max_points": 60
+    },
+    {
+      "id": "LE_Q01",
+      "raw_fields": {
+        "business_age_months": 37
+      },
+      "expected_points": 45.0,
+      "max_points": 60
+    },
+    {
+      "id": "LE_Q01",
+      "raw_fields": {
+        "business_age_months": 59
+      },
+      "expected_points": 45.0,
+      "max_points": 60
+    },
+    {
+      "id": "LE_Q01",
+      "raw_fields": {
+        "business_age_months": 60
+      },
+      "expected_points": 60.0,
+      "max_points": 60
+    },
+    {
+      "id": "LE_Q01",
+      "raw_fields": {
+        "business_age_months": 61
+      },
+      "expected_points": 60.0,
+      "max_points": 60
+    },
+    {
+      "id": "LE_Q02",
+      "raw_fields": {
+        "credit_history_months": 0
+      },
+      "expected_points": 0.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q02",
+      "raw_fields": {
+        "credit_history_months": 1
+      },
+      "expected_points": 10.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q02",
+      "raw_fields": {
+        "credit_history_months": 2
+      },
+      "expected_points": 10.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q02",
+      "raw_fields": {
+        "credit_history_months": 5
+      },
+      "expected_points": 10.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q02",
+      "raw_fields": {
+        "credit_history_months": 6
+      },
+      "expected_points": 25.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q02",
+      "raw_fields": {
+        "credit_history_months": 7
+      },
+      "expected_points": 25.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q02",
+      "raw_fields": {
+        "credit_history_months": 17
+      },
+      "expected_points": 25.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q02",
+      "raw_fields": {
+        "credit_history_months": 18
+      },
+      "expected_points": 40.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q02",
+      "raw_fields": {
+        "credit_history_months": 19
+      },
+      "expected_points": 40.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q02",
+      "raw_fields": {
+        "credit_history_months": 35
+      },
+      "expected_points": 40.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q02",
+      "raw_fields": {
+        "credit_history_months": 36
+      },
+      "expected_points": 50.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q02",
+      "raw_fields": {
+        "credit_history_months": 37
+      },
+      "expected_points": 50.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 0
+      },
+      "expected_points": 100.0,
+      "max_points": 100
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 1
+      },
+      "expected_points": 75.0,
+      "max_points": 100
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 2
+      },
+      "expected_points": 75.0,
+      "max_points": 100
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 7
+      },
+      "expected_points": 75.0,
+      "max_points": 100
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 8
+      },
+      "expected_points": 50.0,
+      "max_points": 100
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 9
+      },
+      "expected_points": 50.0,
+      "max_points": 100
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 29
+      },
+      "expected_points": 50.0,
+      "max_points": 100
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 30
+      },
+      "expected_points": 25.0,
+      "max_points": 100
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 31
+      },
+      "expected_points": 25.0,
+      "max_points": 100
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 59
+      },
+      "expected_points": 25.0,
+      "max_points": 100
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 60
+      },
+      "expected_points": 0.0,
+      "max_points": 100
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 61
+      },
+      "expected_points": 0.0,
+      "max_points": 100
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 89
+      },
+      "expected_points": 0.0,
+      "max_points": 100
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 90
+      },
+      "expected_points": 0.0,
+      "max_points": 100
+    },
+    {
+      "id": "LE_Q03",
+      "raw_fields": {
+        "worst_repaid_dpd_days_24m": 91
+      },
+      "expected_points": 0.0,
+      "max_points": 100
+    },
+    {
+      "id": "LE_Q04",
+      "raw_fields": {
+        "current_dpd_days": 0
+      },
+      "expected_points": 25.0,
+      "max_points": 25
+    },
+    {
+      "id": "LE_Q04",
+      "raw_fields": {
+        "current_dpd_days": 1
+      },
+      "expected_points": 15.0,
+      "max_points": 25
+    },
+    {
+      "id": "LE_Q04",
+      "raw_fields": {
+        "current_dpd_days": 2
+      },
+      "expected_points": 15.0,
+      "max_points": 25
+    },
+    {
+      "id": "LE_Q04",
+      "raw_fields": {
+        "current_dpd_days": 7
+      },
+      "expected_points": 15.0,
+      "max_points": 25
+    },
+    {
+      "id": "LE_Q04",
+      "raw_fields": {
+        "current_dpd_days": 8
+      },
+      "expected_points": 5.0,
+      "max_points": 25
+    },
+    {
+      "id": "LE_Q04",
+      "raw_fields": {
+        "current_dpd_days": 9
+      },
+      "expected_points": 5.0,
+      "max_points": 25
+    },
+    {
+      "id": "LE_Q04",
+      "raw_fields": {
+        "current_dpd_days": 29
+      },
+      "expected_points": 5.0,
+      "max_points": 25
+    },
+    {
+      "id": "LE_Q04",
+      "raw_fields": {
+        "current_dpd_days": 30
+      },
+      "expected_points": 0.0,
+      "max_points": 25
+    },
+    {
+      "id": "LE_Q04",
+      "raw_fields": {
+        "current_dpd_days": 31
+      },
+      "expected_points": 0.0,
+      "max_points": 25
+    },
+    {
+      "id": "LE_Q05",
+      "raw_fields": {
+        "applications_90d": 0
+      },
+      "expected_points": 30.0,
+      "max_points": 30
+    },
+    {
+      "id": "LE_Q05",
+      "raw_fields": {
+        "applications_90d": 1
+      },
+      "expected_points": 20.0,
+      "max_points": 30
+    },
+    {
+      "id": "LE_Q05",
+      "raw_fields": {
+        "applications_90d": 2
+      },
+      "expected_points": 20.0,
+      "max_points": 30
+    },
+    {
+      "id": "LE_Q05",
+      "raw_fields": {
+        "applications_90d": 3
+      },
+      "expected_points": 15.0,
+      "max_points": 30
+    },
+    {
+      "id": "LE_Q05",
+      "raw_fields": {
+        "applications_90d": 4
+      },
+      "expected_points": 15.0,
+      "max_points": 30
+    },
+    {
+      "id": "LE_Q05",
+      "raw_fields": {
+        "applications_90d": 5
+      },
+      "expected_points": 5.0,
+      "max_points": 30
+    },
+    {
+      "id": "LE_Q05",
+      "raw_fields": {
+        "applications_90d": 6
+      },
+      "expected_points": 5.0,
+      "max_points": 30
+    },
+    {
+      "id": "LE_Q05",
+      "raw_fields": {
+        "applications_90d": 7
+      },
+      "expected_points": 5.0,
+      "max_points": 30
+    },
+    {
+      "id": "LE_Q05",
+      "raw_fields": {
+        "applications_90d": 8
+      },
+      "expected_points": 0.0,
+      "max_points": 30
+    },
+    {
+      "id": "LE_Q05",
+      "raw_fields": {
+        "applications_90d": 9
+      },
+      "expected_points": 0.0,
+      "max_points": 30
+    },
+    {
+      "id": "LE_Q06",
+      "raw_fields": {
+        "manager_experience_years": 0
+      },
+      "expected_points": 0.0,
+      "max_points": 35
+    },
+    {
+      "id": "LE_Q06",
+      "raw_fields": {
+        "manager_experience_years": 1
+      },
+      "expected_points": 10.0,
+      "max_points": 35
+    },
+    {
+      "id": "LE_Q06",
+      "raw_fields": {
+        "manager_experience_years": 2
+      },
+      "expected_points": 10.0,
+      "max_points": 35
+    },
+    {
+      "id": "LE_Q06",
+      "raw_fields": {
+        "manager_experience_years": 3
+      },
+      "expected_points": 20.0,
+      "max_points": 35
+    },
+    {
+      "id": "LE_Q06",
+      "raw_fields": {
+        "manager_experience_years": 4
+      },
+      "expected_points": 20.0,
+      "max_points": 35
+    },
+    {
+      "id": "LE_Q06",
+      "raw_fields": {
+        "manager_experience_years": 5
+      },
+      "expected_points": 30.0,
+      "max_points": 35
+    },
+    {
+      "id": "LE_Q06",
+      "raw_fields": {
+        "manager_experience_years": 6
+      },
+      "expected_points": 30.0,
+      "max_points": 35
+    },
+    {
+      "id": "LE_Q06",
+      "raw_fields": {
+        "manager_experience_years": 7
+      },
+      "expected_points": 30.0,
+      "max_points": 35
+    },
+    {
+      "id": "LE_Q06",
+      "raw_fields": {
+        "manager_experience_years": 8
+      },
+      "expected_points": 35.0,
+      "max_points": 35
+    },
+    {
+      "id": "LE_Q06",
+      "raw_fields": {
+        "manager_experience_years": 9
+      },
+      "expected_points": 35.0,
+      "max_points": 35
+    },
+    {
+      "id": "LE_Q07",
+      "raw_fields": {
+        "overdue_taxes_rub": 0
+      },
+      "expected_points": 50.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q07",
+      "raw_fields": {
+        "overdue_taxes_rub": 1
+      },
+      "expected_points": 35.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q07",
+      "raw_fields": {
+        "overdue_taxes_rub": 2
+      },
+      "expected_points": 35.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q07",
+      "raw_fields": {
+        "overdue_taxes_rub": 100000
+      },
+      "expected_points": 35.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q07",
+      "raw_fields": {
+        "overdue_taxes_rub": 100001
+      },
+      "expected_points": 15.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q07",
+      "raw_fields": {
+        "overdue_taxes_rub": 100002
+      },
+      "expected_points": 15.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q07",
+      "raw_fields": {
+        "overdue_taxes_rub": 500000
+      },
+      "expected_points": 15.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q07",
+      "raw_fields": {
+        "overdue_taxes_rub": 500001
+      },
+      "expected_points": 0.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q07",
+      "raw_fields": {
+        "overdue_taxes_rub": 500002
+      },
+      "expected_points": 0.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q08",
+      "raw_fields": {
+        "report_verification_level": 0
+      },
+      "expected_points": 0.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q08",
+      "raw_fields": {
+        "report_verification_level": 1
+      },
+      "expected_points": 15.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q08",
+      "raw_fields": {
+        "report_verification_level": 2
+      },
+      "expected_points": 35.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q08",
+      "raw_fields": {
+        "report_verification_level": 3
+      },
+      "expected_points": 50.0,
+      "max_points": 50
+    },
+    {
+      "id": "LE_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 0
+      },
+      "expected_points": 0.0,
+      "max_points": 30
+    },
+    {
+      "id": "LE_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 1
+      },
+      "expected_points": 10.0,
+      "max_points": 30
+    },
+    {
+      "id": "LE_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 2
+      },
+      "expected_points": 10.0,
+      "max_points": 30
+    },
+    {
+      "id": "LE_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 11
+      },
+      "expected_points": 10.0,
+      "max_points": 30
+    },
+    {
+      "id": "LE_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 12
+      },
+      "expected_points": 20.0,
+      "max_points": 30
+    },
+    {
+      "id": "LE_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 13
+      },
+      "expected_points": 20.0,
+      "max_points": 30
+    },
+    {
+      "id": "LE_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 23
+      },
+      "expected_points": 20.0,
+      "max_points": 30
+    },
+    {
+      "id": "LE_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 24
+      },
+      "expected_points": 30.0,
+      "max_points": 30
+    },
+    {
+      "id": "LE_Q09",
+      "raw_fields": {
+        "bank_relationship_months": 25
+      },
+      "expected_points": 30.0,
+      "max_points": 30
+    }
+  ],
+  "economic_cases": [
+    {
+      "id": "IP_E01",
+      "value": -1e-08,
+      "expected_points": 0,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E01",
+      "value": 0,
+      "expected_points": 0,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E01",
+      "value": 1e-08,
+      "expected_points": 6.25,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E01",
+      "value": 0.04999999,
+      "expected_points": 6.25,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E01",
+      "value": 0.05,
+      "expected_points": 12.5,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E01",
+      "value": 0.05000001,
+      "expected_points": 12.5,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E01",
+      "value": 0.09999999,
+      "expected_points": 12.5,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E01",
+      "value": 0.1,
+      "expected_points": 18.75,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E01",
+      "value": 0.10000001,
+      "expected_points": 18.75,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E01",
+      "value": 0.14999999,
+      "expected_points": 18.75,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E01",
+      "value": 0.15,
+      "expected_points": 25,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E01",
+      "value": 0.15000001,
+      "expected_points": 25,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E02",
+      "value": 0.14999999,
+      "expected_points": 30,
+      "max_points": 30
+    },
+    {
+      "id": "IP_E02",
+      "value": 0.15,
+      "expected_points": 30,
+      "max_points": 30
+    },
+    {
+      "id": "IP_E02",
+      "value": 0.15000001,
+      "expected_points": 22.5,
+      "max_points": 30
+    },
+    {
+      "id": "IP_E02",
+      "value": 0.29999999,
+      "expected_points": 22.5,
+      "max_points": 30
+    },
+    {
+      "id": "IP_E02",
+      "value": 0.3,
+      "expected_points": 22.5,
+      "max_points": 30
+    },
+    {
+      "id": "IP_E02",
+      "value": 0.30000001,
+      "expected_points": 15,
+      "max_points": 30
+    },
+    {
+      "id": "IP_E02",
+      "value": 0.49999999,
+      "expected_points": 15,
+      "max_points": 30
+    },
+    {
+      "id": "IP_E02",
+      "value": 0.5,
+      "expected_points": 15,
+      "max_points": 30
+    },
+    {
+      "id": "IP_E02",
+      "value": 0.50000001,
+      "expected_points": 7.5,
+      "max_points": 30
+    },
+    {
+      "id": "IP_E02",
+      "value": 0.74999999,
+      "expected_points": 7.5,
+      "max_points": 30
+    },
+    {
+      "id": "IP_E02",
+      "value": 0.75,
+      "expected_points": 7.5,
+      "max_points": 30
+    },
+    {
+      "id": "IP_E02",
+      "value": 0.75000001,
+      "expected_points": 0,
+      "max_points": 30
+    },
+    {
+      "id": "IP_E03",
+      "value": 0.49999999,
+      "expected_points": 25,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E03",
+      "value": 0.5,
+      "expected_points": 25,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E03",
+      "value": 0.50000001,
+      "expected_points": 18.75,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E03",
+      "value": 0.99999999,
+      "expected_points": 18.75,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E03",
+      "value": 1,
+      "expected_points": 18.75,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E03",
+      "value": 1.00000001,
+      "expected_points": 12.5,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E03",
+      "value": 1.99999999,
+      "expected_points": 12.5,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E03",
+      "value": 2,
+      "expected_points": 12.5,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E03",
+      "value": 2.00000001,
+      "expected_points": 6.25,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E03",
+      "value": 2.99999999,
+      "expected_points": 6.25,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E03",
+      "value": 3,
+      "expected_points": 6.25,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E03",
+      "value": 3.00000001,
+      "expected_points": 0,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E04",
+      "value": 0.24999999,
+      "expected_points": 0,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E04",
+      "value": 0.25,
+      "expected_points": 6.25,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E04",
+      "value": 0.25000001,
+      "expected_points": 6.25,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E04",
+      "value": 0.49999999,
+      "expected_points": 6.25,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E04",
+      "value": 0.5,
+      "expected_points": 12.5,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E04",
+      "value": 0.50000001,
+      "expected_points": 12.5,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E04",
+      "value": 0.99999999,
+      "expected_points": 12.5,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E04",
+      "value": 1,
+      "expected_points": 18.75,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E04",
+      "value": 1.00000001,
+      "expected_points": 18.75,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E04",
+      "value": 1.99999999,
+      "expected_points": 18.75,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E04",
+      "value": 2,
+      "expected_points": 25,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E04",
+      "value": 2.00000001,
+      "expected_points": 25,
+      "max_points": 25
+    },
+    {
+      "id": "IP_E05",
+      "value": 5,
+      "expected_points": 0,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E05",
+      "value": 6,
+      "expected_points": 5,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E05",
+      "value": 7,
+      "expected_points": 5,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E05",
+      "value": 8,
+      "expected_points": 10,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E05",
+      "value": 9,
+      "expected_points": 10,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E05",
+      "value": 10,
+      "expected_points": 15,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E05",
+      "value": 11,
+      "expected_points": 15,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E05",
+      "value": 12,
+      "expected_points": 20,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E06",
+      "value": 0.09999999,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E06",
+      "value": 0.1,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E06",
+      "value": 0.10000001,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E06",
+      "value": 0.19999999,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E06",
+      "value": 0.2,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E06",
+      "value": 0.20000001,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E06",
+      "value": 0.34999999,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E06",
+      "value": 0.35,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E06",
+      "value": 0.35000001,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E06",
+      "value": 0.49999999,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E06",
+      "value": 0.5,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E06",
+      "value": 0.50000001,
+      "expected_points": 0,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E07",
+      "value": -0.20000001,
+      "expected_points": 0,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E07",
+      "value": -0.2,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E07",
+      "value": -0.19999999,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E07",
+      "value": -0.05000001,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E07",
+      "value": -0.05,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E07",
+      "value": -0.04999999,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E07",
+      "value": 0.04999999,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E07",
+      "value": 0.05,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E07",
+      "value": 0.05000001,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E07",
+      "value": 0.14999999,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E07",
+      "value": 0.15,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E07",
+      "value": 0.15000001,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E08",
+      "value": -0.15000001,
+      "expected_points": 0,
+      "max_points": 10
+    },
+    {
+      "id": "IP_E08",
+      "value": -0.15,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "IP_E08",
+      "value": -0.14999999,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "IP_E08",
+      "value": -0.05000001,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "IP_E08",
+      "value": -0.05,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "IP_E08",
+      "value": -0.04999999,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "IP_E08",
+      "value": 0.04999999,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "IP_E08",
+      "value": 0.05,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "IP_E08",
+      "value": 0.05000001,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "IP_E08",
+      "value": 0.14999999,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "IP_E08",
+      "value": 0.15,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "IP_E08",
+      "value": 0.15000001,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "IP_E09",
+      "value": 0.14999999,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E09",
+      "value": 0.15,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E09",
+      "value": 0.15000001,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E09",
+      "value": 0.29999999,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E09",
+      "value": 0.3,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E09",
+      "value": 0.30000001,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E09",
+      "value": 0.49999999,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E09",
+      "value": 0.5,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E09",
+      "value": 0.50000001,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E09",
+      "value": 0.69999999,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E09",
+      "value": 0.7,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E09",
+      "value": 0.70000001,
+      "expected_points": 0,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E10",
+      "value": 0.79999999,
+      "expected_points": 0,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E10",
+      "value": 0.8,
+      "expected_points": 5,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E10",
+      "value": 0.80000001,
+      "expected_points": 5,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E10",
+      "value": 0.89999999,
+      "expected_points": 5,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E10",
+      "value": 0.9,
+      "expected_points": 10,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E10",
+      "value": 0.90000001,
+      "expected_points": 10,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E10",
+      "value": 0.94999999,
+      "expected_points": 10,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E10",
+      "value": 0.95,
+      "expected_points": 15,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E10",
+      "value": 0.95000001,
+      "expected_points": 15,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E10",
+      "value": 0.98999999,
+      "expected_points": 15,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E10",
+      "value": 0.99,
+      "expected_points": 20,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E10",
+      "value": 0.99000001,
+      "expected_points": 20,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E11",
+      "value": 0.00999999,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E11",
+      "value": 0.01,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E11",
+      "value": 0.01000001,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E11",
+      "value": 0.02999999,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E11",
+      "value": 0.03,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E11",
+      "value": 0.03000001,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E11",
+      "value": 0.04999999,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E11",
+      "value": 0.05,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E11",
+      "value": 0.05000001,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E11",
+      "value": 0.09999999,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E11",
+      "value": 0.1,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E11",
+      "value": 0.10000001,
+      "expected_points": 0,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E12",
+      "value": 0.04999999,
+      "expected_points": 0,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E12",
+      "value": 0.05,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E12",
+      "value": 0.05000001,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E12",
+      "value": 0.09999999,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E12",
+      "value": 0.1,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E12",
+      "value": 0.10000001,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E12",
+      "value": 0.19999999,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E12",
+      "value": 0.2,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E12",
+      "value": 0.20000001,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E12",
+      "value": 0.29999999,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E12",
+      "value": 0.3,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E12",
+      "value": 0.30000001,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "IP_E13",
+      "value": -1e-08,
+      "expected_points": 0,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E13",
+      "value": 0,
+      "expected_points": 0,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E13",
+      "value": 1e-08,
+      "expected_points": 5,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E13",
+      "value": 0.09999999,
+      "expected_points": 5,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E13",
+      "value": 0.1,
+      "expected_points": 10,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E13",
+      "value": 0.10000001,
+      "expected_points": 10,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E13",
+      "value": 0.19999999,
+      "expected_points": 10,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E13",
+      "value": 0.2,
+      "expected_points": 15,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E13",
+      "value": 0.20000001,
+      "expected_points": 15,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E13",
+      "value": 0.29999999,
+      "expected_points": 15,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E13",
+      "value": 0.3,
+      "expected_points": 20,
+      "max_points": 20
+    },
+    {
+      "id": "IP_E13",
+      "value": 0.30000001,
+      "expected_points": 20,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E01",
+      "value": 0.69999999,
+      "expected_points": 0,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E01",
+      "value": 0.7,
+      "expected_points": 5,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E01",
+      "value": 0.70000001,
+      "expected_points": 5,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E01",
+      "value": 0.99999999,
+      "expected_points": 5,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E01",
+      "value": 1,
+      "expected_points": 10,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E01",
+      "value": 1.00000001,
+      "expected_points": 10,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E01",
+      "value": 1.29999999,
+      "expected_points": 10,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E01",
+      "value": 1.3,
+      "expected_points": 15,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E01",
+      "value": 1.30000001,
+      "expected_points": 15,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E01",
+      "value": 1.79999999,
+      "expected_points": 15,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E01",
+      "value": 1.8,
+      "expected_points": 20,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E01",
+      "value": 1.80000001,
+      "expected_points": 20,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E02",
+      "value": 0.29999999,
+      "expected_points": 0,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E02",
+      "value": 0.3,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E02",
+      "value": 0.30000001,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E02",
+      "value": 0.49999999,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E02",
+      "value": 0.5,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E02",
+      "value": 0.50000001,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E02",
+      "value": 0.79999999,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E02",
+      "value": 0.8,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E02",
+      "value": 0.80000001,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E02",
+      "value": 0.99999999,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E02",
+      "value": 1,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E02",
+      "value": 1.00000001,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E03",
+      "value": 0.04999999,
+      "expected_points": 0,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E03",
+      "value": 0.05,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E03",
+      "value": 0.05000001,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E03",
+      "value": 0.09999999,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E03",
+      "value": 0.1,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E03",
+      "value": 0.10000001,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E03",
+      "value": 0.19999999,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E03",
+      "value": 0.2,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E03",
+      "value": 0.20000001,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E03",
+      "value": 0.29999999,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E03",
+      "value": 0.3,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E03",
+      "value": 0.30000001,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E04",
+      "value": -1e-08,
+      "expected_points": 0,
+      "max_points": 25
+    },
+    {
+      "id": "LE_E04",
+      "value": 0,
+      "expected_points": 0,
+      "max_points": 25
+    },
+    {
+      "id": "LE_E04",
+      "value": 1e-08,
+      "expected_points": 6.25,
+      "max_points": 25
+    },
+    {
+      "id": "LE_E04",
+      "value": 0.09999999,
+      "expected_points": 6.25,
+      "max_points": 25
+    },
+    {
+      "id": "LE_E04",
+      "value": 0.1,
+      "expected_points": 12.5,
+      "max_points": 25
+    },
+    {
+      "id": "LE_E04",
+      "value": 0.10000001,
+      "expected_points": 12.5,
+      "max_points": 25
+    },
+    {
+      "id": "LE_E04",
+      "value": 0.24999999,
+      "expected_points": 12.5,
+      "max_points": 25
+    },
+    {
+      "id": "LE_E04",
+      "value": 0.25,
+      "expected_points": 18.75,
+      "max_points": 25
+    },
+    {
+      "id": "LE_E04",
+      "value": 0.25000001,
+      "expected_points": 18.75,
+      "max_points": 25
+    },
+    {
+      "id": "LE_E04",
+      "value": 0.39999999,
+      "expected_points": 18.75,
+      "max_points": 25
+    },
+    {
+      "id": "LE_E04",
+      "value": 0.4,
+      "expected_points": 25,
+      "max_points": 25
+    },
+    {
+      "id": "LE_E04",
+      "value": 0.40000001,
+      "expected_points": 25,
+      "max_points": 25
+    },
+    {
+      "id": "LE_E05",
+      "value": 0.39999999,
+      "expected_points": 0,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E05",
+      "value": 0.4,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E05",
+      "value": 0.40000001,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E05",
+      "value": 0.49999999,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E05",
+      "value": 0.5,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E05",
+      "value": 0.50000001,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E05",
+      "value": 0.59999999,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E05",
+      "value": 0.6,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E05",
+      "value": 0.60000001,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E05",
+      "value": 0.79999999,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E05",
+      "value": 0.8,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E05",
+      "value": 0.80000001,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E06",
+      "value": -0.20000001,
+      "expected_points": 0,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E06",
+      "value": -0.2,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E06",
+      "value": -0.19999999,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E06",
+      "value": -1e-08,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E06",
+      "value": 0,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E06",
+      "value": 1e-08,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E06",
+      "value": 0.09999999,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E06",
+      "value": 0.1,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E06",
+      "value": 0.10000001,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E06",
+      "value": 0.19999999,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E06",
+      "value": 0.2,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E06",
+      "value": 0.20000001,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E07",
+      "value": 0.99999999,
+      "expected_points": 20,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E07",
+      "value": 1,
+      "expected_points": 20,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E07",
+      "value": 1.00000001,
+      "expected_points": 15,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E07",
+      "value": 1.99999999,
+      "expected_points": 15,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E07",
+      "value": 2,
+      "expected_points": 15,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E07",
+      "value": 2.00000001,
+      "expected_points": 10,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E07",
+      "value": 2.99999999,
+      "expected_points": 10,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E07",
+      "value": 3,
+      "expected_points": 10,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E07",
+      "value": 3.00000001,
+      "expected_points": 5,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E07",
+      "value": 3.99999999,
+      "expected_points": 5,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E07",
+      "value": 4,
+      "expected_points": 5,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E07",
+      "value": 4.00000001,
+      "expected_points": 0,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E08",
+      "value": 0.99999999,
+      "expected_points": 0,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E08",
+      "value": 1,
+      "expected_points": 5,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E08",
+      "value": 1.00000001,
+      "expected_points": 5,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E08",
+      "value": 1.49999999,
+      "expected_points": 5,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E08",
+      "value": 1.5,
+      "expected_points": 10,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E08",
+      "value": 1.50000001,
+      "expected_points": 10,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E08",
+      "value": 2.49999999,
+      "expected_points": 10,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E08",
+      "value": 2.5,
+      "expected_points": 15,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E08",
+      "value": 2.50000001,
+      "expected_points": 15,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E08",
+      "value": 3.99999999,
+      "expected_points": 15,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E08",
+      "value": 4,
+      "expected_points": 20,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E08",
+      "value": 4.00000001,
+      "expected_points": 20,
+      "max_points": 20
+    },
+    {
+      "id": "LE_E09",
+      "value": 0.19999999,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E09",
+      "value": 0.2,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E09",
+      "value": 0.20000001,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E09",
+      "value": 0.39999999,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E09",
+      "value": 0.4,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E09",
+      "value": 0.40000001,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E09",
+      "value": 0.59999999,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E09",
+      "value": 0.6,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E09",
+      "value": 0.60000001,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E09",
+      "value": 0.79999999,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E09",
+      "value": 0.8,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E09",
+      "value": 0.80000001,
+      "expected_points": 0,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E10",
+      "value": -1e-08,
+      "expected_points": 0,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E10",
+      "value": 0,
+      "expected_points": 0,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E10",
+      "value": 1e-08,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E10",
+      "value": 0.09999999,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E10",
+      "value": 0.1,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E10",
+      "value": 0.10000001,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E10",
+      "value": 0.19999999,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E10",
+      "value": 0.2,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E10",
+      "value": 0.20000001,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E10",
+      "value": 0.29999999,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E10",
+      "value": 0.3,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E10",
+      "value": 0.30000001,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E11",
+      "value": -1e-08,
+      "expected_points": 0,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E11",
+      "value": 0,
+      "expected_points": 0,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E11",
+      "value": 1e-08,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E11",
+      "value": 0.04999999,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E11",
+      "value": 0.05,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E11",
+      "value": 0.05000001,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E11",
+      "value": 0.09999999,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E11",
+      "value": 0.1,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E11",
+      "value": 0.10000001,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E11",
+      "value": 0.19999999,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E11",
+      "value": 0.2,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E11",
+      "value": 0.20000001,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E12",
+      "value": -1e-08,
+      "expected_points": 0,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E12",
+      "value": 0,
+      "expected_points": 0,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E12",
+      "value": 1e-08,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E12",
+      "value": 0.01999999,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E12",
+      "value": 0.02,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E12",
+      "value": 0.02000001,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E12",
+      "value": 0.04999999,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E12",
+      "value": 0.05,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E12",
+      "value": 0.05000001,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E12",
+      "value": 0.09999999,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E12",
+      "value": 0.1,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E12",
+      "value": 0.10000001,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E13",
+      "value": -1e-08,
+      "expected_points": 0,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E13",
+      "value": 0,
+      "expected_points": 0,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E13",
+      "value": 1e-08,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E13",
+      "value": 0.01999999,
+      "expected_points": 3.75,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E13",
+      "value": 0.02,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E13",
+      "value": 0.02000001,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E13",
+      "value": 0.04999999,
+      "expected_points": 7.5,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E13",
+      "value": 0.05,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E13",
+      "value": 0.05000001,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E13",
+      "value": 0.09999999,
+      "expected_points": 11.25,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E13",
+      "value": 0.1,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E13",
+      "value": 0.10000001,
+      "expected_points": 15,
+      "max_points": 15
+    },
+    {
+      "id": "LE_E14",
+      "value": -1e-08,
+      "expected_points": 0,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E14",
+      "value": 0,
+      "expected_points": 0,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E14",
+      "value": 1e-08,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E14",
+      "value": 0.04999999,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E14",
+      "value": 0.05,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E14",
+      "value": 0.05000001,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E14",
+      "value": 0.09999999,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E14",
+      "value": 0.1,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E14",
+      "value": 0.10000001,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E14",
+      "value": 0.19999999,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E14",
+      "value": 0.2,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E14",
+      "value": 0.20000001,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E15",
+      "value": -0.20000001,
+      "expected_points": 0,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E15",
+      "value": -0.2,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E15",
+      "value": -0.19999999,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E15",
+      "value": -0.05000001,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E15",
+      "value": -0.05,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E15",
+      "value": -0.04999999,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E15",
+      "value": 0.04999999,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E15",
+      "value": 0.05,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E15",
+      "value": 0.05000001,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E15",
+      "value": 0.14999999,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E15",
+      "value": 0.15,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E15",
+      "value": 0.15000001,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E16",
+      "value": 0.49999999,
+      "expected_points": 0,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E16",
+      "value": 0.5,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E16",
+      "value": 0.50000001,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E16",
+      "value": 0.99999999,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E16",
+      "value": 1,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E16",
+      "value": 1.00000001,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E16",
+      "value": 1.49999999,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E16",
+      "value": 1.5,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E16",
+      "value": 1.50000001,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E16",
+      "value": 1.99999999,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E16",
+      "value": 2,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E16",
+      "value": 2.00000001,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E17",
+      "value": 29.99999999,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E17",
+      "value": 30,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E17",
+      "value": 30.00000001,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E17",
+      "value": 59.99999999,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E17",
+      "value": 60,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E17",
+      "value": 60.00000001,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E17",
+      "value": 89.99999999,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E17",
+      "value": 90,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E17",
+      "value": 90.00000001,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E17",
+      "value": 119.99999999,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E17",
+      "value": 120,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E17",
+      "value": 120.00000001,
+      "expected_points": 0,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E18",
+      "value": 29.99999999,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E18",
+      "value": 30,
+      "expected_points": 10,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E18",
+      "value": 30.00000001,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E18",
+      "value": 59.99999999,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E18",
+      "value": 60,
+      "expected_points": 7.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E18",
+      "value": 60.00000001,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E18",
+      "value": 89.99999999,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E18",
+      "value": 90,
+      "expected_points": 5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E18",
+      "value": 90.00000001,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E18",
+      "value": 179.99999999,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E18",
+      "value": 180,
+      "expected_points": 2.5,
+      "max_points": 10
+    },
+    {
+      "id": "LE_E18",
+      "value": 180.00000001,
+      "expected_points": 0,
+      "max_points": 10
+    }
+  ],
+  "totals": {
+    "ip_questionnaire": 750,
+    "le_questionnaire": 750,
+    "ip_economics": 250,
+    "le_economics": 250,
+    "total": 1000
+  },
+  "grade_cases": [
+    {
+      "raw_total": 0,
+      "expected_total": 0,
+      "expected_grade": "D"
+    },
+    {
+      "raw_total": 549,
+      "expected_total": 549,
+      "expected_grade": "D"
+    },
+    {
+      "raw_total": 549.49,
+      "expected_total": 549,
+      "expected_grade": "D"
+    },
+    {
+      "raw_total": 549.5,
+      "expected_total": 550,
+      "expected_grade": "C"
+    },
+    {
+      "raw_total": 550,
+      "expected_total": 550,
+      "expected_grade": "C"
+    },
+    {
+      "raw_total": 649,
+      "expected_total": 649,
+      "expected_grade": "C"
+    },
+    {
+      "raw_total": 649.49,
+      "expected_total": 649,
+      "expected_grade": "C"
+    },
+    {
+      "raw_total": 649.5,
+      "expected_total": 650,
+      "expected_grade": "B"
+    },
+    {
+      "raw_total": 650,
+      "expected_total": 650,
+      "expected_grade": "B"
+    },
+    {
+      "raw_total": 799,
+      "expected_total": 799,
+      "expected_grade": "B"
+    },
+    {
+      "raw_total": 799.49,
+      "expected_total": 799,
+      "expected_grade": "B"
+    },
+    {
+      "raw_total": 799.5,
+      "expected_total": 800,
+      "expected_grade": "A"
+    },
+    {
+      "raw_total": 800,
+      "expected_total": 800,
+      "expected_grade": "A"
+    },
+    {
+      "raw_total": 1000,
+      "expected_total": 1000,
+      "expected_grade": "A"
+    }
+  ],
+  "combination_cases": [
+    {
+      "questionnaire": 500,
+      "economics": 200,
+      "total": 700,
+      "grade": "B"
+    },
+    {
+      "questionnaire": 600,
+      "economics": 0,
+      "total": 600,
+      "grade": "C"
+    },
+    {
+      "questionnaire": 750,
+      "economics": 250,
+      "total": 1000,
+      "grade": "A"
+    }
+  ]
+}

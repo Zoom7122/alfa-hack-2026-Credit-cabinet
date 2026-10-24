@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1210" viewBox="0 0 1100 1210" role="img" aria-labelledby="title desc">
+<title id="title">UC-04. Кредит одобрен и учтён банком</title>
+<desc id="desc">Предварительное одобрение становится окончательным после успешной проверки МС2.</desc>
+<rect width="1100" height="1210" fill="white"/>
+<g font-family="Arial, sans-serif">
+<text x="550" y="36" text-anchor="middle" dominant-baseline="central" font-size="34" font-weight="700" fill="#102640">UC-04. Кредит одобрен и учтён банком</text>
+<text x="550" y="75" text-anchor="middle" dominant-baseline="central" font-size="21" font-weight="400" fill="#475569">Предварительное одобрение становится окончательным после успешной проверки МС2.</text>
+<polyline points="550,235 550,335" fill="none" stroke="#718096" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="550,335 545.315,325.048 554.685,325.048" fill="#718096"/>
+<polyline points="550,470 550,565" fill="none" stroke="#718096" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="550,565 545.315,555.048 554.685,555.048" fill="#718096"/>
+<polyline points="550,705 550,790 267,790 267.5,880" fill="none" stroke="#718096" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="267.5,880 262.759,870.074 272.13,870.022" fill="#718096"/>
+<rect x="200.5078125" y="752" width="132.984375" height="26" rx="3" fill="white" stroke="white" stroke-width="2"/>
+<text x="267" y="765" text-anchor="middle" dominant-baseline="central" font-size="19" font-weight="400" fill="#475569">Уведомление</text>
+<polyline points="550,705 550,790 832,790 832.5,880" fill="none" stroke="#718096" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="832.5,880 827.759,870.074 837.13,870.022" fill="#718096"/>
+<rect x="734.5" y="752" width="201.0" height="26" rx="3" fill="white" stroke="white" stroke-width="2"/>
+<text x="835" y="765" text-anchor="middle" dominant-baseline="central" font-size="19" font-weight="400" fill="#475569">Подтверждение МС1</text>
+<rect x="330" y="130" width="440" height="105" rx="14" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="550" y="150.5" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#16366d">МС1 → МС2 · REST</text>
+<text x="550" y="182" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#16366d">Передаёт подобранные сумму, срок</text>
+<text x="550" y="210" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#16366d">и ставку</text>
+<rect x="330" y="335" width="440" height="135" rx="14" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="550" y="356.5" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#4c1d95">МС2</text>
+<text x="550" y="388" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#4c1d95">Проверяет нормативы и экономику</text>
+<text x="550" y="416" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#4c1d95">на расчётном состоянии после</text>
+<text x="550" y="444" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#4c1d95">выдачи</text>
+<rect x="330" y="565" width="440" height="140" rx="14" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="550" y="589" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#4c1d95">МС2</text>
+<text x="550" y="620.5" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#4c1d95">Все проверки пройдены: учитывает</text>
+<text x="550" y="648.5" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#4c1d95">выдачу и сохраняет новое</text>
+<text x="550" y="676.5" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#4c1d95">состояние банка</text>
+<rect x="55" y="880" width="425" height="130" rx="14" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+<text x="267.5" y="913" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#1e293b">МС2 → МС3 · REST</text>
+<text x="267.5" y="944.5" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#1e293b">Выдан кредит: ID заявки, ID</text>
+<text x="267.5" y="972.5" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#1e293b">кредита и сумма</text>
+<rect x="620" y="880" width="425" height="130" rx="14" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+<text x="832.5" y="927" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#166534">МС1 → клиент</text>
+<text x="832.5" y="958.5" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="700" fill="#166534">Одобрено</text>
+<text x="550" y="1162" text-anchor="middle" dominant-baseline="central" font-size="20" font-weight="400" fill="#475569">Следующая заявка проверяется уже на обновлённом состоянии банка.</text>
+</g>
+</svg>

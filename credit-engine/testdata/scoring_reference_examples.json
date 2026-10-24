@@ -1,0 +1,159 @@
+{
+  "examples": [
+    {
+      "id": "IP_E01",
+      "value": 0.07413793103448275,
+      "expected_points": 12.5
+    },
+    {
+      "id": "IP_E02",
+      "value": 0.31007751937984496,
+      "expected_points": 15.0
+    },
+    {
+      "id": "IP_E03",
+      "value": 0.6201550387596899,
+      "expected_points": 18.75
+    },
+    {
+      "id": "IP_E04",
+      "value": 4,
+      "expected_points": 25
+    },
+    {
+      "id": "IP_E05",
+      "value": 12,
+      "expected_points": 20
+    },
+    {
+      "id": "IP_E06",
+      "value": 0.10638653928670361,
+      "expected_points": 11.25
+    },
+    {
+      "id": "IP_E07",
+      "value": 0.08749999999999991,
+      "expected_points": 11.25
+    },
+    {
+      "id": "IP_E08",
+      "value": 0.19047619047619047,
+      "expected_points": 10
+    },
+    {
+      "id": "IP_E09",
+      "value": 0.2,
+      "expected_points": 11.25
+    },
+    {
+      "id": "IP_E10",
+      "value": 0.97,
+      "expected_points": 15.0
+    },
+    {
+      "id": "IP_E11",
+      "value": 0.02,
+      "expected_points": 11.25
+    },
+    {
+      "id": "IP_E12",
+      "value": 0.25,
+      "expected_points": 11.25
+    },
+    {
+      "id": "IP_E13",
+      "value": 0.21182266009852216,
+      "expected_points": 15.0
+    },
+    {
+      "id": "LE_E01",
+      "value": 2.142857142857143,
+      "expected_points": 20
+    },
+    {
+      "id": "LE_E02",
+      "value": 1.4285714285714286,
+      "expected_points": 15
+    },
+    {
+      "id": "LE_E03",
+      "value": 0.5714285714285714,
+      "expected_points": 10
+    },
+    {
+      "id": "LE_E04",
+      "value": 0.5,
+      "expected_points": 25
+    },
+    {
+      "id": "LE_E05",
+      "value": 0.7083333333333334,
+      "expected_points": 11.25
+    },
+    {
+      "id": "LE_E06",
+      "value": 0.2,
+      "expected_points": 15
+    },
+    {
+      "id": "LE_E07",
+      "value": 0.25,
+      "expected_points": 20
+    },
+    {
+      "id": "LE_E08",
+      "value": 8,
+      "expected_points": 20
+    },
+    {
+      "id": "LE_E09",
+      "value": 0.3333333333333333,
+      "expected_points": 7.5
+    },
+    {
+      "id": "LE_E10",
+      "value": 0.375,
+      "expected_points": 10
+    },
+    {
+      "id": "LE_E11",
+      "value": 0.16666666666666666,
+      "expected_points": 11.25
+    },
+    {
+      "id": "LE_E12",
+      "value": 0.10416666666666667,
+      "expected_points": 10
+    },
+    {
+      "id": "LE_E13",
+      "value": 0.22727272727272727,
+      "expected_points": 15
+    },
+    {
+      "id": "LE_E14",
+      "value": 0.47619047619047616,
+      "expected_points": 10
+    },
+    {
+      "id": "LE_E15",
+      "value": 0.19999999999999996,
+      "expected_points": 10
+    },
+    {
+      "id": "LE_E16",
+      "value": 2.1818181818181817,
+      "expected_points": 10
+    },
+    {
+      "id": "LE_E17",
+      "value": 41.822916666666664,
+      "expected_points": 7.5
+    },
+    {
+      "id": "LE_E18",
+      "value": 54.75,
+      "expected_points": 7.5
+    }
+  ]
+}

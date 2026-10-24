@@ -1,0 +1,13 @@
+# Only build inputs and runtime configuration belong in the context.
+**
+!go.mod
+!go.sum
+!cmd/
+!cmd/**
+!internal/
+!internal/**
+!contracts/
+!contracts/*.go
+!config/
+!config/*.json
+**/*_test.go
