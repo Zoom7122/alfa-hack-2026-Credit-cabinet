@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="850" viewBox="0 0 1100 850" role="img" aria-labelledby="title desc">
+<title id="title">UC-01. Требуется дополнительная информация</title>
+<desc id="desc">Одинаковое правило для ИП и ЮЛ: оценка приостанавливается до уточнения данных.</desc>
+<rect width="1100" height="850" fill="white"/>
+<g font-family="Arial, sans-serif">
+<text x="550" y="36" text-anchor="middle" dominant-baseline="central" font-size="34" font-weight="700" fill="#102640">UC-01. Требуется дополнительная информация</text>
+<text x="550" y="75" text-anchor="middle" dominant-baseline="central" font-size="21" font-weight="400" fill="#475569">Одинаковое правило для ИП и ЮЛ: оценка приостанавливается до уточнения данных.</text>
+<polyline points="267.5,245 267,300 550,300 550,355" fill="none" stroke="#718096" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="550,355 545.315,345.048 554.685,345.048" fill="#718096"/>
+<polyline points="832.5,245 832,300 550,300 550,355" fill="none" stroke="#718096" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="550,355 545.315,345.048 554.685,345.048" fill="#718096"/>
+<polyline points="550,495 550,585" fill="none" stroke="#718096" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="550,585 545.315,575.048 554.685,575.048" fill="#718096"/>
+<rect x="55" y="135" width="425" height="110" rx="14" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+<text x="267.5" y="172" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#334155">Сервис А → МС1</text>
+<text x="267.5" y="203.5" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#334155">Исходные данные заявки</text>
+<rect x="620" y="135" width="425" height="110" rx="14" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+<text x="832.5" y="172" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#334155">Сервис Б → МС1</text>
+<text x="832.5" y="203.5" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#334155">Баланс и ОФР — только для ЮЛ</text>
+<rect x="330" y="355" width="440" height="140" rx="14" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="550" y="393" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#16366d">МС1</text>
+<text x="550" y="424.5" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#16366d">Не хватает обязательных сведений,</text>
+<text x="550" y="452.5" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#16366d">документов или подтверждений</text>
+<rect x="330" y="585" width="440" height="115" rx="14" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+<text x="550" y="610.5" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#92400e">МС1 → клиент</text>
+<text x="550" y="642" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="700" fill="#92400e">Требуется дополнительная</text>
+<text x="550" y="670" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="700" fill="#92400e">информация</text>
+<text x="550" y="802" text-anchor="middle" dominant-baseline="central" font-size="20" font-weight="400" fill="#475569">МС1 возвращает перечень недостающих сведений. МС2 и МС3 не вызываются.</text>
+</g>
+</svg>

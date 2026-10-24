@@ -1,0 +1,74 @@
+// Package app assembles startup dependencies without binding ports or contacting
+// external systems. Business operations are added in subsequent implementation stages.
+package app
+
+import (
+	"net/http"
+
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/contracts"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/clock"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/config"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/httpapi"
+)
+
+type Scoring struct {
+	Settings       config.Scoring
+	Policy         config.Policy
+	Clock          clock.Clock
+	BankHTTP       *http.Client
+	StatementsHTTP *http.Client
+	Server         *http.Server
+}
+
+type Bank struct {
+	Settings     config.Bank
+	Policy       config.Policy
+	InitialState contracts.BankState
+	Clock        clock.Clock
+	AdminHTTP    *http.Client
+	Server       *http.Server
+}
+
+func NewScoring(cfg config.Scoring, source clock.Clock) (*Scoring, error) {
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+	policy, err := config.LoadPolicy(cfg.PolicyFile)
+	if err != nil {
+		return nil, err
+	}
+	if source == nil {
+		source = clock.System{}
+	}
+	if cfg.EvaluationDate != nil {
+		source = clock.Fixed{Time: *cfg.EvaluationDate}
+	}
+	return &Scoring{
+		Settings: cfg, Policy: policy, Clock: source,
+		BankHTTP:       &http.Client{Timeout: cfg.BankTimeout},
+		StatementsHTTP: &http.Client{Timeout: cfg.StatementsTimeout},
+		Server:         httpapi.NewServer(cfg.Addr, cfg.WriteTimeout, httpapi.NewRouter()),
+	}, nil
+}
+
+func NewBank(cfg config.Bank, source clock.Clock) (*Bank, error) {
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+	policy, err := config.LoadPolicy(cfg.PolicyFile)
+	if err != nil {
+		return nil, err
+	}
+	state, err := config.LoadBankState(cfg.StateFile)
+	if err != nil {
+		return nil, err
+	}
+	if source == nil {
+		source = clock.System{}
+	}
+	return &Bank{
+		Settings: cfg, Policy: policy, InitialState: state, Clock: source,
+		AdminHTTP: &http.Client{Timeout: cfg.AdminTimeout},
+		Server:    httpapi.NewServer(cfg.Addr, cfg.WriteTimeout, httpapi.NewRouter()),
+	}, nil
+}

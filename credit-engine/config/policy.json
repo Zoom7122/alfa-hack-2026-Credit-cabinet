@@ -1,0 +1,68 @@
+{
+  "id": "credit-mvp-v2",
+  "economics": {
+    "reserve_rate": 0.05,
+    "quality_category": 2,
+    "risk_weight": 1,
+    "pd_annual": 0.04,
+    "lgd": 0.45,
+    "ftp_annual": 0.15,
+    "ftp_long_addition": 0.005,
+    "opex_annual": 0.01,
+    "upfront_cost_rub": 0,
+    "capital_allocation": 0.12,
+    "capital_price_annual": 0.2,
+    "discount_annual": 0.15
+  },
+  "optimizer": {
+    "amount_step_rub": 10000,
+    "rate_step": 0.0025,
+    "max_term_months": 36,
+    "profit_retention": 0.9,
+    "dsr_cap": 0.75
+  },
+  "norm_limits": {
+    "N1_1": {
+      "operator": ">=",
+      "value": 0.065
+    },
+    "N1_2": {
+      "operator": ">=",
+      "value": 0.08
+    },
+    "N1_0": {
+      "operator": ">=",
+      "value": 0.1
+    },
+    "N2": {
+      "operator": ">=",
+      "value": 0.15
+    },
+    "N3": {
+      "operator": ">=",
+      "value": 0.5
+    },
+    "N4": {
+      "operator": "<=",
+      "value": 1.2
+    },
+    "N6": {
+      "operator": "<=",
+      "value": 0.248
+    },
+    "N7": {
+      "operator": "<=",
+      "value": 8
+    },
+    "N25": {
+      "operator": "<=",
+      "value": 0.2
+    },
+    "N12": {
+      "operator": "<=",
+      "value": 0.25
+    }
+  },
+  "max_quality_category": 3,
+  "large_exposure_threshold": 0.05
+}

@@ -1,0 +1,149 @@
+{
+  "evaluation_date": "2026-10-23",
+  "clock": "2026-10-23T12:00:00Z",
+  "policy": "../config/policy.json",
+  "tolerances": {
+    "money_rub": 0.01,
+    "ratio": 1e-09
+  },
+  "scenarios": [
+    {
+      "id": "uc01_ip_need_data",
+      "initial_bank": "../config/bank.default.json",
+      "reset_bank": true,
+      "steps": [
+        "decisions/uc01_ip_need_data.json"
+      ]
+    },
+    {
+      "id": "uc02_ip_declined",
+      "initial_bank": "../config/bank.default.json",
+      "reset_bank": true,
+      "steps": [
+        "decisions/uc02_ip_declined.json"
+      ]
+    },
+    {
+      "id": "uc03_ip_manual",
+      "initial_bank": "../config/bank.default.json",
+      "reset_bank": true,
+      "steps": [
+        "decisions/uc03_ip_manual.json"
+      ]
+    },
+    {
+      "id": "uc04_ip_approved",
+      "initial_bank": "../config/bank.default.json",
+      "reset_bank": true,
+      "steps": [
+        "decisions/uc04_ip_approved.json"
+      ]
+    },
+    {
+      "id": "uc05_ip_bank_review",
+      "initial_bank": "../config/bank.capital_boundary.json",
+      "reset_bank": true,
+      "steps": [
+        "decisions/uc05_ip_bank_review.json"
+      ]
+    },
+    {
+      "id": "uc01_le_need_data",
+      "initial_bank": "../config/bank.default.json",
+      "reset_bank": true,
+      "steps": [
+        "decisions/uc01_le_need_data.json"
+      ]
+    },
+    {
+      "id": "uc02_le_declined",
+      "initial_bank": "../config/bank.default.json",
+      "reset_bank": true,
+      "steps": [
+        "decisions/uc02_le_declined.json"
+      ]
+    },
+    {
+      "id": "uc03_le_manual",
+      "initial_bank": "../config/bank.default.json",
+      "reset_bank": true,
+      "steps": [
+        "decisions/uc03_le_manual.json"
+      ]
+    },
+    {
+      "id": "uc04_le_approved",
+      "initial_bank": "../config/bank.default.json",
+      "reset_bank": true,
+      "steps": [
+        "decisions/uc04_le_approved.json"
+      ]
+    },
+    {
+      "id": "uc05_le_bank_review",
+      "initial_bank": "../config/bank.liquidity_boundary.json",
+      "reset_bank": true,
+      "steps": [
+        "decisions/uc05_le_bank_review.json"
+      ]
+    },
+    {
+      "id": "extra_ip_confirmed_stop",
+      "initial_bank": "../config/bank.default.json",
+      "reset_bank": true,
+      "steps": [
+        "decisions/extra_ip_confirmed_stop.json"
+      ]
+    },
+    {
+      "id": "extra_le_stop_before_missing_data",
+      "initial_bank": "../config/bank.default.json",
+      "reset_bank": true,
+      "steps": [
+        "decisions/extra_le_stop_before_missing_data.json"
+      ]
+    },
+    {
+      "id": "auto_ip_extend_term",
+      "initial_bank": "../config/bank.default.json",
+      "reset_bank": true,
+      "steps": [
+        "decisions/auto_ip_extend_term.json"
+      ]
+    },
+    {
+      "id": "auto_le_reduce_amount",
+      "initial_bank": "../config/bank.default.json",
+      "reset_bank": true,
+      "steps": [
+        "decisions/auto_le_reduce_amount.json"
+      ]
+    },
+    {
+      "id": "auto_ip_no_acceptable_amount",
+      "initial_bank": "../config/bank.default.json",
+      "reset_bank": true,
+      "steps": [
+        "decisions/auto_ip_no_acceptable_amount.json"
+      ]
+    },
+    {
+      "id": "auto_le_rate_too_low",
+      "initial_bank": "../config/bank.default.json",
+      "reset_bank": true,
+      "steps": [
+        "decisions/auto_le_rate_too_low.json"
+      ]
+    },
+    {
+      "id": "uc06_dynamic_state",
+      "initial_bank": "../config/bank.default.json",
+      "reset_bank": true,
+      "reset_between_steps": false,
+      "steps": [
+        "decisions/uc06_01_ip_issued.json",
+        "decisions/uc06_02_le_bank_review.json"
+      ]
+    }
+  ]
+}
