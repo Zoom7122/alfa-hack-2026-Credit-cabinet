@@ -25,6 +25,8 @@ func Register(r *gin.Engine, repo Repository, files Files) {
 			status, code = 404, "NOT_FOUND"
 		case errors.Is(err, ErrUnsupported):
 			status, code = 422, "UNSUPPORTED"
+		case errors.Is(err, ErrProcessingFailed):
+			status, code = 422, "PROCESSING_FAILED"
 		case errors.Is(err, ErrConflict):
 			status, code = 409, "CONFLICT"
 		}

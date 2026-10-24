@@ -8,7 +8,7 @@ run:
 run-publisher:
 	go run ./cmd/outbox-publisher
 
-# Kafka → сбор со всех моков → raw_collections; нужны DATABASE_URL, KAFKA_BROKERS, MOCK_API_URL
+# Kafka → сбор внешних систем / обработка финансовых документов; нужны DATABASE_URL, KAFKA_BROKERS
 run-worker:
 	go run ./cmd/worker
 
@@ -33,3 +33,8 @@ swagger:
 test-financial:
 	python3 -m unittest discover -s financial_parser/tests -v
 	go test ./internal/financial
+
+# Apply db migrations first. Jet version is pinned in go.mod; DATABASE_URL stays in env.
+.PHONY: generate-financial
+generate-financial:
+	go run ./cmd/generate-financial

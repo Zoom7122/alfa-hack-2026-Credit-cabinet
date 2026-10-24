@@ -140,10 +140,13 @@ type Parser interface {
 	Extract(context.Context, string, Applicant) (Extraction, error)
 }
 type Job struct {
-	ID         string
-	DocumentID string
-	Generation int
-	Applicant  Applicant
+	ID           string
+	DocumentID   string
+	Generation   int
+	Applicant    Applicant
+	SignatureIDs []string
+	Status       string
+	Attempts     int
 }
 type Event struct {
 	Event  string `json:"event"`

@@ -7,6 +7,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log/slog"
 	"mime/multipart"
 	"net/http/httptest"
 	"os"
@@ -46,7 +48,7 @@ func financialDB(t *testing.T) *pgxpool.Pool {
 	}
 	t.Cleanup(func() { pool.Close(); base.Exec(context.Background(), `DROP SCHEMA `+schema+` CASCADE`); base.Close() })
 	paths, err := filepath.Glob("../../../db/migrations/0*.sql")
-	if err != nil || len(paths) < 4 {
+	if err != nil || len(paths) < 5 {
 		t.Fatal("migration files missing", err)
 	}
 	for _, path := range paths {
@@ -78,6 +80,7 @@ func TestFinancialAPIWithActualDocuments(t *testing.T) {
 	repo := Repository{Pool: pool, Topic: "test-topic"}
 	script, _ := filepath.Abs("../../financial_parser/parser.py")
 	processor := Processor{Files: files, Verifier: HTTPVerifier{}, Parser: PythonParser{Script: script}}
+	worker := NewWorker(repo, processor, WorkerConfig{}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	Register(router, repo, files)
@@ -111,7 +114,7 @@ func TestFinancialAPIWithActualDocuments(t *testing.T) {
 			t.Fatal(err)
 		}
 		for i := 0; i < 2; i++ {
-			if err := repo.Handle(ctx, processor, ev); err != nil {
+			if err := worker.Handle(ctx, ev); err != nil {
 				t.Fatal(err)
 			}
 		}

@@ -27,7 +27,7 @@
 
 ## Запуск и API
 
-Применить миграцию `00004_financial_documents.sql` через модуль `db`. API и worker
+Применить все миграции до `00005_financial_worker.sql` через модуль `db`. API и worker
 используют общий каталог `DOCUMENT_STORAGE_PATH` (по умолчанию `/data/documents`);
 в compose для него добавлен постоянный volume `documents`.
 
@@ -47,7 +47,7 @@ export DOCUMENT_STORAGE_PATH=/tmp/credit-documents
 | GET | `/applications/{id}/documents` | список метаданных |
 | GET | `/applications/{id}/documents/{doc}` | метаданные, хеш, поколение, состояние подписи |
 | GET | `/applications/{id}/documents/{doc}/content` | точные исходные байты |
-| GET | `/applications/{id}/documents/{doc}/financial-result` | текущий результат, либо 202 `PENDING` |
+| GET | `/applications/{id}/documents/{doc}/financial-result` | текущий результат; 202 `PENDING`; 422 `PROCESSING_FAILED` при сбое задачи |
 | GET | `/applications/{id}/documents/{doc}/signature-report` | отдельный отчёт подписи, либо 202 |
 | POST | `/applications/{id}/documents/{doc}/signature-verification` | новая проверка, 202 |
 
@@ -61,10 +61,49 @@ API не возвращает старый результат как актуа�
 отдельными строками. Присоединённое содержимое сохраняется отдельным объектом с хешем;
 оно не подменяет загруженный контейнер.
 
+## Kafka worker и Jet
+
 Задача и outbox создаются в одной транзакции. Событие `financial.document.requested`
-идёт через существующий топик Kafka. Worker различает финансовые задачи и сбор внешних
-систем. Снимок подписей и контекст заявки фиксируются на поколение. Блокировка строки
-задачи защищает от параллельного выполнения; повтор завершённой задачи не добавляет отчёты.
+содержит только `task_id` и идёт через существующий `KAFKA_TOPIC`. Файлы и персональные
+данные в Kafka не передаются. `data-collector-publisher` доставляет outbox, а
+`data-collector-worker` направляет финансовое событие в `financial.Worker.Handle`.
+Сбор внешних систем продолжает работать в той же consumer group. Для обработки нужны
+оба процесса; HTTP API только сохраняет оригиналы и ставит задачи.
+
+Использован шаблон `Claim → Process → Complete/Fail` из `feat/mock-API`, уже вошедшей
+в `master`. Финансовый worker отделён от репозитория и процессора. Статусы задач:
+`PENDING → RUNNING → COMPLETED/FAILED`. Захват выполняется короткой транзакцией;
+проверка подписи и Python-парсер не держат соединение или блокировку PostgreSQL.
+Снимок подписей и контекст заявки фиксируются на поколение.
+
+`FINANCIAL_PROCESS_TIMEOUT` по умолчанию 90 секунд; срок захвата — таймаут плюс 30 секунд
+на сохранение и завершение. После аварии истёкший захват позволяет повторную обработку.
+Номер попытки защищает от записи результата устаревшим worker. `WORKER_MAX_ATTEMPTS`
+(по умолчанию 3, общий для обоих обработчиков) ограничивает повторные захваты.
+Падение процессора сохраняется как `FAILED`; ошибки инфраструктуры при захвате/загрузке
+задачи или сохранении результата возвращаются consumer без подтверждения сообщения.
+Consumer завершается; compose перезапускает его, Kafka доставляет событие повторно.
+Занятая задача также не подтверждается до завершения или истечения её захвата.
+Завершённые задачи идемпотентны: повторная доставка не добавляет отчёты.
+
+Статус завершения, результат и отчёт подписи сохраняются атомарно. Результат старого
+поколения остаётся в истории и не меняет статус нового. `FAILED` даёт 422
+`PROCESSING_FAILED`, а не бесконечный polling 202; повторная проверка создаёт новое
+поколение. `COMPLETED` означает завершение обработки, а не успешную подпись или допуск
+к скорингу: решения остаются внутри результата.
+
+Финансовый репозиторий использует типизированные таблицы и модели Jet v2 из
+`internal/generated/financial`. SQL собирает Jet; pgx выполняет запросы и отображает
+строки в сгенерированные модели. Генератор читает только схему семи используемых таблиц.
+После применения миграций обновить код из каталога `data-collector`:
+
+```bash
+DATABASE_URL='postgres://.../credit_cabinet?sslmode=disable' make generate-financial
+```
+
+Версия генератора закреплена в `go.mod`; `JET_SCHEMA` по умолчанию `public`,
+`JET_OUTPUT` — `internal/generated/financial`. Генерируемые файлы входят в Git,
+исходные документы и содержимое БД в них не попадают.
 
 ## Подключение валидатора коллеги
 
@@ -163,6 +202,9 @@ go vet ./...
 # PostgreSQL-тест создаёт отдельную схему, применяет миграции и удаляет её после теста:
 FINANCIAL_TEST_DATABASE_URL='postgres://.../test?sslmode=disable' \
   FINANCIAL_REAL_TESTS=1 go test -tags integration ./internal/financial -v
+# Дополнительно реальный Kafka: outbox, сбой записи, перезапуск группы и дубли.
+FINANCIAL_TEST_DATABASE_URL='postgres://.../test?sslmode=disable' \
+  KAFKA_BROKERS=localhost:9094 go test -tags integration ./internal/financial -run TestFinancialKafkaRedelivery -v
 ```
 
 Проверены несовпадение ИНН, XLSX-вариант образца со вставленными строками, отрицательные

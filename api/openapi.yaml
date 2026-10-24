@@ -553,7 +553,7 @@ paths:
       tags: [documents]
       operationId: getFinancialDocumentResult
       summary: Результат обработки финансового документа
-      description: Возвращается только результат текущего поколения; при повторной проверке старый допуск не используется.
+      description: Возвращается только результат текущего поколения; при повторной проверке старый допуск не используется. Сбой задачи или исчерпание попыток возвращает 422 PROCESSING_FAILED; повторная проверка создаёт новое поколение.
       parameters:
         - $ref: '#/components/parameters/ApplicationId'
         - $ref: '#/components/parameters/DocumentId'
@@ -571,6 +571,11 @@ paths:
                 type: object
                 properties:
                   state: { type: string, const: PENDING }
+        '422':
+          description: PROCESSING_FAILED — обработка завершилась сбоем; можно запросить повторную проверку
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
         '404': { $ref: '#/components/responses/NotFound' }
 
   # ---------------------------------------------------------------- info requests
@@ -1163,7 +1168,7 @@ components:
           enum: [UNAUTHORIZED, FORBIDDEN, NOT_FOUND, CONFLICT, VALIDATION_FAILED, INVALID_TRANSITION,
                  VERSION_CONFLICT, DRAFT_INCOMPLETE, CONSENT_REQUIRED, ACTIVE_APPLICATION_EXISTS,
                  OFFER_EXPIRED, NOT_AUTHORIZED_SIGNER, SIGNATURE_INVALID, NO_SIGNATURE_FOUND,
-                 UPSTREAM_TIMEOUT, INTERNAL]
+                 UPSTREAM_TIMEOUT, INTERNAL, UNSUPPORTED, PROCESSING_FAILED]
         errors:
           type: array
           items:

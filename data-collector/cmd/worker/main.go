@@ -94,10 +94,15 @@ func run(log *slog.Logger) error {
 		Verifier: financial.HTTPVerifier{URL: os.Getenv("SIGNATURE_VERIFIER_URL")},
 		Parser:   financial.PythonParser{Python: env.String("FINANCIAL_PYTHON", "python3"), Script: env.String("FINANCIAL_PARSER_PATH", "/app/financial_parser/parser.py")},
 	}
+	financialTimeout, err := env.Duration("FINANCIAL_PROCESS_TIMEOUT", 90*time.Second)
+	if err != nil {
+		return err
+	}
+	financialWorker := financial.NewWorker(financialRepo, processor, financial.WorkerConfig{ProcessTimeout: financialTimeout, MaxAttempts: maxAttempts}, log)
 	handle := func(ctx context.Context, value []byte) error {
 		var event financial.Event
 		if json.Unmarshal(value, &event) == nil && event.Event == financial.EventRequested {
-			return financialRepo.Handle(ctx, processor, value)
+			return financialWorker.Handle(ctx, value)
 		}
 		return w.Handle(ctx, value)
 	}

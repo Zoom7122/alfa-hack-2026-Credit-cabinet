@@ -41,6 +41,10 @@ depends_on:
 
 Код Jet каждый модуль генерирует себе сам из БД после `make up`, только по своим таблицам, — так модули не зависят от `db` на уровне Go.
 
+Для финансовых документов: `cd ../data-collector && make generate-financial`
+с `DATABASE_URL` мигрированной БД. Генератор и список таблиц — `cmd/generate-financial`;
+результат — `internal/generated/financial`. Требуется миграция `00005_financial_worker.sql`.
+
 ## Правила миграций
 
 - Применённую миграцию не редактируем — пишем новую.
