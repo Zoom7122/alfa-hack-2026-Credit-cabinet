@@ -1,0 +1,8 @@
+.documents-tab {
+    max-width: 760px;
+}
+
+.documents-tab__skeleton {
+    height: 120px;
+    border-radius: var(--border-radius-16);
+}

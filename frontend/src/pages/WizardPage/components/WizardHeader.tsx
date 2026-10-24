@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { formatTime } from '../../../shared/lib/format';
 import { Logo } from '../../../shared/ui/Logo/Logo';
 import type { DraftStatus } from '../useDraft';
+import { VisuallyHidden } from '../../../shared/ui/VisuallyHidden/VisuallyHidden';
 import './WizardHeader.css';
 
 type Props = {
@@ -44,9 +45,7 @@ export function WizardHeader({ status, savedAt, onRetry, exitLabel, onExit, exit
                 </Typography.Text>
             </Link>
             <div className='wizard-header__actions'>
-                <span className='wizard-header__sr' role='status'>
-                    {announcement}
-                </span>
+                <VisuallyHidden role='status'>{announcement}</VisuallyHidden>
                 {status === 'error' ? (
                     <div className='wizard-header__status' aria-hidden='true'>
                         <Typography.Text view='primary-small' color='negative'>

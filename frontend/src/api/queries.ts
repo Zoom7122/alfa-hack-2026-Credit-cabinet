@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { newIdempotencyKey } from '../shared/lib/idempotency';
-import { api, isUnauthorized, unwrap } from './client';
+import { api, ApiError, isUnauthorized, unwrap } from './client';
 import { session } from './session';
 import type {
     ApplicantType,
@@ -10,7 +10,9 @@ import type {
     ApplicationStatus,
     ApplicationStatusView,
     ApplicationSummary,
+    DeclineReason,
     Document,
+    InfoRequestAnswerInput,
     DocumentType,
     PurposeCode,
     RepresentativeRole,
@@ -35,6 +37,12 @@ export const queryKeys = {
     application: (id: string) => ['applications', 'detail', id] as const,
     applicationStatus: (id: string) => ['applications', 'status', id] as const,
     documents: (id: string) => ['applications', 'documents', id] as const,
+    timeline: (id: string) => ['applications', 'timeline', id] as const,
+    infoRequests: (id: string) => ['applications', 'info-requests', id] as const,
+    offers: (id: string) => ['applications', 'offers', id] as const,
+    decision: (id: string) => ['applications', 'decision', id] as const,
+    /** Всё по одной заявке — для инвалидации по WS-событию. */
+    anyOf: (id: string) => (query: { queryKey: readonly unknown[] }) => query.queryKey[0] === 'applications' && query.queryKey[2] === id,
 };
 
 export function useTestUsers() {
@@ -235,7 +243,8 @@ export function useSubmitApplication() {
 }
 
 const RECOGNIZING = new Set(['PENDING', 'PROCESSING']);
-const isRecognizing = (doc: Document) => RECOGNIZING.has(doc.recognition?.state ?? '');
+/** Распознавание или проверка подписи ещё идут. */
+const isRecognizing = (doc: Document) => RECOGNIZING.has(doc.recognition?.state ?? '') || doc.signatures?.state === 'PENDING';
 
 /** Документы заявки. Пока что-то распознаётся — перечитываем (WS-события document.recognized пока нет). */
 export function useDocuments(applicationId: string | undefined) {
@@ -252,15 +261,28 @@ export function useDocuments(applicationId: string | undefined) {
 export function useUploadDocument(applicationId: string) {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ file, type }: { file: File; type: DocumentType }) => {
+        mutationFn: async ({
+            file,
+            type,
+            infoRequestId,
+            signedDocumentId,
+        }: {
+            file: File;
+            type: DocumentType;
+            infoRequestId?: string;
+            /** Для type=SIGNATURE: какой документ подписан (откреплённая .sig/.p7s). */
+            signedDocumentId?: string;
+        }) => {
             const form = new FormData();
             form.append('file', file);
             form.append('type', type);
+            if (infoRequestId) form.append('info_request_id', infoRequestId);
+            if (signedDocumentId) form.append('signed_document_id', signedDocumentId);
             return unwrap(
                 await api.POST('/applications/{applicationId}/documents', {
                     params: { path: { applicationId }, header: { 'Idempotency-Key': newIdempotencyKey() } },
                     // multipart собираем сами; тип поля file в схеме — строка (format: binary)
-                    body: { file: '', type },
+                    body: { file: '', type, info_request_id: infoRequestId, signed_document_id: signedDocumentId },
                     bodySerializer: () => form,
                 }),
             );
@@ -279,5 +301,139 @@ export function useDeleteDocument(applicationId: string) {
                 }),
             ),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.documents(applicationId) }),
+    });
+}
+
+const path = (applicationId: string) => ({ params: { path: { applicationId } } });
+
+/** Лёгкий статус для UI. Перечитывается по WS-событию application.status_changed. */
+export function useApplicationStatus(id: string | undefined) {
+    return useQuery({
+        queryKey: queryKeys.applicationStatus(id ?? ''),
+        queryFn: async () => unwrap(await api.GET('/applications/{applicationId}/status', path(id ?? ''))),
+        enabled: Boolean(id),
+    });
+}
+
+export function useTimeline(id: string | undefined) {
+    return useQuery({
+        queryKey: queryKeys.timeline(id ?? ''),
+        queryFn: async () => unwrap(await api.GET('/applications/{applicationId}/timeline', path(id ?? ''))).items,
+        enabled: Boolean(id),
+    });
+}
+
+export function useInfoRequests(id: string | undefined, enabled = true) {
+    return useQuery({
+        queryKey: queryKeys.infoRequests(id ?? ''),
+        queryFn: async () => unwrap(await api.GET('/applications/{applicationId}/info-requests', path(id ?? ''))).items,
+        enabled: Boolean(id) && enabled,
+    });
+}
+
+export function useOffers(id: string | undefined, enabled = true) {
+    return useQuery({
+        queryKey: queryKeys.offers(id ?? ''),
+        queryFn: async () => unwrap(await api.GET('/applications/{applicationId}/offers', path(id ?? ''))).items,
+        enabled: Boolean(id) && enabled,
+    });
+}
+
+/** После действия кладём свежий статус в кэш и перечитываем остальное по заявке. */
+function useApplyStatus() {
+    const queryClient = useQueryClient();
+    return (status: ApplicationStatusView) => {
+        queryClient.setQueryData(queryKeys.applicationStatus(status.id), status);
+        void queryClient.invalidateQueries({
+            predicate: (q) => q.queryKey[0] === 'applications' && (q.queryKey[1] === 'list' || (q.queryKey[2] === status.id && q.queryKey[1] !== 'status')),
+        });
+    };
+}
+
+/** Статус ушёл вперёд (409), версия устарела (412), предложение истекло (410) — без перечитывания повтор упрётся в ту же ошибку. */
+const STALE = new Set([409, 410, 412]);
+
+function useRefreshOnStale(applicationId: string) {
+    const queryClient = useQueryClient();
+    return (error: Error) => {
+        if (error instanceof ApiError && STALE.has(error.status)) {
+            void queryClient.invalidateQueries({ predicate: queryKeys.anyOf(applicationId) });
+        }
+    };
+}
+
+export function useAnswerInfoRequest(applicationId: string) {
+    const applyStatus = useApplyStatus();
+    const refreshOnStale = useRefreshOnStale(applicationId);
+    return useMutation({
+        mutationFn: async ({ infoRequestId, idempotencyKey, ...body }: InfoRequestAnswerInput & { infoRequestId: string; idempotencyKey: string }) =>
+            unwrap(
+                await api.POST('/applications/{applicationId}/info-requests/{infoRequestId}/answer', {
+                    params: { path: { applicationId, infoRequestId }, header: { 'Idempotency-Key': idempotencyKey } },
+                    body,
+                }),
+            ),
+        onSuccess: ({ application_status }) => applyStatus(application_status),
+        onError: refreshOnStale,
+    });
+}
+
+export function useAcceptOffer(applicationId: string) {
+    const applyStatus = useApplyStatus();
+    const refreshOnStale = useRefreshOnStale(applicationId);
+    return useMutation({
+        mutationFn: async ({ offerId, version, idempotencyKey }: { offerId: string; version: number; idempotencyKey: string }) =>
+            unwrap(
+                await api.POST('/applications/{applicationId}/offers/{offerId}/accept', {
+                    params: {
+                        path: { applicationId, offerId },
+                        header: { 'If-Match': String(version), 'Idempotency-Key': idempotencyKey },
+                    },
+                }),
+            ),
+        onSuccess: applyStatus,
+        onError: refreshOnStale,
+    });
+}
+
+export function useDeclineOffers(applicationId: string) {
+    const applyStatus = useApplyStatus();
+    const refreshOnStale = useRefreshOnStale(applicationId);
+    return useMutation({
+        mutationFn: async ({
+            reason,
+            comment,
+            version,
+            idempotencyKey,
+        }: {
+            reason: DeclineReason;
+            comment?: string;
+            version: number;
+            idempotencyKey: string;
+        }) =>
+            unwrap(
+                await api.POST('/applications/{applicationId}/offers/decline', {
+                    params: { path: { applicationId }, header: { 'If-Match': String(version), 'Idempotency-Key': idempotencyKey } },
+                    body: { reason, comment: comment || undefined },
+                }),
+            ),
+        onSuccess: ({ application_status }) => applyStatus(application_status),
+        onError: refreshOnStale,
+    });
+}
+
+export function useCancelApplication(applicationId: string) {
+    const applyStatus = useApplyStatus();
+    const refreshOnStale = useRefreshOnStale(applicationId);
+    return useMutation({
+        mutationFn: async ({ comment, idempotencyKey }: { comment?: string; idempotencyKey: string }) =>
+            unwrap(
+                await api.POST('/applications/{applicationId}/cancel', {
+                    params: { path: { applicationId }, header: { 'Idempotency-Key': idempotencyKey } },
+                    body: { comment: comment || undefined },
+                }),
+            ),
+        onSuccess: applyStatus,
+        onError: refreshOnStale,
     });
 }

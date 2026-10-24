@@ -8,7 +8,7 @@ import { useDocuments } from '../../../api/queries';
 import type { DocumentType } from '../../../api/types';
 import { DOCUMENT_LABELS } from '../../../shared/lib/dictionaries';
 import { FormCard } from '../../../shared/ui/FormCard/FormCard';
-import { DocumentUploader } from '../components/DocumentUploader';
+import { DocumentUploader } from '../../../shared/ui/DocumentUploader/DocumentUploader';
 import { StepLayout } from '../components/StepLayout';
 import type { StepProps } from '../stepProps';
 import { expectedDocuments } from '../steps';

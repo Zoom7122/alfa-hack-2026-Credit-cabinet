@@ -3,13 +3,14 @@ import { Plate } from '@alfalab/core-components/plate';
 import { Skeleton } from '@alfalab/core-components/skeleton';
 import { Tag } from '@alfalab/core-components/tag';
 import { Typography } from '@alfalab/core-components/typography';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useApplicants, useApplications, useProducts } from '../../api/queries';
 import type { CompanyAccess, PurposeCode } from '../../api/types';
 import { ACTIVE_STAGES, PURPOSE_LABELS, PURPOSES } from '../../shared/lib/dictionaries';
 import { fitTerms, type TermsValue } from '../../shared/lib/terms';
 import { useRovingRadio } from '../../shared/lib/useRovingRadio';
+import { Breadcrumbs } from '../../shared/ui/Breadcrumbs/Breadcrumbs';
 import { Calculator } from './components/Calculator';
 import { ProductCard } from './components/ProductCard';
 import './ProductsPage.css';
@@ -64,17 +65,7 @@ export function ProductsPage({ company }: { company?: CompanyAccess }) {
 
     return (
         <div className='products'>
-            <nav aria-label='Вы здесь' className='products__crumbs'>
-                <Link to='/' className='products__crumb-link'>
-                    <Typography.Text view='primary-small'>Кредиты</Typography.Text>
-                </Link>
-                <Typography.Text view='primary-small' color='secondary' aria-hidden='true'>
-                    →
-                </Typography.Text>
-                <Typography.Text view='primary-small' color='secondary' aria-current='page'>
-                    Новая заявка
-                </Typography.Text>
-            </nav>
+            <Breadcrumbs items={[{ label: 'Кредиты', to: '/' }, { label: 'Новая заявка' }]} />
 
             <div className='products__head'>
                 <Typography.TitleResponsive tag='h1' view='large' font='system'>

@@ -11,7 +11,7 @@ import type { DeclaredFinancials, Document } from '../../../api/types';
 import { BANKS } from '../../../shared/lib/dictionaries';
 import { formatCompactMoney, formatDate } from '../../../shared/lib/format';
 import { FormCard } from '../../../shared/ui/FormCard/FormCard';
-import { DocumentUploader } from '../components/DocumentUploader';
+import { DocumentUploader } from '../../../shared/ui/DocumentUploader/DocumentUploader';
 import { StepLayout } from '../components/StepLayout';
 import type { StepProps } from '../stepProps';
 import { reportingYear } from '../steps';

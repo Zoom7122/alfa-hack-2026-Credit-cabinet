@@ -1,12 +1,10 @@
 import { delay, http, HttpResponse } from 'msw';
 
-import { API_BASE_URL } from '../api/client';
 import type {
     ApplicantType,
     ApplicationInput,
     ApplicationStatus,
     DocumentType,
-    Me,
     Problem,
     PurposeCode,
     RepresentativeRole,
@@ -15,7 +13,23 @@ import type {
 import { fieldLabel, PURPOSES } from '../shared/lib/dictionaries';
 import { isInn, isValidInn } from '../shared/lib/inn';
 import { mergePatch } from '../shared/lib/mergePatch';
-import { products, REGISTRY_TIMEOUT_INN, registry, stageOf, statusViewFor, type StoredApplication, testUsers } from './data';
+import { products, REGISTRY_TIMEOUT_INN, registry, type StoredApplication, testUsers } from './data';
+import {
+    companyIds,
+    currentUser,
+    idempotent,
+    invalidTransition,
+    MOCK_TOKEN_PREFIX,
+    notFound,
+    ownApplication,
+    problem,
+    unauthorized,
+    url,
+    versionMismatch,
+    withEtag,
+} from './http';
+import { annuity } from './seedWorkflow';
+import { addTimeline, statusViewFor, tick, transition } from './workflow';
 import {
     addDocument,
     completeness,
@@ -34,70 +48,14 @@ import {
     toSummary,
 } from './store';
 
-const url = (path: string) => `${API_BASE_URL}${path}`;
-const TOKEN_PREFIX = 'mock.';
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
-const UPLOAD_EXTENSIONS = ['pdf', 'docx', 'xlsx', 'jpg', 'jpeg', 'png', 'sig', 'p7s'];
+// xml — машиночитаемая доверенность (МЧД); в описании поля file в контракте её пока нет
+const UPLOAD_EXTENSIONS = ['pdf', 'docx', 'xlsx', 'jpg', 'jpeg', 'png', 'sig', 'p7s', 'xml'];
 
 const STATUSES: ApplicationStatus[] = [
     'DRAFT', 'SUBMITTED', 'ENRICHING', 'VERIFYING', 'WAITING_FOR_INFO', 'SCORING', 'DECIDING', 'MANUAL_REVIEW',
     'OFFERED', 'SIGNING', 'COMPLETED', 'REJECTED', 'DECLINED', 'CANCELLED', 'EXPIRED',
 ];
-
-function problem(status: number, code: Problem['code'], title: string, extra?: Partial<Problem>) {
-    return HttpResponse.json<Problem>(
-        { type: `https://errors.credit-cabinet.local/${code.toLowerCase().replace(/_/g, '-')}`, title, status, code, ...extra },
-        { status, headers: { 'Content-Type': 'application/problem+json' } },
-    );
-}
-
-/** Пользователь по Bearer-токену. Токен мока — `mock.<user_id>`. */
-function currentUser(request: Request): Me | undefined {
-    const token = (request.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
-    if (!token.startsWith(TOKEN_PREFIX)) return undefined;
-    return meFor(token.slice(TOKEN_PREFIX.length));
-}
-
-const unauthorized = () => problem(401, 'UNAUTHORIZED', 'Нужно войти');
-const notFound = () => problem(404, 'NOT_FOUND', 'Заявка не найдена');
-const companyIds = (me: Me) => new Set(me.companies.map((c) => c.applicant_id));
-const withEtag = (version: number) => ({ ETag: String(version) });
-
-/** Заявка, если она принадлежит компании пользователя. Чужие не раскрываем — как будто их нет. */
-function ownApplication(me: Me, id: unknown): StoredApplication | undefined {
-    const app = read().applications.find((a) => a.id === id);
-    return app && companyIds(me).has(app.applicant.id) ? app : undefined;
-}
-
-function invalidTransition(app: StoredApplication) {
-    return problem(409, 'INVALID_TRANSITION', 'Действие недоступно в текущем статусе', {
-        current_status: app.status,
-        allowed_actions: toApplication(app).allowed_actions,
-    });
-}
-
-function versionMismatch(request: Request, app: StoredApplication) {
-    const ifMatch = request.headers.get('If-Match');
-    if (ifMatch === null) return problem(422, 'VALIDATION_FAILED', 'Нужен заголовок If-Match');
-    if (ifMatch !== String(app.version)) return problem(412, 'VERSION_CONFLICT', 'Заявку уже изменили — обновите данные');
-    return undefined;
-}
-
-/** Повтор запроса с тем же Idempotency-Key возвращает уже созданный ресурс. */
-function idempotent(request: Request, scope: string) {
-    const key = request.headers.get('Idempotency-Key');
-    const full = key ? `${scope}:${key}` : undefined;
-    return {
-        existing: full ? read().idempotency[full] : undefined,
-        remember: (id: string) => full && mutate((d) => (d.idempotency[full] = id)),
-    };
-}
-
-/** Аннуитетный платёж, округлённый до рубля. */
-function annuity(amount: number, months: number, rateAnnual: number) {
-    const r = rateAnnual / 100 / 12;
-    return Math.round((amount * r) / (1 - (1 + r) ** -months));
-}
 
 function validateTerms(terms: Partial<RequestedTerms> | undefined, code: string) {
     const product = productByCode(code);
@@ -169,7 +127,10 @@ function mockFailure(request: Request) {
 
 export const handlers = [
     // ---------------------------------------------------------------- сбои по флагу (e2e)
-    http.all(url('/*'), ({ request }) => mockFailure(request)),
+    http.all(url('/*'), ({ request }) => {
+        tick();
+        return mockFailure(request);
+    }),
     // ---------------------------------------------------------------- auth
     http.get(url('/auth/test-users'), async () => {
         await delay(300);
@@ -181,7 +142,7 @@ export const handlers = [
         const { user_id } = (await request.json()) as { user_id: string };
         const user = meFor(user_id);
         if (!user) return problem(404, 'NOT_FOUND', 'Пользователь не найден');
-        return HttpResponse.json({ token: `${TOKEN_PREFIX}${user_id}`, user });
+        return HttpResponse.json({ token: `${MOCK_TOKEN_PREFIX}${user_id}`, user });
     }),
 
     http.get(url('/me'), async ({ request }) => {
@@ -414,7 +375,7 @@ export const handlers = [
         if (!me) return unauthorized();
         const app = ownApplication(me, params.applicationId);
         if (!app) return notFound();
-        return HttpResponse.json(statusViewFor(toSummary(app), me.id), { headers: withEtag(app.version) });
+        return HttpResponse.json(statusViewFor(app, me.id), { headers: withEtag(app.version) });
     }),
 
     http.post(url('/applications/:applicationId/submit'), async ({ request, params }) => {
@@ -424,7 +385,7 @@ export const handlers = [
         const app = ownApplication(me, params.applicationId);
         if (!app) return notFound();
         const { existing, remember } = idempotent(request, `submit:${app.id}`);
-        if (existing && app.status !== 'DRAFT') return HttpResponse.json(statusViewFor(toSummary(app), me.id), { status: 202 });
+        if (existing && app.status !== 'DRAFT') return HttpResponse.json(statusViewFor(app, me.id), { status: 202 });
         if (app.status !== 'DRAFT') return invalidTransition(app);
         const conflict = versionMismatch(request, app);
         if (conflict) return conflict;
@@ -447,22 +408,18 @@ export const handlers = [
             });
         }
 
-        const submitted = mutate((d) => {
+        mutate((d) => {
             const index = d.applications.findIndex((a) => a.id === app.id);
-            const now = new Date().toISOString();
-            const next: StoredApplication = {
-                ...app,
-                status: 'SUBMITTED',
-                client_stage: stageOf('SUBMITTED'),
-                version: app.version + 1,
-                submitted_at: now,
-                updated_at: now,
-            };
-            d.applications[index] = next;
-            return next;
+            d.applications[index] = { ...app, submitted_at: new Date().toISOString() };
+        });
+        // дальше заявка сама пойдёт по конвейеру (workflow.ts)
+        const submitted = transition(app, 'SUBMITTED', {
+            message: 'Заявка отправлена',
+            actor: { id: me.id, full_name: me.full_name },
+            next: true,
         });
         remember(app.id);
-        return HttpResponse.json(statusViewFor(toSummary(submitted), me.id), { status: 202 });
+        return HttpResponse.json(statusViewFor(submitted, me.id), { status: 202 });
     }),
 
     // ---------------------------------------------------------------- documents
@@ -490,6 +447,17 @@ export const handlers = [
         const form = await request.formData();
         const file = form.get('file');
         const type = form.get('type') as DocumentType | null;
+        const infoRequestId = form.get('info_request_id');
+        const signedDocumentId = form.get('signed_document_id');
+        if (infoRequestId && !read().infoRequests.some((r) => r.id === infoRequestId && r.application_id === app.id)) {
+            return problem(422, 'VALIDATION_FAILED', 'Вопрос не найден', { errors: [{ field: 'info_request_id', message: 'Вопрос не найден' }] });
+        }
+        // откреплённая подпись (.sig/.p7s) — отдельный документ со ссылкой на подписанный
+        if (type === 'SIGNATURE' && !read().documents.some((d) => d.id === signedDocumentId && d.application_id === app.id)) {
+            return problem(422, 'VALIDATION_FAILED', 'Не указан подписанный документ', {
+                errors: [{ field: 'signed_document_id', message: 'Сначала загрузите документ, к которому относится подпись' }],
+            });
+        }
         if (!(file instanceof File) || !type) {
             return problem(422, 'VALIDATION_FAILED', 'Нужен файл и тип документа', {
                 errors: [{ field: 'file', message: 'Нужен файл и тип документа' }],
@@ -514,11 +482,14 @@ export const handlers = [
             origin: 'CLIENT_UPLOAD',
             uploaded_by: { id: me.id, full_name: me.full_name },
             uploaded_at: new Date().toISOString(),
-            info_request_id: null,
-            signed_document_id: null,
+            info_request_id: typeof infoRequestId === 'string' && infoRequestId ? infoRequestId : null,
+            signed_document_id: type === 'SIGNATURE' && typeof signedDocumentId === 'string' ? signedDocumentId : null,
             recognize_at: Date.now() + RECOGNITION_DELAY_MS,
+            verify_at: Date.now() + RECOGNITION_DELAY_MS,
         });
         remember(doc.id);
+        const current = read().applications.find((a) => a.id === app.id) ?? app;
+        addTimeline(current, { type: 'DOCUMENT_UPLOADED', actor_kind: 'CLIENT', actor: { id: me.id, full_name: me.full_name }, message: `Загружен документ: ${file.name}` });
         return HttpResponse.json(doc, { status: 201 });
     }),
 

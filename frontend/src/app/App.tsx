@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/reac
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useOutletContext } from 'react-router-dom';
 
 import { ApiError } from '../api/client';
+import { useLiveUpdates } from '../api/live';
 import { queryKeys } from '../api/queries';
 import type { Me } from '../api/types';
 import { DashboardPage } from '../pages/DashboardPage/DashboardPage';
@@ -26,6 +27,9 @@ const queryClient = new QueryClient({
 // формы с тяжёлыми компонентами кита грузим отдельным чанком
 const ProductsPage = lazy(() => import('../pages/ProductsPage/ProductsPage').then((m) => ({ default: m.ProductsPage })));
 const NewApplicationPage = lazy(() => import('../pages/WizardPage/WizardPage').then((m) => ({ default: m.NewApplicationPage })));
+const ApplicationPage = lazy(() =>
+    import('../pages/ApplicationPage/ApplicationPage').then((m) => ({ default: m.ApplicationPage })),
+);
 const WizardPage = lazy(() => import('../pages/WizardPage/WizardPage').then((m) => ({ default: m.WizardPage })));
 
 function Lazy({ children }: { children: ReactNode }) {
@@ -46,6 +50,7 @@ function Lazy({ children }: { children: ReactNode }) {
 function ClientLayout() {
     const { me } = useOutletContext<AuthContext>();
     const logout = useLogout();
+    useLiveUpdates(useToken());
     // TODO: переключатель компаний, когда у пользователя их несколько
     const company = me.companies[0];
 
@@ -110,6 +115,14 @@ export function App() {
                         <Route element={<ClientLayout />}>
                             <Route index={true} element={<DashboardRoute />} />
                             <Route path='products' element={<ProductsRoute />} />
+                            <Route
+                                path='applications/:applicationId'
+                                element={
+                                    <Lazy>
+                                        <ApplicationPage />
+                                    </Lazy>
+                                }
+                            />
                             <Route path='*' element={<NotReadyPage />} />
                         </Route>
                         {/* анкета — без шапки кабинета */}

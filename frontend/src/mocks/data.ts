@@ -1,16 +1,14 @@
 import type {
     Applicant,
-    ApplicationAction,
     ApplicationInput,
     ApplicationStatus,
-    ApplicationStatusView,
     ApplicationSummary,
-    ClientStage,
     CounterpartyPrefill,
     Product,
     TestUser,
     UserRef,
 } from '../api/types';
+import { stageOf } from './fsm';
 
 type RequiredDocument = NonNullable<Product['required_documents']>[number];
 
@@ -260,27 +258,6 @@ export const registry: CounterpartyPrefill[] = [
 
 export const REGISTRY_TIMEOUT_INN = '7700000000';
 
-export function stageOf(status: ApplicationStatus): ClientStage {
-    switch (status) {
-        case 'DRAFT':
-            return 'FILLING';
-        case 'WAITING_FOR_INFO':
-            return 'ACTION_REQUIRED';
-        case 'OFFERED':
-            return 'OFFER';
-        case 'SIGNING':
-            return 'SIGNING';
-        case 'COMPLETED':
-            return 'DONE';
-        case 'REJECTED':
-        case 'DECLINED':
-        case 'CANCELLED':
-        case 'EXPIRED':
-            return 'CLOSED';
-        default:
-            return 'REVIEW';
-    }
-}
 
 type Seed = {
     id: string;
@@ -294,6 +271,8 @@ type Seed = {
     updated: string;
     input?: Omit<ApplicationInput, 'requested' | 'product_code'>;
     prefilledFrom?: string;
+    /** Кто подал; по умолчанию — директор компании. */
+    createdBy?: string;
 };
 
 const applicantRefs = {
@@ -330,7 +309,7 @@ const romashkaProfile = {
 
 const seeds: Seed[] = [
     { id: 'app_000123', number: 'A-2026-000123', applicant: 'romashka', status: 'SIGNING', product: 'WORKING_CAPITAL', amount: 5_000_000, term: 24, created: '2026-10-20T09:10:00Z', updated: '2026-10-24T11:20:00Z' },
-    { id: 'app_000131', number: 'A-2026-000131', applicant: 'romashka', status: 'WAITING_FOR_INFO', product: 'VEHICLE', amount: 3_200_000, term: 36, created: '2026-10-21T08:00:00Z', updated: '2026-10-23T15:40:00Z' },
+    { id: 'app_000131', number: 'A-2026-000131', applicant: 'romashka', status: 'WAITING_FOR_INFO', product: 'VEHICLE', amount: 3_200_000, term: 36, created: '2026-10-21T08:00:00Z', updated: '2026-10-23T15:40:00Z', createdBy: 'usr_accountant_romashka' },
     {
         id: 'app_000140',
         number: 'A-2026-000140',
@@ -371,7 +350,21 @@ export type StoredApplication = ApplicationSummary &
         prefilled_from?: string | null;
     };
 
+/** Директор компании — он подписывает договор. */
+export function directorOf(applicantId: string): UserRef | undefined {
+    const user = testUsers.find((u) => u.companies?.some((c) => c.applicant_id === applicantId && c.role === 'DIRECTOR'));
+    return user && { id: user.id, full_name: user.full_name };
+}
+
+const userRef = (id: string): UserRef | undefined => {
+    const user = testUsers.find((u) => u.id === id);
+    return user && { id: user.id, full_name: user.full_name };
+};
+
 export const seedApplications: StoredApplication[] = seeds.map((s) => ({
+    created_by: s.createdBy ? userRef(s.createdBy) : directorOf(applicantRefs[s.applicant].id),
+    submitted_at: s.status === 'DRAFT' ? null : s.created,
+    purpose: { code: products.find((p) => p.code === s.product)?.purposes?.[0] ?? 'OTHER' },
     id: s.id,
     number: s.number,
     version: 3,
@@ -385,67 +378,3 @@ export const seedApplications: StoredApplication[] = seeds.map((s) => ({
     ...s.input,
     prefilled_from: s.prefilledFrom ?? null,
 }));
-
-/** Тексты этапов — docs/fsm.md, раздел «Что видит клиент». */
-const STAGE_TEXT: Record<ClientStage, { title: string; subtitle?: string }> = {
-    FILLING: { title: 'Заполнение заявки', subtitle: 'Черновик сохраняется автоматически' },
-    REVIEW: { title: 'Рассматриваем заявку', subtitle: 'Обычно это несколько минут' },
-    ACTION_REQUIRED: { title: 'Нужно уточнить пару моментов', subtitle: 'Ответьте на вопросы банка' },
-    OFFER: { title: 'Решение готово', subtitle: 'Выберите подходящее предложение' },
-    SIGNING: { title: 'Подписание договора' },
-    DONE: { title: 'Кредит выдан' },
-    CLOSED: { title: 'Заявка закрыта' },
-};
-
-/** Доступные клиенту действия по статусу — таблица переходов docs/fsm.md. */
-export const ACTIONS: Partial<Record<ApplicationStatus, ApplicationAction[]>> = {
-    DRAFT: ['EDIT', 'SUBMIT', 'CANCEL', 'UPLOAD_DOCUMENT'],
-    WAITING_FOR_INFO: ['ANSWER_INFO_REQUEST', 'UPLOAD_DOCUMENT', 'CANCEL'],
-    OFFERED: ['ACCEPT_OFFER', 'DECLINE_OFFERS'],
-};
-
-const SIGNER = { id: 'usr_director_romashka', full_name: 'Петров Пётр Петрович' };
-const STAGE_ORDER: ClientStage[] = ['FILLING', 'REVIEW', 'OFFER', 'SIGNING', 'DONE'];
-const STAGE_TITLES = ['Заявка', 'Рассмотрение', 'Решение', 'Подписание', 'Выдача'];
-
-/** Сколько этапов заявка успела пройти до закрытия. */
-function reachedBeforeClose(status: ApplicationStatus): number {
-    if (status === 'DECLINED') return 2; // дошла до решения
-    if (status === 'REJECTED' || status === 'EXPIRED') return 1;
-    return 0;
-}
-
-/** ApplicationStatusView для конкретного пользователя (awaiting_me зависит от того, кто смотрит). */
-export function statusViewFor(app: ApplicationSummary, viewerId: string): ApplicationStatusView {
-    const closed = app.client_stage === 'CLOSED';
-    const current = app.client_stage === 'ACTION_REQUIRED' ? 'REVIEW' : app.client_stage;
-    const idx = closed ? reachedBeforeClose(app.status) : STAGE_ORDER.indexOf(current);
-    const text = STAGE_TEXT[app.client_stage];
-    const isSigning = app.status === 'SIGNING';
-    const awaitingMe = isSigning && viewerId === SIGNER.id;
-
-    const actions = [...(ACTIONS[app.status] ?? [])];
-    if (isSigning) actions.push(awaitingMe ? 'SIGN' : 'START_SIGNING');
-
-    return {
-        id: app.id,
-        version: app.version,
-        status: app.status,
-        client_stage: app.client_stage,
-        title: text.title,
-        subtitle: isSigning && !awaitingMe ? 'Ждём подписи директора' : text.subtitle,
-        stages: STAGE_ORDER.map((code, i) => ({
-            code,
-            title: STAGE_TITLES[i] ?? code,
-            state: closed ? (i <= idx ? 'DONE' : 'SKIPPED') : i < idx ? 'DONE' : i === idx ? 'CURRENT' : 'UPCOMING',
-        })),
-        allowed_actions: actions,
-        open_info_requests: app.status === 'WAITING_FOR_INFO' ? 2 : 0,
-        offers_available: app.status === 'OFFERED' ? 3 : 0,
-        decision_outcome: app.status === 'REJECTED' ? 'REJECTED' : app.status === 'OFFERED' ? 'APPROVED' : null,
-        signing: isSigning ? { required_signer: SIGNER, awaiting_me: awaitingMe } : null,
-        deadline_at:
-            app.status === 'WAITING_FOR_INFO' ? '2026-10-29T21:00:00Z' : app.status === 'OFFERED' ? '2026-10-31T21:00:00Z' : null,
-        updated_at: app.updated_at,
-    };
-}

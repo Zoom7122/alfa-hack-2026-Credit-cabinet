@@ -65,11 +65,20 @@ test.describe('Главная клиента', () => {
         await expect(page.locator('a button, button a, a a, button button')).toHaveCount(0);
     });
 
-    test('переход по строке заявки и «На главную» из заглушки', async ({ page }) => {
+    test('строка заявки ведёт на её страницу, крошки — обратно', async ({ page }) => {
         await seedToken(page, 'director');
         await page.goto('/');
         await page.getByRole('link', { name: /Кредит на транспорт/ }).click();
         await expectPath(page, '/applications/app_000131');
+        await expect(page.getByRole('heading', { level: 1 })).toHaveText('Кредит на транспорт · 3 200 000 ₽');
+        await page.getByRole('navigation', { name: 'Вы здесь' }).getByRole('link', { name: 'Кредиты' }).click();
+        await expectPath(page, '/');
+    });
+
+    test('несверстанный раздел — заглушка с «На главную»', async ({ page }) => {
+        await seedToken(page, 'director');
+        await page.goto('/');
+        await page.getByRole('link', { name: 'Счета' }).click();
         await expect(page.getByRole('heading', { name: 'Экран в разработке' })).toBeVisible();
         await page.getByRole('link', { name: 'На главную', exact: true }).click();
         await expectPath(page, '/');

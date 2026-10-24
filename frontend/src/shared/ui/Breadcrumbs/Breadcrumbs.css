@@ -1,0 +1,26 @@
+.breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-4);
+}
+
+.breadcrumbs__item {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-4);
+}
+
+.breadcrumbs__link {
+    border-radius: var(--border-radius-4);
+    color: var(--color-light-text-secondary);
+    transition: color 0.15s;
+}
+
+.breadcrumbs__link:hover {
+    color: var(--color-light-text-primary);
+}
+
+.breadcrumbs__link:focus-visible {
+    outline: 2px solid var(--color-light-accent-secondary);
+    outline-offset: var(--gap-2);
+}

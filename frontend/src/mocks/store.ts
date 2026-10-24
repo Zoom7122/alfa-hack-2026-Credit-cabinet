@@ -1,5 +1,6 @@
 import type {
     Applicant,
+    ClientDecision,
     Application,
     ApplicationSummary,
     CompanyAccess,
@@ -8,16 +9,21 @@ import type {
     Product,
     RepresentativeRole,
 } from '../api/types';
-import { ACTIONS, applicantSeeds, products, REGISTRY_TIMEOUT_INN, registry, seedApplications, type StoredApplication, testUsers } from './data';
+import { applicantSeeds, products, REGISTRY_TIMEOUT_INN, registry, seedApplications, type StoredApplication, testUsers } from './data';
+import { ACTIONS } from './fsm';
+import { seedWorkflow, type StoredInfoRequest, type StoredOffer, type StoredTimelineEvent } from './seedWorkflow';
 
 /**
  * Изменяемая «база» мока. Живёт в localStorage, чтобы черновики переживали перезагрузку.
  * Номер версии в ключе — сменить, если поменялись сиды.
  */
-const DB_KEY = 'credit-cabinet:mock-db:v2';
+const DB_KEY = 'credit-cabinet:mock-db:v4';
 
 /** Документ + время, когда мок «распознает» его (в контракт не попадает). */
-type StoredDocument = Document & { application_id: string; recognize_at?: number };
+type StoredDocument = Document & { application_id: string; recognize_at?: number; verify_at?: number };
+
+/** Событие для WebSocket (docs/websocket.md) + чьей компании оно касается. */
+export type StoredWsEvent = { id: string; type: string; at: string; data: Record<string, unknown>; applicant_id: string };
 
 type Db = {
     applications: StoredApplication[];
@@ -27,15 +33,31 @@ type Db = {
     documents: StoredDocument[];
     /** Idempotency-Key → id созданного ресурса. */
     idempotency: Record<string, string>;
+    timeline: StoredTimelineEvent[];
+    infoRequests: StoredInfoRequest[];
+    offers: StoredOffer[];
+    decisions: Record<string, ClientDecision>;
+    /** Когда конвейер сделает следующий шаг по заявке (мс). */
+    pipeline: Record<string, number>;
+    /** Сколько раз клиент отказывался от предложений — удерживающее даём только на первый. */
+    declines: Record<string, number>;
+    events: StoredWsEvent[];
+    seq: number;
 };
 
 function seed(): Db {
+    const applications = structuredClone(seedApplications);
     return {
-        applications: structuredClone(seedApplications),
+        applications,
         applicants: structuredClone(applicantSeeds),
         links: {},
         documents: [],
         idempotency: {},
+        ...seedWorkflow(applications),
+        pipeline: {},
+        declines: {},
+        events: [],
+        seq: 0,
     };
 }
 
@@ -50,6 +72,13 @@ function load(): Db {
 }
 
 let db = load();
+
+// вторая вкладка поменяла базу — берём её версию, чтобы вкладки не затирали друг друга
+if (typeof window !== 'undefined') {
+    window.addEventListener('storage', (e) => {
+        if (e.key === DB_KEY && e.newValue) db = JSON.parse(e.newValue) as Db;
+    });
+}
 
 function persist() {
     try {
@@ -83,7 +112,14 @@ export function meFor(userId: string): Me | undefined {
         full_name: u.full_name,
         roles: u.roles,
         companies: [...(u.companies ?? []), ...(db.links[u.id] ?? [])],
-        pending_signatures: u.id === 'usr_director_romashka' ? ['app_000123'] : [],
+        // договоры в подписании по компаниям, где пользователь — директор
+        pending_signatures: db.applications
+            .filter(
+                (a) =>
+                    a.status === 'SIGNING' &&
+                    [...(u.companies ?? []), ...(db.links[u.id] ?? [])].some((c) => c.applicant_id === a.applicant.id && c.role === 'DIRECTOR'),
+            )
+            .map((a) => a.id),
     };
 }
 
@@ -193,19 +229,38 @@ export function prefillFor(applicantId: string): Partial<StoredApplication> {
 
 const RECOGNIZABLE = new Set(['FINANCIAL_STATEMENTS', 'TAX_RETURN', 'BANK_STATEMENT']);
 
-/** Распознавание «завершается» через пару секунд после загрузки. */
+/** Проверка ЭП: у подписанного документа — по его откреплённой подписи (SIGNATURE со ссылкой), у самой подписи — её результат. */
+function signaturesOf(doc: StoredDocument, now: number): Document['signatures'] {
+    const signature = doc.type === 'SIGNATURE' ? doc : db.documents.find((d) => d.type === 'SIGNATURE' && d.signed_document_id === doc.id);
+    if (!signature) return { state: 'NOT_SIGNED' };
+    const policy = doc.type === 'POWER_OF_ATTORNEY' || doc.type === 'SIGNATURE' ? 'POWER_OF_ATTORNEY' : 'GENERIC';
+    if (signature.verify_at && now < signature.verify_at) return { state: 'PENDING', policy };
+    return {
+        state: 'DONE',
+        verdict: 'VALID',
+        signatures_count: 1,
+        policy,
+        policy_satisfied: true,
+        verified_at: new Date(signature.verify_at ?? now).toISOString(),
+    };
+}
+
+/** Распознавание и проверка подписи «завершаются» через пару секунд после загрузки. */
 export function toDocument(doc: StoredDocument): Document {
-    const { application_id: _app, recognize_at, ...rest } = doc;
-    if (!RECOGNIZABLE.has(doc.type)) return { ...rest, recognition: { state: 'NOT_APPLICABLE' } };
-    if (recognize_at && Date.now() < recognize_at) return { ...rest, recognition: { state: 'PROCESSING' } };
+    const { application_id: _app, recognize_at, verify_at: _verify, ...rest } = doc;
+    const now = Date.now();
+    const signatures = signaturesOf(doc, now);
+    if (!RECOGNIZABLE.has(doc.type)) return { ...rest, signatures, recognition: { state: 'NOT_APPLICABLE' } };
+    if (recognize_at && now < recognize_at) return { ...rest, signatures, recognition: { state: 'PROCESSING' } };
     return {
         ...rest,
+        signatures,
         recognition:
             doc.type === 'FINANCIAL_STATEMENTS'
                 ? {
                       state: 'DONE',
                       detected_type: 'FINANCIAL_STATEMENTS',
-                      extracted: { revenue_2025: 48_200_000, net_profit_2025: 3_100_000 },
+                      extracted: { revenue_2025: 41_600_000, net_profit_2025: 2_700_000 },
                       confidence: 0.93,
                   }
                 : { state: 'DONE', detected_type: doc.type, extracted: {}, confidence: 0.88 },

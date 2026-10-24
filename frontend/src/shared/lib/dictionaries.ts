@@ -3,6 +3,7 @@ import type {
     ClientStage,
     CollateralItem,
     CollateralType,
+    DeclineReason,
     DocumentType,
     ExistingDebt,
     Guarantor,
@@ -133,3 +134,13 @@ export const FIELD_LABELS: Record<string, string> = {
 
 /** «guarantors[0].inn» → «поручитель»: для элементов массивов берём название списка. */
 export const fieldLabel = (field: string) => FIELD_LABELS[field] ?? FIELD_LABELS[field.replace(/\[\d+\].*$/, '')] ?? field;
+
+export const DECLINE_REASON_LABELS: Record<DeclineReason, string> = {
+    RATE_TOO_HIGH: 'Высокая ставка',
+    AMOUNT_TOO_LOW: 'Нужна сумма больше',
+    TERM_NOT_SUITABLE: 'Не подходит срок',
+    COLLATERAL_REQUIRED: 'Не хочу оформлять залог или поручительство',
+    FOUND_ELSEWHERE: 'Нашёл кредит в другом банке',
+    NO_LONGER_NEEDED: 'Кредит больше не нужен',
+    OTHER: 'Другое',
+};

@@ -45,3 +45,8 @@ export async function setMockFailures(page: Page, rules: MockFailure[]) {
 export async function clearMockFailures(page: Page) {
     await page.evaluate(() => localStorage.removeItem('credit-cabinet:mock-fail'));
 }
+
+/** Шаг конвейера рассмотрения в моке (по умолчанию 2,5 с) — тесты его ускоряют. */
+export async function setPipelineStep(page: Page, ms: number) {
+    await page.addInitScript((value) => localStorage.setItem('credit-cabinet:mock-pipeline-ms', String(value)), ms);
+}
