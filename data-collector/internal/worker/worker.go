@@ -23,6 +23,8 @@ const saveTimeout = 5 * time.Second
 // Systems — опрос всех внешних систем (mockapi.Client). Объявлен у потребителя.
 type Systems interface {
 	CollectAll(ctx context.Context, requestID string, in domain.CollectInput) []domain.SystemResult
+	// CompanyCard — реквизиты компании из ответа ЕГРЮЛ в данных ФНС; false — их нет.
+	CompanyCard(fnsData json.RawMessage) (domain.CompanyCard, bool)
 }
 
 // Tasks — хранилище задач на сбор.
@@ -30,9 +32,10 @@ type Tasks interface {
 	// Claim переводит задачу в RUNNING и увеличивает attempts; задачу, которую брали уже
 	// maxAttempts раз, — в FAILED. false — задачи нет или она уже завершена.
 	Claim(ctx context.Context, id string, maxAttempts int) (domain.CollectionTask, bool, error)
-	// Complete сохраняет сбор и переводит задачу в COMPLETED одной транзакцией.
-	// domain.ErrTaskNotRunning — результат уже записан или задача снята.
-	Complete(ctx context.Context, rc domain.RawCollection) error
+	// Complete сохраняет сбор и переводит задачу в COMPLETED одной транзакцией, заявку — в VERIFYING;
+	// card дописывает реквизиты компании (nil — их нет). domain.ErrTaskNotRunning — результат
+	// уже записан или задача снята.
+	Complete(ctx context.Context, rc domain.RawCollection, card *domain.CompanyCard) error
 	// Fail переводит выполняющуюся задачу в FAILED с причиной.
 	Fail(ctx context.Context, id, reason string) error
 }
@@ -77,7 +80,8 @@ func New(systems Systems, tasks Tasks, cfg Config, log *slog.Logger, opts ...Opt
 	return w
 }
 
-// Handle обрабатывает одно сообщение из топика задач: PENDING → RUNNING → сбор → COMPLETED.
+// Handle обрабатывает одно сообщение из топика задач: PENDING → RUNNING → сбор → COMPLETED
+// (заявка: SUBMITTED → ENRICHING → VERIFYING).
 // Ошибка — только сбой хранилища: сообщение не подтверждается и придёт снова.
 // Битые сообщения, повторы и задачи без попыток пропускаются без ошибки.
 func (w *Worker) Handle(ctx context.Context, value []byte) error {
@@ -118,7 +122,7 @@ func (w *Worker) Handle(ctx context.Context, value []byte) error {
 
 	saveCtx, cancel := context.WithTimeout(base, saveTimeout)
 	defer cancel()
-	if err := w.tasks.Complete(saveCtx, rc); err != nil {
+	if err := w.tasks.Complete(saveCtx, rc, w.companyCard(rc)); err != nil {
 		if errors.Is(err, domain.ErrTaskNotRunning) {
 			log.InfoContext(ctx, "task is already finished, result is dropped", "collection", rc.ID)
 			return nil
@@ -151,6 +155,18 @@ func (w *Worker) collect(ctx context.Context, task domain.CollectionTask) (rc do
 	rc.Systems = w.systems.CollectAll(collectCtx, rc.ID, task.Input)
 	rc.FinishedAt = w.now().UTC()
 	return rc, nil
+}
+
+// companyCard — реквизиты компании из собранных данных ФНС; nil — ЕГРЮЛ не ответил.
+func (w *Worker) companyCard(rc domain.RawCollection) *domain.CompanyCard {
+	for _, s := range rc.Systems {
+		if s.System == domain.SystemFNS {
+			if card, ok := w.systems.CompanyCard(s.Data); ok {
+				return &card
+			}
+		}
+	}
+	return nil
 }
 
 // preview — начало сообщения для лога.

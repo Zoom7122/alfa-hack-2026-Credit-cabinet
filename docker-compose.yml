@@ -75,7 +75,8 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # API: анкета → задача на сбор (collection_tasks) + событие в outbox одной транзакцией.
+  # API: регистрация заявителя (users, companies, черновик заявки) и анкета с файлами →
+  # заявка SUBMITTED, documents, задача на сбор и события в outbox одной транзакцией.
   data-collector:
     build: ./data-collector
     environment:
@@ -83,6 +84,10 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
       BANK_API_URL: http://mock-api:8090/bank/v1
       BANK_API_TIMEOUT: 5s
+      # файлы документов; этот volume подключат и будущие worker'ы проверки подписи и OCR
+      DOCUMENTS_DIR: /data/documents
+    volumes:
+      - documents:/data/documents
     ports:
       - "${DATA_COLLECTOR_PORT:-8081}:8081"
     depends_on:
@@ -92,7 +97,7 @@ services:
         condition: service_started
     restart: unless-stopped
 
-  # outbox → Kafka: публикует события о новых задачах на сбор.
+  # outbox → Kafka: события о задачах на сбор и о документах заявок.
   data-collector-publisher:
     build: ./data-collector
     entrypoint: ["/data-collector-publisher"]
@@ -106,7 +111,8 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # Kafka → задача RUNNING → опрос всех моков → raw_collections, задача COMPLETED.
+  # Kafka → задача RUNNING (заявка ENRICHING) → опрос всех моков → raw_collections,
+  # задача COMPLETED (заявка VERIFYING), реквизиты компании из ЕГРЮЛ.
   data-collector-worker:
     build: ./data-collector
     entrypoint: ["/data-collector-worker"]
@@ -150,3 +156,4 @@ services:
 volumes:
   pgdata:
   kafkadata:
+  documents:

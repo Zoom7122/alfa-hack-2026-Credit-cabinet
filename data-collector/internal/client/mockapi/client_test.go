@@ -302,3 +302,30 @@ func TestCompanyName(t *testing.T) {
 		t.Errorf("companyName(nil) = %q", got)
 	}
 }
+
+func TestCompanyCard(t *testing.T) {
+	var c Client
+	card, ok := c.CompanyCard(json.RawMessage(`{"egrul":{"rows":[{"c":"ООО \"СЕВЕРНЫЙ ВЕТЕР\"",
+		"n":"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"СЕВЕРНЫЙ ВЕТЕР\"","i":"7799000012","o":"1217700412345",
+		"p":"779901001","r":"14.03.2021","g":"ГЕНЕРАЛЬНЫЙ ДИРЕКТОР: Ковалёв Игорь Сергеевич","k":"ul","rn":"Г.Москва"}]}}`))
+	want := domain.CompanyCard{INN: "7799000012", Type: domain.CompanyLegalEntity, OGRN: "1217700412345", KPP: "779901001",
+		FullName: `ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ "СЕВЕРНЫЙ ВЕТЕР"`, ShortName: `ООО "СЕВЕРНЫЙ ВЕТЕР"`,
+		RegistrationDate: "2021-03-14", DirectorName: "Ковалёв Игорь Сергеевич", Region: "Г.Москва"}
+	if !ok || card != want {
+		t.Fatalf("card = %+v (ok %v)", card, ok)
+	}
+
+	// ИП: короткого имени и руководителя нет, имя — полное
+	card, ok = c.CompanyCard(json.RawMessage(`{"egrul":{"rows":[{"n":"Индивидуальный предприниматель Смирнова Анна Викторовна",
+		"i":"779900010202","o":"326774600012345","r":"28.07.2026","k":"fl"}]}}`))
+	if !ok || card.Type != domain.CompanySoleProprietor || card.Name() != "Индивидуальный предприниматель Смирнова Анна Викторовна" ||
+		card.DirectorName != "" {
+		t.Fatalf("ip card = %+v (ok %v)", card, ok)
+	}
+
+	for _, raw := range []string{``, `{}`, `{"egrul":{"rows":[]}}`, `{"egrul":null}`} {
+		if _, ok := c.CompanyCard(json.RawMessage(raw)); ok {
+			t.Errorf("CompanyCard(%q) must be false", raw)
+		}
+	}
+}

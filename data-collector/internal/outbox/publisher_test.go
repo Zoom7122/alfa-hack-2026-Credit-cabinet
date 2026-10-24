@@ -30,13 +30,13 @@ func newStore(msgs ...events.Message) *fakeStore {
 	return &fakeStore{msgs: msgs, published: map[int64]bool{}, attempts: map[int64]int{}, lastError: map[int64]string{}}
 }
 
-func (s *fakeStore) PublishBatch(ctx context.Context, topic string, limit int,
+func (s *fakeStore) PublishBatch(ctx context.Context, topics []string, limit int,
 	publish func(context.Context, []events.Message) error) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var batch []events.Message
 	for _, m := range s.msgs {
-		if m.Topic == topic && !s.published[m.ID] && len(batch) < limit {
+		if slices.Contains(topics, m.Topic) && !s.published[m.ID] && len(batch) < limit {
 			batch = append(batch, m)
 		}
 	}
@@ -113,18 +113,18 @@ func msg(id int64, topic string) events.Message {
 }
 
 func config(batch int) outbox.Config {
-	return outbox.Config{Topic: "tasks", BatchSize: batch, PollInterval: time.Hour, PublishTimeout: time.Second}
+	return outbox.Config{Topics: []string{"tasks", "documents"}, BatchSize: batch, PollInterval: time.Hour, PublishTimeout: time.Second}
 }
 
 func TestPublishOnce(t *testing.T) {
-	store := newStore(msg(1, "tasks"), msg(2, "other"), msg(3, "tasks"))
+	store := newStore(msg(1, "tasks"), msg(2, "other"), msg(3, "documents"))
 	producer := &fakeProducer{}
 
 	n, err := outbox.New(store, producer, config(10), discardLog).PublishOnce(context.Background())
 	if err != nil || n != 2 {
 		t.Fatalf("published %d, err %v", n, err)
 	}
-	// только события своего топика, одной пачкой
+	// только события своих топиков, одной пачкой
 	if b := producer.batches(); len(b) != 1 || len(b[0]) != 2 || b[0][0].ID != 1 || b[0][1].ID != 3 {
 		t.Fatalf("batches = %+v", b)
 	}

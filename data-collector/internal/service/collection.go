@@ -28,19 +28,14 @@ var (
 	uuidRe      = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 )
 
-// saveTimeout — на запись задачи, когда клиент уже отключился.
-const saveTimeout = 5 * time.Second
-
 // TaskRepository — хранилище задач на сбор (таблица collection_tasks). Объявлено у потребителя.
+// Задачи создаются вместе с отправкой анкеты (ApplicationRepository.Submit).
 type TaskRepository interface {
-	// Create сохраняет задачу вместе с событием о ней в outbox — атомарно:
-	// событие не теряется и не публикуется без задачи.
-	Create(ctx context.Context, task domain.CollectionTask) error
 	// Get возвращает задачу и, если она выполнена, итог сбора. false — задачи нет.
 	Get(ctx context.Context, id string) (domain.CollectionTask, bool, error)
 }
 
-// CollectionService ставит сбор данных о компании в очередь и отдаёт его состояние.
+// CollectionService проверяет данные для сбора, готовит задачу на сбор и отдаёт её состояние.
 // Сами системы опрашивает worker (internal/worker) по событию из Kafka.
 type CollectionService struct {
 	tasks TaskRepository
@@ -78,13 +73,9 @@ func (s *CollectionService) Validate(in domain.CollectInput) []FieldError {
 	return validateCollect(normalize(in))
 }
 
-// Enqueue создаёт задачу на сбор по анкете (PENDING) и событие о ней для worker.
+// NewTask готовит задачу на сбор по анкете (PENDING) из нормализованных данных.
 // Системы без входных данных сразу попадают в Skipped: worker их не опрашивает.
-func (s *CollectionService) Enqueue(ctx context.Context, questionnaireID string, in domain.CollectInput) (domain.CollectionTask, error) {
-	// Задачу ставим, даже если клиент отключился: анкета уже сохранена.
-	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), saveTimeout)
-	defer cancel()
-
+func (s *CollectionService) NewTask(questionnaireID string, in domain.CollectInput) domain.CollectionTask {
 	in = normalize(in)
 	task := domain.CollectionTask{
 		ID:              s.newID(),
@@ -99,10 +90,7 @@ func (s *CollectionService) Enqueue(ctx context.Context, questionnaireID string,
 			task.Skipped = append(task.Skipped, sys)
 		}
 	}
-	if err := s.tasks.Create(ctx, task); err != nil {
-		return domain.CollectionTask{}, fmt.Errorf("create collection task: %w", err)
-	}
-	return task, nil
+	return task
 }
 
 // Get возвращает задачу на сбор, у выполненной — с итогом по системам.

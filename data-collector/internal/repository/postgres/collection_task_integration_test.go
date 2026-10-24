@@ -34,12 +34,10 @@ func TestIntegrationTaskLifecycle(t *testing.T) {
 	ctx := context.Background()
 	suffix := testSuffix()
 	taskID, topic := "tsk_"+suffix, "it.collection-tasks."+suffix
-	repo := NewCollectionTaskRepository(pool, topic)
+	repo := NewCollectionTaskRepository(pool)
 	cleanupTasks(t, pool, topic, taskID)
 
-	if err := repo.Create(ctx, itTask(taskID)); err != nil {
-		t.Fatal(err)
-	}
+	createTask(t, pool, topic, itTask(taskID))
 
 	// задача: токены — только в secrets, пропущенные системы — списком
 	var (
@@ -80,7 +78,7 @@ func TestIntegrationTaskLifecycle(t *testing.T) {
 			Calls: []domain.Call{{Key: "egrul", Status: 200}, {Key: "charter", Status: 404, Error: "status 404"}},
 			Data:  json.RawMessage(`{"egrul":{}}`)}},
 		StartedAt: time.Now().UTC(), FinishedAt: time.Now().UTC().Add(time.Second)}
-	if err := repo.Complete(ctx, rc); err != nil {
+	if err := repo.Complete(ctx, rc, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -96,7 +94,7 @@ func TestIntegrationTaskLifecycle(t *testing.T) {
 
 	// повторная доставка: результат второй раз не пишется, задачу снова не взять
 	rc.ID = "col_" + suffix + "_2"
-	if err := repo.Complete(ctx, rc); !errors.Is(err, domain.ErrTaskNotRunning) {
+	if err := repo.Complete(ctx, rc, nil); !errors.Is(err, domain.ErrTaskNotRunning) {
 		t.Fatalf("second complete: %v", err)
 	}
 	if _, ok, err := repo.Claim(ctx, taskID, 3); err != nil || ok {
@@ -113,13 +111,11 @@ func TestIntegrationTaskFailures(t *testing.T) {
 	ctx := context.Background()
 	suffix := testSuffix()
 	exhausted, failed, topic := "tsk_"+suffix+"_a", "tsk_"+suffix+"_b", "it.collection-tasks."+suffix
-	repo := NewCollectionTaskRepository(pool, topic)
+	repo := NewCollectionTaskRepository(pool)
 	cleanupTasks(t, pool, topic, exhausted, failed)
 
 	for _, id := range []string{exhausted, failed} {
-		if err := repo.Create(ctx, itTask(id)); err != nil {
-			t.Fatal(err)
-		}
+		createTask(t, pool, topic, itTask(id))
 	}
 
 	for attempt := 1; attempt <= 2; attempt++ {
@@ -154,14 +150,11 @@ func TestIntegrationOutboxPublishBatch(t *testing.T) {
 	ctx := context.Background()
 	suffix := testSuffix()
 	topic := "it.collection-tasks." + suffix
-	repo := NewCollectionTaskRepository(pool, topic)
 	outbox := NewOutboxRepository(pool)
 	ids := []string{"tsk_" + suffix + "_1", "tsk_" + suffix + "_2", "tsk_" + suffix + "_3", "tsk_" + suffix + "_4"}
 	cleanupTasks(t, pool, topic, ids...)
 	for _, id := range ids[:3] {
-		if err := repo.Create(ctx, itTask(id)); err != nil {
-			t.Fatal(err)
-		}
+		createTask(t, pool, topic, itTask(id))
 	}
 	keys := func(msgs []events.Message) []string {
 		var out []string
@@ -176,7 +169,7 @@ func TestIntegrationOutboxPublishBatch(t *testing.T) {
 	var gotA []events.Message
 	doneA := make(chan error, 1)
 	go func() {
-		n, err := outbox.PublishBatch(ctx, topic, 2, func(_ context.Context, msgs []events.Message) error {
+		n, err := outbox.PublishBatch(ctx, []string{topic}, 2, func(_ context.Context, msgs []events.Message) error {
 			gotA = msgs
 			close(locked)
 			<-release
@@ -189,7 +182,7 @@ func TestIntegrationOutboxPublishBatch(t *testing.T) {
 	}()
 	<-locked
 	var gotB []events.Message
-	n, err := outbox.PublishBatch(ctx, topic, 10, func(_ context.Context, msgs []events.Message) error {
+	n, err := outbox.PublishBatch(ctx, []string{topic}, 10, func(_ context.Context, msgs []events.Message) error {
 		gotB = msgs
 		return nil
 	})
@@ -205,11 +198,9 @@ func TestIntegrationOutboxPublishBatch(t *testing.T) {
 	}
 
 	// брокер недоступен: событие остаётся неопубликованным, попытка учтена
-	if err := repo.Create(ctx, itTask(ids[3])); err != nil {
-		t.Fatal(err)
-	}
+	createTask(t, pool, topic, itTask(ids[3]))
 	boom := errors.New("kafka is down")
-	if _, err := outbox.PublishBatch(ctx, topic, 10, func(context.Context, []events.Message) error { return boom }); !errors.Is(err, boom) {
+	if _, err := outbox.PublishBatch(ctx, []string{topic}, 10, func(context.Context, []events.Message) error { return boom }); !errors.Is(err, boom) {
 		t.Fatalf("want producer error, got %v", err)
 	}
 	var (
@@ -220,7 +211,7 @@ func TestIntegrationOutboxPublishBatch(t *testing.T) {
 		Scan(&attempts, &lastError); err != nil || attempts != 1 || lastError != boom.Error() {
 		t.Fatalf("attempts=%d last_error=%q err=%v", attempts, lastError, err)
 	}
-	if n, err := outbox.PublishBatch(ctx, topic, 10, func(context.Context, []events.Message) error { return nil }); err != nil || n != 1 {
+	if n, err := outbox.PublishBatch(ctx, []string{topic}, 10, func(context.Context, []events.Message) error { return nil }); err != nil || n != 1 {
 		t.Fatalf("retry: n %d, err %v", n, err)
 	}
 	var unpublished int

@@ -6,8 +6,14 @@ import (
 	"strings"
 )
 
-// ErrNotFound — запрошенной сущности нет.
-var ErrNotFound = errors.New("not found")
+var (
+	// ErrNotFound — запрошенной сущности нет.
+	ErrNotFound = errors.New("not found")
+	// ErrInvalidTransition — действие недопустимо в текущем статусе: анкету по заявке уже отправили.
+	ErrInvalidTransition = errors.New("invalid transition")
+	// ErrFileTooLarge — файл больше лимита.
+	ErrFileTooLarge = errors.New("file is too large")
+)
 
 // FieldError — нарушение правила для одного поля анкеты.
 type FieldError struct {
