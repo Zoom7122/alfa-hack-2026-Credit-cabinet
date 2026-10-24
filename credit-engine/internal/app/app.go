@@ -7,22 +7,27 @@ import (
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/contracts"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/bank"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/clients"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/clock"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/config"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/economics"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/httpapi"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/optimizer"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/scoring"
 )
 
 type Scoring struct {
-	Settings       config.Scoring
-	Policy         config.Policy
-	Economics      *economics.Calculator
-	Optimizer      *optimizer.Selector
-	Clock          clock.Clock
-	BankHTTP       *http.Client
-	StatementsHTTP *http.Client
-	Server         *http.Server
+	Settings         config.Scoring
+	Policy           config.Policy
+	Economics        *economics.Calculator
+	Optimizer        *optimizer.Selector
+	Clock            clock.Clock
+	BankHTTP         *http.Client
+	StatementsHTTP   *http.Client
+	BankClient       *clients.BankClient
+	StatementsClient *clients.StatementsClient
+	Evaluator        *scoring.Evaluator
+	Server           *http.Server
 }
 
 type Bank struct {
@@ -33,6 +38,7 @@ type Bank struct {
 	Operations   *bank.Service
 	Clock        clock.Clock
 	AdminHTTP    *http.Client
+	AdminClient  *clients.AdminClient
 	Server       *http.Server
 }
 
@@ -58,11 +64,24 @@ func NewScoring(cfg config.Scoring, source clock.Clock) (*Scoring, error) {
 	if cfg.EvaluationDate != nil {
 		source = clock.Fixed{Time: *cfg.EvaluationDate}
 	}
+	bankHTTP := &http.Client{Timeout: cfg.BankTimeout}
+	statementsHTTP := &http.Client{Timeout: cfg.StatementsTimeout}
+	bankClient, err := clients.NewBank(cfg.BankURL, bankHTTP)
+	if err != nil {
+		return nil, err
+	}
+	statementsClient, err := clients.NewStatements(cfg.StatementsURL, statementsHTTP)
+	if err != nil {
+		return nil, err
+	}
+	evaluator, err := scoring.NewEvaluator(statementsClient, source)
+	if err != nil {
+		return nil, err
+	}
 	return &Scoring{
 		Settings: cfg, Policy: policy, Economics: calculator, Optimizer: selector, Clock: source,
-		BankHTTP:       &http.Client{Timeout: cfg.BankTimeout},
-		StatementsHTTP: &http.Client{Timeout: cfg.StatementsTimeout},
-		Server:         httpapi.NewServer(cfg.Addr, cfg.WriteTimeout, httpapi.NewRouter()),
+		BankHTTP: bankHTTP, StatementsHTTP: statementsHTTP, BankClient: bankClient, StatementsClient: statementsClient, Evaluator: evaluator,
+		Server: httpapi.NewServer(cfg.Addr, cfg.WriteTimeout, httpapi.NewRouter()),
 	}, nil
 }
 
@@ -85,13 +104,18 @@ func NewBank(cfg config.Bank, source clock.Clock) (*Bank, error) {
 	if source == nil {
 		source = clock.System{}
 	}
-	operations, err := bank.NewService(policy, state, source, nil)
+	adminHTTP := &http.Client{Timeout: cfg.AdminTimeout}
+	adminClient, err := clients.NewAdmin(cfg.AdminURL, adminHTTP)
+	if err != nil {
+		return nil, err
+	}
+	operations, err := bank.NewService(policy, state, source, adminClient)
 	if err != nil {
 		return nil, err
 	}
 	return &Bank{
 		Settings: cfg, Policy: policy, Economics: calculator, InitialState: state, Operations: operations, Clock: source,
-		AdminHTTP: &http.Client{Timeout: cfg.AdminTimeout},
-		Server:    httpapi.NewServer(cfg.Addr, cfg.WriteTimeout, httpapi.NewRouter()),
+		AdminHTTP: adminHTTP, AdminClient: adminClient,
+		Server: httpapi.NewServer(cfg.Addr, cfg.WriteTimeout, httpapi.NewRouter()),
 	}, nil
 }
