@@ -29,7 +29,7 @@ import {
     withEtag,
 } from './http';
 import { annuity } from './seedWorkflow';
-import { addTimeline, statusViewFor, tick, transition } from './workflow';
+import { addTimeline, signerOf, statusViewFor, tick, transition } from './workflow';
 import {
     addDocument,
     completeness,
@@ -438,8 +438,6 @@ export const handlers = [
         if (!me) return unauthorized();
         const app = ownApplication(me, params.applicationId);
         if (!app) return notFound();
-        if (!toApplication(app).allowed_actions.includes('UPLOAD_DOCUMENT')) return invalidTransition(app);
-
         const { existing, remember } = idempotent(request, `upload:${app.id}`);
         const repeated = existing && read().documents.find((d) => d.id === existing);
         if (repeated) return HttpResponse.json(toDocument(repeated), { status: 201 });
@@ -447,6 +445,14 @@ export const handlers = [
         const form = await request.formData();
         const file = form.get('file');
         const type = form.get('type') as DocumentType | null;
+        // на подписании директор загружает откреплённую КЭП к договору (signing/confirm с QUALIFIED_SIGNATURE)
+        const contractIds = new Set(read().signing[app.id]?.document_ids ?? []);
+        const signingSignature =
+            app.status === 'SIGNING' &&
+            type === 'SIGNATURE' &&
+            signerOf(app).id === me.id &&
+            read().documents.some((d) => d.id === form.get('signed_document_id') && contractIds.has(d.id) && d.type === 'LOAN_AGREEMENT_DRAFT');
+        if (!toApplication(app).allowed_actions.includes('UPLOAD_DOCUMENT') && !signingSignature) return invalidTransition(app);
         const infoRequestId = form.get('info_request_id');
         const signedDocumentId = form.get('signed_document_id');
         if (infoRequestId && !read().infoRequests.some((r) => r.id === infoRequestId && r.application_id === app.id)) {

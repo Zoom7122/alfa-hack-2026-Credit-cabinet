@@ -77,11 +77,11 @@
 }
 
 .wizard-nav__marker_state_done {
-    background: var(--color-light-bg-positive-muted);
-    color: var(--color-light-graphic-positive);
+    background: var(--color-light-status-muted-positive);
+    color: var(--color-light-status-positive);
 }
 
 .wizard-nav__marker_state_warning {
-    background: var(--color-light-bg-attention-muted);
-    color: var(--color-light-graphic-attention);
+    background: var(--color-light-status-muted-attention);
+    color: var(--color-light-status-attention);
 }

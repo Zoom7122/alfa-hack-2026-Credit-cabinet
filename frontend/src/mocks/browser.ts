@@ -1,6 +1,7 @@
 import { setupWorker } from 'msw/browser';
 
 import { handlers } from './handlers';
+import { signingHandlers } from './signingHandlers';
 import { workflowHandlers, wsHandlers } from './workflowHandlers';
 
-export const worker = setupWorker(...handlers, ...workflowHandlers, ...wsHandlers);
+export const worker = setupWorker(...handlers, ...workflowHandlers, ...signingHandlers, ...wsHandlers);

@@ -10,7 +10,7 @@ import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { ApiError } from '../../api/client';
 import { useApplication, useApplicationStatus, useProducts, useTimeline } from '../../api/queries';
-import type { Application, ApplicationStatusView } from '../../api/types';
+import type { Application, ApplicationStatusView, Me } from '../../api/types';
 import { STAGE_BADGES } from '../../shared/lib/dictionaries';
 import { formatMoney, formatMonths, formatUpdated } from '../../shared/lib/format';
 import { Breadcrumbs } from '../../shared/ui/Breadcrumbs/Breadcrumbs';
@@ -21,8 +21,11 @@ import { InfoCard } from './components/InfoCard';
 import { ParamsCard } from './components/ParamsCard';
 import { InfoRequestsStatus } from './status/InfoRequestsStatus';
 import { OffersStatus } from './status/OffersStatus';
+import { CompletedStatus } from './status/CompletedStatus';
 import { ReviewStatus } from './status/ReviewStatus';
+import { SignerStatus } from './status/SignerStatus';
 import { StageStatus } from './status/StageStatus';
+import { WaitingSignerStatus } from './status/WaitingSignerStatus';
 import { DocumentsTab } from './tabs/DocumentsTab';
 import { HistoryTab } from './tabs/HistoryTab';
 import './ApplicationPage.css';
@@ -74,18 +77,29 @@ function useFocusOnStageChange(stage: ApplicationStatusView['client_stage']) {
     return ref;
 }
 
-function StatusTab({ app, status, onCancel }: { app: Application; status: ApplicationStatusView; onCancel: () => void }) {
+type StageProps = { app: Application; me: Me; status: ApplicationStatusView; onCancel: () => void };
+
+function StatusTab({ app, me, status, onCancel }: StageProps) {
     const focusRef = useFocusOnStageChange(status.client_stage);
     return (
         <div ref={focusRef} tabIndex={-1} className='application-page__stage'>
-            <StageContent app={app} status={status} onCancel={onCancel} />
+            <StageContent app={app} me={me} status={status} onCancel={onCancel} />
         </div>
     );
 }
 
-function StageContent({ app, status, onCancel }: { app: Application; status: ApplicationStatusView; onCancel: () => void }) {
+function StageContent({ app, me, status, onCancel }: StageProps) {
     // на решении предложения занимают всю ширину, как в макете 09
     if (status.client_stage === 'OFFER') return <OffersStatus app={app} status={status} />;
+    // подписание: директору — экран подписи (11), остальным — «ждём директора» (12)
+    if (status.client_stage === 'SIGNING') {
+        return status.signing?.awaiting_me ? (
+            <SignerStatus app={app} me={me} status={status} />
+        ) : (
+            <WaitingSignerStatus app={app} status={status} />
+        );
+    }
+    if (status.client_stage === 'DONE') return <CompletedStatus app={app} status={status} />;
     const main =
         status.client_stage === 'REVIEW' ? (
             <ReviewStatus status={status} />
@@ -103,7 +117,7 @@ function StageContent({ app, status, onCancel }: { app: Application; status: App
 }
 
 /** /applications/:id — заявка после отправки: статус (экраны 07–10), документы, история. */
-export function ApplicationPage() {
+export function ApplicationPage({ me }: { me: Me }) {
     const { applicationId } = useParams();
     const [params, setParams] = useSearchParams();
     const tabParam = params.get('tab');
@@ -183,7 +197,7 @@ export function ApplicationPage() {
                     rightAddons={questions > 0 ? <Indicator value={questions} view='red' size={20} /> : undefined}
                 >
                     <div className='application-page__panel'>
-                        <StatusTab app={app} status={view} onCancel={() => setCancelling(true)} />
+                        <StatusTab app={app} me={me} status={view} onCancel={() => setCancelling(true)} />
                     </div>
                 </Tab>
                 <Tab id='documents' title='Документы'>

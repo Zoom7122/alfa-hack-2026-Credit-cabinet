@@ -16,6 +16,7 @@ import {
     versionMismatch,
 } from './http';
 import { buildRetentionOffer, type StoredInfoRequest } from './seedWorkflow';
+import { createSigning } from './signingHandlers';
 import { meFor, mutate, read } from './store';
 import { addTimeline, emit, eventsSince, lastEventId, statusViewFor, tick, transition } from './workflow';
 
@@ -187,15 +188,22 @@ export const workflowHandlers = [
         if (offer.state !== 'ACTIVE' || offer.valid_until < new Date().toISOString()) {
             return problem(410, 'OFFER_EXPIRED', 'Предложение больше не действует');
         }
+        const withdrawn = read()
+            .offers.filter((o) => o.application_id === app.id && o.state === 'ACTIVE' && o.id !== offer.id)
+            .map((o) => o.id);
         mutate((d) => {
             d.offers = d.offers.map((o) =>
                 o.application_id !== app.id ? o : { ...o, state: o.id === offer.id ? 'ACCEPTED' : o.state === 'ACTIVE' ? 'WITHDRAWN' : o.state },
             );
         });
+        // банк формирует договор и график — дальше их подписывает директор
+        createSigning(app, offer, withdrawn);
         const signing = transition(app, 'SIGNING', { message: 'Вы выбрали предложение', type: 'OFFER_ACCEPTED', actor: userRef(me) });
         const view = statusViewFor(signing, me.id);
         addTimeline(signing, { type: 'SIGNING_REQUESTED', actor_kind: 'SYSTEM', message: 'Договор готов к подписанию' });
-        emit(app.applicant.id, 'signing.requested', { application_id: app.id, required_signer_id: view.signing?.required_signer?.id });
+        // задача директору — только если выбрал не он сам (startSigning в openapi.yaml)
+        const signerId = view.signing?.required_signer?.id;
+        if (signerId && signerId !== me.id) emit(app.applicant.id, 'signing.requested', { application_id: app.id, required_signer_id: signerId });
         remember(offer.id);
         return HttpResponse.json(view);
     }),

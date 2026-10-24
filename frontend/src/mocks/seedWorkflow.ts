@@ -1,4 +1,4 @@
-import type { ClientDecision, InfoRequest, Offer, Product, TimelineEvent } from '../api/types';
+import type { ClientDecision, Document, InfoRequest, Offer, Product, SigningSession, TimelineEvent } from '../api/types';
 import { products, type StoredApplication } from './data';
 
 /* Стартовые история, вопросы, предложения и решения для сидов. Без доступа к хранилищу — чистые функции. */
@@ -6,6 +6,57 @@ import { products, type StoredApplication } from './data';
 export type StoredTimelineEvent = TimelineEvent & { application_id: string };
 export type StoredInfoRequest = InfoRequest & { application_id: string };
 export type StoredOffer = Offer & { application_id: string };
+/** Документ + когда мок «распознает» его и проверит подпись (в контракт не попадает). */
+export type StoredDocument = Document & { application_id: string; recognize_at?: number; verify_at?: number };
+/** Сессия подписания без вычисляемых полей (подписант, awaiting_me, документы целиком). */
+export type StoredSigning = Omit<SigningSession, 'required_signer' | 'awaiting_me' | 'documents'> & {
+    document_ids: string[];
+    /** Какие предложения отозвал выбор — их вернём, если подписать не удастся (sign.failed). */
+    withdrawn_offer_ids?: string[];
+};
+
+export const SIGNING_ATTEMPTS = 3;
+
+/** Счёт зачисления в моке: «40702•••••••••••» + последние цифры ИНН. */
+export const accountMasked = (inn: string) => `40702•••••••••••${inn.slice(-4)}`;
+
+const pdfSize = (pages: number) => 18_000 * pages;
+
+/** Договор, график и (если нужен поручитель) договор поручительства — их формирует банк при подписании. */
+export function buildSigning(app: StoredApplication, offer: Offer, now: number): { documents: StoredDocument[]; session: StoredSigning } {
+    const at = new Date(now).toISOString();
+    const base = { application_id: app.id, mime_type: 'application/pdf', origin: 'GENERATED' as const, uploaded_at: at, info_request_id: null, signed_document_id: null };
+    const contractNumber = `КД-${app.number.slice(2)}`;
+    // новый комплект на каждое формирование: подпись к прошлому договору к новому не подходит
+    const v = now.toString(36);
+    const documents: StoredDocument[] = [
+        { ...base, id: `doc_${app.id}_contract_${v}`, type: 'LOAN_AGREEMENT_DRAFT', file_name: `Кредитный договор № ${contractNumber}.pdf`, size_bytes: pdfSize(14) },
+        { ...base, id: `doc_${app.id}_schedule_${v}`, type: 'OTHER', file_name: 'График платежей.pdf', size_bytes: pdfSize(2) },
+    ];
+    const guarantor = app.guarantors?.[0];
+    if (offer.guarantee_required && guarantor) {
+        documents.push({
+            ...base,
+            id: `doc_${app.id}_guarantee_${v}`,
+            type: 'OTHER',
+            file_name: `Договор поручительства — ${guarantor.name}.pdf`,
+            size_bytes: pdfSize(4),
+        });
+    }
+    return {
+        documents,
+        session: {
+            state: 'AWAITING_SIGNER',
+            offer_id: offer.id,
+            demo_code: null,
+            attempts_left: SIGNING_ATTEMPTS,
+            signature_report: null,
+            signed_at: null,
+            disbursement: null,
+            document_ids: documents.map((d) => d.id),
+        },
+    };
+}
 
 const DAY = 86_400_000;
 
@@ -161,6 +212,8 @@ type Seeded = {
     infoRequests: StoredInfoRequest[];
     offers: StoredOffer[];
     decisions: Record<string, ClientDecision>;
+    documents: StoredDocument[];
+    signing: Record<string, StoredSigning>;
 };
 
 /** История и сопутствующие данные для сидовых заявок — чтобы экраны статуса были не пустыми. */
@@ -170,6 +223,8 @@ export function seedWorkflow(apps: StoredApplication[], now = Date.now()): Seede
     const infoRequests: StoredInfoRequest[] = [];
     const offers: StoredOffer[] = [];
     const decisions: Record<string, ClientDecision> = {};
+    const documents: StoredDocument[] = [];
+    const signing: Record<string, StoredSigning> = {};
     let n = 0;
     const event = (app: StoredApplication, minutes: number, fields: Omit<TimelineEvent, 'id' | 'at'>) =>
         timeline.push({ id: `tle_seed_${++n}`, application_id: app.id, at: at(app.created_at, minutes), ...fields });
@@ -251,6 +306,20 @@ export function seedWorkflow(apps: StoredApplication[], now = Date.now()): Seede
                 }
                 const [first, ...rest] = appOffers;
                 if (first) offers.push({ ...first, state: app.status === 'DECLINED' ? 'WITHDRAWN' : 'ACCEPTED' });
+                if (first && (app.status === 'SIGNING' || app.status === 'COMPLETED')) {
+                    const built = buildSigning(app, first, new Date(at(app.created_at, 30)).getTime());
+                    documents.push(...built.documents);
+                    signing[app.id] =
+                        app.status === 'COMPLETED'
+                            ? {
+                                  ...built.session,
+                                  state: 'SIGNED',
+                                  method: 'SIMPLE_CODE',
+                                  signed_at: at(app.created_at, 60),
+                                  disbursement: { amount: first.amount, account_masked: accountMasked(app.applicant.inn), executed_at: at(app.created_at, 61) },
+                              }
+                            : built.session;
+                }
                 offers.push(...rest.map((o) => ({ ...o, state: 'WITHDRAWN' as const })));
                 if (app.status === 'DECLINED') {
                     event(app, 60, { type: 'OFFERS_DECLINED', from_status: 'OFFERED', to_status: 'DECLINED', actor_kind: 'CLIENT', actor: app.created_by, message: 'Вы отказались от предложений' });
@@ -268,5 +337,5 @@ export function seedWorkflow(apps: StoredApplication[], now = Date.now()): Seede
                 break;
         }
     }
-    return { timeline, infoRequests, offers, decisions };
+    return { timeline, infoRequests, offers, decisions, documents, signing };
 }

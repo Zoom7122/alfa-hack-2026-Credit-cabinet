@@ -18,7 +18,7 @@
     flex: none;
     margin-top: var(--gap-6);
     border-radius: var(--border-radius-circle);
-    background: var(--color-light-graphic-positive);
+    background: var(--color-light-status-positive);
 }
 
 .event-list__dot_active {

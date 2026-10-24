@@ -27,7 +27,7 @@
     height: 72px;
     flex: none;
     border-radius: var(--border-radius-circle);
-    background: var(--color-light-graphic-link);
+    background: var(--color-light-status-info);
     color: var(--color-light-text-primary-inverted);
 }
 
@@ -65,7 +65,7 @@
 
 .review-status__step_state_done .review-status__mark {
     box-shadow: none;
-    color: var(--color-light-graphic-positive);
+    color: var(--color-light-status-positive);
 }
 
 .review-status__step_state_current .review-status__mark {

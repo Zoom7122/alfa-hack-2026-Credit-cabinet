@@ -115,7 +115,7 @@ test.describe('Кредитное предложение (09) и отказ (10)
         await expect(offers(page).first()).toContainText('Как вы запросили');
         await expect(offers(page).nth(1)).toContainText('Дольше и дешевле в месяц');
         await offers(page).first().getByRole('button', { name: 'Выбрать' }).click();
-        await expect(statusHeading(page, 'Подписание договора')).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Документы на подпись' })).toBeVisible();
     });
 
     test('отказ → удерживающее предложение → всё равно отказаться', async ({ page }) => {
@@ -138,7 +138,7 @@ test.describe('Кредитное предложение (09) и отказ (10)
         await dialog.getByText('Нашёл кредит в другом банке').click();
         await dialog.getByRole('button', { name: 'Отправить' }).click();
         await dialog.getByRole('button', { name: 'Принять предложение' }).click();
-        await expect(statusHeading(page, 'Подписание договора')).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Документы на подпись' })).toBeVisible();
     });
 
     test('«Кредит больше не нужен» — сразу закрываем, без удержания', async ({ page }) => {
@@ -158,7 +158,7 @@ test.describe('Кредитное предложение (09) и отказ (10)
         await page.keyboard.press('Escape');
         await expect(page.getByRole('region', { name: 'Специальное предложение' })).toBeVisible();
         await page.getByRole('region', { name: 'Специальное предложение' }).getByRole('button', { name: 'Принять предложение' }).click();
-        await expect(statusHeading(page, 'Подписание договора')).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Документы на подпись' })).toBeVisible();
     });
 });
 

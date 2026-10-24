@@ -6,7 +6,7 @@ import { Skeleton } from '@alfalab/core-components/skeleton';
 import { Typography } from '@alfalab/core-components/typography';
 
 import { ApiError } from '../../../api/client';
-import { useAcceptOffer, useOffers } from '../../../api/queries';
+import { useAcceptOffer, useOffers, useSigning } from '../../../api/queries';
 import type { Application, ApplicationStatusView, Offer } from '../../../api/types';
 import { formatDay, shortName } from '../../../shared/lib/format';
 import { newIdempotencyKey } from '../../../shared/lib/idempotency';
@@ -28,6 +28,9 @@ function acceptError(e: unknown) {
 /** Экран 09: банк готов выдать кредит — выбор предложения или отказ (экран 10). */
 export function OffersStatus({ app, status }: Props) {
     const offers = useOffers(status.id);
+    // заявка вернулась с подписания (кончились попытки или подпись не прошла) — объясняем, что случилось
+    const signing = useSigning(status.id);
+    const signingFailed = signing.data?.state === 'FAILED';
     const accept = useAcceptOffer(status.id);
     const [declining, setDeclining] = useState(false);
     const keys = useRef<Record<string, string>>({});
@@ -65,6 +68,12 @@ export function OffersStatus({ app, status }: Props) {
                 </Typography.Text>
             </div>
 
+            {signingFailed && (
+                <Plate view='attention' title='Подписать договор не удалось'>
+                    Попытки подтверждения закончились или подпись не прошла проверку. Выберите предложение ещё раз — договор
+                    сформируем заново.
+                </Plate>
+            )}
             {offers.isLoading && <Skeleton visible={true} className='offers-status__skeleton' />}
             {offers.isError && <Plate view='negative' title='Не удалось загрузить предложения' />}
             {accept.error && (

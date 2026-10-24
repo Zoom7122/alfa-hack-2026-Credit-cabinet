@@ -5,7 +5,7 @@ import { API_BASE_URL } from './client';
 import { queryKeys } from './queries';
 
 /** Конверт события (docs/websocket.md). Событие — подсказка «перечитай», данные берём из REST. */
-type LiveEvent = { id?: string; type: string; data?: { application_id?: string } };
+type LiveEvent = { id?: string; type: string; data?: { application_id?: string; from?: string; to?: string } };
 
 const PING_MS = 25_000;
 const MAX_RETRY_MS = 30_000;
@@ -41,6 +41,10 @@ export function useLiveUpdates(token: string | null) {
             const id = data?.application_id;
             switch (type) {
                 case 'application.status_changed':
+                    refresh(id);
+                    // вход в подписание или выход из него меняет задачи директора (/me.pending_signatures)
+                    if (data?.from === 'SIGNING' || data?.to === 'SIGNING') void queryClient.invalidateQueries({ queryKey: queryKeys.me });
+                    break;
                 case 'info_request.created':
                 case 'offers.issued':
                     refresh(id);

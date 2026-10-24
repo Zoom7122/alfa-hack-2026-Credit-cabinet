@@ -220,7 +220,7 @@ export const products: Product[] = [
         collateral: { required_above_amount: 10_000_000, accepted_types: ['REAL_ESTATE', 'EQUIPMENT', 'VEHICLE'] },
         guarantee_required: false,
         required_fields: REQUIRED_FIELDS,
-        required_documents: [...BASE_DOCUMENTS, { type: 'LOAN_AGREEMENT_DRAFT' }],
+        required_documents: [...BASE_DOCUMENTS, { type: 'OTHER' }],
     },
 ];
 
@@ -308,7 +308,7 @@ const romashkaProfile = {
 } satisfies ApplicationInput;
 
 const seeds: Seed[] = [
-    { id: 'app_000123', number: 'A-2026-000123', applicant: 'romashka', status: 'SIGNING', product: 'WORKING_CAPITAL', amount: 5_000_000, term: 24, created: '2026-10-20T09:10:00Z', updated: '2026-10-24T11:20:00Z' },
+    { id: 'app_000123', number: 'A-2026-000123', applicant: 'romashka', status: 'SIGNING', product: 'WORKING_CAPITAL', amount: 5_000_000, term: 24, created: '2026-10-20T09:10:00Z', updated: '2026-10-24T11:20:00Z', createdBy: 'usr_accountant_romashka', input: { purpose: { code: 'WORKING_CAPITAL', description: 'Закупка товара под сезон' }, ...romashkaProfile } },
     { id: 'app_000131', number: 'A-2026-000131', applicant: 'romashka', status: 'WAITING_FOR_INFO', product: 'VEHICLE', amount: 3_200_000, term: 36, created: '2026-10-21T08:00:00Z', updated: '2026-10-23T15:40:00Z', createdBy: 'usr_accountant_romashka' },
     {
         id: 'app_000140',

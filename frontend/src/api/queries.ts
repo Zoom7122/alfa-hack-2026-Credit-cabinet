@@ -17,6 +17,7 @@ import type {
     PurposeCode,
     RepresentativeRole,
     RequestedTerms,
+    SigningMethod,
 } from './types';
 
 type CatalogParams = { purpose?: PurposeCode; applicantType?: ApplicantType };
@@ -41,6 +42,7 @@ export const queryKeys = {
     infoRequests: (id: string) => ['applications', 'info-requests', id] as const,
     offers: (id: string) => ['applications', 'offers', id] as const,
     decision: (id: string) => ['applications', 'decision', id] as const,
+    signing: (id: string) => ['applications', 'signing', id] as const,
     /** Всё по одной заявке — для инвалидации по WS-событию. */
     anyOf: (id: string) => (query: { queryKey: readonly unknown[] }) => query.queryKey[0] === 'applications' && query.queryKey[2] === id,
 };
@@ -436,4 +438,78 @@ export function useCancelApplication(applicationId: string) {
         onSuccess: applyStatus,
         onError: refreshOnStale,
     });
+}
+
+/** Сессия подписания: договор, график, демо-код (только подписанту), попытки, выдача. */
+export function useSigning(id: string | undefined, enabled = true) {
+    return useQuery({
+        queryKey: queryKeys.signing(id ?? ''),
+        queryFn: async () => unwrap(await api.GET('/applications/{applicationId}/signing', path(id ?? ''))),
+        enabled: Boolean(id) && enabled,
+    });
+}
+
+/** Сформировать договор / выбрать способ подписи; не-директору — «напомнить директору». */
+export function useStartSigning(applicationId: string) {
+    const queryClient = useQueryClient();
+    const refreshOnStale = useRefreshOnStale(applicationId);
+    return useMutation({
+        mutationFn: async ({ method, idempotencyKey }: { method?: SigningMethod; idempotencyKey: string }) =>
+            unwrap(
+                await api.POST('/applications/{applicationId}/signing/start', {
+                    params: { path: { applicationId }, header: { 'Idempotency-Key': idempotencyKey } },
+                    body: { method },
+                }),
+            ),
+        onSuccess: (session) => queryClient.setQueryData(queryKeys.signing(applicationId), session),
+        onError: refreshOnStale,
+    });
+}
+
+export type ConfirmSigningBody =
+    | { method: 'SIMPLE_CODE'; code: string }
+    | { method: 'QUALIFIED_SIGNATURE'; signature_document_id: string };
+
+/** Подписать (только директор). Успех — заявка COMPLETED, выдача имитируется. */
+export function useConfirmSigning(applicationId: string) {
+    const queryClient = useQueryClient();
+    const refreshOnStale = useRefreshOnStale(applicationId);
+    return useMutation({
+        mutationFn: async ({ idempotencyKey, ...body }: ConfirmSigningBody & { idempotencyKey: string }) =>
+            unwrap(
+                await api.POST('/applications/{applicationId}/signing/confirm', {
+                    params: { path: { applicationId }, header: { 'Idempotency-Key': idempotencyKey } },
+                    body,
+                }),
+            ),
+        onSuccess: (session) => {
+            queryClient.setQueryData(queryKeys.signing(applicationId), session);
+            void queryClient.invalidateQueries({ predicate: queryKeys.anyOf(applicationId) });
+            void queryClient.invalidateQueries({ queryKey: ['applications', 'list'] });
+            void queryClient.invalidateQueries({ queryKey: queryKeys.me });
+        },
+        onError: (error) => {
+            refreshOnStale(error);
+            // неверный код — попыток стало меньше, а после последней заявка вернулась к предложениям
+            if (error instanceof ApiError && error.status === 422) {
+                void queryClient.invalidateQueries({ predicate: queryKeys.anyOf(applicationId) });
+                void queryClient.invalidateQueries({ queryKey: queryKeys.me });
+            }
+        },
+    });
+}
+
+/** Скачать файл документа (с токеном — обычной ссылкой не получится). Ссылку на blob отзываем сразу после клика. */
+export async function downloadDocument(applicationId: string, doc: Document) {
+    const { data, error, response } = await api.GET('/applications/{applicationId}/documents/{documentId}/content', {
+        params: { path: { applicationId, documentId: doc.id } },
+        parseAs: 'blob',
+    });
+    if (error !== undefined || !response.ok || !data) throw new ApiError(response.status, 'Не удалось скачать документ');
+    const href = URL.createObjectURL(data);
+    const link = window.document.createElement('a');
+    link.href = href;
+    link.download = doc.file_name;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(href), 1000);
 }

@@ -78,6 +78,15 @@ function ProductsRoute() {
     );
 }
 
+function ApplicationRoute() {
+    const { me } = useOutletContext<AuthContext>();
+    return (
+        <Lazy>
+            <ApplicationPage me={me} />
+        </Lazy>
+    );
+}
+
 function NewApplicationRoute() {
     const { me } = useOutletContext<AuthContext>();
     return (
@@ -117,11 +126,7 @@ export function App() {
                             <Route path='products' element={<ProductsRoute />} />
                             <Route
                                 path='applications/:applicationId'
-                                element={
-                                    <Lazy>
-                                        <ApplicationPage />
-                                    </Lazy>
-                                }
+                                element={<ApplicationRoute />}
                             />
                             <Route path='*' element={<NotReadyPage />} />
                         </Route>

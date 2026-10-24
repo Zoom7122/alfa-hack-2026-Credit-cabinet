@@ -238,7 +238,8 @@ export function statusViewFor(app: StoredApplication, viewerId: string): Applica
         stages: STAGE_ORDER.map((code, i) => ({
             code,
             title: STAGE_TITLES[i] ?? code,
-            state: closed ? (i <= idx ? 'DONE' : 'SKIPPED') : i < idx ? 'DONE' : i === idx ? 'CURRENT' : 'UPCOMING',
+            // кредит выдан — пройдены все этапы, текущего нет
+            state: closed ? (i <= idx ? 'DONE' : 'SKIPPED') : i < idx || app.client_stage === 'DONE' ? 'DONE' : i === idx ? 'CURRENT' : 'UPCOMING',
         })),
         allowed_actions: actions,
         open_info_requests: openRequests.length,

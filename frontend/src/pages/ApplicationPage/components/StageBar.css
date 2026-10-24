@@ -21,7 +21,7 @@
 }
 
 .stage-bar__stage_state_done .stage-bar__line {
-    background: var(--color-light-graphic-positive);
+    background: var(--color-light-status-positive);
 }
 
 .stage-bar__stage_state_current .stage-bar__line {
@@ -29,5 +29,5 @@
 }
 
 .stage-bar__stage_state_attention .stage-bar__line {
-    background: var(--color-light-graphic-attention);
+    background: var(--color-light-status-attention);
 }

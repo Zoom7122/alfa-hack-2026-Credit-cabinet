@@ -29,7 +29,7 @@
 }
 
 .documents-step__mark_done {
-    background: var(--color-light-bg-positive-muted);
+    background: var(--color-light-status-muted-positive);
     box-shadow: none;
-    color: var(--color-light-graphic-positive);
+    color: var(--color-light-status-positive);
 }

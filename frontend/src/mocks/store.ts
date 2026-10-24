@@ -11,16 +11,23 @@ import type {
 } from '../api/types';
 import { applicantSeeds, products, REGISTRY_TIMEOUT_INN, registry, seedApplications, type StoredApplication, testUsers } from './data';
 import { ACTIONS } from './fsm';
-import { seedWorkflow, type StoredInfoRequest, type StoredOffer, type StoredTimelineEvent } from './seedWorkflow';
+import {
+    seedWorkflow,
+    type StoredDocument,
+    type StoredInfoRequest,
+    type StoredOffer,
+    type StoredSigning,
+    type StoredTimelineEvent,
+} from './seedWorkflow';
 
 /**
  * Изменяемая «база» мока. Живёт в localStorage, чтобы черновики переживали перезагрузку.
  * Номер версии в ключе — сменить, если поменялись сиды.
  */
-const DB_KEY = 'credit-cabinet:mock-db:v4';
+const DB_KEY = 'credit-cabinet:mock-db:v6';
 
 /** Документ + время, когда мок «распознает» его (в контракт не попадает). */
-type StoredDocument = Document & { application_id: string; recognize_at?: number; verify_at?: number };
+export type { StoredDocument } from './seedWorkflow';
 
 /** Событие для WebSocket (docs/websocket.md) + чьей компании оно касается. */
 export type StoredWsEvent = { id: string; type: string; at: string; data: Record<string, unknown>; applicant_id: string };
@@ -43,6 +50,7 @@ type Db = {
     declines: Record<string, number>;
     events: StoredWsEvent[];
     seq: number;
+    signing: Record<string, StoredSigning>;
 };
 
 function seed(): Db {
@@ -51,7 +59,6 @@ function seed(): Db {
         applications,
         applicants: structuredClone(applicantSeeds),
         links: {},
-        documents: [],
         idempotency: {},
         ...seedWorkflow(applications),
         pipeline: {},
@@ -233,7 +240,10 @@ const RECOGNIZABLE = new Set(['FINANCIAL_STATEMENTS', 'TAX_RETURN', 'BANK_STATEM
 function signaturesOf(doc: StoredDocument, now: number): Document['signatures'] {
     const signature = doc.type === 'SIGNATURE' ? doc : db.documents.find((d) => d.type === 'SIGNATURE' && d.signed_document_id === doc.id);
     if (!signature) return { state: 'NOT_SIGNED' };
-    const policy = doc.type === 'POWER_OF_ATTORNEY' || doc.type === 'SIGNATURE' ? 'POWER_OF_ATTORNEY' : 'GENERIC';
+    // политика по подписанному документу (docs/e-signature.md): договор — LOAN_CONTRACT, доверенность — POWER_OF_ATTORNEY
+    const signed = doc.type === 'SIGNATURE' ? db.documents.find((d) => d.id === doc.signed_document_id) : doc;
+    const policy =
+        signed?.type === 'LOAN_AGREEMENT_DRAFT' ? 'LOAN_CONTRACT' : signed?.type === 'POWER_OF_ATTORNEY' ? 'POWER_OF_ATTORNEY' : 'GENERIC';
     if (signature.verify_at && now < signature.verify_at) return { state: 'PENDING', policy };
     return {
         state: 'DONE',

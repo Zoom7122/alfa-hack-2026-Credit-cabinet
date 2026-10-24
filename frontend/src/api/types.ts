@@ -38,3 +38,6 @@ export type ClientDecision = Schemas['ClientDecision'];
 export type DecisionOutcome = Schemas['DecisionOutcome'];
 export type DeclineReason = Schemas['DeclineReason'];
 export type StageItem = Schemas['StageItem'];
+export type SigningSession = Schemas['SigningSession'];
+export type SigningMethod = Schemas['SigningMethod'];
+export type SignatureReport = Schemas['SignatureReport'];

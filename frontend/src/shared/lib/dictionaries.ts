@@ -108,7 +108,7 @@ export const DOCUMENT_LABELS: Record<DocumentType, string> = {
     EGRN_EXTRACT: 'Выписка из ЕГРН',
     LEASE_AGREEMENT: 'Договор аренды',
     CONTRACT_WITH_CUSTOMER: 'Договор с поставщиком или покупателем',
-    LOAN_AGREEMENT_DRAFT: 'Договор рефинансируемого кредита',
+    LOAN_AGREEMENT_DRAFT: 'Кредитный договор',
     SIGNATURE: 'Электронная подпись',
     OTHER: 'Другой документ',
 };
