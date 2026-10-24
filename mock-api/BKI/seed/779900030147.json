@@ -1,0 +1,92 @@
+{
+  "PERSON": {
+    "report_id": "NBKI-RPT-D7E34F",
+    "bureau": "NBKI",
+    "generated_at": "2026-10-22T10:15:07Z",
+    "subject": {
+      "type": "PERSON",
+      "inn": "779900030147",
+      "name": "Белов Артём Николаевич",
+      "birth_date": "1988-11-03"
+    },
+    "has_history": true,
+    "score": {
+      "value": 512,
+      "min": 300,
+      "max": 850,
+      "grade": "D",
+      "model": "MOCK-RETAIL-v1"
+    },
+    "summary": {
+      "active_accounts": 2,
+      "closed_accounts": 0,
+      "total_limit": 500000.00,
+      "total_outstanding": 352400.00,
+      "total_monthly_payment": 18200.00,
+      "current_overdue_amount": 174200.00,
+      "max_overdue_days_ever": 212,
+      "overdue_30p_24m": 2,
+      "overdue_60p_24m": 1,
+      "overdue_90p_24m": 1,
+      "restructured_count": 0,
+      "inquiries_7d": 1,
+      "inquiries_30d": 2,
+      "inquiries_90d": 3
+    },
+    "accounts": [
+      {
+        "account_id": "ACC-1",
+        "creditor_type": "BANK",
+        "creditor_name": "АО \"БАНК ТОЧКА РОСТА\"",
+        "product_type": "CREDIT_CARD",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2023-07-10",
+        "planned_close_at": "2027-07-10",
+        "limit": 200000.00,
+        "outstanding": 196400.00,
+        "monthly_payment": 18200.00,
+        "status": "ACTIVE",
+        "current_overdue_days": 41,
+        "current_overdue_amount": 18200.00,
+        "payment_history_24m": "210000000000000000000000",
+        "collateral": false
+      },
+      {
+        "account_id": "ACC-2",
+        "creditor_type": "BANK",
+        "creditor_name": "ПАО \"СТОЛИЧНЫЙ БАНК\"",
+        "product_type": "TERM_LOAN",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2024-09-05",
+        "planned_close_at": "2027-09-05",
+        "limit": 300000.00,
+        "outstanding": 156000.00,
+        "monthly_payment": null,
+        "status": "IN_DEFAULT",
+        "current_overdue_days": 212,
+        "current_overdue_amount": 156000.00,
+        "payment_history_24m": "444443210000000000000000",
+        "collateral": false
+      }
+    ],
+    "inquiries": [
+      {
+        "date": "2026-10-18",
+        "creditor_type": "BANK",
+        "purpose": "LOAN_APPLICATION"
+      },
+      {
+        "date": "2026-10-02",
+        "creditor_type": "MFO",
+        "purpose": "LOAN_APPLICATION"
+      },
+      {
+        "date": "2026-08-15",
+        "creditor_type": "MFO",
+        "purpose": "LOAN_APPLICATION"
+      }
+    ]
+  }
+}

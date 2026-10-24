@@ -1,0 +1,163 @@
+{
+  "LEGAL": {
+    "report_id": "NBKI-RPT-3B2E6B",
+    "bureau": "NBKI",
+    "generated_at": "2026-10-22T10:15:07Z",
+    "subject": {
+      "type": "LEGAL",
+      "inn": "7799000044",
+      "name": "ООО \"ТЕХНО-СЕРВИС\""
+    },
+    "has_history": true,
+    "score": {
+      "value": 640,
+      "min": 300,
+      "max": 850,
+      "grade": "C",
+      "model": "MOCK-SME-v1"
+    },
+    "summary": {
+      "active_accounts": 2,
+      "closed_accounts": 4,
+      "total_limit": 4500000.00,
+      "total_outstanding": 2340000.00,
+      "total_monthly_payment": 135800.00,
+      "current_overdue_amount": 0.00,
+      "max_overdue_days_ever": 35,
+      "overdue_30p_24m": 1,
+      "overdue_60p_24m": 0,
+      "overdue_90p_24m": 0,
+      "restructured_count": 0,
+      "inquiries_7d": 1,
+      "inquiries_30d": 2,
+      "inquiries_90d": 3
+    },
+    "accounts": [
+      {
+        "account_id": "ACC-1",
+        "creditor_type": "BANK",
+        "creditor_name": "АО \"БАНК ЮГ-КРЕДИТ\"",
+        "product_type": "TERM_LOAN",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2025-02-20",
+        "planned_close_at": "2028-02-20",
+        "limit": 2000000.00,
+        "outstanding": 1240000.00,
+        "monthly_payment": 77500.00,
+        "status": "ACTIVE",
+        "current_overdue_days": 0,
+        "current_overdue_amount": 0.00,
+        "payment_history_24m": "000000002100000000000---",
+        "collateral": true
+      },
+      {
+        "account_id": "ACC-2",
+        "creditor_type": "BANK",
+        "creditor_name": "АО \"АЛЬФА-БАНК\"",
+        "product_type": "CREDIT_LINE",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2024-04-01",
+        "planned_close_at": "2027-04-01",
+        "limit": 2500000.00,
+        "outstanding": 1100000.00,
+        "monthly_payment": 58300.00,
+        "status": "ACTIVE",
+        "current_overdue_days": 0,
+        "current_overdue_amount": 0.00,
+        "payment_history_24m": "000000000000000000000000",
+        "collateral": false
+      },
+      {
+        "account_id": "ACC-3",
+        "creditor_type": "BANK",
+        "creditor_name": "ПАО \"БАНК ВОСТОК\"",
+        "product_type": "TERM_LOAN",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2019-02-01",
+        "planned_close_at": "2022-02-01",
+        "limit": 1800000.00,
+        "outstanding": 0.00,
+        "monthly_payment": null,
+        "status": "CLOSED",
+        "current_overdue_days": 0,
+        "current_overdue_amount": 0.00,
+        "payment_history_24m": "------------------------",
+        "collateral": false
+      },
+      {
+        "account_id": "ACC-4",
+        "creditor_type": "BANK",
+        "creditor_name": "АО \"АЛЬФА-БАНК\"",
+        "product_type": "OVERDRAFT",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2021-04-01",
+        "planned_close_at": "2024-04-01",
+        "limit": 800000.00,
+        "outstanding": 0.00,
+        "monthly_payment": null,
+        "status": "CLOSED",
+        "current_overdue_days": 0,
+        "current_overdue_amount": 0.00,
+        "payment_history_24m": "------------00000000000-",
+        "collateral": false
+      },
+      {
+        "account_id": "ACC-5",
+        "creditor_type": "BANK",
+        "creditor_name": "АО \"ПРОМКРЕДИТБАНК\"",
+        "product_type": "GUARANTEE",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2023-08-01",
+        "planned_close_at": "2024-12-01",
+        "limit": 650000.00,
+        "outstanding": 0.00,
+        "monthly_payment": null,
+        "status": "CLOSED",
+        "current_overdue_days": 0,
+        "current_overdue_amount": 0.00,
+        "payment_history_24m": "----------000000000000--",
+        "collateral": false
+      },
+      {
+        "account_id": "ACC-6",
+        "creditor_type": "BANK",
+        "creditor_name": "АО \"БАНК ЮГ-КРЕДИТ\"",
+        "product_type": "OVERDRAFT",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2024-01-15",
+        "planned_close_at": "2025-01-15",
+        "limit": 400000.00,
+        "outstanding": 0.00,
+        "monthly_payment": null,
+        "status": "CLOSED",
+        "current_overdue_days": 0,
+        "current_overdue_amount": 0.00,
+        "payment_history_24m": "------------0000000000--",
+        "collateral": false
+      }
+    ],
+    "inquiries": [
+      {
+        "date": "2026-10-21",
+        "creditor_type": "BANK",
+        "purpose": "LOAN_APPLICATION"
+      },
+      {
+        "date": "2026-10-06",
+        "creditor_type": "BANK",
+        "purpose": "LOAN_APPLICATION"
+      },
+      {
+        "date": "2026-08-28",
+        "creditor_type": "LEASING",
+        "purpose": "LOAN_APPLICATION"
+      }
+    ]
+  }
+}

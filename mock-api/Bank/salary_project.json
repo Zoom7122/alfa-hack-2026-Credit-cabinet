@@ -1,0 +1,22 @@
+{
+  "bank": "ПАО «Банк А»",
+  "contractNumber": "ЗП-0457/23",
+  "contractDate": "2023-09-01",
+  "status": "Active",
+  "employeesWithCards": 38,
+  "payments": [
+    {
+      "registryNumber": "10",
+      "date": "2026-10-10",
+      "employees": 37,
+      "amount": "612000.00"
+    },
+    {
+      "registryNumber": "9",
+      "date": "2026-09-25",
+      "employees": 38,
+      "amount": "590400.00"
+    }
+  ],
+  "avgMonthlyFundLast6m": "1180000.00"
+}

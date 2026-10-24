@@ -24,34 +24,51 @@ type Repository interface {
 	Save(ctx context.Context, q domain.Questionnaire) error
 }
 
+// Collector — постановка сбора данных о компании в очередь (CollectionService).
+type Collector interface {
+	Validate(in domain.CollectInput) []FieldError
+	Enqueue(ctx context.Context, questionnaireID string, in domain.CollectInput) (domain.CollectionTask, error)
+}
+
 // CreateInput — данные анкеты, пришедшие с формы.
 type CreateInput struct {
 	Age           int
 	MaritalStatus domain.MaritalStatus
 	ChildrenCount int
+	Company       domain.CollectInput // по чему собирать данные: ИНН, руководитель, согласия, токены, залог
 }
 
-// Service принимает анкеты и сохраняет их.
-type Service struct {
-	repo  Repository
-	now   func() time.Time
-	newID func() string
+// Created — сохранённая анкета и задача на сбор данных по ней.
+type Created struct {
+	Questionnaire domain.Questionnaire
+	Task          domain.CollectionTask
 }
 
-// Option настраивает Service (используется в тестах).
-type Option func(*Service)
+// QuestionnaireService принимает анкеты, сохраняет их и ставит сбор данных о компании в очередь.
+type QuestionnaireService struct {
+	repo      Repository
+	collector Collector
+	now       func() time.Time
+	newID     func() string
+}
+
+// Option настраивает QuestionnaireService (используется в тестах).
+type Option func(*QuestionnaireService)
 
 // WithClock подменяет источник времени.
-func WithClock(now func() time.Time) Option { return func(s *Service) { s.now = now } }
+func WithClock(now func() time.Time) Option { return func(s *QuestionnaireService) { s.now = now } }
 
 // WithIDGenerator подменяет генератор идентификаторов.
-func WithIDGenerator(newID func() string) Option { return func(s *Service) { s.newID = newID } }
+func WithIDGenerator(newID func() string) Option {
+	return func(s *QuestionnaireService) { s.newID = newID }
+}
 
-func New(repo Repository, opts ...Option) *Service {
-	s := &Service{
-		repo:  repo,
-		now:   time.Now,
-		newID: func() string { return "qst_" + ulid.MustNew(ulid.Now(), rand.Reader).String() },
+func NewQuestionnaireService(repo Repository, collector Collector, opts ...Option) *QuestionnaireService {
+	s := &QuestionnaireService{
+		repo:      repo,
+		collector: collector,
+		now:       time.Now,
+		newID:     func() string { return "qst_" + ulid.MustNew(ulid.Now(), rand.Reader).String() },
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -59,11 +76,14 @@ func New(repo Repository, opts ...Option) *Service {
 	return s
 }
 
-// Create проверяет бизнес-правила и сохраняет анкету.
-// Нарушения возвращаются как *ValidationError.
-func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Questionnaire, error) {
-	if err := validate(in); err != nil {
-		return domain.Questionnaire{}, err
+// Create проверяет анкету и данные для сбора, сохраняет анкету и ставит сбор данных о компании
+// в очередь. Нарушения возвращаются как *ValidationError — все сразу, и ничего не сохраняется.
+// Системы опрашивает worker; состояние сбора — в задаче (CollectionService.Get).
+func (s *QuestionnaireService) Create(ctx context.Context, in CreateInput) (Created, error) {
+	fields := validate(in)
+	fields = append(fields, s.collector.Validate(in.Company)...)
+	if len(fields) > 0 {
+		return Created{}, &ValidationError{Fields: fields}
 	}
 
 	q := domain.Questionnaire{
@@ -74,12 +94,17 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Questionna
 		CreatedAt:     s.now().UTC(),
 	}
 	if err := s.repo.Save(ctx, q); err != nil {
-		return domain.Questionnaire{}, fmt.Errorf("save questionnaire: %w", err)
+		return Created{}, fmt.Errorf("save questionnaire: %w", err)
 	}
-	return q, nil
+
+	task, err := s.collector.Enqueue(ctx, q.ID, in.Company)
+	if err != nil {
+		return Created{Questionnaire: q}, fmt.Errorf("enqueue company data collection: %w", err)
+	}
+	return Created{Questionnaire: q, Task: task}, nil
 }
 
-func validate(in CreateInput) error {
+func validate(in CreateInput) []FieldError {
 	var fields []FieldError
 	if in.Age < minAge || in.Age > maxAge {
 		fields = append(fields, FieldError{
@@ -102,8 +127,5 @@ func validate(in CreateInput) error {
 			Message: fmt.Sprintf("количество детей и иждивенцев должно быть от 0 до %d", maxChildren),
 		})
 	}
-	if len(fields) > 0 {
-		return &ValidationError{Fields: fields}
-	}
-	return nil
+	return fields
 }

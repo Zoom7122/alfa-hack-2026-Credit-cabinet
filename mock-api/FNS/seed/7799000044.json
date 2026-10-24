@@ -1,0 +1,277 @@
+{
+  "egrul": {
+    "c": "ООО \"ТЕХНО-СЕРВИС\"",
+    "n": "ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"ТЕХНО-СЕРВИС\"",
+    "i": "7799000044",
+    "o": "1187700745678",
+    "p": "779901001",
+    "r": "09.04.2018",
+    "g": "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР: Зайцева Ольга Михайловна",
+    "k": "ul",
+    "rn": "Г.Москва",
+    "t": "MOCK-VYP-7799000044"
+  },
+  "pb": {
+    "vyp": {
+      "ИНН": "7799000044",
+      "ОГРН": "1187700745678",
+      "КПП": "779901001",
+      "НаимЮЛСокр": "ООО \"ТЕХНО-СЕРВИС\"",
+      "ДатаРег": "2018-04-09",
+      "КодОКВЭД": "33.12",
+      "НаимОКВЭД": "Ремонт машин и оборудования",
+      "СумКап": "20000",
+      "Адрес": "115280,МОСКВА ГОРОД,,,,УЛИЦА ЛЕНИНСКАЯ СЛОБОДА,19,,ОФИС 305",
+      "sulst_ex": 10,
+      "sulst_name_ex": "Действующая организация",
+      "invalid": 0,
+      "pr_zd": 0,
+      "pr_otch": 0,
+      "rsmpcategory": 2,
+      "masruk": [
+        {
+          "inn": "779900040158",
+          "name": "ЗАЙЦЕВА ОЛЬГА МИХАЙЛОВНА",
+          "position": "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР",
+          "cnt": "1"
+        }
+      ]
+    },
+    "masaddress": [],
+    "vestnik": [],
+    "liquidated": false,
+    "okved2exs": [
+      "33.12 - Ремонт машин и оборудования",
+      "46.69 - Торговля оптовая прочими машинами и оборудованием"
+    ]
+  },
+  "bo": {
+    "organization": {
+      "id": 90000448,
+      "inn": "7799000044",
+      "shortName": "ООО \"ТЕХНО-СЕРВИС\"",
+      "ogrn": "1187700745678",
+      "okved2": "33.12",
+      "statusCode": "ACTIVE",
+      "bfo": {
+        "period": "2025",
+        "gainSum": 39800,
+        "knd": "0710099"
+      }
+    },
+    "bfo": [
+      {
+        "period": "2025",
+        "actives": 19050,
+        "gainSum": 39800,
+        "typeCorrections": [
+          {
+            "correction": {
+              "balance": {
+                "current1100": 5300,
+                "current1200": 13750,
+                "current1210": 3900,
+                "current1230": 8200,
+                "current1250": 1650,
+                "current1300": 8100,
+                "current1400": 0,
+                "current1410": 0,
+                "current1500": 10950,
+                "current1510": 1100,
+                "current1520": 9850,
+                "current1600": 19050,
+                "previous1100": 5100,
+                "previous1200": 12140,
+                "previous1210": 3600,
+                "previous1230": 7300,
+                "previous1250": 1240,
+                "previous1300": 6120,
+                "previous1400": 1500,
+                "previous1410": 1500,
+                "previous1500": 9620,
+                "previous1510": 600,
+                "previous1520": 9020,
+                "previous1600": 17240
+              },
+              "financialResult": {
+                "current2110": 39800,
+                "current2120": 33650,
+                "current2200": 3030,
+                "current2210": 3120,
+                "current2300": 2480,
+                "current2330": 410,
+                "current2340": 120,
+                "current2350": 260,
+                "current2400": 1980,
+                "current2410": 500,
+                "previous2110": 36500,
+                "previous2120": 31200,
+                "previous2200": 2400,
+                "previous2210": 2900,
+                "previous2300": 1900,
+                "previous2330": 380,
+                "previous2340": 90,
+                "previous2350": 210,
+                "previous2400": 1520,
+                "previous2410": 380
+              },
+              "fundsMovement": {
+                "current4100": 2640,
+                "previous4100": 2050
+              }
+            }
+          }
+        ]
+      },
+      {
+        "period": "2024",
+        "actives": 17240,
+        "gainSum": 36500,
+        "typeCorrections": [
+          {
+            "correction": {
+              "balance": {
+                "current1100": 5100,
+                "current1200": 12140,
+                "current1210": 3600,
+                "current1230": 7300,
+                "current1250": 1240,
+                "current1300": 6120,
+                "current1400": 1500,
+                "current1410": 1500,
+                "current1500": 9620,
+                "current1510": 600,
+                "current1520": 9020,
+                "current1600": 17240,
+                "previous1100": 4800,
+                "previous1200": 11000,
+                "previous1210": 3300,
+                "previous1230": 6600,
+                "previous1250": 1100,
+                "previous1300": 4600,
+                "previous1400": 2200,
+                "previous1410": 2200,
+                "previous1500": 9000,
+                "previous1510": 400,
+                "previous1520": 8600,
+                "previous1600": 15800
+              },
+              "financialResult": {
+                "current2110": 36500,
+                "current2120": 31200,
+                "current2200": 2400,
+                "current2210": 2900,
+                "current2300": 1900,
+                "current2330": 380,
+                "current2340": 90,
+                "current2350": 210,
+                "current2400": 1520,
+                "current2410": 380,
+                "previous2110": 33100,
+                "previous2120": 28400,
+                "previous2200": 2050,
+                "previous2210": 2650,
+                "previous2300": 1660,
+                "previous2330": 300,
+                "previous2340": 50,
+                "previous2350": 140,
+                "previous2400": 1330,
+                "previous2410": 330
+              },
+              "fundsMovement": {
+                "current4100": 2050,
+                "previous4100": 1720
+              }
+            }
+          }
+        ]
+      },
+      {
+        "period": "2023",
+        "actives": 15800,
+        "gainSum": 33100,
+        "typeCorrections": [
+          {
+            "correction": {
+              "balance": {
+                "current1100": 4800,
+                "current1200": 11000,
+                "current1210": 3300,
+                "current1230": 6600,
+                "current1250": 1100,
+                "current1300": 4600,
+                "current1400": 2200,
+                "current1410": 2200,
+                "current1500": 9000,
+                "current1510": 400,
+                "current1520": 8600,
+                "current1600": 15800
+              },
+              "financialResult": {
+                "current2110": 33100,
+                "current2120": 28400,
+                "current2200": 2050,
+                "current2210": 2650,
+                "current2300": 1660,
+                "current2330": 300,
+                "current2340": 50,
+                "current2350": 140,
+                "current2400": 1330,
+                "current2410": 330
+              },
+              "fundsMovement": {
+                "current4100": 1720
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "bi": {
+    "checked_at": "2026-10-22T10:15:03",
+    "by_bik": {}
+  },
+  "charter": {
+    "inn": "7799000044",
+    "document": {
+      "type": "CHARTER",
+      "version_date": "2022-09-01",
+      "registration_record": "2227700664410"
+    },
+    "head": {
+      "position": "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР",
+      "term_years": 5,
+      "acts_without_poa": true,
+      "restrictions": [
+        {
+          "type": "LOAN_LIMIT",
+          "amount": 3000000.00,
+          "text": "Займы и кредиты свыше 3 000 000 руб. — только с согласия единственного участника"
+        }
+      ]
+    },
+    "major_transaction": {
+      "threshold_pct_of_assets": 25,
+      "approval_body": "SOLE_PARTICIPANT",
+      "assets_at_last_reporting_date": 19050000.00,
+      "threshold_amount": 4762500.00
+    },
+    "related_party_approval_required": true,
+    "participants": [
+      {
+        "inn": "779900040158",
+        "full_name": "Зайцева Ольга Михайловна",
+        "share_pct": 100
+      }
+    ]
+  },
+  "rmsp": {
+    "inn": "7799000044",
+    "in_registry": true,
+    "category": "SMALL",
+    "included_at": "2018-08-10",
+    "employees": 31,
+    "support": []
+  }
+}

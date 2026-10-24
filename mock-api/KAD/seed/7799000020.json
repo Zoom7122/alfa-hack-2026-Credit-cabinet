@@ -1,0 +1,13 @@
+{
+  "inn": "7799000020",
+  "checked_at": "2026-10-22T10:15:06Z",
+  "summary": {
+    "as_defendant_count_12m": 0,
+    "as_defendant_amount_12m": 0.00,
+    "as_defendant_active_amount": 0.00,
+    "as_plaintiff_count_12m": 0,
+    "as_plaintiff_amount_12m": 0.00,
+    "bankruptcy_as_debtor": false
+  },
+  "items": []
+}

@@ -1,0 +1,9 @@
+{
+  "inn": "7799000044",
+  "risk_level": "MEDIUM",
+  "assigned_at": "2026-09-14",
+  "reason_codes": [
+    "TRANSIT_OPERATIONS",
+    "HIGH_CASH_WITHDRAWAL"
+  ]
+}

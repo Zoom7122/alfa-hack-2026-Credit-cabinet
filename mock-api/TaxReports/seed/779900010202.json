@@ -1,0 +1,74 @@
+{
+  "inn": "779900010202",
+  "taxpayer_type": "IP",
+  "tax_regime": {
+    "current": "USN_INCOME",
+    "history": [
+      {
+        "regime": "NPD",
+        "from": "2024-02-05",
+        "to": "2026-07-27"
+      },
+      {
+        "regime": "USN_INCOME",
+        "from": "2026-07-28",
+        "to": null
+      }
+    ]
+  },
+  "documents": [
+    {
+      "type": "NPD_INCOME",
+      "period": "2024",
+      "data": {
+        "income": 1140000.00,
+        "income_from_legal": 1140000.00,
+        "tax_paid": 68400.00
+      }
+    },
+    {
+      "type": "NPD_INCOME",
+      "period": "2025",
+      "data": {
+        "income": 2310000.00,
+        "income_from_legal": 2310000.00,
+        "tax_paid": 138600.00
+      }
+    },
+    {
+      "type": "NPD_INCOME",
+      "period": "2026-01-01..2026-07-27",
+      "data": {
+        "income": 2286500.00,
+        "income_from_legal": 2286500.00,
+        "tax_paid": 137190.00
+      }
+    },
+    {
+      "type": "ENS_BALANCE",
+      "as_of": "2026-10-22",
+      "data": {
+        "balance": 0.00,
+        "debt": 0.00,
+        "penalties": 0.00,
+        "fines": 0.00
+      }
+    }
+  ],
+  "not_available": [
+    {
+      "type": "USN",
+      "period": "2026",
+      "reason": "NOT_DUE",
+      "due_date": "2027-04-25"
+    },
+    {
+      "type": "PROFIT",
+      "reason": "NOT_APPLICABLE"
+    },
+    {
+      "type": "VAT",
+      "reason": "NOT_APPLICABLE"
+    }
+  ]
+}

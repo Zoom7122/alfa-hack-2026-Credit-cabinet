@@ -1,0 +1,59 @@
+{
+  "person": {
+    "last_name": "Зайцева",
+    "first_name": "Ольга",
+    "middle_name": "Михайловна",
+    "birth_date": "1981-09-14",
+    "inn": "779900040158"
+  },
+  "data": {
+    "passport": {
+      "series": "4510",
+      "number": "215566",
+      "issued_at": "2026-09-20",
+      "issuer": "ГУ МВД России по г. Москве",
+      "division_code": "770-041",
+      "valid": true
+    },
+    "inn": "779900040158",
+    "snils": "124-660-391 88",
+    "registration_address": "г. Москва, ул. Кожуховская 5-я, д. 9, кв. 12",
+    "income": [
+      {
+        "year": "2025",
+        "sources": [
+          {
+            "type": "NDFL",
+            "payer": "ООО \"ТЕХНО-СЕРВИС\"",
+            "payer_inn": "7799000044",
+            "amount": 1320000.00
+          }
+        ]
+      },
+      {
+        "year": "2024",
+        "sources": [
+          {
+            "type": "NDFL",
+            "payer": "ООО \"ТЕХНО-СЕРВИС\"",
+            "payer_inn": "7799000044",
+            "amount": 1210000.00
+          }
+        ]
+      }
+    ],
+    "employment": [
+      {
+        "employer": "ООО \"ТЕХНО-СЕРВИС\"",
+        "employer_inn": "7799000044",
+        "position": "Генеральный директор",
+        "from": "2018-04-09",
+        "to": null
+      }
+    ],
+    "npd_status": {
+      "registered": false,
+      "history": []
+    }
+  }
+}

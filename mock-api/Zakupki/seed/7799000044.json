@@ -1,0 +1,75 @@
+{
+  "inn": "7799000044",
+  "summary": {
+    "active_count": 1,
+    "active_amount": 4920000.00,
+    "active_unpaid_amount": 2050000.00,
+    "completed_count_36m": 3,
+    "completed_amount_36m": 6100000.00,
+    "terminated_count_36m": 0,
+    "penalties_amount_36m": 0.00
+  },
+  "contracts": [
+    {
+      "reg_number": "3770123456726000123",
+      "law": "44-FZ",
+      "customer": {
+        "inn": "7701234567",
+        "name": "ГБУЗ \"ГОРОДСКАЯ БОЛЬНИЦА №17 ДЗМ\""
+      },
+      "subject": "Техническое обслуживание и ремонт медицинского оборудования",
+      "price": 4920000.00,
+      "signed_at": "2026-02-10",
+      "end_date": "2026-12-31",
+      "status": "EXECUTING",
+      "paid_amount": 2870000.00,
+      "penalties": []
+    },
+    {
+      "reg_number": "2771987654325000456",
+      "law": "223-FZ",
+      "customer": {
+        "inn": "7708123499",
+        "name": "АО \"МОСТРАНСРЕМОНТ\""
+      },
+      "subject": "Ремонт насосного оборудования",
+      "price": 2350000.00,
+      "signed_at": "2025-04-03",
+      "end_date": "2025-09-30",
+      "status": "COMPLETED",
+      "paid_amount": 2350000.00,
+      "penalties": []
+    },
+    {
+      "reg_number": "3772611223324000210",
+      "law": "44-FZ",
+      "customer": {
+        "inn": "7722334455",
+        "name": "ГБУ \"ЖИЛИЩНИК РАЙОНА ЛЕФОРТОВО\""
+      },
+      "subject": "Ремонт котельного оборудования",
+      "price": 1900000.00,
+      "signed_at": "2024-02-14",
+      "end_date": "2024-06-30",
+      "status": "COMPLETED",
+      "paid_amount": 1900000.00,
+      "penalties": []
+    },
+    {
+      "reg_number": "2770998877623000301",
+      "law": "223-FZ",
+      "customer": {
+        "inn": "7703556677",
+        "name": "АО \"ГОРВОДСЕРВИС\""
+      },
+      "subject": "Ремонт насосных агрегатов",
+      "price": 1850000.00,
+      "signed_at": "2023-11-20",
+      "end_date": "2024-03-31",
+      "status": "COMPLETED",
+      "paid_amount": 1850000.00,
+      "penalties": []
+    }
+  ],
+  "rnp": []
+}

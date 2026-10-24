@@ -1,0 +1,1066 @@
+{
+  "inn": "7799000012",
+  "banks": {
+    "044525225": [
+      {
+        "account": {
+          "accountId": "acc-0b71",
+          "status": "Enabled",
+          "currency": "RUB",
+          "accountType": "Business",
+          "accountSubType": "CurrentAccount",
+          "openingDate": "2023-06-01",
+          "AccountDetails": [
+            {
+              "schemeName": "RU.CBR.BBAN",
+              "identification": "40702810738000123456"
+            }
+          ],
+          "Servicer": {
+            "schemeName": "RU.CBR.BIK",
+            "identification": "044525225",
+            "name": "АО \"БАНК ГОРИЗОНТ\""
+          }
+        },
+        "balance": {
+          "type": "ClosingAvailable",
+          "dateTime": "2026-10-22T00:00:00+03:00",
+          "Amount": {
+            "amount": "184320.55",
+            "currency": "RUB"
+          },
+          "creditDebitIndicator": "Credit"
+        },
+        "opening_balance": 259390.0,
+        "transactions": [
+          {
+            "transactionId": "obt-20260928-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-09-28T12:00:00+03:00",
+            "Amount": {
+              "amount": "2990.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за сентябрь 2026",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7707083893",
+              "name": "АО \"БАНК ГОРИЗОНТ\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000001",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20260922-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-09-22T12:00:00+03:00",
+            "Amount": {
+              "amount": "337389.45",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №2177 за хлебобулочные изделия. В т.ч. НДС 20% 56231.58",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7715334455",
+              "name": "ООО \"ХЛЕБОЗАВОД №7\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810110000077889",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260920-0041",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-09-20T12:04:11+03:00",
+            "Amount": {
+              "amount": "300000.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Перевод собственных средств",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810900000012345",
+              "bic": "044525999"
+            },
+            "CreditorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20260917-0033",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-09-17T09:41:55+03:00",
+            "Amount": {
+              "amount": "214700.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №431 от 10.09.2026 за продукты питания. В т.ч. НДС 20% 35783.33",
+            "DebtorParty": {
+              "inn": "7702345678",
+              "name": "ООО \"ВКУСНЫЙ ДОМ\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810338000067788",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20260828-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-08-28T12:00:00+03:00",
+            "Amount": {
+              "amount": "2990.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за август 2026",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7707083893",
+              "name": "АО \"БАНК ГОРИЗОНТ\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000001",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20260822-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-08-22T12:00:00+03:00",
+            "Amount": {
+              "amount": "254200.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №2170 за хлебобулочные изделия. В т.ч. НДС 20% 42366.67",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7715334455",
+              "name": "ООО \"ХЛЕБОЗАВОД №7\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810110000077889",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260817-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-08-17T12:00:00+03:00",
+            "Amount": {
+              "amount": "224100.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №410 от 10.08.2026 за продукты питания. В т.ч. НДС 20% 37350.00",
+            "DebtorParty": {
+              "inn": "7702345678",
+              "name": "ООО \"ВКУСНЫЙ ДОМ\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810338000067788",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20260728-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-07-28T12:00:00+03:00",
+            "Amount": {
+              "amount": "2990.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за июль 2026",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7707083893",
+              "name": "АО \"БАНК ГОРИЗОНТ\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000001",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20260722-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-07-22T12:00:00+03:00",
+            "Amount": {
+              "amount": "256300.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №2163 за хлебобулочные изделия. В т.ч. НДС 20% 42716.67",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7715334455",
+              "name": "ООО \"ХЛЕБОЗАВОД №7\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810110000077889",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260717-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-07-17T12:00:00+03:00",
+            "Amount": {
+              "amount": "203900.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №399 от 10.07.2026 за продукты питания. В т.ч. НДС 20% 33983.33",
+            "DebtorParty": {
+              "inn": "7702345678",
+              "name": "ООО \"ВКУСНЫЙ ДОМ\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810338000067788",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20260628-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-06-28T12:00:00+03:00",
+            "Amount": {
+              "amount": "2990.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за июнь 2026",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7707083893",
+              "name": "АО \"БАНК ГОРИЗОНТ\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000001",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20260622-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-06-22T12:00:00+03:00",
+            "Amount": {
+              "amount": "239900.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №2156 за хлебобулочные изделия. В т.ч. НДС 20% 39983.33",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7715334455",
+              "name": "ООО \"ХЛЕБОЗАВОД №7\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810110000077889",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260617-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-06-17T12:00:00+03:00",
+            "Amount": {
+              "amount": "192300.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №388 от 10.06.2026 за продукты питания. В т.ч. НДС 20% 32050.00",
+            "DebtorParty": {
+              "inn": "7702345678",
+              "name": "ООО \"ВКУСНЫЙ ДОМ\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810338000067788",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20260528-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-05-28T12:00:00+03:00",
+            "Amount": {
+              "amount": "2990.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за май 2026",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7707083893",
+              "name": "АО \"БАНК ГОРИЗОНТ\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000001",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20260522-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-05-22T12:00:00+03:00",
+            "Amount": {
+              "amount": "238000.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №2149 за хлебобулочные изделия. В т.ч. НДС 20% 39666.67",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7715334455",
+              "name": "ООО \"ХЛЕБОЗАВОД №7\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810110000077889",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260517-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-05-17T12:00:00+03:00",
+            "Amount": {
+              "amount": "175400.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №377 от 10.05.2026 за продукты питания. В т.ч. НДС 20% 29233.33",
+            "DebtorParty": {
+              "inn": "7702345678",
+              "name": "ООО \"ВКУСНЫЙ ДОМ\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810338000067788",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20260428-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-04-28T12:00:00+03:00",
+            "Amount": {
+              "amount": "2990.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за апрель 2026",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7707083893",
+              "name": "АО \"БАНК ГОРИЗОНТ\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000001",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20260422-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-04-22T12:00:00+03:00",
+            "Amount": {
+              "amount": "240600.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №2142 за хлебобулочные изделия. В т.ч. НДС 20% 40100.00",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7715334455",
+              "name": "ООО \"ХЛЕБОЗАВОД №7\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810110000077889",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260417-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-04-17T12:00:00+03:00",
+            "Amount": {
+              "amount": "195000.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №366 от 10.04.2026 за продукты питания. В т.ч. НДС 20% 32500.00",
+            "DebtorParty": {
+              "inn": "7702345678",
+              "name": "ООО \"ВКУСНЫЙ ДОМ\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810338000067788",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20260328-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-03-28T12:00:00+03:00",
+            "Amount": {
+              "amount": "2990.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за март 2026",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7707083893",
+              "name": "АО \"БАНК ГОРИЗОНТ\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000001",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20260327-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-03-27T12:04:11+03:00",
+            "Amount": {
+              "amount": "250000.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Перевод собственных средств",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810900000012345",
+              "bic": "044525999"
+            },
+            "CreditorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20260322-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-03-22T12:00:00+03:00",
+            "Amount": {
+              "amount": "246300.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №2135 за хлебобулочные изделия. В т.ч. НДС 20% 41050.00",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7715334455",
+              "name": "ООО \"ХЛЕБОЗАВОД №7\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810110000077889",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260317-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-03-17T12:00:00+03:00",
+            "Amount": {
+              "amount": "206200.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №355 от 10.03.2026 за продукты питания. В т.ч. НДС 20% 34366.67",
+            "DebtorParty": {
+              "inn": "7702345678",
+              "name": "ООО \"ВКУСНЫЙ ДОМ\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810338000067788",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20260228-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-02-28T12:00:00+03:00",
+            "Amount": {
+              "amount": "2990.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за февраль 2026",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7707083893",
+              "name": "АО \"БАНК ГОРИЗОНТ\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000001",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20260222-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-02-22T12:00:00+03:00",
+            "Amount": {
+              "amount": "245100.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №2128 за хлебобулочные изделия. В т.ч. НДС 20% 40850.00",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7715334455",
+              "name": "ООО \"ХЛЕБОЗАВОД №7\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810110000077889",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260217-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-02-17T12:00:00+03:00",
+            "Amount": {
+              "amount": "209800.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №344 от 10.02.2026 за продукты питания. В т.ч. НДС 20% 34966.67",
+            "DebtorParty": {
+              "inn": "7702345678",
+              "name": "ООО \"ВКУСНЫЙ ДОМ\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810338000067788",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20260128-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-01-28T12:00:00+03:00",
+            "Amount": {
+              "amount": "2990.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за январь 2026",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7707083893",
+              "name": "АО \"БАНК ГОРИЗОНТ\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000001",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20260122-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2026-01-22T12:00:00+03:00",
+            "Amount": {
+              "amount": "219900.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №2121 за хлебобулочные изделия. В т.ч. НДС 20% 36650.00",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7715334455",
+              "name": "ООО \"ХЛЕБОЗАВОД №7\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810110000077889",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20260117-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2026-01-17T12:00:00+03:00",
+            "Amount": {
+              "amount": "193300.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №333 от 10.01.2026 за продукты питания. В т.ч. НДС 20% 32216.67",
+            "DebtorParty": {
+              "inn": "7702345678",
+              "name": "ООО \"ВКУСНЫЙ ДОМ\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810338000067788",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20251228-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2025-12-28T12:00:00+03:00",
+            "Amount": {
+              "amount": "2990.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за декабрь 2025",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7707083893",
+              "name": "АО \"БАНК ГОРИЗОНТ\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000001",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20251222-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2025-12-22T12:00:00+03:00",
+            "Amount": {
+              "amount": "228800.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №2114 за хлебобулочные изделия. В т.ч. НДС 20% 38133.33",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7715334455",
+              "name": "ООО \"ХЛЕБОЗАВОД №7\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810110000077889",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20251217-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2025-12-17T12:00:00+03:00",
+            "Amount": {
+              "amount": "228600.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №322 от 10.12.2025 за продукты питания. В т.ч. НДС 20% 38100.00",
+            "DebtorParty": {
+              "inn": "7702345678",
+              "name": "ООО \"ВКУСНЫЙ ДОМ\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810338000067788",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20251128-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2025-11-28T12:00:00+03:00",
+            "Amount": {
+              "amount": "2990.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за ноябрь 2025",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7707083893",
+              "name": "АО \"БАНК ГОРИЗОНТ\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000001",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20251122-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2025-11-22T12:00:00+03:00",
+            "Amount": {
+              "amount": "254500.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №2107 за хлебобулочные изделия. В т.ч. НДС 20% 42416.67",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7715334455",
+              "name": "ООО \"ХЛЕБОЗАВОД №7\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810110000077889",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20251117-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2025-11-17T12:00:00+03:00",
+            "Amount": {
+              "amount": "191700.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №311 от 10.11.2025 за продукты питания. В т.ч. НДС 20% 31950.00",
+            "DebtorParty": {
+              "inn": "7702345678",
+              "name": "ООО \"ВКУСНЫЙ ДОМ\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810338000067788",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20251028-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2025-10-28T12:00:00+03:00",
+            "Amount": {
+              "amount": "2990.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Комиссия за обслуживание счета за октябрь 2025",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7707083893",
+              "name": "АО \"БАНК ГОРИЗОНТ\""
+            },
+            "CreditorAccount": {
+              "identification": "70601810000000000001",
+              "bic": "044525225"
+            }
+          },
+          {
+            "transactionId": "obt-20251022-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Debit",
+            "bookingDateTime": "2025-10-22T12:00:00+03:00",
+            "Amount": {
+              "amount": "252400.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №2100 за хлебобулочные изделия. В т.ч. НДС 20% 42066.67",
+            "DebtorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7715334455",
+              "name": "ООО \"ХЛЕБОЗАВОД №7\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810110000077889",
+              "bic": "044525974"
+            }
+          },
+          {
+            "transactionId": "obt-20251017-0010",
+            "status": "Booked",
+            "creditDebitIndicator": "Credit",
+            "bookingDateTime": "2025-10-17T12:00:00+03:00",
+            "Amount": {
+              "amount": "189200.00",
+              "currency": "RUB"
+            },
+            "transactionInformation": "Оплата по счету №300 от 10.10.2025 за продукты питания. В т.ч. НДС 20% 31533.33",
+            "DebtorParty": {
+              "inn": "7702345678",
+              "name": "ООО \"ВКУСНЫЙ ДОМ\""
+            },
+            "DebtorAccount": {
+              "identification": "40702810338000067788",
+              "bic": "044525225"
+            },
+            "CreditorParty": {
+              "inn": "7799000012",
+              "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+            },
+            "CreditorAccount": {
+              "identification": "40702810738000123456",
+              "bic": "044525225"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

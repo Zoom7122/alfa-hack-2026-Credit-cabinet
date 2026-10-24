@@ -1,0 +1,176 @@
+{
+  "inn": "7799000012",
+  "checked_at": "2026-10-22T10:15:06Z",
+  "summary": {
+    "as_defendant_count_12m": 2,
+    "as_defendant_amount_12m": 176650.00,
+    "as_defendant_active_amount": 128400.00,
+    "as_plaintiff_count_12m": 3,
+    "as_plaintiff_amount_12m": 2045000.00,
+    "bankruptcy_as_debtor": false
+  },
+  "items": [
+    {
+      "case_number": "А40-201557/2026",
+      "court": "АС города Москвы",
+      "registered_at": "2026-09-08",
+      "case_type": "CIVIL",
+      "category": "О взыскании задолженности по договору перевозки",
+      "role": "DEFENDANT",
+      "plaintiffs": [
+        {
+          "name": "ООО \"ТРАНСЛОГИСТИК\"",
+          "inn": "7713445566"
+        }
+      ],
+      "defendants": [
+        {
+          "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\"",
+          "inn": "7799000012"
+        }
+      ],
+      "claim_amount": 128400.00,
+      "status": "PENDING",
+      "outcome": null,
+      "decision_date": null,
+      "last_event": "Назначено предварительное заседание",
+      "last_event_at": "2026-09-15",
+      "next_hearing_at": "2026-11-19"
+    },
+    {
+      "case_number": "А41-77120/2026",
+      "court": "АС Московской области",
+      "registered_at": "2026-06-30",
+      "case_type": "CIVIL",
+      "category": "О взыскании задолженности по договору поставки",
+      "role": "PLAINTIFF",
+      "plaintiffs": [
+        {
+          "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\"",
+          "inn": "7799000012"
+        }
+      ],
+      "defendants": [
+        {
+          "name": "ООО \"ПРОДМАРКЕТ\"",
+          "inn": "5047201188"
+        }
+      ],
+      "claim_amount": 1240000.00,
+      "status": "PENDING",
+      "outcome": null,
+      "decision_date": null,
+      "last_event": "Назначено судебное заседание",
+      "last_event_at": "2026-10-01",
+      "next_hearing_at": "2026-11-12"
+    },
+    {
+      "case_number": "А40-118734/2026",
+      "court": "АС города Москвы",
+      "registered_at": "2026-05-14",
+      "case_type": "CIVIL",
+      "category": "О неисполнении или ненадлежащем исполнении обязательств по договорам поставки",
+      "role": "DEFENDANT",
+      "plaintiffs": [
+        {
+          "name": "ООО \"АГРОСНАБ\"",
+          "inn": "5024187365"
+        }
+      ],
+      "defendants": [
+        {
+          "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\"",
+          "inn": "7799000012"
+        }
+      ],
+      "claim_amount": 48250.00,
+      "status": "CLOSED",
+      "outcome": "SATISFIED",
+      "decision_date": "2026-07-22",
+      "last_event": "Решение вступило в законную силу",
+      "last_event_at": "2026-08-23",
+      "next_hearing_at": null
+    },
+    {
+      "case_number": "А40-55210/2026",
+      "court": "АС города Москвы",
+      "registered_at": "2026-02-10",
+      "case_type": "CIVIL",
+      "category": "О взыскании задолженности по договору поставки",
+      "role": "PLAINTIFF",
+      "plaintiffs": [
+        {
+          "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\"",
+          "inn": "7799000012"
+        }
+      ],
+      "defendants": [
+        {
+          "name": "ООО \"ФУДЛАЙН\"",
+          "inn": "7720112233"
+        }
+      ],
+      "claim_amount": 512000.00,
+      "status": "CLOSED",
+      "outcome": "SATISFIED",
+      "decision_date": "2026-05-20",
+      "last_event": "Решение вступило в законную силу",
+      "last_event_at": "2026-06-22",
+      "next_hearing_at": null
+    },
+    {
+      "case_number": "А40-12877/2026",
+      "court": "АС города Москвы",
+      "registered_at": "2025-12-15",
+      "case_type": "CIVIL",
+      "category": "О взыскании задолженности по договору поставки",
+      "role": "PLAINTIFF",
+      "plaintiffs": [
+        {
+          "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\"",
+          "inn": "7799000012"
+        }
+      ],
+      "defendants": [
+        {
+          "name": "ООО \"ОПТТОРГ\"",
+          "inn": "7731223344"
+        }
+      ],
+      "claim_amount": 293000.00,
+      "status": "CLOSED",
+      "outcome": "SETTLED",
+      "decision_date": "2026-02-03",
+      "last_event": "Утверждено мировое соглашение",
+      "last_event_at": "2026-02-03",
+      "next_hearing_at": null
+    },
+    {
+      "case_number": "А40-88120/2023",
+      "court": "АС города Москвы",
+      "registered_at": "2023-05-11",
+      "case_type": "CIVIL",
+      "category": "О взыскании задолженности по договору поставки",
+      "role": "PLAINTIFF",
+      "plaintiffs": [
+        {
+          "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\"",
+          "inn": "7799000012"
+        }
+      ],
+      "defendants": [
+        {
+          "name": "ООО \"ВКУСНЫЙ ДОМ\"",
+          "inn": "7702345678"
+        }
+      ],
+      "claim_amount": 76300.00,
+      "status": "CLOSED",
+      "outcome": "SETTLED",
+      "decision_date": "2023-06-20",
+      "last_event": "Утверждено мировое соглашение",
+      "last_event_at": "2023-06-20",
+      "next_hearing_at": null
+    }
+  ]
+}

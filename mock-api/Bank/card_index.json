@@ -1,0 +1,28 @@
+{
+  "source": "Обслуживающий банк",
+  "asOfDate": "2026-10-22",
+  "accountNumber": "40702810900000012345",
+  "unpaidDocuments": [
+    {
+      "queue": 3,
+      "documentType": "Инкассовое поручение",
+      "number": "77012",
+      "date": "2026-10-15",
+      "recipient": "УФК по г. Москве (ИФНС № 1)",
+      "amount": "84500.00",
+      "paidAmount": "0.00",
+      "basis": "Решение о взыскании № 1234 от 10.10.2026"
+    }
+  ],
+  "totalUnpaid": "84500.00",
+  "suspensions": [
+    {
+      "authority": "ФНС",
+      "decisionNumber": "5678",
+      "decisionDate": "2026-10-16",
+      "type": "Приостановление операций по счёту",
+      "amount": "84500.00"
+    }
+  ],
+  "arrests": []
+}

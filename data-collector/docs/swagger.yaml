@@ -1,0 +1,781 @@
+basePath: /api/v1
+definitions:
+  Collateral:
+    properties:
+      cadastral_numbers:
+        description: недвижимость → ЕГРН
+        example:
+        - 50:21:0110203:845
+        items:
+          type: string
+        type: array
+      serials:
+        description: техника → реестр залогов
+        example:
+        - JCB3CX2023118457
+        items:
+          type: string
+        type: array
+      vins:
+        description: транспорт → реестр залогов
+        example:
+        - XTC652005N1498213
+        items:
+          type: string
+        type: array
+    type: object
+  CollectionSource:
+    properties:
+      calls:
+        type: integer
+      duration_ms:
+        type: integer
+      failed_calls:
+        type: integer
+      reason:
+        type: string
+      source:
+        enum:
+        - CORE_BANKING
+        - FNS
+        - BKI
+        - COMPLIANCE
+        - FSSP
+        - KAD
+        - FEDRESURS
+        - M4D
+        - TAX_REPORTS
+        - PLEDGE_REGISTRY
+        - EGRN
+        - GOSUSLUGI
+        - OPEN_BANKING
+        - MARKETPLACES
+        - OFD
+        - ZAKUPKI
+        - SIGNALS
+        - CBR
+        - HH
+        type: string
+      state:
+        enum:
+        - DONE
+        - PARTIAL
+        - FAILED
+        - SKIPPED
+        type: string
+    type: object
+  CollectionTask:
+    properties:
+      attempts:
+        description: сколько раз worker брал задачу
+        example: 0
+        type: integer
+      created_at:
+        type: string
+      error:
+        description: почему FAILED
+        type: string
+      finished_at:
+        type: string
+      id:
+        example: tsk_01JB8Z5X0G6Q9T4V2W8Y3K7M1N
+        type: string
+      inn:
+        example: "7799000012"
+        type: string
+      questionnaire_id:
+        example: qst_01JB8Z5X0G6Q9T4V2W8Y3K7M1N
+        type: string
+      raw_collection_id:
+        example: col_01JB8Z5X0G6Q9T4V2W8Y3K7M1N
+        type: string
+      skipped_sources:
+        description: 'Системы, для которых в анкете нет данных (согласия, токена,
+          залога, банков): они не опрашиваются.'
+        example:
+        - EGRN
+        - MARKETPLACES
+        items:
+          type: string
+        type: array
+      sources:
+        description: 'только у COMPLETED: состояние по каждой системе'
+        items:
+          $ref: '#/definitions/CollectionSource'
+        type: array
+      started_at:
+        type: string
+      status:
+        description: PENDING — ждёт worker, RUNNING — системы опрашиваются, COMPLETED
+          — сбор сохранён, FAILED — не выполнена.
+        enum:
+        - PENDING
+        - RUNNING
+        - COMPLETED
+        - FAILED
+        example: PENDING
+        type: string
+    type: object
+  Consent:
+    properties:
+      id:
+        example: CNS-2026-000781
+        type: string
+      scope:
+        description: только у consents.tax
+        items:
+          enum:
+          - DECLARATIONS
+          - ENS_BALANCE
+          type: string
+        type: array
+      signed_at:
+        example: "2026-10-21T14:02:11Z"
+        type: string
+      valid_until:
+        example: "2027-04-21"
+        type: string
+    type: object
+  Consents:
+    properties:
+      bki_company:
+        allOf:
+        - $ref: '#/definitions/Consent'
+        description: компании на запрос в БКИ
+      bki_person:
+        allOf:
+        - $ref: '#/definitions/Consent'
+        description: руководителя на запрос в БКИ
+      tax:
+        allOf:
+        - $ref: '#/definitions/Consent'
+        description: на налоговую отчётность
+    type: object
+  CreateQuestionnaireRequest:
+    properties:
+      age:
+        example: 42
+        maximum: 100
+        minimum: 18
+        type: integer
+      children_count:
+        example: 2
+        maximum: 20
+        minimum: 0
+        type: integer
+      collateral:
+        $ref: '#/definitions/Collateral'
+      consents:
+        $ref: '#/definitions/Consents'
+      director:
+        allOf:
+        - $ref: '#/definitions/Person'
+        description: |-
+          Руководитель; у ИП — сам предприниматель. Без него не запрашиваются данные физлица:
+          БКИ, ФССП, Федресурс, Госуслуги, дисквалификация, санкции.
+      inn:
+        description: ИНН компании (10 цифр) или ИП (12 цифр) — ключ ко всем системам.
+        example: "7799000012"
+        type: string
+      marital_status:
+        enum:
+        - SINGLE
+        - MARRIED
+        - DIVORCED
+        - DIVORCED_MULTIPLE
+        example: MARRIED
+        type: string
+      marketplace_tokens:
+        description: 'Токены продавца: {"wildberries": "…", "ozon": "…"}. Мок принимает
+          любой непустой токен (кроме начинающегося с invalid).'
+        type: object
+      ofd_token:
+        description: Токен оператора фискальных данных (онлайн-кассы).
+        example: demo-ofd-token
+        type: string
+      other_bank_biks:
+        description: 'БИК банков, где у клиента ещё есть счета: мультибанкинг и блокировки
+          ФНС.'
+        example:
+        - "044525225"
+        items:
+          type: string
+        type: array
+      poa_number:
+        description: Номер МЧД, если заявку подаёт представитель, и его ИНН.
+        example: 0f5a2c1e-7b3d-4e8a-9c21-6d4b8e0a1f37
+        type: string
+      representative_inn:
+        example: "779900010333"
+        type: string
+    required:
+    - age
+    - children_count
+    - inn
+    - marital_status
+    type: object
+  InternalData:
+    properties:
+      accounts:
+        $ref: '#/definitions/domain.AccountsReport'
+      acquiring:
+        $ref: '#/definitions/domain.AcquiringReport'
+      card_index:
+        $ref: '#/definitions/domain.CardIndexReport'
+      credits:
+        $ref: '#/definitions/domain.CreditReport'
+      inn:
+        type: string
+      salary_project:
+        $ref: '#/definitions/domain.SalaryProjectReport'
+      sources:
+        items:
+          $ref: '#/definitions/SourceResult'
+        type: array
+    type: object
+  Person:
+    properties:
+      birth_date:
+        example: "1984-07-19"
+        type: string
+      first_name:
+        example: Игорь
+        type: string
+      inn:
+        example: "779900010139"
+        type: string
+      last_name:
+        example: Ковалёв
+        type: string
+      middle_name:
+        example: Сергеевич
+        type: string
+    type: object
+  Problem:
+    properties:
+      code:
+        type: string
+      detail:
+        type: string
+      errors:
+        items:
+          $ref: '#/definitions/ProblemField'
+        type: array
+      status:
+        type: integer
+      title:
+        type: string
+      type:
+        type: string
+    type: object
+  ProblemField:
+    properties:
+      code:
+        type: string
+      field:
+        type: string
+      message:
+        type: string
+    type: object
+  Questionnaire:
+    properties:
+      age:
+        type: integer
+      children_count:
+        type: integer
+      collection:
+        $ref: '#/definitions/CollectionTask'
+      created_at:
+        type: string
+      id:
+        type: string
+      marital_status:
+        type: string
+    type: object
+  SourceResult:
+    properties:
+      duration_ms:
+        type: integer
+      error:
+        type: string
+      source:
+        enum:
+        - ACCOUNTS
+        - CREDITS
+        - ACQUIRING
+        - SALARY_PROJECT
+        - CARD_INDEX
+        type: string
+      state:
+        enum:
+        - DONE
+        - FAILED
+        type: string
+    type: object
+  domain.Account:
+    properties:
+      AccountDetails:
+        items:
+          $ref: '#/definitions/domain.AccountDetails'
+        type: array
+      Servicer:
+        $ref: '#/definitions/domain.Servicer'
+      accountDescription:
+        type: string
+      accountId:
+        type: string
+      accountSubType:
+        type: string
+      accountType:
+        type: string
+      currency:
+        type: string
+      openingDate:
+        type: string
+      status:
+        type: string
+      statusUpdateDateTime:
+        type: string
+    type: object
+  domain.AccountDetails:
+    properties:
+      identification:
+        description: номер счёта
+        type: string
+      name:
+        type: string
+      schemeName:
+        type: string
+    type: object
+  domain.AccountRestriction:
+    properties:
+      amount:
+        type: string
+      authority:
+        type: string
+      decisionDate:
+        type: string
+      decisionNumber:
+        type: string
+      type:
+        type: string
+    type: object
+  domain.AccountsData:
+    properties:
+      Account:
+        items:
+          $ref: '#/definitions/domain.Account'
+        type: array
+      Balance:
+        items:
+          $ref: '#/definitions/domain.Balance'
+        type: array
+      Transaction:
+        items:
+          $ref: '#/definitions/domain.Transaction'
+        type: array
+    type: object
+  domain.AccountsReport:
+    properties:
+      Data:
+        $ref: '#/definitions/domain.AccountsData'
+      Links:
+        properties:
+          self:
+            type: string
+        type: object
+      Meta:
+        properties:
+          totalPages:
+            type: integer
+        type: object
+    type: object
+  domain.AcquiringReport:
+    properties:
+      acquirer:
+        type: string
+      commissionRate:
+        description: '% от оборота'
+        type: string
+      contractDate:
+        type: string
+      merchant:
+        $ref: '#/definitions/domain.Merchant'
+      monthlyTurnover:
+        items:
+          $ref: '#/definitions/domain.MonthlyTurnover'
+        type: array
+      sbp:
+        $ref: '#/definitions/domain.SBP'
+      terminals:
+        items:
+          $ref: '#/definitions/domain.Terminal'
+        type: array
+    type: object
+  domain.Balance:
+    properties:
+      Amount:
+        $ref: '#/definitions/domain.Money'
+      accountId:
+        type: string
+      creditDebitIndicator:
+        type: string
+      dateTime:
+        type: string
+      type:
+        type: string
+    type: object
+  domain.CardIndexReport:
+    properties:
+      accountNumber:
+        type: string
+      arrests:
+        items:
+          $ref: '#/definitions/domain.AccountRestriction'
+        type: array
+      asOfDate:
+        type: string
+      source:
+        type: string
+      suspensions:
+        description: приостановления операций
+        items:
+          $ref: '#/definitions/domain.AccountRestriction'
+        type: array
+      totalUnpaid:
+        type: string
+      unpaidDocuments:
+        items:
+          $ref: '#/definitions/domain.UnpaidDocument'
+        type: array
+    type: object
+  domain.CounterpartyAccount:
+    properties:
+      identification:
+        type: string
+      name:
+        type: string
+    type: object
+  domain.CreditConsent:
+    properties:
+      date:
+        type: string
+      purpose:
+        type: string
+      validUntil:
+        type: string
+    type: object
+  domain.CreditContract:
+    properties:
+      collateral:
+        type: string
+      creditor:
+        type: string
+      currency:
+        type: string
+      currentDebt:
+        type: string
+      limit:
+        type: string
+      openDate:
+        type: string
+      overdueDebt:
+        type: string
+      paymentHistory:
+        description: по месяцу на символ, 0 — без просрочки
+        type: string
+      plannedCloseDate:
+        type: string
+      type:
+        type: string
+      uid:
+        type: string
+    type: object
+  domain.CreditReport:
+    properties:
+      bureau:
+        type: string
+      consent:
+        $ref: '#/definitions/domain.CreditConsent'
+      contracts:
+        items:
+          $ref: '#/definitions/domain.CreditContract'
+        type: array
+      reportId:
+        type: string
+      requestDate:
+        type: string
+      subject:
+        $ref: '#/definitions/domain.CreditSubject'
+      summary:
+        $ref: '#/definitions/domain.CreditSummary'
+    type: object
+  domain.CreditSubject:
+    properties:
+      inn:
+        type: string
+      name:
+        type: string
+      ogrn:
+        type: string
+    type: object
+  domain.CreditSummary:
+    properties:
+      activeContracts:
+        type: integer
+      inquiriesLast30d:
+        type: integer
+      maxOverdueDaysLast12m:
+        type: integer
+      overdueDebt:
+        type: string
+      totalDebt:
+        type: string
+    type: object
+  domain.Merchant:
+    properties:
+      inn:
+        type: string
+      mcc:
+        type: string
+      merchantId:
+        type: string
+    type: object
+  domain.Money:
+    properties:
+      amount:
+        type: string
+      currency:
+        type: string
+    type: object
+  domain.MonthlyTurnover:
+    properties:
+      amount:
+        type: string
+      month:
+        description: YYYY-MM
+        type: string
+      operations:
+        type: integer
+      refunds:
+        type: string
+    type: object
+  domain.SBP:
+    properties:
+      connected:
+        type: boolean
+      monthlyAmountLast3mAvg:
+        type: string
+    type: object
+  domain.SalaryPayment:
+    properties:
+      amount:
+        type: string
+      date:
+        type: string
+      employees:
+        type: integer
+      registryNumber:
+        type: string
+    type: object
+  domain.SalaryProjectReport:
+    properties:
+      avgMonthlyFundLast6m:
+        type: string
+      bank:
+        type: string
+      contractDate:
+        type: string
+      contractNumber:
+        type: string
+      employeesWithCards:
+        type: integer
+      payments:
+        items:
+          $ref: '#/definitions/domain.SalaryPayment'
+        type: array
+      status:
+        type: string
+    type: object
+  domain.Servicer:
+    properties:
+      identification:
+        description: БИК
+        type: string
+      schemeName:
+        type: string
+    type: object
+  domain.Terminal:
+    properties:
+      address:
+        type: string
+      status:
+        type: string
+      tid:
+        type: string
+      type:
+        description: POS, Ecom
+        type: string
+    type: object
+  domain.Transaction:
+    properties:
+      Amount:
+        $ref: '#/definitions/domain.Money'
+      CounterpartyAccount:
+        $ref: '#/definitions/domain.CounterpartyAccount'
+      accountId:
+        type: string
+      bookingDateTime:
+        type: string
+      creditDebitIndicator:
+        description: Credit — поступление, Debit — списание
+        type: string
+      documentNumber:
+        type: string
+      status:
+        type: string
+      transactionId:
+        type: string
+      transactionInformation:
+        description: назначение платежа
+        type: string
+    type: object
+  domain.UnpaidDocument:
+    properties:
+      amount:
+        type: string
+      basis:
+        type: string
+      date:
+        type: string
+      documentType:
+        type: string
+      number:
+        type: string
+      paidAmount:
+        type: string
+      queue:
+        description: очерёдность списания (ст. 855 ГК)
+        type: integer
+      recipient:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: |-
+    Сбор данных о заёмщике для скоринга: анкета клиента и сырые ответы всех внешних систем (эмулятор mock-api).
+    Сбор асинхронный: анкета ставит задачу в очередь (outbox → Kafka), системы опрашивает worker.
+    Ошибки — RFC 9457 (`application/problem+json`).
+  title: data-collector API
+  version: "0.2"
+paths:
+  /check-mock:
+    get:
+      description: |-
+        Параллельно опрашивает 5 систем банка (эмулятор mock-api) и возвращает их ответы как есть.
+        Секция системы, которая не ответила, — null; причина — в sources.
+      parameters:
+      - description: 'ИНН: 10 цифр (ЮЛ) или 12 (ИП)'
+        example: "7701234567"
+        in: query
+        name: inn
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/InternalData'
+        "400":
+          description: не передан inn
+          schema:
+            $ref: '#/definitions/Problem'
+        "422":
+          description: inn не из 10 или 12 цифр
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Problem'
+      summary: Проверить данные внутренних систем банка
+      tags:
+      - internal-data
+  /collections/{id}:
+    get:
+      description: |-
+        Задача на сбор, созданная POST /questionnaires. PENDING — ждёт worker, RUNNING — системы опрашиваются,
+        COMPLETED — сбор сохранён в raw_collections (строка raw_collection_id), FAILED — не выполнена, причина в error.
+        У COMPLETED в sources — состояние по каждой системе: DONE, PARTIAL, FAILED, SKIPPED.
+      parameters:
+      - description: id задачи (tsk_…)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/CollectionTask'
+        "404":
+          description: задачи нет
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Problem'
+      summary: Состояние сбора данных по анкете
+      tags:
+      - collections
+  /questionnaires:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Проверяет анкету и данные для сбора, сохраняет анкету и создаёт задачу на сбор (status=PENDING)
+        вместе с событием в outbox — одной транзакцией. Publisher отправляет событие в Kafka, worker
+        опрашивает все внешние системы (эмулятор mock-api) и пишет сырые ответы строкой в raw_collections.
+        Состояние сбора — GET /collections/{id} (ссылка в заголовке Location).
+        Системы без нужных данных (нет согласия, токена, залога, банков) не опрашиваются: они перечислены в skipped_sources.
+      parameters:
+      - description: Анкета и данные для сбора
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/CreateQuestionnaireRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          headers:
+            Location:
+              description: /api/v1/collections/{id} — состояние задачи на сбор
+              type: string
+          schema:
+            $ref: '#/definitions/Questionnaire'
+        "400":
+          description: битый JSON, нет обязательного поля (age, marital_status, children_count,
+            inn) или неверный тип
+          schema:
+            $ref: '#/definitions/Problem'
+        "422":
+          description: нарушено правило анкеты или неверный формат данных для сбора
+            (ИНН, БИК, VIN, даты)
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Problem'
+      summary: Принять анкету и поставить сбор данных о компании в очередь
+      tags:
+      - questionnaires
+swagger: "2.0"

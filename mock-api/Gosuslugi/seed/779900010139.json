@@ -1,0 +1,59 @@
+{
+  "person": {
+    "last_name": "Ковалёв",
+    "first_name": "Игорь",
+    "middle_name": "Сергеевич",
+    "birth_date": "1984-07-19",
+    "inn": "779900010139"
+  },
+  "data": {
+    "passport": {
+      "series": "4519",
+      "number": "128734",
+      "issued_at": "2019-08-02",
+      "issuer": "ГУ МВД России по г. Москве",
+      "division_code": "770-001",
+      "valid": true
+    },
+    "inn": "779900010139",
+    "snils": "112-334-556 71",
+    "registration_address": "г. Москва, ул. Народного Ополчения, д. 21, кв. 47",
+    "income": [
+      {
+        "year": "2025",
+        "sources": [
+          {
+            "type": "NDFL",
+            "payer": "ООО \"СЕВЕРНЫЙ ВЕТЕР\"",
+            "payer_inn": "7799000012",
+            "amount": 1440000.00
+          }
+        ]
+      },
+      {
+        "year": "2024",
+        "sources": [
+          {
+            "type": "NDFL",
+            "payer": "ООО \"СЕВЕРНЫЙ ВЕТЕР\"",
+            "payer_inn": "7799000012",
+            "amount": 1200000.00
+          }
+        ]
+      }
+    ],
+    "employment": [
+      {
+        "employer": "ООО \"СЕВЕРНЫЙ ВЕТЕР\"",
+        "employer_inn": "7799000012",
+        "position": "Генеральный директор",
+        "from": "2021-03-14",
+        "to": null
+      }
+    ],
+    "npd_status": {
+      "registered": false,
+      "history": []
+    }
+  }
+}

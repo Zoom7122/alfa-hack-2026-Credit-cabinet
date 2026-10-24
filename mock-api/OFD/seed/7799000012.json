@@ -1,0 +1,135 @@
+{
+  "inn": "7799000012",
+  "kkt": [
+    {
+      "reg_number": "0006451238019944",
+      "serial": "0491028377165",
+      "model": "АТОЛ 30Ф",
+      "fn_number": "7281440500231467",
+      "fn_valid_until": "2027-05-14",
+      "address": "г. Москва, ул. Черняховского, д. 9, пом. 4",
+      "status": "ACTIVE",
+      "registered_at": "2022-04-01"
+    },
+    {
+      "reg_number": "0006451238020371",
+      "serial": "0491028377902",
+      "model": "АТОЛ 30Ф",
+      "fn_number": "7281440500231988",
+      "fn_valid_until": "2027-05-14",
+      "address": "г. Москва, ул. Черняховского, д. 9, пом. 4",
+      "status": "ACTIVE",
+      "registered_at": "2022-04-01"
+    }
+  ],
+  "months": [
+    {
+      "month": "2026-09",
+      "receipts_count": 2184,
+      "revenue_total": 1545300.00,
+      "revenue_card": 1203400.00,
+      "revenue_cash": 341900.00,
+      "refunds_total": 12300.00,
+      "avg_check": 707.56
+    },
+    {
+      "month": "2026-08",
+      "receipts_count": 2047,
+      "revenue_total": 1436900.00,
+      "revenue_card": 1118750.00,
+      "revenue_cash": 318150.00,
+      "refunds_total": 9800.00,
+      "avg_check": 701.95
+    },
+    {
+      "month": "2026-07",
+      "receipts_count": 1801,
+      "revenue_total": 1267700.00,
+      "revenue_card": 987300.00,
+      "revenue_cash": 280400.00,
+      "refunds_total": 10100.00,
+      "avg_check": 703.89
+    },
+    {
+      "month": "2026-06",
+      "receipts_count": 2108,
+      "revenue_total": 1483900.00,
+      "revenue_card": 1155700.00,
+      "revenue_cash": 328200.00,
+      "refunds_total": 11900.00,
+      "avg_check": 703.94
+    },
+    {
+      "month": "2026-05",
+      "receipts_count": 2144,
+      "revenue_total": 1509100.00,
+      "revenue_card": 1175300.00,
+      "revenue_cash": 333800.00,
+      "refunds_total": 12100.00,
+      "avg_check": 703.87
+    },
+    {
+      "month": "2026-04",
+      "receipts_count": 2076,
+      "revenue_total": 1461800.00,
+      "revenue_card": 1138500.00,
+      "revenue_cash": 323300.00,
+      "refunds_total": 11700.00,
+      "avg_check": 704.14
+    },
+    {
+      "month": "2026-03",
+      "receipts_count": 2051,
+      "revenue_total": 1443900.00,
+      "revenue_card": 1124500.00,
+      "revenue_cash": 319400.00,
+      "refunds_total": 11600.00,
+      "avg_check": 704.00
+    },
+    {
+      "month": "2026-02",
+      "receipts_count": 1830,
+      "revenue_total": 1288100.00,
+      "revenue_card": 1003200.00,
+      "revenue_cash": 284900.00,
+      "refunds_total": 10300.00,
+      "avg_check": 703.88
+    },
+    {
+      "month": "2026-01",
+      "receipts_count": 1758,
+      "revenue_total": 1237900.00,
+      "revenue_card": 964100.00,
+      "revenue_cash": 273800.00,
+      "refunds_total": 9900.00,
+      "avg_check": 704.15
+    },
+    {
+      "month": "2025-12",
+      "receipts_count": 2327,
+      "revenue_total": 1637900.00,
+      "revenue_card": 1275600.00,
+      "revenue_cash": 362300.00,
+      "refunds_total": 13100.00,
+      "avg_check": 703.87
+    },
+    {
+      "month": "2025-11",
+      "receipts_count": 1955,
+      "revenue_total": 1376300.00,
+      "revenue_card": 1071900.00,
+      "revenue_cash": 304400.00,
+      "refunds_total": 11000.00,
+      "avg_check": 703.99
+    },
+    {
+      "month": "2025-10",
+      "receipts_count": 2009,
+      "revenue_total": 1414100.00,
+      "revenue_card": 1101300.00,
+      "revenue_cash": 312800.00,
+      "refunds_total": 11300.00,
+      "avg_check": 703.88
+    }
+  ]
+}
