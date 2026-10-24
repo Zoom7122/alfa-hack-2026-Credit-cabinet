@@ -1,5 +1,5 @@
 // Package app assembles startup dependencies without binding ports or contacting
-// external systems. Business operations are added in subsequent implementation stages.
+// external systems.
 package app
 
 import (
@@ -10,6 +10,7 @@ import (
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/clients"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/clock"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/config"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/decision"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/economics"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/httpapi"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/optimizer"
@@ -27,6 +28,7 @@ type Scoring struct {
 	BankClient       *clients.BankClient
 	StatementsClient *clients.StatementsClient
 	Evaluator        *scoring.Evaluator
+	Decisions        *decision.Service
 	Server           *http.Server
 }
 
@@ -78,10 +80,15 @@ func NewScoring(cfg config.Scoring, source clock.Clock) (*Scoring, error) {
 	if err != nil {
 		return nil, err
 	}
+	decisions, err := decision.New(policy.ID, evaluator, selector, bankClient)
+	if err != nil {
+		return nil, err
+	}
 	return &Scoring{
 		Settings: cfg, Policy: policy, Economics: calculator, Optimizer: selector, Clock: source,
 		BankHTTP: bankHTTP, StatementsHTTP: statementsHTTP, BankClient: bankClient, StatementsClient: statementsClient, Evaluator: evaluator,
-		Server: httpapi.NewServer(cfg.Addr, cfg.WriteTimeout, httpapi.NewRouter()),
+		Decisions: decisions,
+		Server:    httpapi.NewServer(cfg.Addr, cfg.WriteTimeout, httpapi.NewScoringRouter(decisions)),
 	}, nil
 }
 
@@ -116,6 +123,6 @@ func NewBank(cfg config.Bank, source clock.Clock) (*Bank, error) {
 	return &Bank{
 		Settings: cfg, Policy: policy, Economics: calculator, InitialState: state, Operations: operations, Clock: source,
 		AdminHTTP: adminHTTP, AdminClient: adminClient,
-		Server: httpapi.NewServer(cfg.Addr, cfg.WriteTimeout, httpapi.NewRouter()),
+		Server: httpapi.NewServer(cfg.Addr, cfg.WriteTimeout, httpapi.NewBankRouter(operations)),
 	}, nil
 }

@@ -14,13 +14,14 @@ import (
 
 func NewRouter() *gin.Engine {
 	router := gin.New()
+	router.RedirectTrailingSlash = false
+	router.HandleMethodNotAllowed = true
 	// Gin's default recovery dump can contain request headers and borrower data.
 	router.Use(gin.CustomRecoveryWithWriter(io.Discard, func(c *gin.Context, _ any) {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, contracts.Problem{
-			Type: "about:blank", Title: "Internal Server Error", Status: http.StatusInternalServerError,
-			Code: "INTERNAL_ERROR", Detail: "Internal server error", Fields: []string{},
-		})
+		writeProblem(c, http.StatusInternalServerError, "INTERNAL_ERROR", nil)
 	}))
+	router.NoRoute(func(c *gin.Context) { writeProblem(c, 404, "NOT_FOUND", nil) })
+	router.NoMethod(func(c *gin.Context) { writeProblem(c, 405, "METHOD_NOT_ALLOWED", nil) })
 	router.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, contracts.Health{Status: "ok"})
 	})
