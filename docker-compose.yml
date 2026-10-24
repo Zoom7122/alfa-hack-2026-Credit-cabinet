@@ -83,6 +83,9 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
       BANK_API_URL: http://mock-api:8090/bank/v1
       BANK_API_TIMEOUT: 5s
+      DOCUMENT_STORAGE_PATH: /data/documents
+    volumes:
+      - documents:/data/documents
     ports:
       - "${DATA_COLLECTOR_PORT:-8081}:8081"
     depends_on:
@@ -117,6 +120,10 @@ services:
       MOCK_API_TIMEOUT: 5s
       COLLECT_TIMEOUT: 8s
       WORKER_CONCURRENCY: 4
+      DOCUMENT_STORAGE_PATH: /data/documents
+      SIGNATURE_VERIFIER_URL: ${SIGNATURE_VERIFIER_URL:-}
+    volumes:
+      - documents:/data/documents
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -148,5 +155,6 @@ services:
     restart: unless-stopped
 
 volumes:
+  documents:
   pgdata:
   kafkadata:

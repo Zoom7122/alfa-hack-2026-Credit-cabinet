@@ -27,3 +27,9 @@ lint:
 swagger:
 	go run github.com/swaggo/swag/cmd/swag@v1.16.6 fmt -g cmd/data-collector/main.go
 	go run github.com/swaggo/swag/cmd/swag@v1.16.6 init -g cmd/data-collector/main.go -o docs --parseInternal --outputTypes go,json,yaml
+
+# Install requirements.txt first; real XLS/PDF fixtures are supplied locally, never committed.
+.PHONY: test-financial
+test-financial:
+	python3 -m unittest discover -s financial_parser/tests -v
+	go test ./internal/financial

@@ -22,6 +22,7 @@ import (
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/client/bank"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/env"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/events"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/financial"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/repository/memory"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/repository/postgres"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/service"
@@ -72,6 +73,8 @@ func run(log *slog.Logger) error {
 		httptransport.NewCollectionHandler(collectionSvc, log),
 		httptransport.NewInternalDataHandler(internalDataSvc, log),
 	)
+
+	financial.Register(router, financial.Repository{Pool: pool, Topic: topic}, financial.Files{Root: env.String("DOCUMENT_STORAGE_PATH", "/data/documents")})
 
 	srv := &http.Server{
 		Addr:              addr,

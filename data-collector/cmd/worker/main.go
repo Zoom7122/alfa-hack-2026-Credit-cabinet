@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -16,6 +17,7 @@ import (
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/client/mockapi"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/env"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/events"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/financial"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/kafka"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/repository/postgres"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/worker"
@@ -86,7 +88,20 @@ func run(log *slog.Logger) error {
 	)
 	log.Info("worker started", "brokers", brokers, "topic", topic, "group", group, "concurrency", concurrency,
 		"mock_api", mockURL)
-	if err := consumer.Run(ctx, w.Handle); err != nil {
+	financialRepo := financial.Repository{Pool: pool, Topic: topic}
+	processor := financial.Processor{
+		Files:    financial.Files{Root: env.String("DOCUMENT_STORAGE_PATH", "/data/documents")},
+		Verifier: financial.HTTPVerifier{URL: os.Getenv("SIGNATURE_VERIFIER_URL")},
+		Parser:   financial.PythonParser{Python: env.String("FINANCIAL_PYTHON", "python3"), Script: env.String("FINANCIAL_PARSER_PATH", "/app/financial_parser/parser.py")},
+	}
+	handle := func(ctx context.Context, value []byte) error {
+		var event financial.Event
+		if json.Unmarshal(value, &event) == nil && event.Event == financial.EventRequested {
+			return financialRepo.Handle(ctx, processor, value)
+		}
+		return w.Handle(ctx, value)
+	}
+	if err := consumer.Run(ctx, handle); err != nil {
 		return err
 	}
 	log.Info("shutting down")

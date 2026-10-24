@@ -92,3 +92,7 @@ type SignatureVerifier interface {
 | Сертификат отозван (есть в тестовом CRL) | `INVALID` (`NOT_REVOKED`) |
 | OCSP/CRL недоступны (выключен мок УЦ) | `INDETERMINATE` |
 | Подпись самоподписанным сертификатом | `INVALID` (`CHAIN_TO_TRUSTED_ROOT`) |
+
+## Финансовый MVP
+
+Для КУДиР используется политика `KUDIR_IP` (сам ИП), для PDF ГИРБО — `GIRBO_FNS` (ФНС как подписант, ИНН заёмщика из содержимого). Общая политика `FINANCIAL_STATEMENTS` не заменяет эти проверки. Адаптер, обязательные проверки и ограничения текущей реализации: [financial-documents.md](financial-documents.md). Сам криптографический сервис разрабатывается отдельно.

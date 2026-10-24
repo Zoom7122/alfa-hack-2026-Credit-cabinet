@@ -40,3 +40,5 @@ make help    # остальные команды
 ```bash
 npx @redocly/cli@1.25.0 lint api/openapi.yaml
 ```
+
+Финансовые документы (КУДиР ИП, PDF ГИРБО ООО): [реализация, контракт валидатора и проверки](docs/financial-documents.md).
