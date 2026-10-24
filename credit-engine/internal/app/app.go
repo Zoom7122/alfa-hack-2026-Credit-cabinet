@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/contracts"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/bank"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/clock"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/config"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/economics"
@@ -29,6 +30,7 @@ type Bank struct {
 	Policy       config.Policy
 	Economics    *economics.Calculator
 	InitialState contracts.BankState
+	Operations   *bank.Service
 	Clock        clock.Clock
 	AdminHTTP    *http.Client
 	Server       *http.Server
@@ -83,8 +85,12 @@ func NewBank(cfg config.Bank, source clock.Clock) (*Bank, error) {
 	if source == nil {
 		source = clock.System{}
 	}
+	operations, err := bank.NewService(policy, state, source, nil)
+	if err != nil {
+		return nil, err
+	}
 	return &Bank{
-		Settings: cfg, Policy: policy, Economics: calculator, InitialState: state, Clock: source,
+		Settings: cfg, Policy: policy, Economics: calculator, InitialState: state, Operations: operations, Clock: source,
 		AdminHTTP: &http.Client{Timeout: cfg.AdminTimeout},
 		Server:    httpapi.NewServer(cfg.Addr, cfg.WriteTimeout, httpapi.NewRouter()),
 	}, nil

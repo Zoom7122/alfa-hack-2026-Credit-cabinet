@@ -64,7 +64,13 @@ func TestBankDependenciesAndIndependentSnapshots(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if a.Operations == nil || b.Operations == nil {
+		t.Fatal("bank operations must be initialized")
+	}
 	a.InitialState.Groups["g1"] = 1
+	if a.Operations.Snapshot().State.Groups["g1"] != 200000000 {
+		t.Fatal("public initial snapshot aliases bank operations")
+	}
 	if b.InitialState.Groups["g1"] != 200000000 || b.InitialState.Cash != 10000000 {
 		t.Fatal("startup snapshots must be independently loaded")
 	}
