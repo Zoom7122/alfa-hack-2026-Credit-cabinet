@@ -59,31 +59,11 @@ func (p Policy) Validate() error {
 	if strings.TrimSpace(p.ID) == "" {
 		return fmt.Errorf("id must not be empty")
 	}
-	e := p.Economics
-	for _, item := range []struct {
-		name  string
-		value float64
-	}{
-		{"reserve_rate", e.ReserveRate}, {"pd_annual", e.PDAnnual}, {"lgd", e.LGD}, {"capital_allocation", e.CapitalAllocation},
-	} {
-		if !finite(item.value) || item.value < 0 || item.value > 1 {
-			return fmt.Errorf("economics.%s must be between 0 and 1", item.name)
-		}
+	if err := p.Economics.Validate(); err != nil {
+		return err
 	}
-	for _, item := range []struct {
-		name  string
-		value float64
-	}{
-		{"risk_weight", e.RiskWeight}, {"ftp_annual", e.FTPAnnual}, {"ftp_long_addition", e.FTPLongAddition},
-		{"opex_annual", e.OpexAnnual}, {"upfront_cost_rub", e.UpfrontCostRUB},
-		{"capital_price_annual", e.CapitalPriceAnnual}, {"discount_annual", e.DiscountAnnual},
-	} {
-		if !finite(item.value) || item.value < 0 {
-			return fmt.Errorf("economics.%s must be finite and nonnegative", item.name)
-		}
-	}
-	if e.QualityCategory < 1 || e.QualityCategory > 5 || p.MaxQualityCategory < 1 || p.MaxQualityCategory > 5 {
-		return fmt.Errorf("quality categories must be between 1 and 5")
+	if p.MaxQualityCategory < 1 || p.MaxQualityCategory > 5 {
+		return fmt.Errorf("max_quality_category must be between 1 and 5")
 	}
 	o := p.Optimizer
 	if o.AmountStepRUB <= 0 {
@@ -113,6 +93,39 @@ func (p Policy) Validate() error {
 		if !ok || limit.Operator != operator || !finite(limit.Value) || limit.Value < 0 {
 			return fmt.Errorf("invalid norm_limits.%s", name)
 		}
+	}
+	return nil
+}
+
+// Validate is shared by startup loading and the pure economics calculator.
+func (e Economics) Validate() error {
+	for _, item := range []struct {
+		name  string
+		value float64
+	}{
+		{"reserve_rate", e.ReserveRate}, {"pd_annual", e.PDAnnual}, {"lgd", e.LGD}, {"capital_allocation", e.CapitalAllocation},
+	} {
+		if !finite(item.value) || item.value < 0 || item.value > 1 {
+			return fmt.Errorf("economics.%s must be between 0 and 1", item.name)
+		}
+	}
+	for _, item := range []struct {
+		name  string
+		value float64
+	}{
+		{"risk_weight", e.RiskWeight}, {"ftp_annual", e.FTPAnnual}, {"ftp_long_addition", e.FTPLongAddition},
+		{"opex_annual", e.OpexAnnual}, {"upfront_cost_rub", e.UpfrontCostRUB},
+		{"capital_price_annual", e.CapitalPriceAnnual}, {"discount_annual", e.DiscountAnnual},
+	} {
+		if !finite(item.value) || item.value < 0 {
+			return fmt.Errorf("economics.%s must be finite and nonnegative", item.name)
+		}
+	}
+	if !finite(e.FTPAnnual + e.FTPLongAddition) {
+		return fmt.Errorf("combined long-term funding rate must be finite")
+	}
+	if e.QualityCategory < 1 || e.QualityCategory > 5 {
+		return fmt.Errorf("economics.quality_category must be between 1 and 5")
 	}
 	return nil
 }

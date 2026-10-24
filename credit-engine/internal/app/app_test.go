@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/contracts"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/app"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/clock"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/config"
@@ -97,5 +98,44 @@ func TestStartupRejectsInvalidDependencies(t *testing.T) {
 	scoring.BankTimeout = 0
 	if _, err := app.NewScoring(scoring, nil); err == nil {
 		t.Fatal("invalid settings must block startup")
+	}
+}
+
+func TestServicesUseTheSameEconomicsWithoutBankState(t *testing.T) {
+	scoringConfig, err := config.LoadScoring(environment(map[string]string{
+		"STATEMENTS_URL": "http://unused.invalid", "POLICY_FILE": "../../config/policy.json",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	bankConfig, err := config.LoadBank(environment(map[string]string{
+		"ADMIN_URL": "http://unused.invalid", "POLICY_FILE": "../../config/policy.json",
+		"BANK_STATE_FILE": "../../config/bank.capital_boundary.json",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	scoring, err := app.NewScoring(scoringConfig, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bank, err := app.NewBank(bankConfig, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	terms := contracts.LoanTerms{AmountRUB: 3000000, TermMonths: 24, AnnualRate: 24}
+	scoringResult, err := scoring.Economics.Evaluate(terms)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bankResult, err := bank.Economics.Evaluate(terms)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if scoringResult.NPVKopecks != 11894554 || scoringResult.NPVKopecks != bankResult.NPVKopecks || scoringResult.Schedule.MonthlyPaymentRUB != bankResult.Schedule.MonthlyPaymentRUB {
+		t.Fatal("MS1 and MS2 must use identical economics regardless of the bank snapshot")
+	}
+	if bank.InitialState.Cash != 10000000 || len(bank.InitialState.IssuedApplicationIds) != 0 {
+		t.Fatal("economic evaluation must not issue a loan or change bank state")
 	}
 }

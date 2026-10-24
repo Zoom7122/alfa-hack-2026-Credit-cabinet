@@ -8,12 +8,14 @@ import (
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/contracts"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/clock"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/config"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/economics"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/httpapi"
 )
 
 type Scoring struct {
 	Settings       config.Scoring
 	Policy         config.Policy
+	Economics      *economics.Calculator
 	Clock          clock.Clock
 	BankHTTP       *http.Client
 	StatementsHTTP *http.Client
@@ -23,6 +25,7 @@ type Scoring struct {
 type Bank struct {
 	Settings     config.Bank
 	Policy       config.Policy
+	Economics    *economics.Calculator
 	InitialState contracts.BankState
 	Clock        clock.Clock
 	AdminHTTP    *http.Client
@@ -37,6 +40,10 @@ func NewScoring(cfg config.Scoring, source clock.Clock) (*Scoring, error) {
 	if err != nil {
 		return nil, err
 	}
+	calculator, err := economics.NewCalculator(policy.Economics)
+	if err != nil {
+		return nil, err
+	}
 	if source == nil {
 		source = clock.System{}
 	}
@@ -44,7 +51,7 @@ func NewScoring(cfg config.Scoring, source clock.Clock) (*Scoring, error) {
 		source = clock.Fixed{Time: *cfg.EvaluationDate}
 	}
 	return &Scoring{
-		Settings: cfg, Policy: policy, Clock: source,
+		Settings: cfg, Policy: policy, Economics: calculator, Clock: source,
 		BankHTTP:       &http.Client{Timeout: cfg.BankTimeout},
 		StatementsHTTP: &http.Client{Timeout: cfg.StatementsTimeout},
 		Server:         httpapi.NewServer(cfg.Addr, cfg.WriteTimeout, httpapi.NewRouter()),
@@ -63,11 +70,15 @@ func NewBank(cfg config.Bank, source clock.Clock) (*Bank, error) {
 	if err != nil {
 		return nil, err
 	}
+	calculator, err := economics.NewCalculator(policy.Economics)
+	if err != nil {
+		return nil, err
+	}
 	if source == nil {
 		source = clock.System{}
 	}
 	return &Bank{
-		Settings: cfg, Policy: policy, InitialState: state, Clock: source,
+		Settings: cfg, Policy: policy, Economics: calculator, InitialState: state, Clock: source,
 		AdminHTTP: &http.Client{Timeout: cfg.AdminTimeout},
 		Server:    httpapi.NewServer(cfg.Addr, cfg.WriteTimeout, httpapi.NewRouter()),
 	}, nil
