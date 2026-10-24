@@ -34,3 +34,14 @@ export async function seedToken(page: Page, user: UserKey) {
 export async function expectPath(page: Page, path: string) {
     await expect(page).toHaveURL((url) => url.pathname === path);
 }
+
+/** Сбой в моке по флагу (см. mockFailure в src/mocks/handlers.ts). */
+export type MockFailure = { method: string; path: string; status: number; code?: string; field?: string; times?: number };
+
+export async function setMockFailures(page: Page, rules: MockFailure[]) {
+    await page.evaluate((r) => localStorage.setItem('credit-cabinet:mock-fail', JSON.stringify(r)), rules);
+}
+
+export async function clearMockFailures(page: Page) {
+    await page.evaluate(() => localStorage.removeItem('credit-cabinet:mock-fail'));
+}

@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@alfalab/core-components/button';
 import { Plate } from '@alfalab/core-components/plate';
 import { Segment, SegmentedControl } from '@alfalab/core-components/segmented-control';
@@ -8,6 +8,7 @@ import { Typography } from '@alfalab/core-components/typography';
 import { useMockLogin, useTestUsers } from '../../api/queries';
 import type { UserRole } from '../../api/types';
 import { shortName } from '../../shared/lib/format';
+import { useRovingRadio } from '../../shared/lib/useRovingRadio';
 import { Logo } from '../../shared/ui/Logo/Logo';
 import { PersonaCard } from './components/PersonaCard';
 import './LoginPage.css';
@@ -22,23 +23,12 @@ export function LoginPage() {
     const login = useMockLogin();
     const [role, setRole] = useState<UserRole>('CLIENT');
     const [selectedId, setSelectedId] = useState<string>();
-    const listRef = useRef<HTMLDivElement>(null);
 
     const visible = useMemo(() => (users ?? []).filter((u) => u.roles.includes(role)), [users, role]);
     // По умолчанию выбран первый пользователь вкладки.
     const selected = visible.find((u) => u.id === selectedId) ?? visible[0];
 
-    // Стрелки перемещают выбор внутри radiogroup (паттерн WAI-ARIA)
-    const handleKeyDown = (index: number) => (e: KeyboardEvent<HTMLButtonElement>) => {
-        const delta = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 0;
-        if (!delta || !visible.length) return;
-        e.preventDefault();
-        const next = (index + delta + visible.length) % visible.length;
-        const nextUser = visible[next];
-        if (!nextUser) return;
-        setSelectedId(nextUser.id);
-        listRef.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]?.focus();
-    };
+    const { ref: radiosRef, onKeyDown: onRadioKeyDown } = useRovingRadio(visible, (user) => setSelectedId(user.id));
 
     // Переход после входа делает LoginRoute: как только появляется токен, он уводит на домашнюю страницу роли.
     const handleLogin = () => {
@@ -92,7 +82,7 @@ export function LoginPage() {
                         </Plate>
                     )}
 
-                    <div ref={listRef} className='login__personas' role='radiogroup' aria-label='Тестовый пользователь'>
+                    <div ref={radiosRef} className='login__personas' role='radiogroup' aria-label='Тестовый пользователь'>
                         {isLoading &&
                             [0, 1, 2].map((i) => <Skeleton key={i} visible={true} className='login__persona-skeleton' />)}
                         {visible.map((user, i) => (
@@ -101,7 +91,7 @@ export function LoginPage() {
                                 user={user}
                                 checked={user.id === selected?.id}
                                 onSelect={() => setSelectedId(user.id)}
-                                onKeyDown={handleKeyDown(i)}
+                                onKeyDown={onRadioKeyDown(i)}
                             />
                         ))}
                     </div>

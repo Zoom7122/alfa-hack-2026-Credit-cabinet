@@ -68,8 +68,8 @@ test.describe('Главная клиента', () => {
     test('переход по строке заявки и «На главную» из заглушки', async ({ page }) => {
         await seedToken(page, 'director');
         await page.goto('/');
-        await page.getByRole('link', { name: /Кредит на оборудование/ }).click();
-        await expectPath(page, '/applications/app_000140');
+        await page.getByRole('link', { name: /Кредит на транспорт/ }).click();
+        await expectPath(page, '/applications/app_000131');
         await expect(page.getByRole('heading', { name: 'Экран в разработке' })).toBeVisible();
         await page.getByRole('link', { name: 'На главную', exact: true }).click();
         await expectPath(page, '/');
@@ -82,5 +82,15 @@ test.describe('Главная клиента', () => {
         await expectPath(page, '/login');
         await page.goto('/');
         await expectPath(page, '/login');
+    });
+
+    test('черновик открывается в анкете, «Новая заявка» ведёт в подбор', async ({ page }) => {
+        await seedToken(page, 'director');
+        await page.goto('/');
+        await page.getByRole('link', { name: /Кредит на оборудование/ }).click();
+        await expectPath(page, '/applications/app_000140/edit/finance');
+        await page.goto('/');
+        await page.getByRole('link', { name: 'Новая заявка' }).click();
+        await expectPath(page, '/products');
     });
 });

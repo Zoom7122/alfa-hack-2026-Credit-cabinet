@@ -10,7 +10,7 @@ type Props = {
     user: TestUser;
     checked: boolean;
     onSelect: () => void;
-    onKeyDown?: (e: KeyboardEvent<HTMLButtonElement>) => void;
+    onKeyDown?: (e: KeyboardEvent<HTMLElement>) => void;
 };
 
 function subtitle(user: TestUser) {

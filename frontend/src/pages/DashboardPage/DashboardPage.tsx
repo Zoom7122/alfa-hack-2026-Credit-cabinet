@@ -78,7 +78,7 @@ export function DashboardPage({ me, company }: Props) {
                 <Typography.TitleResponsive tag='h1' view='large' font='system'>
                     Добрый день, {[first, middle].filter(Boolean).join(' ')}
                 </Typography.TitleResponsive>
-                <Button Component={Link} href='/applications/new' view='accent' size={56} leftAddons={<PlusMIcon />}>
+                <Button Component={Link} href='/products' view='accent' size={56} leftAddons={<PlusMIcon />}>
                     Новая заявка
                 </Button>
             </div>

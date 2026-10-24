@@ -1,0 +1,22 @@
+.entry-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-16);
+    padding: var(--gap-20);
+    border-radius: var(--border-radius-20);
+    box-shadow: inset 0 0 0 1px var(--color-light-neutral-300);
+}
+
+.entry-card__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-12);
+}
+
+.entry-card__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: var(--gap-16);
+}

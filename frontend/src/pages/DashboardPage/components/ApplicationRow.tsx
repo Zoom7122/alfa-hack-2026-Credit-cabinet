@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import type { ApplicationStatusView, ApplicationSummary } from '../../../api/types';
 import { CLOSED_REASONS, STAGE_BADGES } from '../../../shared/lib/dictionaries';
 import { formatMoney, formatMonths, formatUpdated, pluralize } from '../../../shared/lib/format';
+import { applicationPath } from '../../../shared/lib/routes';
 import './ApplicationRow.css';
 
 const PRODUCT_ICONS: Record<string, typeof BriefcaseMIcon> = {
@@ -56,7 +57,7 @@ export function ApplicationRow({ application: app, productName, status }: Props)
         .join(' · ');
 
     return (
-        <Link to={`/applications/${app.id}`} className='application-row'>
+        <Link to={applicationPath(app)} className='application-row'>
             <span className='application-row__icon' aria-hidden='true'>
                 <Icon />
             </span>

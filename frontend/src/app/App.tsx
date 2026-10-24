@@ -1,3 +1,5 @@
+import { lazy, type ReactNode, Suspense } from 'react';
+import { Spinner } from '@alfalab/core-components/spinner';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useOutletContext } from 'react-router-dom';
 
@@ -21,6 +23,25 @@ const queryClient = new QueryClient({
     },
 });
 
+// формы с тяжёлыми компонентами кита грузим отдельным чанком
+const ProductsPage = lazy(() => import('../pages/ProductsPage/ProductsPage').then((m) => ({ default: m.ProductsPage })));
+const NewApplicationPage = lazy(() => import('../pages/WizardPage/WizardPage').then((m) => ({ default: m.NewApplicationPage })));
+const WizardPage = lazy(() => import('../pages/WizardPage/WizardPage').then((m) => ({ default: m.WizardPage })));
+
+function Lazy({ children }: { children: ReactNode }) {
+    return (
+        <Suspense
+            fallback={
+                <div className='app__loading'>
+                    <Spinner visible={true} preset={48} />
+                </div>
+            }
+        >
+            {children}
+        </Suspense>
+    );
+}
+
 /** Кабинет клиента: шапка + страница. */
 function ClientLayout() {
     const { me } = useOutletContext<AuthContext>();
@@ -43,6 +64,33 @@ function DashboardRoute() {
     return <DashboardPage me={me} company={me.companies[0]} />;
 }
 
+function ProductsRoute() {
+    const { me } = useOutletContext<AuthContext>();
+    return (
+        <Lazy>
+            <ProductsPage company={me.companies[0]} />
+        </Lazy>
+    );
+}
+
+function NewApplicationRoute() {
+    const { me } = useOutletContext<AuthContext>();
+    return (
+        <Lazy>
+            <NewApplicationPage me={me} />
+        </Lazy>
+    );
+}
+
+function WizardRoute() {
+    const { me } = useOutletContext<AuthContext>();
+    return (
+        <Lazy>
+            <WizardPage me={me} />
+        </Lazy>
+    );
+}
+
 /** Залогиненного сразу отправляем на его домашнюю страницу — единственное место редиректа после входа. */
 function LoginRoute() {
     const token = useToken();
@@ -61,8 +109,12 @@ export function App() {
                     <Route element={<RequireAuth role='CLIENT' />}>
                         <Route element={<ClientLayout />}>
                             <Route index={true} element={<DashboardRoute />} />
+                            <Route path='products' element={<ProductsRoute />} />
                             <Route path='*' element={<NotReadyPage />} />
                         </Route>
+                        {/* анкета — без шапки кабинета */}
+                        <Route path='/applications/new' element={<NewApplicationRoute />} />
+                        <Route path='/applications/:applicationId/edit/:step?' element={<WizardRoute />} />
                     </Route>
                     <Route path='/backoffice' element={<RequireAuth role='UNDERWRITER' />}>
                         <Route path='*' element={<NotReadyPage standalone={true} />} />

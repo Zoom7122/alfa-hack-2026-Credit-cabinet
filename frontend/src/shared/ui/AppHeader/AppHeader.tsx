@@ -3,7 +3,7 @@ import { IconButton } from '@alfalab/core-components/icon-button';
 import { Indicator } from '@alfalab/core-components/indicator';
 import { Typography } from '@alfalab/core-components/typography';
 import { BellMIcon } from '@alfalab/icons-glyph/BellMIcon';
-import { NavLink } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 import type { CompanyAccess, Me } from '../../../api/types';
 import { ROLE_LABELS } from '../../lib/dictionaries';
@@ -19,38 +19,39 @@ type Props = {
 };
 
 const NAV = [
-    { to: '/', label: 'Кредиты', end: true },
+    { to: '/', label: 'Кредиты' },
     { to: '/accounts', label: 'Счета' },
     { to: '/documents', label: 'Документы' },
 ];
 
+/** «Кредиты» — всё, что не другие разделы: главная, подбор, заявки. Link, а не NavLink: активность считаем сами. */
+const isSection = (to: string, pathname: string) =>
+    to === '/' ? !NAV.some((n) => n.to !== '/' && pathname.startsWith(n.to)) : pathname.startsWith(to);
+
 export function AppHeader({ me, company, hasNotifications, onLogout }: Props) {
+    const { pathname } = useLocation();
     return (
         <header className='app-header'>
             <div className='app-header__inner'>
-                <NavLink to='/' className='app-header__logo' aria-label='Альфа Бизнес — на главную'>
+                <Link to='/' className='app-header__logo' aria-label='Альфа Бизнес — на главную'>
                     <Logo />
                     <Typography.Text view='primary-large' weight='bold'>
                         Альфа Бизнес
                     </Typography.Text>
-                </NavLink>
+                </Link>
 
                 <nav className='app-header__nav' aria-label='Разделы'>
                     {NAV.map((item) => (
-                        <NavLink
+                        <Link
                             key={item.to}
                             to={item.to}
-                            end={item.end}
-                            className={({ isActive }) =>
-                                `app-header__nav-link${isActive ? ' app-header__nav-link_active' : ''}`
-                            }
+                            aria-current={isSection(item.to, pathname) ? 'page' : undefined}
+                            className={`app-header__nav-link${isSection(item.to, pathname) ? ' app-header__nav-link_active' : ''}`}
                         >
-                            {({ isActive }) => (
-                                <Typography.Text view='primary-medium' weight={isActive ? 'bold' : 'regular'}>
-                                    {item.label}
-                                </Typography.Text>
-                            )}
-                        </NavLink>
+                            <Typography.Text view='primary-medium' weight={isSection(item.to, pathname) ? 'bold' : 'regular'}>
+                                {item.label}
+                            </Typography.Text>
+                        </Link>
                     ))}
                 </nav>
 

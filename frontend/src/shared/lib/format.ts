@@ -7,6 +7,38 @@ export function formatMonths(n: number) {
     return `${n} мес.`;
 }
 
+/** 24 → «24 месяца» */
+export function formatMonthsLong(n: number) {
+    return `${n} ${pluralize(n, 'месяц', 'месяца', 'месяцев')}`;
+}
+
+const compact = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
+
+/** 300000 → «300 тыс.», 30000000 → «30 млн», 1500000 → «1,5 млн». */
+export function formatCompactMoney(rub: number) {
+    if (Math.abs(rub) >= 1_000_000) return `${compact.format(rub / 1_000_000)} млн`;
+    if (Math.abs(rub) >= 1_000) return `${compact.format(rub / 1_000)} тыс.`;
+    return compact.format(rub);
+}
+
+const rate = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 });
+
+/** 18.5 → «18,5%» */
+export const formatRate = (value: number) => `${rate.format(value)}%`;
+
+const sizeFmt = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
+
+export function formatFileSize(bytes: number) {
+    if (bytes >= 1024 * 1024) return `${sizeFmt.format(bytes / 1024 / 1024)} МБ`;
+    return `${sizeFmt.format(Math.max(1, Math.round(bytes / 1024)))} КБ`;
+}
+
+/** «2019-03-14» → «14.03.2019» без парсинга (часовые пояса не сдвигают дату). */
+export function formatIsoDate(date: string) {
+    const [y, m, d] = date.slice(0, 10).split('-');
+    return y && m && d ? `${d}.${m}.${y}` : date;
+}
+
 const dayFmt = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' });
 const timeFmt = new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
@@ -23,6 +55,13 @@ export function formatUpdated(iso: string, now = new Date()) {
 export function formatDay(iso: string) {
     return dayFmt.format(new Date(iso));
 }
+
+export const formatTime = (iso: string) => timeFmt.format(new Date(iso));
+
+const dateFmt = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+/** Момент времени → «12.05.2026» в часовом поясе пользователя. */
+export const formatDate = (iso: string) => dateFmt.format(new Date(iso));
 
 /** «Петров Пётр Петрович» → { last: 'Петров', first: 'Пётр', middle: 'Петрович' } */
 export function splitName(full: string) {
