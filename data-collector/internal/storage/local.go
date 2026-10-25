@@ -1,5 +1,5 @@
-// Package storage — файлы документов на диске (в docker — volume, общий с будущими
-// worker'ами проверки подписи и OCR).
+// Package storage — файлы документов на диске (в docker — volume, общий с worker'ом проверки
+// подписи и будущим OCR).
 package storage
 
 import (
@@ -56,7 +56,7 @@ func (s *Local) Stage(name string, r io.Reader) (Staged, error) {
 		err = ErrTooLarge
 	}
 	if err == nil {
-		err = os.Chmod(f.Name(), 0o640) // читают и будущие worker'ы
+		err = os.Chmod(f.Name(), 0o640) // читает и worker подписи (тот же uid в образе)
 	}
 	if err != nil {
 		_ = os.Remove(f.Name())
