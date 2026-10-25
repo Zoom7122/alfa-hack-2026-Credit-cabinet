@@ -1,0 +1,74 @@
+{
+  "items": [
+    {
+      "notification_number": "2025-009-381245-617",
+      "registered_at": "2025-04-17T11:32:08+03:00",
+      "status": "ACTIVE",
+      "pledgors": [
+        {
+          "type": "LEGAL",
+          "inn": "7799000020",
+          "ogrn": "1197700523456",
+          "name": "ООО \"СТРОЙРЕСУРС\""
+        }
+      ],
+      "pledgees": [
+        {
+          "type": "LEGAL",
+          "inn": "7703451122",
+          "name": "АО \"РЕГИОН-КРЕДИТ\""
+        }
+      ],
+      "contract": {
+        "name": "Договор залога оборудования",
+        "number": "ДЗ-2025/0417",
+        "date": "2025-04-15",
+        "term_until": "2028-04-15"
+      },
+      "subjects": [
+        {
+          "class": "EQUIPMENT",
+          "serial": "JCB3CX2023118457",
+          "vin": null,
+          "description": "Экскаватор-погрузчик JCB 3CX, 2023 г.в."
+        }
+      ],
+      "notary": "Нотариус г. Москвы Кузнецова Е. В."
+    },
+    {
+      "notification_number": "2026-004-117903-552",
+      "registered_at": "2026-02-26T15:08:44+03:00",
+      "status": "ACTIVE",
+      "pledgors": [
+        {
+          "type": "LEGAL",
+          "inn": "7799000020",
+          "ogrn": "1197700523456",
+          "name": "ООО \"СТРОЙРЕСУРС\""
+        }
+      ],
+      "pledgees": [
+        {
+          "type": "LEGAL",
+          "inn": "7744001234",
+          "name": "ПАО \"БАНК ВОСТОК\""
+        }
+      ],
+      "contract": {
+        "name": "Договор залога транспортного средства",
+        "number": "ЗТС-26/112",
+        "date": "2026-02-20",
+        "term_until": "2029-02-20"
+      },
+      "subjects": [
+        {
+          "class": "VEHICLE",
+          "serial": null,
+          "vin": "XTC652005N1498213",
+          "description": "Самосвал КАМАЗ 65115, 2022 г.в."
+        }
+      ],
+      "notary": "Нотариус г. Москвы Белова Т. С."
+    }
+  ]
+}

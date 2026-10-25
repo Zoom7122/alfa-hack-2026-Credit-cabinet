@@ -3,10 +3,17 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /data-collector ./cmd/data-collector
+# три бинаря одного модуля: API, publisher outbox → Kafka, worker сбора
+RUN for cmd in data-collector:data-collector data-collector-publisher:outbox-publisher data-collector-worker:worker; do \
+        CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o "/out/bin/${cmd%%:*}" "./cmd/${cmd#*:}" || exit 1; \
+    done && \
+    mkdir -p /out/data/documents
 
 FROM gcr.io/distroless/static-debian12:nonroot
-COPY --from=build /data-collector /data-collector
-ENV GIN_MODE=release HTTP_ADDR=:8081
+COPY --from=build /out/bin/ /
+# папка файлов документов принадлежит nonroot: новый volume берёт владельца отсюда, иначе API не сможет писать
+COPY --from=build --chown=65532:65532 /out/data /data
+ENV GIN_MODE=release HTTP_ADDR=:8081 DOCUMENTS_DIR=/data/documents
 EXPOSE 8081
+# publisher и worker запускаются из того же образа: entrypoint /data-collector-publisher, /data-collector-worker
 ENTRYPOINT ["/data-collector"]

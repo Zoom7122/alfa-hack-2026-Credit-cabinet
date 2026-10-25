@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1230" viewBox="0 0 1400 1230" role="img" aria-labelledby="title desc">
+<title id="title">UC-06. Первая выдача влияет на следующую заявку</title>
+<desc id="desc">Учебный внутренний лимит: после выдачи должно остаться не менее 6 млн руб.</desc>
+<rect width="1400" height="1230" fill="white"/>
+<g font-family="Arial, sans-serif">
+<text x="700" y="36" text-anchor="middle" dominant-baseline="central" font-size="34" font-weight="700" fill="#102640">UC-06. Первая выдача влияет на следующую заявку</text>
+<text x="700" y="75" text-anchor="middle" dominant-baseline="central" font-size="21" font-weight="400" fill="#475569">Учебный внутренний лимит: после выдачи должно остаться не менее 6 млн руб.</text>
+<polyline points="700,245 700,440" fill="none" stroke="#718096" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="700,440 695.315,430.048 704.685,430.048" fill="#718096"/>
+<polyline points="420,512.5 510,512.5" fill="none" stroke="#718096" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="510,512.5 500.048,517.185 500.048,507.815" fill="#718096"/>
+<polyline points="890,512.5 980,512.5" fill="none" stroke="#718096" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="980,512.5 970.048,517.185 970.048,507.815" fill="#718096"/>
+<polyline points="1170,585 1170,700 700,700 700,820" fill="none" stroke="#718096" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="700,820 695.315,810.048 704.685,810.048" fill="#718096"/>
+<rect x="758.0" y="662" width="284.0" height="26" rx="3" fill="white" stroke="white" stroke-width="2"/>
+<text x="900" y="675" text-anchor="middle" dominant-baseline="central" font-size="19" font-weight="400" fill="#475569">Проверка на новом состоянии</text>
+<polyline points="420,892.5 510,892.5" fill="none" stroke="#718096" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="510,892.5 500.048,897.185 500.048,887.815" fill="#718096"/>
+<polyline points="890,892.5 980,892.5" fill="none" stroke="#718096" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="980,892.5 970.048,897.185 970.048,887.815" fill="#718096"/>
+<rect x="420" y="130" width="560" height="115" rx="14" fill="#edf5fa" stroke="#45758c" stroke-width="2"/>
+<text x="700" y="169.5" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#234e63">МС2 · начальное состояние</text>
+<text x="700" y="201" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#234e63">Доступные средства: 10 млн руб.</text>
+<rect x="40" y="440" width="380" height="145" rx="14" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="230" y="480.5" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#16366d">МС1 → МС2</text>
+<text x="230" y="512" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#16366d">Заявка № 1 предварительно</text>
+<text x="230" y="540" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#16366d">одобрена: 3 млн руб.</text>
+<rect x="510" y="440" width="380" height="145" rx="14" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="700" y="480.5" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#4c1d95">МС2 · проверка</text>
+<text x="700" y="512" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#4c1d95">10 − 3 = 7 млн руб. Минимум 6</text>
+<text x="700" y="540" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#4c1d95">соблюдён</text>
+<rect x="980" y="440" width="380" height="145" rx="14" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+<text x="1170" y="480.5" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#166534">МС2 · выдача</text>
+<text x="1170" y="512" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="700" fill="#166534">Сохраняет остаток 7 млн</text>
+<text x="1170" y="540" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="700" fill="#166534">руб.</text>
+<rect x="40" y="820" width="380" height="145" rx="14" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="230" y="860.5" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#16366d">МС1 → МС2</text>
+<text x="230" y="892" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#16366d">Заявка № 2 предварительно</text>
+<text x="230" y="920" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#16366d">одобрена: 2 млн руб.</text>
+<rect x="510" y="820" width="380" height="145" rx="14" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="700" y="860.5" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#4c1d95">МС2 · проверка</text>
+<text x="700" y="892" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#4c1d95">7 − 2 = 5 млн руб. Ниже</text>
+<text x="700" y="920" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#4c1d95">минимума 6</text>
+<rect x="980" y="820" width="380" height="145" rx="14" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+<text x="1170" y="860.5" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#92400e">МС2 · без выдачи</text>
+<text x="1170" y="892" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="700" fill="#92400e">Фактический остаток</text>
+<text x="1170" y="920" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="700" fill="#92400e">остаётся 7 млн руб.</text>
+<text x="700" y="1050" text-anchor="middle" dominant-baseline="central" font-size="22" font-weight="400" fill="#334155">Заявка № 1: МС1 → клиент «Одобрено»; МС2 → МС3 уведомление о выдаче.</text>
+<text x="700" y="1100" text-anchor="middle" dominant-baseline="central" font-size="22" font-weight="400" fill="#334155">Заявка № 2: МС1 → клиент «Заявка на рассмотрении»; МС2 → МС3 описание проблемы.</text>
+<text x="700" y="1182" text-anchor="middle" dominant-baseline="central" font-size="20" font-weight="400" fill="#475569">Все остальные проверки в примере выполнены. Начальные значения заданы для демонстрации.</text>
+</g>
+</svg>

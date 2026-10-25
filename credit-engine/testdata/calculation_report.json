@@ -1,0 +1,187 @@
+{
+  "result": "PASSED",
+  "scenario_count": 17,
+  "decision_count": 18,
+  "bank_case_count": 7,
+  "date": "2026-10-23",
+  "method": "Offline Decimal reference calculations; neither Go service is implemented or executed.",
+  "second_loan_after_reset": "APPROVED",
+  "cases": [
+    {
+      "case_id": "auto_ip_extend_term",
+      "status": "APPROVED",
+      "score": 978,
+      "questionnaire": 750,
+      "economics": 227.5,
+      "terms": {
+        "amount_rub": 3000000,
+        "term_months": 24,
+        "annual_rate": 23.75
+      }
+    },
+    {
+      "case_id": "auto_ip_no_acceptable_amount",
+      "status": "UNDER_REVIEW",
+      "score": 974,
+      "questionnaire": 750,
+      "economics": 223.75,
+      "terms": null
+    },
+    {
+      "case_id": "auto_le_rate_too_low",
+      "status": "UNDER_REVIEW",
+      "score": 976,
+      "questionnaire": 750,
+      "economics": 226.25,
+      "terms": null
+    },
+    {
+      "case_id": "auto_le_reduce_amount",
+      "status": "APPROVED",
+      "score": 976,
+      "questionnaire": 750,
+      "economics": 226.25,
+      "terms": {
+        "amount_rub": 3130000,
+        "term_months": 24,
+        "annual_rate": 20.25
+      }
+    },
+    {
+      "case_id": "extra_ip_confirmed_stop",
+      "status": "REJECTED",
+      "score": null,
+      "questionnaire": null,
+      "economics": null,
+      "terms": null
+    },
+    {
+      "case_id": "extra_le_stop_before_missing_data",
+      "status": "REJECTED",
+      "score": null,
+      "questionnaire": null,
+      "economics": null,
+      "terms": null
+    },
+    {
+      "case_id": "uc01_ip_need_data",
+      "status": "NEED_INFO",
+      "score": null,
+      "questionnaire": null,
+      "economics": null,
+      "terms": null
+    },
+    {
+      "case_id": "uc01_le_need_data",
+      "status": "NEED_INFO",
+      "score": null,
+      "questionnaire": null,
+      "economics": null,
+      "terms": null
+    },
+    {
+      "case_id": "uc02_ip_declined",
+      "status": "REJECTED",
+      "score": 408,
+      "questionnaire": 275,
+      "economics": 132.5,
+      "terms": null
+    },
+    {
+      "case_id": "uc02_le_declined",
+      "status": "REJECTED",
+      "score": 496,
+      "questionnaire": 390,
+      "economics": 106.25,
+      "terms": null
+    },
+    {
+      "case_id": "uc03_ip_manual",
+      "status": "UNDER_REVIEW",
+      "score": 628,
+      "questionnaire": 450,
+      "economics": 177.5,
+      "terms": null
+    },
+    {
+      "case_id": "uc03_le_manual",
+      "status": "UNDER_REVIEW",
+      "score": 626,
+      "questionnaire": 505,
+      "economics": 121.25,
+      "terms": null
+    },
+    {
+      "case_id": "uc04_ip_approved",
+      "status": "APPROVED",
+      "score": 991,
+      "questionnaire": 750,
+      "economics": 241.25,
+      "terms": {
+        "amount_rub": 3000000,
+        "term_months": 22,
+        "annual_rate": 24
+      }
+    },
+    {
+      "case_id": "uc04_le_approved",
+      "status": "APPROVED",
+      "score": 976,
+      "questionnaire": 750,
+      "economics": 226.25,
+      "terms": {
+        "amount_rub": 3000000,
+        "term_months": 22,
+        "annual_rate": 24
+      }
+    },
+    {
+      "case_id": "uc05_ip_bank_review",
+      "status": "UNDER_REVIEW",
+      "score": 831,
+      "questionnaire": 605,
+      "economics": 226.25,
+      "terms": {
+        "amount_rub": 3000000,
+        "term_months": 22,
+        "annual_rate": 24
+      }
+    },
+    {
+      "case_id": "uc05_le_bank_review",
+      "status": "UNDER_REVIEW",
+      "score": 838,
+      "questionnaire": 655,
+      "economics": 182.5,
+      "terms": {
+        "amount_rub": 3000000,
+        "term_months": 22,
+        "annual_rate": 24
+      }
+    },
+    {
+      "case_id": "uc06_01_ip_issued",
+      "status": "APPROVED",
+      "score": 991,
+      "questionnaire": 750,
+      "economics": 241.25,
+      "terms": {
+        "amount_rub": 3000000,
+        "term_months": 22,
+        "annual_rate": 24
+      }
+    },
+    {
+      "case_id": "uc06_02_le_bank_review",
+      "status": "UNDER_REVIEW",
+      "score": 976,
+      "questionnaire": 750,
+      "economics": 226.25,
+      "terms": {
+        "amount_rub": 2000000,
+        "term_months": 22,
+        "annual_rate": 24
+      }
+    }
+  ]
+}

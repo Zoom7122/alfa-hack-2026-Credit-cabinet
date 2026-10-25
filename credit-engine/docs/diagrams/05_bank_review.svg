@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1060" viewBox="0 0 1100 1060" role="img" aria-labelledby="title desc">
+<title id="title">UC-05. Выдача создаёт проблемы у банка</title>
+<desc id="desc">Заёмщик прошёл скоринг, но предложенная сделка не прошла банковскую проверку.</desc>
+<rect width="1100" height="1060" fill="white"/>
+<g font-family="Arial, sans-serif">
+<text x="550" y="36" text-anchor="middle" dominant-baseline="central" font-size="34" font-weight="700" fill="#102640">UC-05. Выдача создаёт проблемы у банка</text>
+<text x="550" y="75" text-anchor="middle" dominant-baseline="central" font-size="21" font-weight="400" fill="#475569">Заёмщик прошёл скоринг, но предложенная сделка не прошла банковскую проверку.</text>
+<polyline points="550,250 550,380" fill="none" stroke="#718096" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="550,380 545.315,370.048 554.685,370.048" fill="#718096"/>
+<polyline points="550,525 550,625 267,625 267.5,735" fill="none" stroke="#718096" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="267.5,735 262.769,725.069 272.14,725.027" fill="#718096"/>
+<rect x="146.5078125" y="587" width="236.984375" height="26" rx="3" fill="white" stroke="white" stroke-width="2"/>
+<text x="265" y="600" text-anchor="middle" dominant-baseline="central" font-size="19" font-weight="400" fill="#475569">Сообщение о проблемах</text>
+<polyline points="550,525 550,625 832,625 832.5,735" fill="none" stroke="#718096" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="832.5,735 827.769,725.069 837.14,725.027" fill="#718096"/>
+<rect x="714.0" y="587" width="242.0" height="26" rx="3" fill="white" stroke="white" stroke-width="2"/>
+<text x="835" y="600" text-anchor="middle" dominant-baseline="central" font-size="19" font-weight="400" fill="#475569">Выдача не подтверждена</text>
+<rect x="330" y="135" width="440" height="115" rx="14" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="550" y="160.5" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#16366d">МС1 → МС2 · REST</text>
+<text x="550" y="192" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#16366d">Передаёт предварительно</text>
+<text x="550" y="220" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#16366d">одобренную заявку и условия</text>
+<rect x="330" y="380" width="440" height="145" rx="14" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="550" y="406.5" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#4c1d95">МС2</text>
+<text x="550" y="438" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#4c1d95">Расчёт после выдачи выявил</text>
+<text x="550" y="466" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#4c1d95">нарушение норматива или другого</text>
+<text x="550" y="494" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#4c1d95">ограничения</text>
+<rect x="55" y="735" width="425" height="145" rx="14" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+<text x="267.5" y="775.5" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#1e293b">МС2 → МС3 · REST</text>
+<text x="267.5" y="807" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#1e293b">Заявка и условия; проблемные</text>
+<text x="267.5" y="835" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="400" fill="#1e293b">показатели и причины</text>
+<rect x="620" y="735" width="425" height="145" rx="14" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+<text x="832.5" y="789.5" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="#92400e">МС1 → клиент</text>
+<text x="832.5" y="821" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="700" fill="#92400e">Заявка на рассмотрении</text>
+<text x="550" y="1012" text-anchor="middle" dominant-baseline="central" font-size="20" font-weight="400" fill="#475569">Кредит не выдаётся, состояние банка не меняется. После уведомления сценарий завершён.</text>
+</g>
+</svg>

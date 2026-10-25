@@ -1,0 +1,64 @@
+{
+  "PERSON": {
+    "report_id": "NBKI-RPT-FAE5B9",
+    "bureau": "NBKI",
+    "generated_at": "2026-10-22T10:15:07Z",
+    "subject": {
+      "type": "PERSON",
+      "inn": "779900040158",
+      "name": "Зайцева Ольга Михайловна",
+      "birth_date": "1981-09-14"
+    },
+    "has_history": true,
+    "score": {
+      "value": 702,
+      "min": 300,
+      "max": 850,
+      "grade": "B",
+      "model": "MOCK-RETAIL-v1"
+    },
+    "summary": {
+      "active_accounts": 1,
+      "closed_accounts": 0,
+      "total_limit": 250000.00,
+      "total_outstanding": 31000.00,
+      "total_monthly_payment": 930.00,
+      "current_overdue_amount": 0.00,
+      "max_overdue_days_ever": 0,
+      "overdue_30p_24m": 0,
+      "overdue_60p_24m": 0,
+      "overdue_90p_24m": 0,
+      "restructured_count": 0,
+      "inquiries_7d": 1,
+      "inquiries_30d": 1,
+      "inquiries_90d": 1
+    },
+    "accounts": [
+      {
+        "account_id": "ACC-1",
+        "creditor_type": "BANK",
+        "creditor_name": "ПАО \"СТОЛИЧНЫЙ БАНК\"",
+        "product_type": "CREDIT_CARD",
+        "role": "BORROWER",
+        "currency": "RUB",
+        "opened_at": "2020-10-01",
+        "planned_close_at": "2028-10-01",
+        "limit": 250000.00,
+        "outstanding": 31000.00,
+        "monthly_payment": 930.00,
+        "status": "ACTIVE",
+        "current_overdue_days": 0,
+        "current_overdue_amount": 0.00,
+        "payment_history_24m": "000000000000000000000000",
+        "collateral": false
+      }
+    ],
+    "inquiries": [
+      {
+        "date": "2026-10-21",
+        "creditor_type": "BANK",
+        "purpose": "LOAN_APPLICATION"
+      }
+    ]
+  }
+}

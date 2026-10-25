@@ -1,0 +1,67 @@
+{
+  "versions": {
+    "RFM_TERRORISM_EXTREMISM": "2026-10-20",
+    "RFM_FREEZE": "2026-10-19",
+    "OFAC_SDN": "2026-10-17",
+    "UK": "2026-10-15",
+    "EU": "2026-10-16"
+  },
+  "entries": [
+    {
+      "list": "RFM_TERRORISM_EXTREMISM",
+      "entry_id": "RFM-55821",
+      "type": "PERSON",
+      "name": "ГРОМОВ ВИКТОР АНДРЕЕВИЧ",
+      "birth_date": "1979-03-02",
+      "inn": "779900099015"
+    },
+    {
+      "list": "RFM_FREEZE",
+      "entry_id": "RFM-F-10442",
+      "type": "LEGAL",
+      "name": "ООО \"ТРАНЗИТ-ИНВЕСТ\"",
+      "birth_date": null,
+      "inn": "7799000099"
+    },
+    {
+      "list": "OFAC_SDN",
+      "entry_id": "SDN-48120",
+      "type": "LEGAL",
+      "name": "TRANZIT-INVEST LLC",
+      "birth_date": null,
+      "inn": "7799000099"
+    },
+    {
+      "list": "EU",
+      "entry_id": "EU-7781",
+      "type": "PERSON",
+      "name": "КОВАЛЕВ ИГОРЬ ПЕТРОВИЧ",
+      "birth_date": "1962-01-15",
+      "inn": null
+    },
+    {
+      "list": "UK",
+      "entry_id": "UK-RUS-1203",
+      "type": "PERSON",
+      "name": "БЕЛОВ АРТЕМ НИКОЛАЕВИЧ",
+      "birth_date": "1971-06-30",
+      "inn": null
+    },
+    {
+      "list": "OFAC_SDN",
+      "entry_id": "SDN-50233",
+      "type": "LEGAL",
+      "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР ТРЕЙД\"",
+      "birth_date": null,
+      "inn": "7799000507"
+    },
+    {
+      "list": "RFM_TERRORISM_EXTREMISM",
+      "entry_id": "RFM-60114",
+      "type": "PERSON",
+      "name": "ОРЛОВ ДЕНИС ПЕТРОВИЧ",
+      "birth_date": "1990-12-01",
+      "inn": null
+    }
+  ]
+}

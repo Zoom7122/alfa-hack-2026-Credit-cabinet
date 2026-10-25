@@ -1,0 +1,59 @@
+{
+  "person": {
+    "last_name": "Смирнова",
+    "first_name": "Анна",
+    "middle_name": "Викторовна",
+    "birth_date": "1993-05-27",
+    "inn": "779900010202"
+  },
+  "data": {
+    "passport": {
+      "series": "4517",
+      "number": "662301",
+      "issued_at": "2017-06-14",
+      "issuer": "ГУ МВД России по г. Москве",
+      "division_code": "770-095",
+      "valid": true
+    },
+    "inn": "779900010202",
+    "snils": "157-923-418 32",
+    "registration_address": "г. Москва, ул. Профсоюзная, д. 56, кв. 118",
+    "income": [
+      {
+        "year": "2025",
+        "sources": [
+          {
+            "type": "NPD",
+            "payer": "ООО \"ВАЙЛДБЕРРИЗ\"",
+            "amount": 2130000.00
+          },
+          {
+            "type": "NPD",
+            "payer": "ООО \"ИНТЕРНЕТ РЕШЕНИЯ\"",
+            "amount": 180000.00
+          }
+        ]
+      },
+      {
+        "year": "2024",
+        "sources": [
+          {
+            "type": "NPD",
+            "payer": "ООО \"ВАЙЛДБЕРРИЗ\"",
+            "amount": 1140000.00
+          }
+        ]
+      }
+    ],
+    "employment": [],
+    "npd_status": {
+      "registered": false,
+      "history": [
+        {
+          "from": "2024-02-05",
+          "to": "2026-07-27"
+        }
+      ]
+    }
+  }
+}

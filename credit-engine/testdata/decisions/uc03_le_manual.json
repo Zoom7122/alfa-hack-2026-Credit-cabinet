@@ -1,0 +1,1521 @@
+{
+  "case_id": "uc03_le_manual",
+  "user_story": "UC-03",
+  "bank_profile": "default",
+  "request": {
+    "application_id": "app-uc03_le_manual",
+    "borrower": {
+      "id": "borrower-uc03_le_manual",
+      "type": "LEGAL_ENTITY",
+      "inn": "9900000088",
+      "name": "ООО Демо 08"
+    },
+    "facts_date": "2026-10-20",
+    "credit_request": {
+      "purpose": "BUSINESS_DEVELOPMENT",
+      "amount_rub": 3000000,
+      "term_months": 24,
+      "max_annual_rate": 24,
+      "min_acceptable_amount_rub": 3000000,
+      "max_acceptable_term_months": 24
+    },
+    "need": {
+      "confirmed_cost_rub": 4000000,
+      "own_contribution_rub": 1000000
+    },
+    "cash": {
+      "free_after_own_contribution_rub": 2000000,
+      "minimum_required_rub": 100000
+    },
+    "monthly_history": [
+      {
+        "month": "2025-10",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 100000
+      },
+      {
+        "month": "2025-11",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 100000
+      },
+      {
+        "month": "2025-12",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 100000
+      },
+      {
+        "month": "2026-01",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 100000
+      },
+      {
+        "month": "2026-02",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 100000
+      },
+      {
+        "month": "2026-03",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 100000
+      },
+      {
+        "month": "2026-04",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 100000
+      },
+      {
+        "month": "2026-05",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 100000
+      },
+      {
+        "month": "2026-06",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 100000
+      },
+      {
+        "month": "2026-07",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 100000
+      },
+      {
+        "month": "2026-08",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 100000
+      },
+      {
+        "month": "2026-09",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 100000
+      }
+    ],
+    "financial_debt_rub": 8000000,
+    "future_debt_payments": [
+      {
+        "month": "2026-11",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2026-12",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2027-01",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2027-02",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2027-03",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2027-04",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2027-05",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2027-06",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2027-07",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2027-08",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2027-09",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2027-10",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2027-11",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2027-12",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2028-01",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2028-02",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2028-03",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2028-04",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2028-05",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2028-06",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2028-07",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2028-08",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2028-09",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2028-10",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2028-11",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2028-12",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2029-01",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2029-02",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2029-03",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2029-04",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2029-05",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2029-06",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2029-07",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2029-08",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2029-09",
+        "payment_rub": 100000
+      },
+      {
+        "month": "2029-10",
+        "payment_rub": 100000
+      }
+    ],
+    "evidence": {
+      "confirmed_receipts_rub": 22080000,
+      "unexplained_difference_rub": 0,
+      "largest_buyer_group_receipts_rub": 9600000
+    },
+    "scoring": {
+      "ip": null,
+      "legal_entity": {
+        "active": true,
+        "bankrupt": false,
+        "material_forgery": false,
+        "credit_prohibited": false,
+        "identity_and_authority_verified": true,
+        "consents_verified": true,
+        "bureau_received": true,
+        "debts_complete": true,
+        "documents_complete": true,
+        "free_cash_source_verified": true,
+        "material_account_restriction": true,
+        "material_dispute_or_enforcement": true,
+        "key_buyer_loss": false,
+        "structural_business_change": false,
+        "business_age_months": 30,
+        "credit_history_months": 48,
+        "current_dpd_days": 0,
+        "worst_repaid_dpd_days_24m": 20,
+        "applications_90d": 0,
+        "overdue_taxes_rub": 0,
+        "bank_relationship_months": 12,
+        "manager_experience_years": 2,
+        "report_verification_level": 2,
+        "organization_and_related_debts_complete": true,
+        "material_register_inaccuracy": false,
+        "auditor_opinion": "MATERIAL_MODIFICATION",
+        "need_evidence": "VERIFIED_ESTIMATE",
+        "operating_nonfinancial_company": true,
+        "liquidated_or_excluded": false
+      }
+    },
+    "ip_economic_data": null
+  },
+  "service_b_response": {
+    "borrower_id": "borrower-uc03_le_manual",
+    "annual_reports": [
+      {
+        "year": 2024,
+        "period_end": "2024-12-31",
+        "balance": {
+          "unit": "THOUSAND_RUB",
+          "intangible_assets": 0,
+          "research_and_development": 0,
+          "intangible_exploration_assets": 0,
+          "tangible_exploration_assets": 0,
+          "fixed_assets": 8000,
+          "income_bearing_tangible_investments": 0,
+          "long_term_financial_investments": 0,
+          "deferred_tax_assets": 0,
+          "other_non_current_assets": 0,
+          "non_current_assets": 8000,
+          "inventories": 7000,
+          "vat_on_acquired_assets": 0,
+          "receivables": 4000,
+          "short_term_financial_investments": 500,
+          "cash_and_equivalents": 500,
+          "other_current_assets": 0,
+          "current_assets": 12000,
+          "total_assets": 20000,
+          "charter_capital": 1000,
+          "treasury_shares": 0,
+          "revaluation_reserve": 0,
+          "additional_capital": 0,
+          "reserve_capital": 0,
+          "retained_earnings": 4000,
+          "equity": 5000,
+          "long_term_borrowings": 4000,
+          "deferred_tax_liabilities": 0,
+          "long_term_provisions": 0,
+          "other_long_term_liabilities": 1000,
+          "long_term_liabilities": 5000,
+          "short_term_borrowings": 4000,
+          "payables": 6000,
+          "deferred_income": 0,
+          "short_term_provisions": 0,
+          "other_short_term_liabilities": 0,
+          "current_liabilities": 10000,
+          "total_equity_and_liabilities": 20000
+        },
+        "profit_and_loss": {
+          "unit": "THOUSAND_RUB",
+          "revenue": 24000,
+          "cost_of_sales": 18080,
+          "gross_profit": 5920,
+          "selling_expenses": 2000,
+          "administrative_expenses": 2000,
+          "sales_profit": 1920,
+          "participation_income": 0,
+          "interest_receivable": 0,
+          "interest_payable": 1200,
+          "other_income": 0,
+          "other_expenses": 0,
+          "profit_before_tax": 720,
+          "income_tax": 20,
+          "net_profit": 700
+        }
+      },
+      {
+        "year": 2025,
+        "period_end": "2025-12-31",
+        "balance": {
+          "unit": "THOUSAND_RUB",
+          "intangible_assets": 0,
+          "research_and_development": 0,
+          "intangible_exploration_assets": 0,
+          "tangible_exploration_assets": 0,
+          "fixed_assets": 8000,
+          "income_bearing_tangible_investments": 0,
+          "long_term_financial_investments": 0,
+          "deferred_tax_assets": 0,
+          "other_non_current_assets": 0,
+          "non_current_assets": 8000,
+          "inventories": 7000,
+          "vat_on_acquired_assets": 0,
+          "receivables": 4000,
+          "short_term_financial_investments": 500,
+          "cash_and_equivalents": 500,
+          "other_current_assets": 0,
+          "current_assets": 12000,
+          "total_assets": 20000,
+          "charter_capital": 1000,
+          "treasury_shares": 0,
+          "revaluation_reserve": 0,
+          "additional_capital": 0,
+          "reserve_capital": 0,
+          "retained_earnings": 4000,
+          "equity": 5000,
+          "long_term_borrowings": 4000,
+          "deferred_tax_liabilities": 0,
+          "long_term_provisions": 0,
+          "other_long_term_liabilities": 1000,
+          "long_term_liabilities": 5000,
+          "short_term_borrowings": 4000,
+          "payables": 6000,
+          "deferred_income": 0,
+          "short_term_provisions": 0,
+          "other_short_term_liabilities": 0,
+          "current_liabilities": 10000,
+          "total_equity_and_liabilities": 20000
+        },
+        "profit_and_loss": {
+          "unit": "THOUSAND_RUB",
+          "revenue": 24000,
+          "cost_of_sales": 18080,
+          "gross_profit": 5920,
+          "selling_expenses": 2000,
+          "administrative_expenses": 2000,
+          "sales_profit": 1920,
+          "participation_income": 0,
+          "interest_receivable": 0,
+          "interest_payable": 1200,
+          "other_income": 0,
+          "other_expenses": 0,
+          "profit_before_tax": 720,
+          "income_tax": 20,
+          "net_profit": 700
+        }
+      }
+    ]
+  },
+  "expected": {
+    "response": {
+      "application_id": "app-uc03_le_manual",
+      "borrower_id": "borrower-uc03_le_manual",
+      "status": "UNDER_REVIEW",
+      "message": "Заявка на рассмотрении",
+      "score": {
+        "model": "legal-v2",
+        "questionnaire": {
+          "points": 505,
+          "max_points": 750,
+          "criteria": [
+            {
+              "id": "LE_Q01",
+              "answer": "business_age_months=30",
+              "points": 30,
+              "max_points": 60
+            },
+            {
+              "id": "LE_Q02",
+              "answer": "credit_history_months=48",
+              "points": 50,
+              "max_points": 50
+            },
+            {
+              "id": "LE_Q03",
+              "answer": "worst_repaid_dpd_days_24m=20",
+              "points": 50,
+              "max_points": 100
+            },
+            {
+              "id": "LE_Q04",
+              "answer": "current_dpd_days=0",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "LE_Q05",
+              "answer": "applications_90d=0",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q06",
+              "answer": "manager_experience_years=2",
+              "points": 10,
+              "max_points": 35
+            },
+            {
+              "id": "LE_Q07",
+              "answer": "overdue_taxes_rub=0",
+              "points": 50,
+              "max_points": 50
+            },
+            {
+              "id": "LE_Q08",
+              "answer": "report_verification_level=2",
+              "points": 35,
+              "max_points": 50
+            },
+            {
+              "id": "LE_Q09",
+              "answer": "bank_relationship_months=12",
+              "points": 20,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q10",
+              "answer": "organization_and_related_debts_complete=true",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q11",
+              "answer": "material_register_inaccuracy=false",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q12",
+              "answer": "auditor_opinion=MATERIAL_MODIFICATION",
+              "points": 0,
+              "max_points": 35
+            },
+            {
+              "id": "LE_Q13",
+              "answer": "material_account_restriction=true",
+              "points": 0,
+              "max_points": 35
+            },
+            {
+              "id": "LE_Q14",
+              "answer": "material_dispute_or_enforcement=true",
+              "points": 0,
+              "max_points": 35
+            },
+            {
+              "id": "LE_Q15",
+              "answer": "key_buyer_loss=false",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q16",
+              "answer": "structural_business_change=false",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q17",
+              "answer": "need_evidence=VERIFIED_ESTIMATE",
+              "points": 20,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q18",
+              "answer": "documents_complete=true",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q19",
+              "answer": "free_cash_source_verified=true",
+              "points": 20,
+              "max_points": 20
+            },
+            {
+              "id": "LE_Q20",
+              "answer": "operating_nonfinancial_company=true",
+              "points": 15,
+              "max_points": 15
+            },
+            {
+              "id": "LE_Q21",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "LE_Q22",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "LE_Q23",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "LE_Q24",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "LE_Q25",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "LE_Q26",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "LE_Q27",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            }
+          ]
+        },
+        "economics": {
+          "points": 121.25,
+          "max_points": 250,
+          "criteria": [
+            {
+              "id": "LE_E01",
+              "value": 1.2,
+              "points": 10,
+              "max_points": 20
+            },
+            {
+              "id": "LE_E02",
+              "value": 0.5,
+              "points": 7.5,
+              "max_points": 15
+            },
+            {
+              "id": "LE_E03",
+              "value": 0.1,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E04",
+              "value": 0.25,
+              "points": 18.75,
+              "max_points": 25
+            },
+            {
+              "id": "LE_E05",
+              "value": 0.5,
+              "points": 7.5,
+              "max_points": 15
+            },
+            {
+              "id": "LE_E06",
+              "value": -0.25,
+              "points": 0,
+              "max_points": 15
+            },
+            {
+              "id": "LE_E07",
+              "value": 3.645833333333,
+              "points": 5,
+              "max_points": 20
+            },
+            {
+              "id": "LE_E08",
+              "value": 1.6,
+              "points": 10,
+              "max_points": 20
+            },
+            {
+              "id": "LE_E09",
+              "value": 0.5,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E10",
+              "value": 0.246666666667,
+              "points": 7.5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E11",
+              "value": 0.08,
+              "points": 7.5,
+              "max_points": 15
+            },
+            {
+              "id": "LE_E12",
+              "value": 0.029166666667,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E13",
+              "value": 0.035,
+              "points": 7.5,
+              "max_points": 15
+            },
+            {
+              "id": "LE_E14",
+              "value": 0.14,
+              "points": 7.5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E15",
+              "value": 0,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E16",
+              "value": 1.2,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E17",
+              "value": 60.833333333333,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E18",
+              "value": 141.316371681416,
+              "points": 2.5,
+              "max_points": 10
+            }
+          ]
+        },
+        "raw_total": 626.25,
+        "total": 626,
+        "grade": "C"
+      },
+      "terms": null,
+      "terms_confirmed": false,
+      "monthly_payment_rub": null,
+      "overpayment_rub": null,
+      "loan_id": null,
+      "review_reason": "BORROWER",
+      "reasons": [
+        {
+          "code": "SCORE_CLASS_C",
+          "message": "Нужна индивидуальная оценка сотрудника.",
+          "fields": []
+        },
+        {
+          "code": "MATERIAL_ACCOUNT_RESTRICTION",
+          "message": "material account restriction",
+          "fields": []
+        },
+        {
+          "code": "MATERIAL_DISPUTE_OR_ENFORCEMENT",
+          "message": "material dispute or enforcement",
+          "fields": []
+        },
+        {
+          "code": "MATERIAL_AUDITOR_MODIFICATION",
+          "message": "material auditor modification",
+          "fields": []
+        }
+      ]
+    },
+    "statements_called": true,
+    "ms2_called": true,
+    "bank_projection_called": false,
+    "admin_called": true,
+    "bank_check_request": null,
+    "manual_review_request": {
+      "policy_id": "credit-mvp-v2",
+      "application_id": "app-uc03_le_manual",
+      "borrower": {
+        "id": "borrower-uc03_le_manual",
+        "type": "LEGAL_ENTITY",
+        "inn": "9900000088",
+        "name": "ООО Демо 08"
+      },
+      "requested_terms": {
+        "purpose": "BUSINESS_DEVELOPMENT",
+        "amount_rub": 3000000,
+        "term_months": 24,
+        "max_annual_rate": 24,
+        "min_acceptable_amount_rub": 3000000,
+        "max_acceptable_term_months": 24
+      },
+      "score": {
+        "model": "legal-v2",
+        "questionnaire": {
+          "points": 505,
+          "max_points": 750,
+          "criteria": [
+            {
+              "id": "LE_Q01",
+              "answer": "business_age_months=30",
+              "points": 30,
+              "max_points": 60
+            },
+            {
+              "id": "LE_Q02",
+              "answer": "credit_history_months=48",
+              "points": 50,
+              "max_points": 50
+            },
+            {
+              "id": "LE_Q03",
+              "answer": "worst_repaid_dpd_days_24m=20",
+              "points": 50,
+              "max_points": 100
+            },
+            {
+              "id": "LE_Q04",
+              "answer": "current_dpd_days=0",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "LE_Q05",
+              "answer": "applications_90d=0",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q06",
+              "answer": "manager_experience_years=2",
+              "points": 10,
+              "max_points": 35
+            },
+            {
+              "id": "LE_Q07",
+              "answer": "overdue_taxes_rub=0",
+              "points": 50,
+              "max_points": 50
+            },
+            {
+              "id": "LE_Q08",
+              "answer": "report_verification_level=2",
+              "points": 35,
+              "max_points": 50
+            },
+            {
+              "id": "LE_Q09",
+              "answer": "bank_relationship_months=12",
+              "points": 20,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q10",
+              "answer": "organization_and_related_debts_complete=true",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q11",
+              "answer": "material_register_inaccuracy=false",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q12",
+              "answer": "auditor_opinion=MATERIAL_MODIFICATION",
+              "points": 0,
+              "max_points": 35
+            },
+            {
+              "id": "LE_Q13",
+              "answer": "material_account_restriction=true",
+              "points": 0,
+              "max_points": 35
+            },
+            {
+              "id": "LE_Q14",
+              "answer": "material_dispute_or_enforcement=true",
+              "points": 0,
+              "max_points": 35
+            },
+            {
+              "id": "LE_Q15",
+              "answer": "key_buyer_loss=false",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q16",
+              "answer": "structural_business_change=false",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q17",
+              "answer": "need_evidence=VERIFIED_ESTIMATE",
+              "points": 20,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q18",
+              "answer": "documents_complete=true",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q19",
+              "answer": "free_cash_source_verified=true",
+              "points": 20,
+              "max_points": 20
+            },
+            {
+              "id": "LE_Q20",
+              "answer": "operating_nonfinancial_company=true",
+              "points": 15,
+              "max_points": 15
+            },
+            {
+              "id": "LE_Q21",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "LE_Q22",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "LE_Q23",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "LE_Q24",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "LE_Q25",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "LE_Q26",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "LE_Q27",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            }
+          ]
+        },
+        "economics": {
+          "points": 121.25,
+          "max_points": 250,
+          "criteria": [
+            {
+              "id": "LE_E01",
+              "value": 1.2,
+              "points": 10,
+              "max_points": 20
+            },
+            {
+              "id": "LE_E02",
+              "value": 0.5,
+              "points": 7.5,
+              "max_points": 15
+            },
+            {
+              "id": "LE_E03",
+              "value": 0.1,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E04",
+              "value": 0.25,
+              "points": 18.75,
+              "max_points": 25
+            },
+            {
+              "id": "LE_E05",
+              "value": 0.5,
+              "points": 7.5,
+              "max_points": 15
+            },
+            {
+              "id": "LE_E06",
+              "value": -0.25,
+              "points": 0,
+              "max_points": 15
+            },
+            {
+              "id": "LE_E07",
+              "value": 3.645833333333,
+              "points": 5,
+              "max_points": 20
+            },
+            {
+              "id": "LE_E08",
+              "value": 1.6,
+              "points": 10,
+              "max_points": 20
+            },
+            {
+              "id": "LE_E09",
+              "value": 0.5,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E10",
+              "value": 0.246666666667,
+              "points": 7.5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E11",
+              "value": 0.08,
+              "points": 7.5,
+              "max_points": 15
+            },
+            {
+              "id": "LE_E12",
+              "value": 0.029166666667,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E13",
+              "value": 0.035,
+              "points": 7.5,
+              "max_points": 15
+            },
+            {
+              "id": "LE_E14",
+              "value": 0.14,
+              "points": 7.5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E15",
+              "value": 0,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E16",
+              "value": 1.2,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E17",
+              "value": 60.833333333333,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E18",
+              "value": 141.316371681416,
+              "points": 2.5,
+              "max_points": 10
+            }
+          ]
+        },
+        "raw_total": 626.25,
+        "total": 626,
+        "grade": "C"
+      },
+      "reasons": [
+        {
+          "code": "SCORE_CLASS_C",
+          "message": "Нужна индивидуальная оценка сотрудника.",
+          "fields": []
+        },
+        {
+          "code": "MATERIAL_ACCOUNT_RESTRICTION",
+          "message": "material account restriction",
+          "fields": []
+        },
+        {
+          "code": "MATERIAL_DISPUTE_OR_ENFORCEMENT",
+          "message": "material dispute or enforcement",
+          "fields": []
+        },
+        {
+          "code": "MATERIAL_AUDITOR_MODIFICATION",
+          "message": "material auditor modification",
+          "fields": []
+        }
+      ]
+    },
+    "bank_response": null,
+    "notification": {
+      "event_id": "app-uc03_le_manual:BORROWER_REVIEW",
+      "occurred_at": "2026-10-23T12:00:00Z",
+      "kind": "BORROWER_REVIEW",
+      "application_id": "app-uc03_le_manual",
+      "borrower": {
+        "id": "borrower-uc03_le_manual",
+        "type": "LEGAL_ENTITY",
+        "inn": "9900000088",
+        "name": "ООО Демо 08"
+      },
+      "score": {
+        "model": "legal-v2",
+        "questionnaire": {
+          "points": 505,
+          "max_points": 750,
+          "criteria": [
+            {
+              "id": "LE_Q01",
+              "answer": "business_age_months=30",
+              "points": 30,
+              "max_points": 60
+            },
+            {
+              "id": "LE_Q02",
+              "answer": "credit_history_months=48",
+              "points": 50,
+              "max_points": 50
+            },
+            {
+              "id": "LE_Q03",
+              "answer": "worst_repaid_dpd_days_24m=20",
+              "points": 50,
+              "max_points": 100
+            },
+            {
+              "id": "LE_Q04",
+              "answer": "current_dpd_days=0",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "LE_Q05",
+              "answer": "applications_90d=0",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q06",
+              "answer": "manager_experience_years=2",
+              "points": 10,
+              "max_points": 35
+            },
+            {
+              "id": "LE_Q07",
+              "answer": "overdue_taxes_rub=0",
+              "points": 50,
+              "max_points": 50
+            },
+            {
+              "id": "LE_Q08",
+              "answer": "report_verification_level=2",
+              "points": 35,
+              "max_points": 50
+            },
+            {
+              "id": "LE_Q09",
+              "answer": "bank_relationship_months=12",
+              "points": 20,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q10",
+              "answer": "organization_and_related_debts_complete=true",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q11",
+              "answer": "material_register_inaccuracy=false",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q12",
+              "answer": "auditor_opinion=MATERIAL_MODIFICATION",
+              "points": 0,
+              "max_points": 35
+            },
+            {
+              "id": "LE_Q13",
+              "answer": "material_account_restriction=true",
+              "points": 0,
+              "max_points": 35
+            },
+            {
+              "id": "LE_Q14",
+              "answer": "material_dispute_or_enforcement=true",
+              "points": 0,
+              "max_points": 35
+            },
+            {
+              "id": "LE_Q15",
+              "answer": "key_buyer_loss=false",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q16",
+              "answer": "structural_business_change=false",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q17",
+              "answer": "need_evidence=VERIFIED_ESTIMATE",
+              "points": 20,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q18",
+              "answer": "documents_complete=true",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "LE_Q19",
+              "answer": "free_cash_source_verified=true",
+              "points": 20,
+              "max_points": 20
+            },
+            {
+              "id": "LE_Q20",
+              "answer": "operating_nonfinancial_company=true",
+              "points": 15,
+              "max_points": 15
+            },
+            {
+              "id": "LE_Q21",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "LE_Q22",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "LE_Q23",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "LE_Q24",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "LE_Q25",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "LE_Q26",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "LE_Q27",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            }
+          ]
+        },
+        "economics": {
+          "points": 121.25,
+          "max_points": 250,
+          "criteria": [
+            {
+              "id": "LE_E01",
+              "value": 1.2,
+              "points": 10,
+              "max_points": 20
+            },
+            {
+              "id": "LE_E02",
+              "value": 0.5,
+              "points": 7.5,
+              "max_points": 15
+            },
+            {
+              "id": "LE_E03",
+              "value": 0.1,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E04",
+              "value": 0.25,
+              "points": 18.75,
+              "max_points": 25
+            },
+            {
+              "id": "LE_E05",
+              "value": 0.5,
+              "points": 7.5,
+              "max_points": 15
+            },
+            {
+              "id": "LE_E06",
+              "value": -0.25,
+              "points": 0,
+              "max_points": 15
+            },
+            {
+              "id": "LE_E07",
+              "value": 3.645833333333,
+              "points": 5,
+              "max_points": 20
+            },
+            {
+              "id": "LE_E08",
+              "value": 1.6,
+              "points": 10,
+              "max_points": 20
+            },
+            {
+              "id": "LE_E09",
+              "value": 0.5,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E10",
+              "value": 0.246666666667,
+              "points": 7.5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E11",
+              "value": 0.08,
+              "points": 7.5,
+              "max_points": 15
+            },
+            {
+              "id": "LE_E12",
+              "value": 0.029166666667,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E13",
+              "value": 0.035,
+              "points": 7.5,
+              "max_points": 15
+            },
+            {
+              "id": "LE_E14",
+              "value": 0.14,
+              "points": 7.5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E15",
+              "value": 0,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E16",
+              "value": 1.2,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E17",
+              "value": 60.833333333333,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "LE_E18",
+              "value": 141.316371681416,
+              "points": 2.5,
+              "max_points": 10
+            }
+          ]
+        },
+        "raw_total": 626.25,
+        "total": 626,
+        "grade": "C"
+      },
+      "requested_terms": {
+        "purpose": "BUSINESS_DEVELOPMENT",
+        "amount_rub": 3000000,
+        "term_months": 24,
+        "max_annual_rate": 24,
+        "min_acceptable_amount_rub": 3000000,
+        "max_acceptable_term_months": 24
+      },
+      "loan_id": null,
+      "terms": null,
+      "reasons": [
+        {
+          "code": "SCORE_CLASS_C",
+          "message": "Нужна индивидуальная оценка сотрудника.",
+          "fields": []
+        },
+        {
+          "code": "MATERIAL_ACCOUNT_RESTRICTION",
+          "message": "material account restriction",
+          "fields": []
+        },
+        {
+          "code": "MATERIAL_DISPUTE_OR_ENFORCEMENT",
+          "message": "material dispute or enforcement",
+          "fields": []
+        },
+        {
+          "code": "MATERIAL_AUDITOR_MODIFICATION",
+          "message": "material auditor modification",
+          "fields": []
+        }
+      ],
+      "problems": [],
+      "selection": null
+    },
+    "selection": null,
+    "bank_state_before": {
+      "K1": 650000000,
+      "Ka": 800000000,
+      "K0": 1000000000,
+      "RWA11": 8000000000,
+      "RWA12": 8000000000,
+      "RWA10": 8000000000,
+      "Lam": 600000000,
+      "Lat": 2500000000,
+      "D2": 2000000000,
+      "D3": 4000000000,
+      "Krd": 1500000000,
+      "Funding4": 1000000000,
+      "Invest": 150000000,
+      "Cash": 10000000,
+      "CashMin": 6000000,
+      "Reserves": 50000000,
+      "groups": {
+        "g1": 200000000,
+        "g2": 180000000,
+        "related": 100000000,
+        "small": 20000000
+      },
+      "related_groups": [
+        "related"
+      ],
+      "borrower_groups": {},
+      "issued_application_ids": [],
+      "issuance_enabled": true
+    },
+    "bank_state_saved": {
+      "K1": 650000000,
+      "Ka": 800000000,
+      "K0": 1000000000,
+      "RWA11": 8000000000,
+      "RWA12": 8000000000,
+      "RWA10": 8000000000,
+      "Lam": 600000000,
+      "Lat": 2500000000,
+      "D2": 2000000000,
+      "D3": 4000000000,
+      "Krd": 1500000000,
+      "Funding4": 1000000000,
+      "Invest": 150000000,
+      "Cash": 10000000,
+      "CashMin": 6000000,
+      "Reserves": 50000000,
+      "groups": {
+        "g1": 200000000,
+        "g2": 180000000,
+        "related": 100000000,
+        "small": 20000000
+      },
+      "related_groups": [
+        "related"
+      ],
+      "borrower_groups": {},
+      "issued_application_ids": [],
+      "issuance_enabled": true
+    },
+    "projected_bank_state": null
+  }
+}

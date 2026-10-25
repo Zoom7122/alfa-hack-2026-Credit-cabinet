@@ -1,0 +1,61 @@
+{
+  "debtor": {
+    "type": "LEGAL",
+    "inn": "7799000012",
+    "name": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+  },
+  "checked_at": "2026-10-22T10:15:06Z",
+  "summary": {
+    "active_count": 1,
+    "active_amount": 48250.00,
+    "finished_count": 2,
+    "finished_no_assets_count": 0
+  },
+  "items": [
+    {
+      "number": "148213/26/77099-ИП",
+      "opened_at": "2026-08-11",
+      "executive_document": "Исполнительный лист ФС №041237785 от 22.07.2026, Арбитражный суд г. Москвы, дело №А40-118734/2026",
+      "subject_code": "CONTRACT_DEBT",
+      "subject": "Задолженность по договору поставки",
+      "amount_initial": 48250.00,
+      "amount_remaining": 48250.00,
+      "status": "ACTIVE",
+      "finished_at": null,
+      "finish_reason_code": null,
+      "finish_reason": null,
+      "department": "ОСП по Центральному АО №1 ГУФССП России по г. Москве",
+      "bailiff": "Петрова М.А."
+    },
+    {
+      "number": "90211/25/77099-ИП",
+      "opened_at": "2025-11-03",
+      "executive_document": "Постановление по делу об АП №18810077250001234567",
+      "subject_code": "FINE",
+      "subject": "Штраф ГИБДД",
+      "amount_initial": 500.00,
+      "amount_remaining": 0.00,
+      "status": "FINISHED",
+      "finished_at": "2025-11-20",
+      "finish_reason_code": "47-1-1",
+      "finish_reason": "ст. 47 ч. 1 п. 1 — фактическое исполнение",
+      "department": "ОСП по Центральному АО №1 ГУФССП России по г. Москве",
+      "bailiff": "Петрова М.А."
+    },
+    {
+      "number": "51877/25/77099-ИП",
+      "opened_at": "2025-05-19",
+      "executive_document": "Акт налогового органа №3341 от 12.05.2025",
+      "subject_code": "TAX",
+      "subject": "Налоги и сборы, включая пени",
+      "amount_initial": 12740.00,
+      "amount_remaining": 0.00,
+      "status": "FINISHED",
+      "finished_at": "2025-06-02",
+      "finish_reason_code": "47-1-1",
+      "finish_reason": "ст. 47 ч. 1 п. 1 — фактическое исполнение",
+      "department": "ОСП по Центральному АО №1 ГУФССП России по г. Москве",
+      "bailiff": "Иванов Д.К."
+    }
+  ]
+}

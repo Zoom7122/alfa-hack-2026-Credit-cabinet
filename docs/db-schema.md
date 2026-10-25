@@ -2,7 +2,7 @@
 
 PostgreSQL 16. Одна БД на API, воркеры pgqueue и WS-хаб, поэтому переход FSM, запись в журнал и постановка следующей таски выполняются в одной транзакции ([fsm.md](fsm.md)).
 
-13 таблиц. ERD — [db-schema.dbml](db-schema.dbml): вставьте файл целиком на [dbdiagram.io](https://dbdiagram.io/d). Таблицы раскрашены по доменам. Диаграмма и справочник ниже содержат одни и те же колонки. Источник правды — миграции в [db/migrations](../db/migrations), оба файла обновляются вместе с ними.
+16 таблиц. ERD — [db-schema.dbml](db-schema.dbml): вставьте файл целиком на [dbdiagram.io](https://dbdiagram.io/d). Таблицы раскрашены по доменам. Диаграмма и справочник ниже содержат одни и те же колонки. Источник правды — миграции в [db/migrations](../db/migrations), оба файла обновляются вместе с ними.
 
 Проверка синтаксиса диаграммы:
 
@@ -13,8 +13,8 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 ## Принципы
 
 - **Колонка — только если по ней фильтруем, джойним или её охраняет FSM.** Всё, что пишется и читается целиком (анкета, расчёт скоринга, отчёт проверки ЭП), лежит в `jsonb`. Структура jsonb совпадает со схемами [openapi.yaml](../api/openapi.yaml), валидация и связи с таблицами — на Go-структурах.
-- **История не перезаписывается.** `application_events`, `source_snapshots` и `signature_reports` пишутся только вставкой. Решения хранятся строкой на каждый раунд рассмотрения.
-- PK — `text` вида `<prefix>_<ULID>` (`app_01JB8Z…`), как в API. Исключение — `source_runs`: наружу без id, PK `bigint identity`.
+- **История не перезаписывается.** `application_events`, `source_snapshots`, `raw_collections` и `signature_reports` пишутся только вставкой. Решения хранятся строкой на каждый раунд рассмотрения.
+- PK — `text` вида `<prefix>_<ULID>` (`app_01JB8Z…`), как в API. Исключения — `source_runs` и `outbox`: наружу без id, PK `bigint identity`.
 - Деньги — `bigint` в рублях, ставки — `numeric`, время — `timestamptz`.
 - PG-enum не заводим: перечисления хранятся в `text` с `CHECK` на значения одноимённой схемы OpenAPI. Новое значение не требует `ALTER TYPE`.
 - Имена в БД и API различаются в одном месте: таблица `companies` — это `Applicant` в API, `company_id` — это `applicant_id`.
@@ -35,6 +35,8 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 | `inn` | text | ✔ | ИНН ФЛ. Сверяется с сертификатом КЭП (`SIGNER_AUTHORITY`) |
 | `persona` | text | ✔ | что демонстрирует пользователь (`/auth/test-users`) |
 | `created_at` | timestamptz | | |
+
+Индексы: уникальный `(inn) where role = 'CLIENT' and inn is not null` — клиент с тем же ИНН ФЛ один (регистрация в data-collector его находит).
 
 ### companies
 
@@ -62,7 +64,7 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 |---|---|---|---|
 | `user_id` | text | | PK, FK → `users` |
 | `company_id` | text | | PK, FK → `companies` |
-| `role` | text | | `DIRECTOR`, `OWNER`, `CFO`, `ACCOUNTANT`, `AUTHORIZED_EMPLOYEE` |
+| `role` | text | | `OWNER` (собственник), `DIRECTOR` (генеральный директор), `CFO` / `ACCOUNTANT` (финансовый директор или бухгалтер), `FINANCE_EMPLOYEE` (отвечает за финансирование), `BANKING_EMPLOYEE` (работает с банковскими продуктами), `AUTHORIZED_EMPLOYEE` (иной уполномоченный сотрудник) |
 | `can_sign` | boolean | | `true` только у действующего директора ЮЛ или у самого ИП |
 
 ### applications
@@ -161,6 +163,86 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 | `finished_at` | timestamptz | ✔ | |
 
 Критичность источника (`CRITICAL`/`NORMAL`) берётся из конфига, а не из БД.
+
+### collection_tasks
+
+Задача на сбор данных data-collector: строка на анкету, принятую `POST /api/v1/applications/{id}/questionnaire`. Создаётся одной транзакцией с отправкой заявки и событием в `outbox`. Выполняет её worker по событию из Kafka: `PENDING` → `RUNNING` → `COMPLETED` (заявка — `ENRICHING` → `VERIFYING`), результат — строка `raw_collections`.
+
+| Колонка | Тип | Null | Описание |
+|---|---|---|---|
+| `id` | text | | PK, `tsk_<ULID>` |
+| `application_id` | text | ✔ | FK → `applications`. `NULL` — задачи, созданные до заявок |
+| `questionnaire_id` | text | | `qst_<ULID>`; анкета лежит в `applications.form` |
+| `inn` | text | | ИНН компании или ИП, `CHECK` 10 или 12 цифр |
+| `document_ids` | text[] | | документы (`documents.id`), пришедшие с анкетой |
+| `status` | text | | `PENDING`, `RUNNING`, `COMPLETED`, `FAILED` |
+| `request` | jsonb | | входные данные сбора без токенов, как `raw_collections.request` |
+| `secrets` | jsonb | ✔ | токены маркетплейсов и ОФД для worker'а. `NULL` — токенов нет или задача завершена |
+| `skipped_sources` | text[] | | системы, для которых в анкете нет данных (согласия, токена, залога, банков): не опрашиваются. Заполняется при создании |
+| `attempts` | smallint | | сколько раз worker брал задачу; кончились попытки — `FAILED` |
+| `error` | text | ✔ | почему `FAILED` |
+| `created_at` | timestamptz | | |
+| `started_at` | timestamptz | ✔ | последний захват worker'ом |
+| `finished_at` | timestamptz | ✔ | |
+| `updated_at` | timestamptz | | |
+
+Индексы: `(questionnaire_id)`, `(status, created_at)`, `(application_id)`.
+
+### outbox
+
+Исходящие события для Kafka (transactional outbox). Пишутся в одной транзакции с данными, в брокер их переносит outbox-publisher data-collector. Строки блокируются `FOR UPDATE SKIP LOCKED`, поэтому несколько publisher'ов не публикуют одно событие дважды. Доставка at-least-once.
+
+| Колонка | Тип | Null | Описание |
+|---|---|---|---|
+| `id` | bigint | | PK, identity: порядок публикации |
+| `topic` | text | | топик Kafka |
+| `key` | text | | ключ сообщения: id задачи |
+| `payload` | jsonb | | тело сообщения: `event`, `task_id`, `questionnaire_id`, `inn`, `created_at`. Входных данных и токенов нет |
+| `attempts` | int | | неудачные попытки публикации |
+| `last_error` | text | ✔ | почему не удалась последняя попытка |
+| `created_at` | timestamptz | | |
+| `published_at` | timestamptz | ✔ | `NULL` — ещё не опубликовано |
+
+Индексы: `(topic, id) WHERE published_at IS NULL` — очередь неопубликованного.
+
+### raw_collections
+
+Сырые ответы всех внешних систем (моков) по одному сбору данных: строка на выполненную задачу `collection_tasks`, её пишет worker data-collector. Только вставка. Колонка на систему, в ней — ответы её эндпоинтов как есть, по ключам запросов (ключи — в [data-collector/README.md](../data-collector/README.md)). `NULL` в колонке системы — данных нет: система пропущена или не ответила, причина — в `sources`.
+
+| Колонка | Тип | Null | Описание |
+|---|---|---|---|
+| `id` | text | | PK, `col_<ULID>` |
+| `task_id` | text | | FK → `collection_tasks`, UK: один результат на задачу |
+| `questionnaire_id` | text | | `qst_<ULID>`. Без FK: анкеты пока хранятся в памяти data-collector |
+| `inn` | text | | ИНН компании или ИП, `CHECK` 10 или 12 цифр |
+| `director_inn` | text | ✔ | ИНН руководителя, `CHECK` 12 цифр |
+| `request` | jsonb | | входные данные сбора: руководитель, согласия, банки, залог. Токены не хранятся |
+| `sources` | jsonb | | по системе: `state` (`DONE`, `PARTIAL`, `FAILED`, `SKIPPED`), `reason`, все HTTP-запросы со статусом и временем |
+| `started_at`, `finished_at` | timestamptz | | |
+| `core_banking` | jsonb | ✔ | АБС банка |
+| `fns` | jsonb | ✔ | ЕГРЮЛ, «Прозрачный бизнес», ГИР БО, блокировки, устав, реестр МСП, дисквалификация |
+| `bki` | jsonb | ✔ | отчёты БКИ по компании и руководителю |
+| `compliance` | jsonb | ✔ | ЗСК и санкционные списки |
+| `fssp` | jsonb | ✔ | исполнительные производства |
+| `kad` | jsonb | ✔ | арбитражные дела |
+| `fedresurs` | jsonb | ✔ | Федресурс |
+| `m4d` | jsonb | ✔ | МЧД |
+| `tax_reports` | jsonb | ✔ | налоговая отчётность |
+| `pledge_registry` | jsonb | ✔ | реестр залогов |
+| `egrn` | jsonb | ✔ | выписки ЕГРН |
+| `gosuslugi` | jsonb | ✔ | «Цифровой профиль» руководителя |
+| `open_banking` | jsonb | ✔ | счета в других банках |
+| `marketplaces` | jsonb | ✔ | Wildberries, Ozon |
+| `ofd` | jsonb | ✔ | онлайн-кассы |
+| `zakupki` | jsonb | ✔ | госконтракты и РНП |
+| `signals` | jsonb | ✔ | проверки, товарные знаки, новости |
+| `cbr` | jsonb | ✔ | ключевая ставка: SOAP-ответ ЦБ строкой |
+| `hh` | jsonb | ✔ | hh.ru |
+| `created_at` | timestamptz | | |
+
+Индексы: `(inn, created_at desc)`, `(questionnaire_id)`, уникальный `(task_id)`.
+
+Это временная форма хранения: сбор пишет всё одной строкой, а нормализованные `source_snapshots` и `source_runs` по заявке появятся вместе с FSM. jsonb хранит содержимое ответов без изменений, но не исходный текст: порядок ключей и пробелы нормализуются.
 
 ### decisions
 

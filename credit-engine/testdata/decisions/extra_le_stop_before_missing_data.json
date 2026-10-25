@@ -1,0 +1,545 @@
+{
+  "case_id": "extra_le_stop_before_missing_data",
+  "user_story": "UC-02",
+  "bank_profile": "default",
+  "request": {
+    "application_id": "app-extra_le_stop_before_missing_data",
+    "borrower": {
+      "id": "borrower-extra_le_stop_before_missing_data",
+      "type": "LEGAL_ENTITY",
+      "inn": "9900000144",
+      "name": "ООО Демо 14"
+    },
+    "facts_date": "2026-10-20",
+    "credit_request": {
+      "purpose": "BUSINESS_DEVELOPMENT",
+      "amount_rub": 3000000,
+      "term_months": 24,
+      "max_annual_rate": 24,
+      "min_acceptable_amount_rub": 3000000,
+      "max_acceptable_term_months": 24
+    },
+    "need": {
+      "confirmed_cost_rub": 4000000,
+      "own_contribution_rub": 1000000
+    },
+    "cash": {
+      "free_after_own_contribution_rub": 2000000,
+      "minimum_required_rub": 100000
+    },
+    "monthly_history": [
+      {
+        "month": "2025-10",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2025-11",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2025-12",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2026-01",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2026-02",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2026-03",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2026-04",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2026-05",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2026-06",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2026-07",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2026-08",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2026-09",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 800000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      }
+    ],
+    "financial_debt_rub": 2000000,
+    "future_debt_payments": [
+      {
+        "month": "2026-11",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2026-12",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-01",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-02",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-03",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-04",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-05",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-06",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-07",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-08",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-09",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-10",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-11",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-12",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-01",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-02",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-03",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-04",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-05",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-06",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-07",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-08",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-09",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-10",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-11",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-12",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-01",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-02",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-03",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-04",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-05",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-06",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-07",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-08",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-09",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-10",
+        "payment_rub": 50000
+      }
+    ],
+    "evidence": {
+      "confirmed_receipts_rub": 24000000,
+      "unexplained_difference_rub": 0,
+      "largest_buyer_group_receipts_rub": 3000000
+    },
+    "scoring": {
+      "ip": null,
+      "legal_entity": {
+        "active": true,
+        "bankrupt": false,
+        "material_forgery": true,
+        "credit_prohibited": false,
+        "identity_and_authority_verified": true,
+        "consents_verified": true,
+        "bureau_received": true,
+        "debts_complete": true,
+        "documents_complete": true,
+        "free_cash_source_verified": true,
+        "material_account_restriction": false,
+        "material_dispute_or_enforcement": false,
+        "key_buyer_loss": false,
+        "structural_business_change": false,
+        "business_age_months": 72,
+        "credit_history_months": 48,
+        "current_dpd_days": 0,
+        "worst_repaid_dpd_days_24m": 0,
+        "applications_90d": 0,
+        "overdue_taxes_rub": 0,
+        "bank_relationship_months": 36,
+        "manager_experience_years": 10,
+        "report_verification_level": 3,
+        "organization_and_related_debts_complete": true,
+        "material_register_inaccuracy": false,
+        "auditor_opinion": "NOT_REQUIRED",
+        "need_evidence": "CONTRACT_AND_COST",
+        "operating_nonfinancial_company": true,
+        "liquidated_or_excluded": false
+      }
+    },
+    "ip_economic_data": null
+  },
+  "service_b_response": {
+    "borrower_id": "borrower-extra_le_stop_before_missing_data",
+    "annual_reports": [
+      {
+        "year": 2024,
+        "period_end": "2024-12-31",
+        "balance": {
+          "unit": "RUB",
+          "intangible_assets": 0,
+          "research_and_development": 0,
+          "intangible_exploration_assets": 0,
+          "tangible_exploration_assets": 0,
+          "fixed_assets": 8000000,
+          "income_bearing_tangible_investments": 0,
+          "long_term_financial_investments": 0,
+          "deferred_tax_assets": 0,
+          "other_non_current_assets": 0,
+          "non_current_assets": 8000000,
+          "inventories": 2000000,
+          "vat_on_acquired_assets": 0,
+          "receivables": 4000000,
+          "short_term_financial_investments": 1000000,
+          "cash_and_equivalents": 3000000,
+          "other_current_assets": 0,
+          "current_assets": 10000000,
+          "total_assets": 18000000,
+          "charter_capital": 1000000,
+          "treasury_shares": 0,
+          "revaluation_reserve": 0,
+          "additional_capital": 0,
+          "reserve_capital": 0,
+          "retained_earnings": 8000000,
+          "equity": 9000000,
+          "long_term_borrowings": 1200000,
+          "deferred_tax_liabilities": 0,
+          "long_term_provisions": 0,
+          "other_long_term_liabilities": 3800000,
+          "long_term_liabilities": 5000000,
+          "short_term_borrowings": 1200000,
+          "payables": 2800000,
+          "deferred_income": 0,
+          "short_term_provisions": 0,
+          "other_short_term_liabilities": 0,
+          "current_liabilities": 4000000,
+          "total_equity_and_liabilities": 18000000
+        },
+        "profit_and_loss": {
+          "unit": "RUB",
+          "revenue": 20000000,
+          "cost_of_sales": 12000000,
+          "gross_profit": 8000000,
+          "selling_expenses": 2000000,
+          "administrative_expenses": 2000000,
+          "sales_profit": 4000000,
+          "participation_income": 0,
+          "interest_receivable": 0,
+          "interest_payable": 500000,
+          "other_income": 0,
+          "other_expenses": 0,
+          "profit_before_tax": 3500000,
+          "income_tax": 1000000,
+          "net_profit": 2500000
+        }
+      },
+      {
+        "year": 2025,
+        "period_end": "2025-12-31",
+        "balance": {
+          "unit": "RUB",
+          "intangible_assets": 0,
+          "research_and_development": 0,
+          "intangible_exploration_assets": 0,
+          "tangible_exploration_assets": 0,
+          "fixed_assets": 8000000,
+          "income_bearing_tangible_investments": 0,
+          "long_term_financial_investments": 0,
+          "deferred_tax_assets": 0,
+          "other_non_current_assets": 0,
+          "non_current_assets": 8000000,
+          "inventories": 3000000,
+          "vat_on_acquired_assets": 0,
+          "receivables": 5000000,
+          "short_term_financial_investments": 1000000,
+          "cash_and_equivalents": 3000000,
+          "other_current_assets": 0,
+          "current_assets": 12000000,
+          "total_assets": 20000000,
+          "charter_capital": 1000000,
+          "treasury_shares": 0,
+          "revaluation_reserve": 0,
+          "additional_capital": 0,
+          "reserve_capital": 0,
+          "retained_earnings": 9000000,
+          "equity": 10000000,
+          "long_term_borrowings": 1000000,
+          "deferred_tax_liabilities": 0,
+          "long_term_provisions": 0,
+          "other_long_term_liabilities": 5000000,
+          "long_term_liabilities": 6000000,
+          "short_term_borrowings": 1000000,
+          "payables": 3000000,
+          "deferred_income": 0,
+          "short_term_provisions": 0,
+          "other_short_term_liabilities": 0,
+          "current_liabilities": 4000000,
+          "total_equity_and_liabilities": 20000000
+        },
+        "profit_and_loss": null
+      }
+    ]
+  },
+  "expected": {
+    "response": {
+      "application_id": "app-extra_le_stop_before_missing_data",
+      "borrower_id": "borrower-extra_le_stop_before_missing_data",
+      "status": "REJECTED",
+      "message": "Отклонено",
+      "score": null,
+      "terms": null,
+      "terms_confirmed": false,
+      "monthly_payment_rub": null,
+      "overpayment_rub": null,
+      "loan_id": null,
+      "review_reason": null,
+      "reasons": [
+        {
+          "code": "MATERIAL_FORGERY",
+          "message": "material forgery",
+          "fields": [
+            "scoring.legal_entity.material_forgery"
+          ]
+        }
+      ]
+    },
+    "statements_called": false,
+    "ms2_called": false,
+    "bank_projection_called": false,
+    "admin_called": false,
+    "bank_check_request": null,
+    "manual_review_request": null,
+    "bank_response": null,
+    "notification": null,
+    "selection": null,
+    "bank_state_before": {
+      "K1": 650000000,
+      "Ka": 800000000,
+      "K0": 1000000000,
+      "RWA11": 8000000000,
+      "RWA12": 8000000000,
+      "RWA10": 8000000000,
+      "Lam": 600000000,
+      "Lat": 2500000000,
+      "D2": 2000000000,
+      "D3": 4000000000,
+      "Krd": 1500000000,
+      "Funding4": 1000000000,
+      "Invest": 150000000,
+      "Cash": 10000000,
+      "CashMin": 6000000,
+      "Reserves": 50000000,
+      "groups": {
+        "g1": 200000000,
+        "g2": 180000000,
+        "related": 100000000,
+        "small": 20000000
+      },
+      "related_groups": [
+        "related"
+      ],
+      "borrower_groups": {},
+      "issued_application_ids": [],
+      "issuance_enabled": true
+    },
+    "bank_state_saved": {
+      "K1": 650000000,
+      "Ka": 800000000,
+      "K0": 1000000000,
+      "RWA11": 8000000000,
+      "RWA12": 8000000000,
+      "RWA10": 8000000000,
+      "Lam": 600000000,
+      "Lat": 2500000000,
+      "D2": 2000000000,
+      "D3": 4000000000,
+      "Krd": 1500000000,
+      "Funding4": 1000000000,
+      "Invest": 150000000,
+      "Cash": 10000000,
+      "CashMin": 6000000,
+      "Reserves": 50000000,
+      "groups": {
+        "g1": 200000000,
+        "g2": 180000000,
+        "related": 100000000,
+        "small": 20000000
+      },
+      "related_groups": [
+        "related"
+      ],
+      "borrower_groups": {},
+      "issued_application_ids": [],
+      "issuance_enabled": true
+    },
+    "projected_bank_state": null
+  }
+}

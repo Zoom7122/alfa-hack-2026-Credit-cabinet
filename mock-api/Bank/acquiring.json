@@ -1,0 +1,47 @@
+{
+  "merchant": {
+    "inn": "7701234567",
+    "merchantId": "MID-552100",
+    "mcc": "5812"
+  },
+  "acquirer": "АО «Банк-эквайрер»",
+  "contractDate": "2023-04-01",
+  "commissionRate": "1.8",
+  "terminals": [
+    {
+      "tid": "10203040",
+      "type": "POS",
+      "address": "г. Москва, ул. Примерная, 1",
+      "status": "Active"
+    },
+    {
+      "tid": "E-778899",
+      "type": "Ecom",
+      "status": "Active"
+    }
+  ],
+  "monthlyTurnover": [
+    {
+      "month": "2026-07",
+      "operations": 4120,
+      "amount": "1532000.00",
+      "refunds": "12400.00"
+    },
+    {
+      "month": "2026-08",
+      "operations": 4380,
+      "amount": "1610500.00",
+      "refunds": "9800.00"
+    },
+    {
+      "month": "2026-09",
+      "operations": 4015,
+      "amount": "1498300.00",
+      "refunds": "15100.00"
+    }
+  ],
+  "sbp": {
+    "connected": true,
+    "monthlyAmountLast3mAvg": "220000.00"
+  }
+}

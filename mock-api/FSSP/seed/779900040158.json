@@ -1,0 +1,17 @@
+{
+  "debtor": {
+    "type": "PERSON",
+    "inn": "779900040158",
+    "name": "Зайцева Ольга Михайловна",
+    "birth_date": "1981-09-14",
+    "region": "77"
+  },
+  "checked_at": "2026-10-22T10:15:06Z",
+  "summary": {
+    "active_count": 0,
+    "active_amount": 0.00,
+    "finished_count": 0,
+    "finished_no_assets_count": 0
+  },
+  "items": []
+}

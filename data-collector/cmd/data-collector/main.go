@@ -1,9 +1,19 @@
 // Сервис сбора данных о заёмщике для передачи в скоринг.
+//
+//	@title			data-collector API
+//	@version		0.2
+//	@description	Сбор данных о заёмщике для скоринга: заявитель и компания, анкета с документами и сырые ответы
+//	@description	всех внешних систем (эмулятор mock-api). Сначала регистрация (POST /applicants → черновик заявки),
+//	@description	затем анкета с файлами (POST /applications/{id}/questionnaire). Сбор асинхронный: анкета ставит
+//	@description	задачу в очередь (outbox → Kafka), системы опрашивает worker.
+//	@description	Ошибки — RFC 9457 (`application/problem+json`).
+//	@BasePath		/api/v1
 package main
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -11,10 +21,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gin-gonic/gin"
-
-	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/repository/memory"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/client/bank"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/env"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/events"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/repository/postgres"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/service"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/storage"
 	httptransport "github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/transport/http"
 )
 
@@ -30,29 +42,66 @@ func run(log *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	addr := envOr("HTTP_ADDR", ":8081")
+	addr := env.String("HTTP_ADDR", ":8081")
+	bankURL := env.String("BANK_API_URL", "http://localhost:8090/bank/v1")
+	bankTimeout, err := env.Duration("BANK_API_TIMEOUT", 5*time.Second)
+	if err != nil {
+		return err
+	}
+	topic := env.String("KAFKA_TOPIC", events.DefaultTopic)
+	documentsTopic := env.String("KAFKA_DOCUMENTS_TOPIC", events.DocumentsTopic)
+	documentsDir := env.String("DOCUMENTS_DIR", "data/documents")
+	maxFileMB, err := env.PositiveInt("MAX_FILE_SIZE_MB", 20)
+	if err != nil {
+		return err
+	}
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		return errors.New("DATABASE_URL is not set: заявки, задачи на сбор и outbox хранятся в Postgres")
+	}
+	maxFileSize := int64(maxFileMB) << 20
+	files, err := storage.NewLocal(documentsDir, maxFileSize)
+	if err != nil {
+		return err
+	}
 
-	repo := memory.NewQuestionnaireRepository()
-	svc := service.New(repo)
-	handler := httptransport.NewHandler(svc, log)
+	pool, err := postgres.Connect(ctx, dbURL)
+	if err != nil {
+		return fmt.Errorf("connect postgres: %w", err)
+	}
+	defer pool.Close()
 
-	router := gin.New()
-	router.Use(gin.Logger(), gin.Recovery())
-	router.GET("/healthz", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "ok"}) })
-	handler.Register(router.Group("/api/v1"))
+	// заявки: регистрация (пользователь, компания, черновик) и отправка анкеты с документами;
+	// при отправке задача на сбор и события пишутся в outbox той же транзакцией, системы опрашивает worker
+	applications := postgres.NewApplicationRepository(pool, topic, documentsTopic)
+	collectionSvc := service.NewCollectionService(postgres.NewCollectionTaskRepository(pool))
+	applicationSvc := service.NewApplicationService(applications)
+	questionnaireSvc := service.NewQuestionnaireService(applications, files, collectionSvc)
+
+	// внутренние данные банка: хендлер → сервис → клиент банка (без хранилища)
+	internalDataSvc := service.NewInternalDataService(bank.New(bankURL, bankTimeout))
+
+	router := httptransport.NewRouter(
+		httptransport.NewApplicationHandler(applicationSvc, log),
+		// тело анкеты: все файлы и JSON с запасом на заголовки частей
+		httptransport.NewQuestionnaireHandler(questionnaireSvc, service.MaxFiles*maxFileSize+2<<20, log),
+		httptransport.NewCollectionHandler(collectionSvc, log),
+		httptransport.NewInternalDataHandler(internalDataSvc, log),
+	)
 
 	srv := &http.Server{
 		Addr:              addr,
 		Handler:           router,
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       10 * time.Second,
-		WriteTimeout:      10 * time.Second,
+		ReadTimeout:       2 * time.Minute, // анкета с файлами до 200 МБ
+		WriteTimeout:      2 * time.Minute,
 		IdleTimeout:       60 * time.Second,
 	}
 
 	errCh := make(chan error, 1)
 	go func() {
-		log.Info("data-collector listening", "addr", addr)
+		log.Info("data-collector listening", "addr", addr, "bank_api", bankURL, "topics", []string{topic, documentsTopic},
+			"documents_dir", documentsDir)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 		}
@@ -69,11 +118,4 @@ func run(log *slog.Logger) error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	return srv.Shutdown(shutdownCtx)
-}
-
-func envOr(key, def string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return def
 }

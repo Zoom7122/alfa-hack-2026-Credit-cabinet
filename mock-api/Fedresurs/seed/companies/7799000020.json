@@ -1,0 +1,85 @@
+{
+  "inn": "7799000020",
+  "checked_at": "2026-10-22T10:15:06Z",
+  "summary": {
+    "bankruptcy_stage": "NONE",
+    "has_bankruptcy_intention": false,
+    "active_leasing_count": 4,
+    "liquidation": false,
+    "reorganization": false
+  },
+  "messages": [
+    {
+      "id": "FR-C61F2D88",
+      "type": "LEASING_CONTRACT",
+      "published_at": "2026-04-17",
+      "publisher": {
+        "name": "ООО \"ЛИЗИНГ-ПРО\"",
+        "inn": "7718654321"
+      },
+      "payload": {
+        "contract_number": "ЛД-5102",
+        "contract_date": "2026-04-15",
+        "period_from": "2026-04-15",
+        "period_to": "2029-04-14",
+        "lessee_inn": "7799000020",
+        "subject_class": "VEHICLE",
+        "subject": "Автокран Галичанин КС-55713-1В, VIN X89557131M0AQ1122, 2025 г.в."
+      }
+    },
+    {
+      "id": "FR-9A0C5E63",
+      "type": "LEASING_CONTRACT",
+      "published_at": "2025-11-24",
+      "publisher": {
+        "name": "АО \"ТЕХЛИЗИНГ\"",
+        "inn": "7705112233"
+      },
+      "payload": {
+        "contract_number": "ТЛ-2025/402",
+        "contract_date": "2025-11-20",
+        "period_from": "2025-11-20",
+        "period_to": "2027-11-19",
+        "lessee_inn": "7799000020",
+        "subject_class": "EQUIPMENT",
+        "subject": "Опалубка щитовая стеновая, комплект 640 м²"
+      }
+    },
+    {
+      "id": "FR-48E2B917",
+      "type": "LEASING_CONTRACT",
+      "published_at": "2025-06-04",
+      "publisher": {
+        "name": "АО \"СТРОЙЛИЗИНГ\"",
+        "inn": "7709334455"
+      },
+      "payload": {
+        "contract_number": "СЛ-2025/077",
+        "contract_date": "2025-06-01",
+        "period_from": "2025-06-01",
+        "period_to": "2028-05-31",
+        "lessee_inn": "7799000020",
+        "subject_class": "EQUIPMENT",
+        "subject": "Экскаватор-погрузчик JCB 3CX, заводской № JCB3CX0S2451187"
+      }
+    },
+    {
+      "id": "FR-31D7A0C4",
+      "type": "LEASING_CONTRACT",
+      "published_at": "2025-03-12",
+      "publisher": {
+        "name": "ООО \"ЛИЗИНГ-ПРО\"",
+        "inn": "7718654321"
+      },
+      "payload": {
+        "contract_number": "ЛД-4410",
+        "contract_date": "2025-03-10",
+        "period_from": "2025-03-10",
+        "period_to": "2028-03-09",
+        "lessee_inn": "7799000020",
+        "subject_class": "VEHICLE",
+        "subject": "Самосвал КАМАЗ 65115, VIN XTC651153P1234567, 2024 г.в."
+      }
+    }
+  ]
+}

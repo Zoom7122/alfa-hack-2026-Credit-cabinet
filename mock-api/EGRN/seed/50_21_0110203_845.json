@@ -1,0 +1,43 @@
+{
+  "extract_id": "КУВИ-001/2026-41820377",
+  "generated_at": "2026-10-22T10:17:02+03:00",
+  "object": {
+    "cadastral_number": "50:21:0110203:845",
+    "type": "BUILDING",
+    "purpose": "Нежилое",
+    "name": "Складское здание",
+    "address": "Московская обл., г.о. Ленинский, д. Мисайлово, ул. Промышленная, стр. 7",
+    "area_m2": 1240.5,
+    "floors": 2,
+    "year_built": 2014,
+    "cadastral_value": 38450000.00
+  },
+  "rights": [
+    {
+      "holder": {
+        "type": "LEGAL",
+        "inn": "7799000020",
+        "ogrn": "1197700523456",
+        "name": "ООО \"СТРОЙРЕСУРС\""
+      },
+      "right_type": "OWNERSHIP",
+      "share": "1/1",
+      "registration_number": "50:21:0110203:845-50/215/2021-3",
+      "registered_at": "2021-06-18"
+    }
+  ],
+  "encumbrances": [
+    {
+      "type": "MORTGAGE",
+      "in_favor_of": {
+        "inn": "7703451122",
+        "name": "АО \"РЕГИОН-КРЕДИТ\""
+      },
+      "registration_number": "50:21:0110203:845-50/215/2024-7",
+      "registered_at": "2024-03-11",
+      "term": "до 2029-03-11",
+      "basis": "Договор об ипотеке №И-24/031 от 05.03.2024"
+    }
+  ],
+  "claims": []
+}
