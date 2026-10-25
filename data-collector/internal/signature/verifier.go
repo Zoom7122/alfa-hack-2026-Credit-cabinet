@@ -1,12 +1,13 @@
 // Package signature проверяет электронную подпись документа заёмщика: открепленную или
 // присоединённую подпись CMS/CAdES над исходными байтами файла (формат файла не важен — PDF,
-// XLS, XLSX…), сертификат подписанта по доверенным корням профиля, личность подписанта и его
-// полномочия за заявителя, и выносит решение по правилам банка.
+// XLS, XLSX…) и подпись внутри PDF (PAdES), если она одна и покрывает весь файл; затем
+// сертификат подписанта по доверенным корням профиля, личность подписанта и его полномочия
+// за заявителя, и выносит решение по правилам банка.
 //
 // Сейчас есть только профиль TEST: локальные тестовые корни и CRL, полномочия — по мокам
-// ЕГРЮЛ и реестра МЧД. ГОСТ-алгоритмы и встроенные подписи PDF/XML не проверяются: такие
-// подписи получают INDETERMINATE, а не VERIFIED. Верная подпись не подтверждает ни достоверность
-// цифр в документе, ни платёжеспособность.
+// ЕГРЮЛ и реестра МЧД. ГОСТ-алгоритмы, подписи XML и PDF, изменённые после подписания, не
+// проверяются: такие подписи получают INDETERMINATE, а не VERIFIED. Верная подпись не
+// подтверждает ни достоверность цифр в документе, ни платёжеспособность.
 package signature
 
 import (
@@ -44,7 +45,8 @@ const scopeNote = "Подпись подтверждает только, что 
 // limitations — чего профиль TEST не умеет; пишется в каждый отчёт.
 var limitations = []string{
 	"ГОСТ Р 34.10-2012 / 34.11-2012 не поддерживается: такие подписи — INDETERMINATE",
-	"встроенные подписи PDF (PAdES) и XML (XMLDSig/XAdES) только обнаруживаются: INDETERMINATE",
+	"подпись внутри PDF (PAdES) проверяется, только если она одна и покрывает весь файл: дописанный после подписания PDF — INDETERMINATE",
+	"подписи внутри XML (XMLDSig/XAdES) только обнаруживаются: INDETERMINATE",
 	"метки времени (CAdES-T) и OCSP не проверяются: время подписи — заявленное подписантом, отзыв — по локальным CRL",
 	"аккредитация УЦ и квалифицированность сертификата (УКЭП) не проверяются",
 	"в контейнере проверяется только одна подпись; BER-кодирование не поддерживается",
@@ -121,8 +123,9 @@ type evaluation struct {
 	rule    DocumentRule
 	now     time.Time
 	r       *Report
-	claimed time.Time         // время подписи из signing-time; нулевое — не заявлено
+	claimed time.Time         // время подписи из signing-time или /M в PDF; нулевое — не заявлено
 	cert    *x509.Certificate // сертификат подписанта
+	pdf     *pdfSignature     // подпись внутри PDF
 }
 
 // safeRun — run с защитой от паники: внутренняя ошибка проверки даёт INDETERMINATE во всех этапах,
@@ -153,24 +156,38 @@ func (e *evaluation) run(ctx context.Context, load ApplicantLoader) error {
 		e.skipParty(reason)
 		return nil
 	}
-	if e.in.Signature == nil {
+	// подпись CMS и документ, над которым она сделана
+	var sig, doc []byte
+	switch {
+	case e.in.Container == ContainerPDF:
+		if !e.checkPDF() {
+			e.skipAfterFormat()
+			return nil
+		}
+		sig, doc = e.pdf.cms, e.pdf.signed
+	case e.in.Signature == nil:
 		e.embedded()
 		return nil
+	default:
+		sig, doc = e.in.Signature.Data, e.in.Document.Data
 	}
 
-	sd, err := parseCMS(e.in.Signature.Data)
+	sd, err := parseCMS(sig)
 	if err != nil {
-		st.Format.add("FORMAT_PARSED", statusOf(err), err.Error())
+		st.Format.add(codeOf(err), statusOf(err), err.Error())
 		e.skipAfterFormat()
 		return nil
 	}
 	e.r.Encoding = sd.encoding
-	si, content, attrs, alg, ok := e.checkFormat(sd)
+	si, content, attrs, alg, ok := e.checkFormat(sd, doc)
 	if !ok {
 		e.skipAfterFormat()
 		return nil
 	}
 	e.claimed = attrs.signingTime
+	if e.claimed.IsZero() && e.pdf != nil { // в PAdES время подписи — в словаре подписи (/M), а не в CMS
+		e.claimed = e.pdf.claimed
+	}
 	e.r.Algorithm = alg.name
 	e.r.SigningTime = &SigningTime{Source: "NONE"}
 	if !e.claimed.IsZero() {
@@ -235,17 +252,34 @@ func (e *evaluation) checkFiles() bool {
 	return ok
 }
 
-// embedded — подпись внутри PDF или XML: найдена, но не поддерживается.
+// checkPDF — подпись внутри PDF: одна, /ByteRange от нуля до последнего байта файла, непокрытый
+// промежуток — только её /Contents. false — подпись не годится для проверки.
+func (e *evaluation) checkPDF() bool {
+	st := &e.r.Stages.Format
+	e.r.Format = "PADES"
+	ps, err := parsePDFSignature(e.in.Document.Data)
+	if err != nil {
+		st.add(codeOf(err), statusOf(err), err.Error())
+		return false
+	}
+	e.pdf = ps
+	a, b, c, d := ps.byteRange[0], ps.byteRange[1], ps.byteRange[2], ps.byteRange[3]
+	e.r.PDF = &PDFSignature{ByteRange: ps.byteRange[:], SubFilter: ps.subFilter, SignedBytes: len(ps.signed)}
+	e.r.SignatureSHA256 = sha256Hex(ps.cms)
+	st.add("PDF_SIGNATURE", statusVerified, "подпись внутри PDF, SubFilter "+ps.subFilter)
+	st.add("SIGNED_DATA_COVERAGE", statusVerified, fmt.Sprintf("/ByteRange [%d %d %d %d] покрывает весь файл, кроме значения "+
+		"/Contents с подписью: подписано %d из %d байт", a, b, c, d, len(ps.signed), len(e.in.Document.Data)))
+	st.add("DOCUMENT_NOT_MODIFIED", statusVerified, "после подписания файл не менялся: подписанный диапазон доходит до "+
+		"последнего байта, инкрементальных изменений нет")
+	return true
+}
+
+// embedded — подпись внутри XML: найдена, но не поддерживается.
 func (e *evaluation) embedded() {
 	st := &e.r.Stages
-	msg := "подпись внутри PDF (PAdES) не поддерживается: проверка подписанного диапазона /ByteRange и изменений, " +
-		"внесённых после подписания, не реализована — считать такую подпись проверенной нельзя"
-	e.r.Format = "PADES"
-	if e.in.Container == ContainerXML {
-		e.r.Format = "XMLDSIG"
-		msg = "подпись внутри XML (XMLDSig/XAdES) не поддерживается: канонизация и проверка ссылок XMLDSig не реализованы"
-	}
-	st.Format.add("FORMAT_PARSED", statusIndeterminate, msg)
+	e.r.Format = "XMLDSIG"
+	st.Format.add("FORMAT_PARSED", statusIndeterminate,
+		"подпись внутри XML (XMLDSig/XAdES) не поддерживается: канонизация и проверка ссылок XMLDSig не реализованы")
 	st.Format.add("DOCUMENT_NOT_MODIFIED", statusIndeterminate, "охват подписи и изменения после подписания не проверялись")
 	e.skipAfterFormat()
 }
@@ -254,9 +288,9 @@ func (e *evaluation) embedded() {
 func (e *evaluation) skipAfterFormat() {
 	st := &e.r.Stages
 	st.Format.finish()
-	reason := "формат подписи не поддержан"
+	reason := "формат подписи или её охват не поддерживаются"
 	if st.Format.Status == statusInvalid {
-		reason = "контейнер подписи повреждён"
+		reason = "подпись повреждена или не покрывает документ"
 	}
 	st.Integrity.add("INTEGRITY", statusIndeterminate, "не проверялась: "+reason)
 	st.Integrity.finish()
@@ -287,9 +321,13 @@ func (e *evaluation) notRequiredReason(what string) string {
 // checkFormat — этап «формат и охват»: одна подпись CMS над данными документа, подписанные
 // атрибуты CAdES, поддерживаемый алгоритм. Возвращает подпись, подписанные байты и атрибуты;
 // false — дальше проверять нечего.
-func (e *evaluation) checkFormat(sd *signedData) (si signerInfo, content []byte, attrs signedAttributes, alg algorithm, ok bool) {
+func (e *evaluation) checkFormat(sd *signedData, doc []byte) (si signerInfo, content []byte, attrs signedAttributes, alg algorithm, ok bool) {
 	st := &e.r.Stages.Format
-	st.add("FORMAT_PARSED", statusVerified, "контейнер CMS SignedData, "+sd.encoding)
+	if e.pdf != nil {
+		st.add("FORMAT_PARSED", statusVerified, "подпись CMS SignedData в /Contents, "+sd.encoding)
+	} else {
+		st.add("FORMAT_PARSED", statusVerified, "контейнер CMS SignedData, "+sd.encoding)
+	}
 	switch n := len(sd.signers); {
 	case n == 0:
 		st.add("SINGLE_SIGNER", statusInvalid, "в контейнере нет ни одной подписи")
@@ -305,7 +343,12 @@ func (e *evaluation) checkFormat(sd *signedData) (si signerInfo, content []byte,
 		return
 	}
 
-	switch doc := e.in.Document.Data; {
+	switch {
+	case e.pdf != nil && sd.content != nil:
+		st.add("SIGNED_DATA_COVERAGE", statusIndeterminate, "в /Contents подпись с данными внутри: для PDF такой формат не поддерживается")
+		return
+	case e.pdf != nil:
+		content = doc // охват уже проверен: весь файл, кроме /Contents
 	case e.in.Container == ContainerAttached && sd.content == nil:
 		st.add("SIGNED_DATA_COVERAGE", statusIndeterminate, "это открепленная подпись, а подписанный файл не загружен в паре с ней")
 		return
@@ -324,8 +367,10 @@ func (e *evaluation) checkFormat(sd *signedData) (si signerInfo, content []byte,
 		st.add("SIGNED_DATA_COVERAGE", statusInvalid, "внутри контейнера подписан другой документ, а не загруженный в паре файл")
 		return
 	}
-	st.add("DOCUMENT_NOT_MODIFIED", statusNotRequired, "подпись CMS охватывает документ целиком: дописать что-то после "+
-		"подписания, как в PDF с инкрементальными изменениями, нельзя — любое изменение байтов ломает хеш")
+	if e.pdf == nil {
+		st.add("DOCUMENT_NOT_MODIFIED", statusNotRequired, "подпись CMS охватывает документ целиком: дописать что-то после "+
+			"подписания, как в PDF с инкрементальными изменениями, нельзя — любое изменение байтов ломает хеш")
+	}
 
 	if si.signedAttrs == nil {
 		st.add("SIGNED_ATTRIBUTES", statusIndeterminate, "нет подписанных атрибутов: подпись PKCS#7 без атрибутов — не CAdES, профиль её не проверяет")
@@ -397,7 +442,9 @@ func (e *evaluation) checkBinding(si signerInfo) {
 		st.add(code, statusInvalid, err.Error())
 		return
 	case !found:
-		e.r.Format = "CMS"
+		if e.pdf == nil {
+			e.r.Format = "CMS"
+		}
 		st.add(code, statusNotRequired, "нет атрибута signing-certificate-v2: подпись CMS без привязки к сертификату, не CAdES-BES")
 		st.warn("подпись без signing-certificate-v2: сертификат подписанта не закреплён подписью (не CAdES-BES)")
 		return
@@ -422,7 +469,9 @@ func (e *evaluation) checkBinding(si signerInfo) {
 		st.add(code, statusInvalid, "атрибут signing-certificate указывает на другой сертификат, чем тот, которым проверена подпись")
 		return
 	}
-	e.r.Format = "CADES_BES"
+	if e.pdf == nil {
+		e.r.Format = "CADES_BES"
+	}
 	st.add(code, statusVerified, "подписанный атрибут signing-certificate-v2 указывает на сертификат подписанта (CAdES-BES)")
 }
 
@@ -706,6 +755,15 @@ func nameString(n pkix.Name) string {
 		}
 	}
 	return strings.Join(parts, ", ")
+}
+
+// codeOf — код проверки, на которой разбор остановился (по умолчанию FORMAT_PARSED).
+func codeOf(err error) string {
+	var fe *formatError
+	if errors.As(err, &fe) && fe.code != "" {
+		return fe.code
+	}
+	return "FORMAT_PARSED"
 }
 
 // statusOf — статус проверки по ошибке: формат или алгоритм не поддержан — INDETERMINATE, иначе INVALID.

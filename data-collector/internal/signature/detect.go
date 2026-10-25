@@ -10,7 +10,7 @@ var xmlSignatureRe = regexp.MustCompile(`<([A-Za-z_][\w.-]*:)?Signature[\s>/]`)
 
 // EmbeddedSignature — есть ли в документе встроенная подпись: PDF со словарём подписи
 // (/ByteRange и /Contents) — ContainerPDF, XML с подписью XMLDSig — ContainerXML; "" — нет.
-// Такие подписи MVP только находит, но не проверяет.
+// Подпись PDF затем проверяется (если она одна и покрывает весь файл), подпись XML — только находится.
 func EmbeddedSignature(data []byte) Container {
 	head := data[:min(len(data), 1024)]
 	switch {

@@ -3,8 +3,8 @@
 //	go run ./tools/sigdemo -trust testdata/signature/trust -examples examples/files
 //
 // В -trust пишутся корень (root.pem) и список отзыва (root.crl) — их монтирует worker подписи
-// в docker-compose. В -examples — открепленная подпись balance.pdf.sig для сценария A и пары
-// «документ + подпись» в signature-demo/ с разными исходами проверки. Закрытые ключи живут только
+// в docker-compose. В -examples — открепленная подпись balance.pdf.sig для сценария A, пары
+// «документ + подпись» и PDF с подписью внутри в signature-demo/ с разными исходами проверки. Закрытые ключи живут только
 // в памяти этого запуска: чтобы подписать что-то ещё, запустите sigdemo заново — корень сменится.
 // Это тестовые сертификаты, а не КЭП: их проверка — профиль TEST, не проверка УКЭП.
 package main
@@ -95,6 +95,17 @@ func run(trustDir, examplesDir string) error {
 		}
 		files[f.path+".sig"] = sig
 	}
+	// PDF с подписью внутри (PAdES): /ByteRange покрывает весь файл, кроме /Contents; и тот же PDF,
+	// дописанный после подписания
+	pades, err := sigtest.SignPDF("Balance 2025 - OOO Severny Veter (TEST signature)", litvinova,
+		sigtest.PDFOptions{SigningTime: now})
+	if err != nil {
+		return err
+	}
+	files[filepath.Join(demo, "balance-signed-inside.pdf")] = pades
+	files[filepath.Join(demo, "balance-signed-inside-updated.pdf")] = append(bytes.Clone(pades),
+		[]byte("\n% изменено после подписания\n%%EOF\n")...)
+
 	for path, data := range files {
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			return err

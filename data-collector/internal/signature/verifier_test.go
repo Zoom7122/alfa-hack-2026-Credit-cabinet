@@ -1,6 +1,7 @@
 package signature_test
 
 import (
+	"bytes"
 	"context"
 	"crypto"
 	"crypto/ed25519"
@@ -423,8 +424,6 @@ func TestVerifyUnsupported(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	signedPDF := []byte("%PDF-1.7\n1 0 obj << /Type /Sig /Filter /Adobe.PPKLite /SubFilter /ETSI.CAdES.detached " +
-		"/ByteRange [0 120 4216 300] /Contents <3082...> >> endobj\n%%EOF")
 	signedXML := []byte(`<?xml version="1.0"?><Доверенность><ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">` +
 		`<ds:SignedInfo/></ds:Signature></Доверенность>`)
 	embedded := func(c signature.Container, data []byte) signature.Input {
@@ -456,7 +455,6 @@ func TestVerifyUnsupported(t *testing.T) {
 		{"BER from openssl -stream", detached(domain.DocFinancialStatements, doc, opensslBER), "FORMAT_PARSED"},
 		{"not a CMS container", detached(domain.DocFinancialStatements, doc,
 			[]byte("demo detached signature: not a real CMS container")), "FORMAT_PARSED"},
-		{"PDF with embedded signature (PAdES)", embedded(signature.ContainerPDF, signedPDF), "FORMAT_PARSED"},
 		{"XML with XMLDSig", embedded(signature.ContainerXML, signedXML), "FORMAT_PARSED"},
 		{"detached signature uploaded without document", attached(sign(t, doc, litv, sigtest.SignOptions{})), "SIGNED_DATA_COVERAGE"},
 	} {
@@ -884,5 +882,158 @@ func TestDemoFiles(t *testing.T) {
 			}
 			expect(t, verify(t, v, detached(domain.DocFinancialStatements, doc, sig), &loader{a: llc(poaActive, poaExpired, poaRevoked)}), tt.want)
 		})
+	}
+	// PDF с подписью внутри — без отдельного файла подписи
+	for _, tt := range []struct{ file, want string }{
+		{"signature-demo/balance-signed-inside.pdf", allVerified},
+		{"signature-demo/balance-signed-inside-updated.pdf",
+			"INDETERMINATE INDETERMINATE INDETERMINATE INDETERMINATE INDETERMINATE → INDETERMINATE"},
+	} {
+		t.Run(tt.file, func(t *testing.T) {
+			doc, err := os.ReadFile(filepath.Join("../../examples/files", tt.file))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if c := signature.EmbeddedSignature(doc); c != signature.ContainerPDF {
+				t.Fatalf("embedded signature = %q", c)
+			}
+			in := signature.Input{DocumentType: domain.DocFinancialStatements, Container: signature.ContainerPDF, Document: file(tt.file, doc)}
+			expect(t, verify(t, v, in, &loader{a: llc(poaActive)}), tt.want)
+		})
+	}
+}
+
+// Подпись внутри PDF: проверяется тем же кодом, что открепленная, если она одна и /ByteRange
+// покрывает весь файл, кроме своего /Contents. Иначе — INVALID или INDETERMINATE, но не VERIFIED.
+func TestVerifyPDFSignature(t *testing.T) {
+	p := testPKI(t)
+	litv := p.signer(t, "litvinova")
+	signPDF := func(t *testing.T, s *sigtest.Signer, opts sigtest.PDFOptions) []byte {
+		t.Helper()
+		if opts.SigningTime.IsZero() {
+			opts.SigningTime = now.Add(-time.Hour)
+		}
+		pdf, err := sigtest.SignPDF("Balance 2025", s, opts)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return pdf
+	}
+	pdfInput := func(docType domain.DocumentType, data []byte) signature.Input {
+		return signature.Input{DocumentType: docType, Container: signature.ContainerPDF, Document: file("balance.pdf", data)}
+	}
+	valid := signPDF(t, litv, sigtest.PDFOptions{})
+
+	t.Run("valid", func(t *testing.T) {
+		r := verify(t, newVerifier(p.trust()), pdfInput(domain.DocFinancialStatements, valid), &loader{a: llc(poaActive)})
+		expect(t, r, allVerified)
+		if r.Format != "PADES" || r.Container != signature.ContainerPDF || r.PDF == nil || r.PDF.ByteRange[0] != 0 ||
+			r.PDF.ByteRange[2]+r.PDF.ByteRange[3] != len(valid) || r.PDF.SubFilter != "ETSI.CAdES.detached" ||
+			r.SignatureSHA256 == "" || r.SigningTime.Value == nil || !r.SigningTime.Value.Equal(now.Add(-time.Hour).Truncate(time.Second)) ||
+			check(r, "DOCUMENT_NOT_MODIFIED") != domain.VerificationVerified || r.Authority.Basis != "POWER_OF_ATTORNEY" {
+			t.Fatalf("report = %s", reportJSON(t, r))
+		}
+	})
+
+	t.Run("director, adbe.pkcs7.detached, RSA", func(t *testing.T) {
+		pdf := signPDF(t, p.signer(t, "kovalev-rsa"), sigtest.PDFOptions{SubFilter: "adbe.pkcs7.detached"})
+		r := verify(t, newVerifier(p.trust()), pdfInput(domain.DocLoanAgreementDraft, pdf), &loader{a: llc()})
+		expect(t, r, allVerified)
+		if r.Authority.Basis != "REGISTRY_HEAD" || r.Signer.Kind != "LEGAL_ENTITY_HEAD" {
+			t.Fatalf("report = %s", reportJSON(t, r))
+		}
+	})
+
+	// время подписи в PAdES — /M словаря подписи: сертификат истёк уже после него — INDETERMINATE, не INVALID
+	t.Run("signing time from /M", func(t *testing.T) {
+		pdf := signPDF(t, p.signer(t, "expired-after"), sigtest.PDFOptions{SigningTime: time.Date(2026, 3, 1, 10, 0, 0, 0, time.UTC)})
+		r := verify(t, newVerifier(p.trust()), pdfInput(domain.DocFinancialStatements, pdf), &loader{a: llc(poaActive)})
+		expect(t, r, "VERIFIED VERIFIED INDETERMINATE VERIFIED VERIFIED → INDETERMINATE")
+	})
+
+	modify := func(data []byte, from, to string) []byte {
+		out := bytes.Replace(append([]byte{}, data...), []byte(from), []byte(to), 1)
+		if bytes.Equal(out, data) {
+			t.Fatalf("%q is not in the PDF", from)
+		}
+		return out
+	}
+	open := bytes.Index(valid, []byte("/Contents <")) + len("/Contents ") // '<' значения /Contents
+	end := open + bytes.IndexByte(valid[open:], '>')
+	junk := append([]byte{}, valid...)
+	junk[end-2] = 'f' // выравнивающий ноль в /Contents: не подписан, но проверяется
+	noContentsKey := modify(valid, "/Contents <", "/Content2 <")
+	shifted := modify(valid, "/ByteRange [0 ", "/ByteRange [1 ")
+	notCovered := append([]byte{}, valid...) // та же длина, но промежуток /ByteRange начинается не с '<'
+	notCovered[open-1], notCovered[open] = '<', ' '
+	twoSignatures := append(append([]byte{}, valid...), []byte("\n6 0 obj << /Type /Sig /ByteRange [0 1 2 3] >> endobj\n%%EOF\n")...)
+	unsigned := signPDF(t, litv, sigtest.PDFOptions{NoSignature: true})
+
+	for _, tt := range []struct {
+		name string
+		pdf  []byte
+		want string
+		code string
+	}{
+		{"document changed after signing", modify(valid, "(Balance 2025)", "(Balance 2026)"),
+			"INVALID VERIFIED VERIFIED INDETERMINATE INDETERMINATE → INVALID", "INTEGRITY"},
+		{"incremental update after signing", append(append([]byte{}, valid...), []byte("\n% update\n%%EOF\n")...),
+			"INDETERMINATE INDETERMINATE INDETERMINATE INDETERMINATE INDETERMINATE → INDETERMINATE", "DOCUMENT_NOT_MODIFIED"},
+		{"two signatures", twoSignatures,
+			"INDETERMINATE INDETERMINATE INDETERMINATE INDETERMINATE INDETERMINATE → INDETERMINATE", "SINGLE_SIGNER"},
+		{"data hidden in /Contents padding", junk,
+			"INDETERMINATE INVALID INDETERMINATE INDETERMINATE INDETERMINATE → INVALID", "SIGNED_DATA_COVERAGE"},
+		{"gap is not /Contents", noContentsKey,
+			"INDETERMINATE INVALID INDETERMINATE INDETERMINATE INDETERMINATE → INVALID", "SIGNED_DATA_COVERAGE"},
+		{"/ByteRange does not start at 0", shifted,
+			"INDETERMINATE INVALID INDETERMINATE INDETERMINATE INDETERMINATE → INVALID", "SIGNED_DATA_COVERAGE"},
+		{"gap does not match /ByteRange", notCovered,
+			"INDETERMINATE INVALID INDETERMINATE INDETERMINATE INDETERMINATE → INVALID", "SIGNED_DATA_COVERAGE"},
+		{"signature field is not signed", unsigned,
+			"INDETERMINATE INDETERMINATE INDETERMINATE INDETERMINATE INDETERMINATE → INDETERMINATE", "PDF_SIGNATURE"},
+		{"legacy adbe.pkcs7.sha1", signPDF(t, litv, sigtest.PDFOptions{SubFilter: "adbe.pkcs7.sha1"}),
+			"INDETERMINATE INDETERMINATE INDETERMINATE INDETERMINATE INDETERMINATE → INDETERMINATE", "PDF_SIGNATURE"},
+		{"GOST inside PDF", signPDF(t, litv, sigtest.PDFOptions{Sign: sigtest.SignOptions{DigestOID: sigtest.OIDGOST3411_2012_256,
+			SignatureOID: sigtest.OIDGOST3410_2012_256}}),
+			"INDETERMINATE INDETERMINATE INDETERMINATE INDETERMINATE INDETERMINATE → INDETERMINATE", "ALGORITHM_SUPPORTED"},
+		{"untrusted signer", func() []byte {
+			other, err := sigtest.NewCA("Посторонний УЦ", certFrom, certUntil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			s, err := other.Issue(litvinova, sigtest.CertOptions{NotBefore: certFrom, NotAfter: certUntil})
+			if err != nil {
+				t.Fatal(err)
+			}
+			return signPDF(t, s, sigtest.PDFOptions{})
+		}(), "VERIFIED VERIFIED INVALID INDETERMINATE INDETERMINATE → INVALID", "CHAIN_TO_TRUSTED_ROOT"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			r := verify(t, newVerifier(p.trust()), pdfInput(domain.DocFinancialStatements, tt.pdf), &loader{a: llc(poaActive)})
+			expect(t, r, tt.want)
+			if r.FailedCheck != tt.code || r.Format != "PADES" {
+				t.Fatalf("failed check = %s, want %s (format %s): %s", r.FailedCheck, tt.code, r.Format, r.FailureReason)
+			}
+		})
+	}
+}
+
+func TestParsePDFDateViaReport(t *testing.T) {
+	p := testPKI(t)
+	for _, tt := range []struct {
+		m    time.Time
+		want time.Time
+	}{
+		{time.Date(2026, 10, 22, 8, 30, 15, 0, time.UTC), time.Date(2026, 10, 22, 8, 30, 15, 0, time.UTC)},
+	} {
+		pdf, err := sigtest.SignPDF("x", p.signer(t, "litvinova"), sigtest.PDFOptions{SigningTime: tt.m})
+		if err != nil {
+			t.Fatal(err)
+		}
+		r := verify(t, newVerifier(p.trust()), signature.Input{DocumentType: domain.DocOther, Container: signature.ContainerPDF,
+			Document: file("x.pdf", pdf)}, &loader{a: llc(poaActive)})
+		if r.SigningTime == nil || r.SigningTime.Value == nil || !r.SigningTime.Value.Equal(tt.want) {
+			t.Fatalf("signing time = %+v", r.SigningTime)
+		}
 	}
 }

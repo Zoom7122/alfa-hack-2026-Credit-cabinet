@@ -19,7 +19,7 @@ type Container string
 const (
 	ContainerDetached Container = "DETACHED"      // открепленная подпись .sig/.p7s к отдельному файлу
 	ContainerAttached Container = "ATTACHED"      // присоединённая: документ внутри контейнера CMS
-	ContainerPDF      Container = "PDF_EMBEDDED"  // подпись внутри PDF (PAdES)
+	ContainerPDF      Container = "PDF_EMBEDDED"  // подпись внутри PDF (PAdES): проверяется, если одна и покрывает весь файл
 	ContainerXML      Container = "XML_ENVELOPED" // подпись внутри XML (XMLDSig/XAdES)
 )
 
@@ -54,6 +54,7 @@ type Report struct {
 	PolicyResult  PolicyResult              `json:"policy_result"`
 	Stages        Stages                    `json:"stages"`
 
+	PDF         *PDFSignature      `json:"pdf,omitempty"` // подпись внутри PDF
 	Algorithm   string             `json:"algorithm,omitempty"`
 	SigningTime *SigningTime       `json:"signing_time,omitempty"`
 	Signer      *SignerReport      `json:"signer,omitempty"`
@@ -63,6 +64,13 @@ type Report struct {
 	ScopeNote   string    `json:"scope_note"`
 	Limitations []string  `json:"limitations"`
 	VerifiedAt  time.Time `json:"verified_at"`
+}
+
+// PDFSignature — подпись внутри PDF: что подписано.
+type PDFSignature struct {
+	ByteRange   []int  `json:"byte_range"` // [0, b, c, d]: подписаны байты [0, b) и [c, c+d)
+	SubFilter   string `json:"sub_filter"`
+	SignedBytes int    `json:"signed_bytes"`
 }
 
 // PolicyResult — выполнена ли политика (signature_reports.policy_satisfied).

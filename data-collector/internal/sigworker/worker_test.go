@@ -477,20 +477,38 @@ func TestHandleReadErrors(t *testing.T) {
 	}
 }
 
-// PDF со встроенной подписью — отчёт INDETERMINATE (PAdES не поддержан); PDF без подписи — без отчёта.
+// PDF с подписью внутри проверяется целиком: подпись одна и покрывает весь файл — VERIFIED;
+// PDF, дописанный после подписания, — INDETERMINATE; PDF без подписи — без отчёта.
 func TestHandleEmbeddedPDFSignature(t *testing.T) {
 	e := newEnv(t, sigworker.Config{})
-	signed := e.addDoc(t, "doc_1", "signed.pdf", "application/pdf", domain.DocCharter,
-		[]byte("%PDF-1.7\n<< /Type /Sig /SubFilter /ETSI.CAdES.detached /ByteRange [0 10 20 30] /Contents <3082> >>"), "")
-	plain := e.addDoc(t, "doc_2", "plain.pdf", "application/pdf", domain.DocCharter, []byte("%PDF-1.4 без подписи"), "")
+	pdf, err := sigtest.SignPDF("Balance 2025", pki(t).litvinova, sigtest.PDFOptions{SigningTime: now.Add(-time.Hour)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	signed := e.addDoc(t, "doc_1", "signed.pdf", "application/pdf", domain.DocFinancialStatements, pdf, "")
+	updated := e.addDoc(t, "doc_2", "updated.pdf", "application/pdf", domain.DocFinancialStatements,
+		append(append([]byte{}, pdf...), []byte("\n% update after signing\n%%EOF\n")...), "")
+	plain := e.addDoc(t, "doc_3", "plain.pdf", "application/pdf", domain.DocCharter, []byte("%PDF-1.4 без подписи"), "")
 
-	handle(t, e, event(t, signed, plain))
-	handle(t, e, event(t, signed, plain))
+	handle(t, e, event(t, signed, updated, plain))
+	handle(t, e, event(t, signed, updated, plain)) // повторная доставка
 
-	r := onlyReport(t, e)
-	if r.DocumentID != signed.ID || r.SignatureDocumentID != "" || r.Decision != domain.VerificationIndeterminate ||
-		r.Format != domain.VerificationIndeterminate || !strings.Contains(r.FailureReason, "PAdES") {
-		t.Fatalf("report = %+v", r)
+	reports := map[string]domain.SignatureReport{}
+	for _, r := range e.repo.Reports() {
+		reports[r.DocumentID] = r
+	}
+	if len(e.repo.Reports()) != 2 {
+		t.Fatalf("reports = %d, want 2", len(e.repo.Reports()))
+	}
+	if r := reports[signed.ID]; stages(r) != "VERIFIED VERIFIED VERIFIED VERIFIED VERIFIED → VERIFIED" || r.SignatureDocumentID != "" ||
+		r.DocumentSHA256 != signed.SHA256 || r.SignatureSHA256 == "" || r.IdempotencyKey != "auto:TEST:doc_1@"+signed.SHA256 {
+		t.Fatalf("signed PDF: %s (%s) %+v", stages(r), r.FailureReason, r)
+	}
+	if r := reports[updated.ID]; r.Decision != domain.VerificationIndeterminate || !strings.Contains(r.FailureReason, "дописано") {
+		t.Fatalf("updated PDF: %s (%s)", stages(r), r.FailureReason)
+	}
+	if state, verdict := e.repo.Signature(appID, signed.ID); state != domain.SignatureDone || verdict != "VALID_WITH_WARNINGS" {
+		t.Fatalf("signed PDF state = %s %s", state, verdict)
 	}
 	if state, _ := e.repo.Signature(appID, plain.ID); state != domain.SignatureNotSigned {
 		t.Fatalf("plain PDF state = %s", state)

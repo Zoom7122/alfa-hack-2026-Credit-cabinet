@@ -16,7 +16,7 @@ make help    # остальные команды
 | data-collector | http://localhost:8081 | сбор данных для скоринга: регистрация заявителя `POST /api/v1/applicants`, анкета с документами `POST /api/v1/applications/{id}/questionnaire` ставит задачу на сбор (outbox → Kafka), состояние — `GET /api/v1/applications/{id}`, `GET /api/v1/collections/{id}`; файлы — в volume `documents`; [data-collector/](data-collector/), Swagger UI — http://localhost:8081/swagger/index.html |
 | data-collector-publisher | — | переносит события о задачах и документах из таблицы `outbox` в Kafka |
 | data-collector-worker | — | читает задачи из Kafka, опрашивает все моки и пишет сырые ответы в `raw_collections` |
-| data-collector-signature-worker | — | читает события о документах из Kafka, проверяет электронные подписи (CMS/CAdES, профиль TEST — тестовые корни, не УКЭП) и пишет отчёты в `signature_reports`; [data-collector/README.md](data-collector/README.md#проверка-подписи-data-collector-signature-worker) |
+| data-collector-signature-worker | — | читает события о документах из Kafka, проверяет электронные подписи (CMS/CAdES и подпись внутри PDF, профиль TEST — тестовые корни, не УКЭП) и пишет отчёты в `signature_reports`; [data-collector/README.md](data-collector/README.md#проверка-подписи-data-collector-signature-worker) |
 | kafka | `localhost:${KAFKA_PORT}` (9094) | брокер сообщений (KRaft, один узел); внутри compose — `kafka:9092` |
 | kafka-ui | http://localhost:8086 | топики, сообщения и лаг consumer group в браузере |
 | mock-api | http://localhost:8090 | эмулятор внешних систем: АБС банка, ФНС, БКИ, Compliance, ФССП, КАД, Федресурс, МЧД, налоговая отчётность, залоги, ЕГРН, Госуслуги, мультибанкинг, маркетплейсы, ОФД, закупки, сигналы, ЦБ, hh.ru; [mock-api/](mock-api/) |

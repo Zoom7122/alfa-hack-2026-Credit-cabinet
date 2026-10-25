@@ -318,7 +318,7 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 | `verified_at` | timestamptz | | |
 | `signature_document_id` | text | ✔ | FK → `documents`: файл открепленной подписи. `NULL` — подпись внутри документа |
 | `document_sha256` | text | ✔ | sha256 проверенных байтов документа, посчитан до проверки, — версия документа |
-| `signature_sha256` | text | ✔ | sha256 файла подписи |
+| `signature_sha256` | text | ✔ | sha256 файла подписи; у подписи внутри PDF — подписи CMS из `/Contents` |
 | `profile` | text | ✔ | профиль проверки: `TEST` (тестовые корни и моки реестров, не УКЭП). `NULL` — отчёт не от worker'а подписи |
 | `integrity_status`, `format_status`, `certificate_status`, `identity_status`, `authority_status` | text | ✔ | статус этапа: `VERIFIED`, `INVALID`, `INDETERMINATE`, `NOT_REQUIRED` — целостность, формат и охват, сертификат, личность подписанта, полномочия |
 | `decision` | text | ✔ | итог по правилам банка, те же значения |

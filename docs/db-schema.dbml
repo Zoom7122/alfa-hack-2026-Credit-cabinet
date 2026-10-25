@@ -264,7 +264,7 @@ Table signature_reports {
   verified_at timestamptz [not null]
   signature_document_id text [ref: > documents.id, note: 'файл открепленной подписи; NULL — подпись внутри документа']
   document_sha256 text [note: 'sha256 проверенных байтов документа (версия); у отчётов worker\'а обязателен']
-  signature_sha256 text [note: 'sha256 файла подписи']
+  signature_sha256 text [note: 'sha256 файла подписи; у подписи внутри PDF — CMS из /Contents']
   profile text [note: 'TEST; NULL — отчёт не от worker\'а подписи']
   integrity_status text [note: 'VERIFIED | INVALID | INDETERMINATE | NOT_REQUIRED']
   format_status text [note: 'VERIFIED | INVALID | INDETERMINATE | NOT_REQUIRED']

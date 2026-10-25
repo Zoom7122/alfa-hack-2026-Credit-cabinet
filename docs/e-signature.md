@@ -88,13 +88,14 @@ type SignatureVerifier interface {
 | Что | MVP |
 |---|---|
 | Контейнеры | CMS/CAdES-BES (и CMS без `signing-certificate-v2`), открепленная и присоединённая, DER / PEM / base64, одна подпись в контейнере |
-| PAdES, XMLDSig/XAdES | только обнаруживаются → `INDETERMINATE`: подписанный диапазон, изменения после подписания и канонизация не проверяются |
+| PAdES (подпись внутри PDF) | проверяется тем же кодом, что открепленная, если подпись одна, `/ByteRange` начинается с нуля и доходит до конца файла, а вне его только `/Contents` с подписью. Дописанный после подписания PDF (инкрементальные изменения, метка времени документа), несколько подписей, `adbe.pkcs7.sha1` → `INDETERMINATE` |
+| XMLDSig/XAdES | только обнаруживается → `INDETERMINATE`: канонизация и ссылки не проверяются |
 | Алгоритмы | профиль TEST: RSA ≥ 2048 (PKCS#1 v1.5, PSS), ECDSA P-256/384/521, Ed25519; SHA-256/384/512. ГОСТ, SHA-1, MD5 → `INDETERMINATE` |
 | Доверие | локальные тестовые корни и CRL (`SIGNATURE_TRUST_DIR`, выпуск — `make sigdemo`); OCSP, TSL и аккредитация УЦ — нет |
 | Полномочия | ЕГРЮЛ (руководитель по ИНН из «Прозрачного бизнеса»), ИП сам за себя, МЧД из реестра (срок, отзыв, полномочие для типа документа) — по собранным ответам mock-api |
 | Результат | статус каждого этапа (`VERIFIED`, `INVALID`, `INDETERMINATE`, `NOT_REQUIRED`) и итог по правилам банка; чек-лист выше — коды проверок в отчёте |
 
-Этапы отчёта и коды чек-листа: целостность — `INTEGRITY`, `SIGNATURE_VALUE` (+ файл не менялся после загрузки); формат и охват — `FORMAT_PARSED`, `DOCUMENT_NOT_MODIFIED` (+ подписанные атрибуты, привязка сертификата, алгоритм); сертификат — `CHAIN_TO_TRUSTED_ROOT`, `CERT_VALID_AT_SIGNING_TIME`, `KEY_USAGE`, `NOT_REVOKED`, `SIGNING_TIME_TRUSTED`, `ISSUER_ACCREDITED`, `QUALIFIED_ATTRIBUTES` (последние три в TEST — `NOT_REQUIRED`); личность — `SIGNER_MATCHES_APPLICANT`; полномочия — `SIGNER_AUTHORITY`, `POA_VALID`.
+Этапы отчёта и коды чек-листа: целостность — `INTEGRITY`, `SIGNATURE_VALUE` (+ файл не менялся после загрузки); формат и охват — `FORMAT_PARSED`, `DOCUMENT_NOT_MODIFIED` (у PDF — проверяется: подписанный диапазон доходит до конца файла; + словарь подписи PDF, подписанные атрибуты, привязка сертификата, алгоритм); сертификат — `CHAIN_TO_TRUSTED_ROOT`, `CERT_VALID_AT_SIGNING_TIME`, `KEY_USAGE`, `NOT_REVOKED`, `SIGNING_TIME_TRUSTED`, `ISSUER_ACCREDITED`, `QUALIFIED_ATTRIBUTES` (последние три в TEST — `NOT_REQUIRED`); личность — `SIGNER_MATCHES_APPLICANT`; полномочия — `SIGNER_AUTHORITY`, `POA_VALID`.
 
 **Профиль TEST — не проверка УКЭП.** Он проверяет криптографию по тестовым корням и не подтверждает квалифицированный статус: нет сертифицированного СКЗИ, ГОСТ не проверяется (и не подменяется RSA), аккредитация УЦ и признаки КЭП не смотрятся, время подписи не подтверждено меткой TSP. Поэтому верная подпись получает вердикт `VALID_WITH_WARNINGS`, а не `VALID`, а в отчёте — `profile = TEST`, `trust_mode = MOCK` и список ограничений. Даже верная подпись подтверждает только, что файл не изменён и кем подписан, — не достоверность цифр и не платёжеспособность.
 

@@ -18,9 +18,11 @@ import (
 // выдают потоковые подписчики, не поддержан: такой контейнер — INDETERMINATE, а не INVALID.
 
 // formatError — контейнер подписи не разобран. unsupported — формат не поддерживается
-// (INDETERMINATE), иначе контейнер испорчен (INVALID).
+// (INDETERMINATE), иначе контейнер испорчен (INVALID). code — код проверки в отчёте;
+// пусто — FORMAT_PARSED.
 type formatError struct {
 	unsupported bool
+	code        string
 	msg         string
 }
 
