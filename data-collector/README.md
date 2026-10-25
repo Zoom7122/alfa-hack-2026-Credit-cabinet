@@ -44,7 +44,7 @@ GET /applications/{id}, /collections/{id} ──▶ статус заявки и
 
 | Бинарь | Пакет | Что делает |
 |---|---|---|
-| `data-collector` | `cmd/data-collector` | HTTP API: регистрация, анкета с файлами, заявки, состояние сбора, `/check-mock` |
+| `data-collector` | `cmd/data-collector` | HTTP API: мок-вход (`/auth/*`, `/me`), регистрация, анкета с файлами, заявки, состояние сбора, `/check-mock` |
 | `data-collector-publisher` | `cmd/outbox-publisher` | переносит события из `outbox` в Kafka (оба топика). Несколько реплик безопасны: события блокируются `FOR UPDATE SKIP LOCKED` |
 | `data-collector-worker` | `cmd/worker` | читает топик задач в consumer group `data-collector-worker`, опрашивает системы, пишет результат. Реплики делят партиции топика |
 | `data-collector-signature-worker` | `cmd/signature-worker` | читает топик документов в consumer group `data-collector-signature-worker`, проверяет подписи и пишет отчёты в `signature_reports`. Реплики делят партиции топика |
@@ -91,6 +91,7 @@ make swagger            # перегенерировать docs/ после пр
 | `KAFKA_TOPIC` | всем | `data-collector.collection-tasks` | топик задач на сбор |
 | `KAFKA_DOCUMENTS_TOPIC` | API, publisher, worker подписи | `data-collector.documents` | топик событий о документах |
 | `HTTP_ADDR` | API | `:8081` | адрес HTTP-сервера |
+| `SEED_TEST_USERS` | API | `true` | при старте завести тестовых пользователей для мок-входа (`GET /auth/test-users`); `false` — не заводить |
 | `DOCUMENTS_DIR` | API, worker подписи | `data/documents` (в образе — `/data/documents`) | куда класть файлы документов; worker подписи читает их оттуда |
 | `MAX_FILE_SIZE_MB` | API, worker подписи | `20` | лимит одного файла |
 | `BANK_API_URL` | API | `http://localhost:8090/bank/v1` | корень старого API банка (`/check-mock`) |
@@ -141,6 +142,49 @@ curl -s localhost:8081/api/v1/applications/app_…                 # SUBMITTED �
 curl -s localhost:8081/api/v1/collections/tsk_…                  # PENDING → RUNNING → COMPLETED
 ```
 
+### Вход: `GET /api/v1/auth/test-users`, `POST /api/v1/auth/mock-login`, `GET /api/v1/me`
+
+Мок-вход, как в контракте кабинета `api/openapi.yaml`: паролей нет, токен — `mock.<user_id>`.
+- `GET /auth/test-users` — тестовые пользователи: `id`, `full_name`, `roles`, `persona`, `companies` (`applicant_id`, `short_name`, `inn`, `role`, `can_sign`).
+- `POST /auth/mock-login` с `{"user_id": "usr_director_north"}` — `{"token": "mock.usr_director_north", "user": Me}`. Ошибки: `400` — нет или пустой `user_id`; `404` — пользователя нет или он не тестовый. Войти можно только под тестовым пользователем (с `persona`): под пользователем, заведённым анонимной регистрацией, нельзя.
+- `GET /me` с `Authorization: Bearer mock.<user_id>` — текущий пользователь и его компании: сначала заведённые ему, потом добавленные регистрацией, по имени (кабинет берёт первую как основную). `pending_signatures` пока всегда пустой — подписания в модуле нет. Без токена или с неизвестным пользователем — `401 UNAUTHORIZED`.
+
+Токен необязателен на всех ручках `/api/v1`, кроме `/me`. Схема `Bearer` — без учёта регистра. Ручкам входа токен не нужен, старый токен им не мешает. Без заголовка всё работает анонимно, как раньше. С неверным токеном остальные ручки отвечают `401`. С верным `POST /applicants` оформляет заявку **от имени вошедшего пользователя**:
+- нового пользователя не заводит, ИНН физлица из тела не нужен;
+- ФИО берёт из профиля (поле в теле всё равно обязательно);
+- по той же компании возвращает его прежний черновик;
+- новая компания попадает в профиль (`company_members`) с ролью из запроса, а **уже записанная роль не меняется** — иначе одна регистрация задним числом поменяла бы роль и `can_sign` во всех его заявках по компании;
+- сотрудник банка (`UNDERWRITER`) заявку не подаёт — `403 FORBIDDEN`.
+
+Тестовые пользователи (`internal/service/testusers.go`) заводятся при старте API (`SEED_TEST_USERS`). При повторном старте:
+- ничего не дублируется;
+- порядок в списке входа — как в коде;
+- убранные из кода пользователи пропадают из списка (строки остаются — на них ссылаются заявки).
+
+Компания с тем же ИНН, по которой уже подавали заявку, остаётся со своим id и собранными данными. Поэтому id компаний в живой базе могут отличаться от указанных в коде — сверять по ИНН. Если id из кода занят другой компанией, заводится `apl_inn_<ИНН>`.
+
+| id | Кто | Компания |
+|---|---|---|
+| `usr_director_romashka`, `usr_accountant_romashka` | директор и бухгалтер | ООО «Ромашка» `7701234567` |
+| `usr_ip_smirnov` | ИП | `771234567890` |
+| `usr_director_vector` | директор | ООО «Вектор Строй» `7724567890` |
+| `usr_underwriter_sokolova` | андеррайтер (`UNDERWRITER`) | — |
+| `usr_director_north`, `usr_accountant_north` | директор и бухгалтер, сценарий A | ООО «Северный ветер» `7799000012` |
+| `usr_director_stroyresurs` | директор, сценарий B | ООО «Стройресурс» `7799000020` |
+| `usr_director_altair` | директор, сценарий C | ООО «Альтаир» `7799000037` |
+| `usr_ip_smirnova` | ИП, сценарий D | `779900010202` |
+| `usr_finance_techno` | отвечает за финансирование, сценарий E | ООО «Техно-Сервис» `7799000044` |
+
+Первые пять — те же id, что у моков фронта (`frontend/src/mocks/data.ts`): на них держатся экраны кабинета, которые пока на моках. По компаниям сценариев A–E mock-api отдаёт данные во всех системах.
+
+```bash
+curl -s localhost:8081/api/v1/auth/test-users
+curl -s -X POST localhost:8081/api/v1/auth/mock-login -H 'Content-Type: application/json' -d '{"user_id":"usr_director_north"}'
+curl -s localhost:8081/api/v1/me -H 'Authorization: Bearer mock.usr_director_north'
+curl -s -X POST localhost:8081/api/v1/applicants -H 'Authorization: Bearer mock.usr_director_north' \
+  -H 'Content-Type: application/json' -d '{"representative":{"full_name":"Ковалёв Игорь Сергеевич","role":"DIRECTOR"},"company":{"inn":"7799000012"}}'
+```
+
 ### `POST /api/v1/applicants` — кто оформляет кредит и за какую компанию
 
 Одной транзакцией создаёт или находит:
@@ -165,7 +209,7 @@ curl -s localhost:8081/api/v1/collections/tsk_…                  # PENDING →
 | `BANKING_EMPLOYEE` | сотрудник, работающий с банковскими продуктами | по доверенности |
 | `AUTHORIZED_EMPLOYEE` | иной сотрудник, уполномоченный оформлять заявку от имени компании | по доверенности |
 
-Ответ `201` — заявка (как в `GET /applications/{id}`, плюс `applicant.already_known`), `Location: /api/v1/applications/{id}`. Ошибки: `400` — битый JSON, нет обязательного поля; `422` — неверный ИНН (компании — 10 или 12 цифр, физлица — 12) или роль.
+Ответ `201` — заявка (как в `GET /applications/{id}`, плюс `applicant.already_known`), `Location: /api/v1/applications/{id}`. Ошибки: `400` — битый JSON, нет обязательного поля; `401` — неверный токен; `422` — неверный ИНН (компании — 10 или 12 цифр, физлица — 12) или роль. С токеном — см. «Вход» выше.
 
 ### `POST /api/v1/applications/{id}/questionnaire` — анкета и документы
 

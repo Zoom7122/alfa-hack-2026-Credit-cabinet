@@ -20,6 +20,8 @@ export interface paths {
          *     и черновик заявки (DRAFT). Если у этого пользователя по этой компании уже есть черновик, возвращается он.
          *     Подписывать договор без доверенности может директор, у ИП — сам предприниматель (can_sign).
          *     Дальше — анкета: POST /applications/{id}/questionnaire выводит заявку из DRAFT и запускает сбор данных.
+         *     С токеном `Authorization: Bearer mock.<user_id>` (POST /auth/mock-login) заявка оформляется от имени вошедшего
+         *     пользователя: нового пользователя не заводится, ФИО берётся из профиля, черновик по компании — его.
          *
          *     **Примеры** — заявители сценариев mock-api A–E (`examples/scenario-X.applicant.json`), в теле по умолчанию — сценарий A. Данные в моках привязаны к компании, поэтому анкету берите того же сценария: они в описании POST /applications/{id}/questionnaire.
          *
@@ -127,6 +129,15 @@ export interface paths {
                 };
                 /** @description битый JSON, нет обязательного поля (representative.full_name, representative.role, company.inn) */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description неверный токен */
+                401: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -593,6 +604,127 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/mock-login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Войти под синтетическим пользователем
+         * @description Возвращает токен `mock.<user_id>` и пользователя. Токен передаётся в `Authorization: Bearer …`:
+         *     с ним POST /applicants оформляет заявку от имени этого пользователя, а GET /me возвращает его компании.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description id тестового пользователя */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MockLoginRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MockLoginResponse"];
+                    };
+                };
+                /** @description битый JSON, нет user_id */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description пользователя нет */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/test-users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Список синтетических пользователей для входа
+         * @description Тестовые пользователи стенда: директора, бухгалтеры и ИП компаний сценариев mock-api A–E, демо-персонажи
+         *     экранов кабинета и андеррайтер. Заводятся при старте API (SEED_TEST_USERS). Вход — POST /auth/mock-login.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TestUsers"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/check-mock": {
         parameters: {
             query?: never;
@@ -728,6 +860,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Текущий пользователь и его компании
+         * @description Пользователь по токену `Authorization: Bearer mock.<user_id>` и компании, от имени которых он действует.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Me"];
+                    };
+                };
+                /** @description нет или неверный токен */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -827,6 +1016,21 @@ export interface components {
              */
             status?: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED";
         };
+        CompanyAccess: {
+            /** @example apl_north_wind */
+            applicant_id: string;
+            /** @description Может подписать договор без доверенности: директор, у ИП — сам предприниматель. */
+            can_sign: boolean;
+            /** @example 7799000012 */
+            inn: string;
+            /**
+             * @example DIRECTOR
+             * @enum {string}
+             */
+            role: "OWNER" | "DIRECTOR" | "CFO" | "ACCOUNTANT" | "FINANCE_EMPLOYEE" | "BANKING_EMPLOYEE" | "AUTHORIZED_EMPLOYEE";
+            /** @example ООО «Северный ветер» */
+            short_name: string;
+        };
         CompanyInput: {
             /**
              * @description 10 цифр — ЮЛ, 12 — ИП
@@ -867,6 +1071,28 @@ export interface components {
             inn?: string;
             salary_project?: components["schemas"]["domain.SalaryProjectReport"];
             sources?: components["schemas"]["SourceResult"][];
+        };
+        Me: {
+            companies: components["schemas"]["CompanyAccess"][];
+            /** @example Ковалёв Игорь Сергеевич */
+            full_name: string;
+            /** @example usr_director_north */
+            id: string;
+            /** @description Заявки, ждущие подписи пользователя как директора. Подписания в data-collector пока нет — всегда пусто. */
+            pending_signatures: string[];
+            roles: ("CLIENT" | "UNDERWRITER")[];
+        };
+        MockLoginRequest: {
+            /** @example usr_director_north */
+            user_id: string;
+        };
+        MockLoginResponse: {
+            /**
+             * @description Токен для Authorization: Bearer …
+             * @example mock.usr_director_north
+             */
+            token: string;
+            user: components["schemas"]["Me"];
         };
         Problem: {
             code?: string;
@@ -949,6 +1175,19 @@ export interface components {
             source?: "ACCOUNTS" | "CREDITS" | "ACQUIRING" | "SALARY_PROJECT" | "CARD_INDEX";
             /** @enum {string} */
             state?: "DONE" | "FAILED";
+        };
+        TestUser: {
+            companies: components["schemas"]["CompanyAccess"][];
+            /** @example Ковалёв Игорь Сергеевич */
+            full_name: string;
+            /** @example usr_director_north */
+            id: string;
+            /** @example Сценарий A: директор ООО «Северный ветер» */
+            persona: string;
+            roles: ("CLIENT" | "UNDERWRITER")[];
+        };
+        TestUsers: {
+            items: components["schemas"]["TestUser"][];
         };
         "domain.Account": {
             AccountDetails?: components["schemas"]["domain.AccountDetails"][];

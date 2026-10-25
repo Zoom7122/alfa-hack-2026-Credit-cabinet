@@ -170,6 +170,39 @@ definitions:
         example: PENDING
         type: string
     type: object
+  CompanyAccess:
+    properties:
+      applicant_id:
+        example: apl_north_wind
+        type: string
+      can_sign:
+        description: 'Может подписать договор без доверенности: директор, у ИП — сам
+          предприниматель.'
+        type: boolean
+      inn:
+        example: "7799000012"
+        type: string
+      role:
+        enum:
+        - OWNER
+        - DIRECTOR
+        - CFO
+        - ACCOUNTANT
+        - FINANCE_EMPLOYEE
+        - BANKING_EMPLOYEE
+        - AUTHORIZED_EMPLOYEE
+        example: DIRECTOR
+        type: string
+      short_name:
+        example: ООО «Северный ветер»
+        type: string
+    required:
+    - applicant_id
+    - can_sign
+    - inn
+    - role
+    - short_name
+    type: object
   CompanyInput:
     properties:
       inn:
@@ -243,6 +276,58 @@ definitions:
         items:
           $ref: '#/definitions/SourceResult'
         type: array
+    type: object
+  Me:
+    properties:
+      companies:
+        items:
+          $ref: '#/definitions/CompanyAccess'
+        type: array
+      full_name:
+        example: Ковалёв Игорь Сергеевич
+        type: string
+      id:
+        example: usr_director_north
+        type: string
+      pending_signatures:
+        description: Заявки, ждущие подписи пользователя как директора. Подписания
+          в data-collector пока нет — всегда пусто.
+        items:
+          type: string
+        type: array
+      roles:
+        items:
+          enum:
+          - CLIENT
+          - UNDERWRITER
+          type: string
+        type: array
+    required:
+    - companies
+    - full_name
+    - id
+    - pending_signatures
+    - roles
+    type: object
+  MockLoginRequest:
+    properties:
+      user_id:
+        example: usr_director_north
+        type: string
+    required:
+    - user_id
+    type: object
+  MockLoginResponse:
+    properties:
+      token:
+        description: 'Токен для Authorization: Bearer …'
+        example: mock.usr_director_north
+        type: string
+      user:
+        $ref: '#/definitions/Me'
+    required:
+    - token
+    - user
     type: object
   Problem:
     properties:
@@ -404,6 +489,44 @@ definitions:
         - DONE
         - FAILED
         type: string
+    type: object
+  TestUser:
+    properties:
+      companies:
+        items:
+          $ref: '#/definitions/CompanyAccess'
+        type: array
+      full_name:
+        example: Ковалёв Игорь Сергеевич
+        type: string
+      id:
+        example: usr_director_north
+        type: string
+      persona:
+        example: 'Сценарий A: директор ООО «Северный ветер»'
+        type: string
+      roles:
+        items:
+          enum:
+          - CLIENT
+          - UNDERWRITER
+          type: string
+        type: array
+    required:
+    - companies
+    - full_name
+    - id
+    - persona
+    - roles
+    type: object
+  TestUsers:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/TestUser'
+        type: array
+    required:
+    - items
     type: object
   domain.Account:
     properties:
@@ -760,6 +883,8 @@ info:
     всех внешних систем (эмулятор mock-api). Сначала регистрация (POST /applicants → черновик заявки),
     затем анкета с файлами (POST /applications/{id}/questionnaire). Сбор асинхронный: анкета ставит
     задачу в очередь (outbox → Kafka), системы опрашивает worker.
+    Вход — мок-логином, как в api/openapi.yaml: GET /auth/test-users → POST /auth/mock-login → токен
+    `mock.<user_id>` в `Authorization: Bearer …`. С токеном регистрация идёт от имени пользователя; без него — анонимно.
     Ошибки — RFC 9457 (`application/problem+json`).
   title: data-collector API
   version: "0.2"
@@ -774,6 +899,10 @@ paths:
         и черновик заявки (DRAFT). Если у этого пользователя по этой компании уже есть черновик, возвращается он.
         Подписывать договор без доверенности может директор, у ИП — сам предприниматель (can_sign).
         Дальше — анкета: POST /applications/{id}/questionnaire выводит заявку из DRAFT и запускает сбор данных.
+        С токеном `Authorization: Bearer mock.<user_id>` (POST /auth/mock-login) заявка оформляется от имени вошедшего
+        пользователя: нового пользователя не заводится, ФИО берётся из профиля (поле в теле всё равно обязательно),
+        `representative.inn` не нужен, черновик по компании — его. Уже записанная роль в компании не меняется.
+        Сотрудник банка (UNDERWRITER) заявку подать не может — 403.
 
         **Примеры** — заявители сценариев mock-api A–E (`examples/scenario-X.applicant.json`), в теле по умолчанию — сценарий A. Данные в моках привязаны к компании, поэтому анкету берите того же сценария: они в описании POST /applications/{id}/questionnaire.
 
@@ -876,6 +1005,14 @@ paths:
             representative.role, company.inn)
           schema:
             $ref: '#/definitions/Problem'
+        "401":
+          description: неверный токен
+          schema:
+            $ref: '#/definitions/Problem'
+        "403":
+          description: токен сотрудника банка
+          schema:
+            $ref: '#/definitions/Problem'
         "422":
           description: неверный ИНН или роль
           schema:
@@ -884,6 +1021,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
       summary: 'Зарегистрировать заявителя: кто оформляет кредит и за какую компанию'
       tags:
       - applicants
@@ -913,6 +1052,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
       summary: Заявка
       tags:
       - applications
@@ -1238,10 +1379,68 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
       summary: 'Отправить анкету: заявка выходит из DRAFT, начинается сбор данных
         из моков'
       tags:
       - questionnaires
+  /auth/mock-login:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Возвращает токен `mock.<user_id>` и пользователя. Токен передаётся в `Authorization: Bearer …`:
+        с ним POST /applicants оформляет заявку от имени этого пользователя, а GET /me возвращает его компании.
+      parameters:
+      - description: id тестового пользователя
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/MockLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MockLoginResponse'
+        "400":
+          description: битый JSON, нет user_id
+          schema:
+            $ref: '#/definitions/Problem'
+        "404":
+          description: пользователя нет или он не тестовый
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Problem'
+      summary: Войти под синтетическим пользователем
+      tags:
+      - auth
+  /auth/test-users:
+    get:
+      description: |-
+        Тестовые пользователи стенда: директора, бухгалтеры и ИП компаний сценариев mock-api A–E, демо-персонажи
+        экранов кабинета и андеррайтер. Заводятся при старте API (SEED_TEST_USERS). Вход — POST /auth/mock-login,
+        только под ними: пользователи, заведённые анонимной регистрацией, войти не могут. Токен этой ручке не нужен.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/TestUsers'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Problem'
+      summary: Список синтетических пользователей для входа
+      tags:
+      - auth
   /check-mock:
     get:
       description: |-
@@ -1303,7 +1502,39 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
       summary: Состояние сбора данных по анкете
       tags:
       - collections
+  /me:
+    get:
+      description: 'Пользователь по токену `Authorization: Bearer mock.<user_id>`
+        и компании, от имени которых он действует.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Me'
+        "401":
+          description: нет или неверный токен
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
+      summary: Текущий пользователь и его компании
+      tags:
+      - auth
+securityDefinitions:
+  bearer:
+    description: Bearer mock.<user_id> из POST /auth/mock-login
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

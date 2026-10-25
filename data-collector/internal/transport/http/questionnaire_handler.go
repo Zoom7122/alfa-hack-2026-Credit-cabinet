@@ -81,6 +81,7 @@ func NewQuestionnaireHandler(svc QuestionnaireService, maxBody int64, log *slog.
 //	@Failure				415				{object}	problem		"не multipart/form-data и не application/json"
 //	@Failure				422				{object}	problem		"нарушено правило анкеты или файлов: формат, размер, пары подписей, больше 10 файлов"
 //	@Failure				500				{object}	problem
+//	@Security				bearer
 //	@Router					/applications/{id}/questionnaire [post]
 func (h *QuestionnaireHandler) submit(c *gin.Context) {
 	var (

@@ -21,10 +21,25 @@ const (
 	collectionsPath  = "/api/v1/collections"
 )
 
+// RouterOption подключает необязательные части API.
+type RouterOption func(r *gin.Engine, api *gin.RouterGroup)
+
+// WithAuth — мок-вход (/auth/test-users, /auth/mock-login, /me) и проверка токена на всех ручках /api/v1:
+// с токеном регистрация оформляется от имени вошедшего пользователя, без токена всё работает анонимно.
+func WithAuth(auth *AuthHandler) RouterOption {
+	return func(_ *gin.Engine, api *gin.RouterGroup) {
+		// вход — до проверки токена: по контракту ему токен не нужен, и старый токен не мешает перелогиниться
+		api.GET("/auth/test-users", auth.testUsers)
+		api.POST("/auth/mock-login", auth.mockLogin)
+		api.Use(auth.authenticate)
+		api.GET("/me", auth.me)
+	}
+}
+
 // NewRouter — единственное место, где перечислены все эндпоинты data-collector.
-// Новая ручка = метод в хендлере + строка здесь.
+// Новая ручка = метод в хендлере + строка здесь (или в RouterOption).
 func NewRouter(applications *ApplicationHandler, questionnaires *QuestionnaireHandler, collections *CollectionHandler,
-	internalData *InternalDataHandler) *gin.Engine {
+	internalData *InternalDataHandler, opts ...RouterOption) *gin.Engine {
 	useJSONFieldNames()
 
 	r := gin.New()
@@ -34,6 +49,10 @@ func NewRouter(applications *ApplicationHandler, questionnaires *QuestionnaireHa
 	r.GET("/swagger/*any", swagger()) // UI: /swagger/ или /swagger/index.html
 
 	api := r.Group("/api/v1")
+	// middleware группы (проверка токена) — до ручек
+	for _, opt := range opts {
+		opt(r, api)
+	}
 	{
 		api.POST("/applicants", applications.register)
 		api.GET("/applications/:id", applications.get)

@@ -32,7 +32,12 @@ async function chooseFiles(page: Page, list: ReturnType<typeof balance>[]) {
 }
 
 // input радио кита скрыт визуально — выбираем кликом по подписи
-const chooseRole = (page: Page, role: string) => page.getByText(role, { exact: true }).click();
+/** Роль в своей компании задана профилем и заблокирована — тогда только проверяем её. */
+async function chooseRole(page: Page, role: string) {
+    const radio = page.getByRole('radio', { name: role, exact: true });
+    if (await radio.isDisabled()) await expect(radio).toBeChecked();
+    else await page.getByText(role, { exact: true }).click();
+}
 
 /** Шаг «Компания» для сценария A mock-api. */
 async function register(page: Page, inn = '7799000012', role = 'Генеральный директор') {
@@ -71,18 +76,22 @@ const collectorApp = (page: Page, id: string) =>
     page.evaluate(async (appId) => (await (await fetch(`/collector/api/v1/applications/${appId}`)).json()) as CollectorAppView, id);
 
 test.beforeEach(async ({ page }) => {
-    await seedToken(page, 'director');
+    // представитель компании сценария A: «Северный ветер» уже в его профиле директором — так же и у живого сервиса,
+    // сколько бы раз ни гоняли тесты (у других пользователей профиль копит компании из прошлых прогонов)
+    await seedToken(page, 'northDirector');
 });
 
 test.describe('Анкета — компания', () => {
     test('сценарий A: реквизиты из подсказки, роль, черновик в data-collector', async ({ page }) => {
+        await seedToken(page, 'northAccountant');
         await page.goto(NEW);
         await page.getByLabel('ИНН компании или ИП').fill('7799000012');
         await expect(page.getByText('Нашли компанию в реестре')).toBeVisible();
         await expect(page.getByLabel('Название')).toHaveValue('ООО «Северный ветер»');
         await expect(page.getByLabel('Руководитель')).toHaveValue('Ковалёв Игорь Сергеевич');
-        await expect(page.getByLabel('ФИО')).toHaveValue('Петров Пётр Петрович');
-        await expect(page.getByRole('button', { name: 'Продолжить' })).toBeDisabled();
+        await expect(page.getByLabel('ФИО')).toHaveValue('Литвинова Марина Олеговна');
+        // роль в своей компании — из профиля, сменить нельзя
+        await expect(page.getByRole('radio', { name: 'Генеральный директор' })).toBeDisabled();
         await chooseRole(page, 'Бухгалтер');
         await next(page);
         await expect(page).toHaveURL(/\/edit\/terms$/);
@@ -94,7 +103,8 @@ test.describe('Анкета — компания', () => {
 
     test('ИНН вне подсказок — можно продолжить, реквизиты возьмём из ЕГРЮЛ', async ({ page }) => {
         await page.goto(NEW);
-        await page.getByLabel('ИНН компании или ИП').fill('7711111111');
+        // каждый раз новый ИНН: у живого сервиса компания из прошлого прогона уже была бы в профиле
+        await page.getByLabel('ИНН компании или ИП').fill(`77${String(Date.now()).slice(-8)}`);
         await expect(page.getByText('В подсказках реестра такой компании нет')).toBeVisible();
         await chooseRole(page, 'Генеральный директор');
         await next(page);
@@ -227,6 +237,7 @@ test.describe('Анкета — отправка', () => {
     });
 
     test('бухгалтер: МЧД проверяется по формату', async ({ page }) => {
+        await seedToken(page, 'northAccountant');
         await register(page, '7799000012', 'Бухгалтер');
         await toReview(page);
         await page.getByLabel('Номер МЧД').fill('12345');
@@ -258,6 +269,7 @@ test.describe('Анкета — отправка', () => {
     });
 
     test('ИП (сценарий D): руководитель — сам предприниматель, без МЧД', async ({ page }) => {
+        await seedToken(page, 'ipSmirnova');
         await register(page, '779900010202', 'Собственник бизнеса');
         await next(page);
         await expect(page.getByRole('heading', { level: 1, name: 'Руководитель и анкета' })).toBeVisible();
@@ -275,7 +287,9 @@ test.describe('Анкета — надёжность', () => {
         await page.goto('/applications/new?product=EXPRESS&amount=1000000&term=12&purpose=WORKING_CAPITAL');
         await page.getByLabel('ИНН компании или ИП').fill('7799000012');
         await expect(page.getByText('Нашли компанию в реестре')).toBeVisible();
-        await chooseRole(page, 'Генеральный директор');
+        // компания уже в профиле после первой регистрации — роль из профиля, менять нельзя
+        await expect(page.getByRole('radio', { name: 'Генеральный директор' })).toBeChecked();
+        await expect(page.getByRole('radio', { name: 'Бухгалтер' })).toBeDisabled();
         await next(page);
         await expect(page).toHaveURL(/\/edit\/terms$/);
         expect(editPath(page)).toBe(first);
@@ -333,5 +347,27 @@ test.describe('Анкета — надёжность', () => {
         await expect(page.getByRole('checkbox', { name: 'Согласие руководителя на запрос его кредитной истории' })).not.toBeChecked();
         await page.getByRole('button', { name: 'Отправить заявку' }).click();
         await expect(page).not.toHaveURL(/\/edit\//);
+    });
+});
+
+test.describe('Анкета — пользователь data-collector', () => {
+    test('своя компания из профиля: роль подставлена, черновик привязан к пользователю', async ({ page }) => {
+        await seedToken(page, 'northAccountant');
+        await page.goto(NEW);
+        await page.getByLabel('ИНН компании или ИП').fill('7799000012');
+        await expect(page.getByText('Нашли компанию в реестре')).toBeVisible();
+        await expect(page.getByRole('radio', { name: 'Бухгалтер' })).toBeChecked();
+        await expect(page.getByLabel('ФИО')).toHaveValue('Литвинова Марина Олеговна');
+        await next(page);
+        await expect(page).toHaveURL(/\/edit\/terms$/);
+        const id = editPath(page).split('/').pop() ?? '';
+        const app = await page.evaluate(
+            async (appId) =>
+                (await (await fetch(`/collector/api/v1/applications/${appId}`, { headers: { Authorization: 'Bearer mock.usr_accountant_north' } })).json()) as {
+                    representative: { id: string };
+                },
+            id,
+        );
+        expect(app.representative.id).toBe('usr_accountant_north');
     });
 });

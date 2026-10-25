@@ -56,7 +56,7 @@ server {
 
     # data-collector: /collector/api/v1/... → /api/v1/...
     # только ручки, которые нужны кабинету: swagger, /check-mock и прочее наружу не отдаём
-    location ~ ^/collector(/api/v1/(applicants|applications/[A-Za-z0-9_]+(/questionnaire)?|collections/[A-Za-z0-9_]+))$ {
+    location ~ ^/collector(/api/v1/(auth/test-users|auth/mock-login|me|applicants|applications/[A-Za-z0-9_]+(/questionnaire)?|collections/[A-Za-z0-9_]+))$ {
         include /etc/nginx/snippets/security-headers.conf;
         rewrite ^/collector(/.*)$ $1 break;
         proxy_pass $collector_upstream;

@@ -48,8 +48,6 @@ export function forgetApplication(userId: string, id: string) {
     listeners.forEach((l) => l());
 }
 
-/** Заявки пользователя по компании — среди них ищем открытый черновик, чтобы не заводить второй. */
-export const indexedFor = (userId: string, companyInn: string) => read(userId).filter((a) => a.company_inn === companyInn);
 
 function subscribe(listener: () => void) {
     listeners.add(listener);

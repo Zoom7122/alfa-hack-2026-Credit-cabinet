@@ -13,6 +13,8 @@ var (
 	ErrInvalidTransition = errors.New("invalid transition")
 	// ErrFileTooLarge — файл больше лимита.
 	ErrFileTooLarge = errors.New("file is too large")
+	// ErrUnauthorized — нет токена или пользователя по нему.
+	ErrUnauthorized = errors.New("unauthorized")
 )
 
 // FieldError — нарушение правила для одного поля анкеты.

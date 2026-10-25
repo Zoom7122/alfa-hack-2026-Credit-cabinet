@@ -59,6 +59,8 @@ test.describe('Подписание директором (11)', () => {
     });
 
     test('неверный код уменьшает попытки, после трёх — назад к предложениям', async ({ page }) => {
+        // договор ждёт подписи директора — в колокольчике есть новое (pending_signatures из основного API)
+        await expect(page.getByRole('button', { name: 'Уведомления, есть новые' })).toBeVisible();
         await agree(page);
         for (const left of [2, 1]) {
             await typeCode(page, '000000');

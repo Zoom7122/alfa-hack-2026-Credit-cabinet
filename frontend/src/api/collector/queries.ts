@@ -2,7 +2,7 @@ import { type QueryClient, useMutation, useQueries, useQuery, useQueryClient } f
 
 import { ApiError, unwrap } from '../client';
 import { collector } from './client';
-import { forgetApplication, indexedFor, rememberApplication, useCollectorIndex } from './localIndex';
+import { forgetApplication, rememberApplication, useCollectorIndex } from './localIndex';
 import type { CollectionTask, CollectorApplication, QuestionnaireInput, RegisterInput } from './types';
 
 export const collectorKeys = {
@@ -42,25 +42,6 @@ export function useRegister(userId: string) {
             });
         },
     });
-}
-
-const getApplication = async (id: string) => unwrap(await collector.GET('/applications/{id}', { params: { path: { id } } }));
-
-/**
- * Открытый черновик пользователя по компании. Без ИНН физлица data-collector на каждую регистрацию
- * заводит нового пользователя и новый черновик, а удалить черновик нельзя — поэтому сначала ищем свой.
- */
-export function useFindDraft(userId: string) {
-    const queryClient = useQueryClient();
-    return async (companyInn: string) => {
-        for (const entry of indexedFor(userId, companyInn)) {
-            const app = await queryClient
-                .fetchQuery({ queryKey: collectorKeys.application(entry.id), queryFn: () => getApplication(entry.id) })
-                .catch(() => undefined);
-            if (app?.status === 'DRAFT') return app;
-        }
-        return undefined;
-    };
 }
 
 /** Статус заявки; пока идёт сбор (SUBMITTED, ENRICHING) — опрашиваем: событий у data-collector нет. */

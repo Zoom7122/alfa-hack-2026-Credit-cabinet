@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } f
 
 import { newIdempotencyKey } from '../shared/lib/idempotency';
 import { api, ApiError, isUnauthorized, unwrap } from './client';
+import { collector } from './collector/client';
 import { session } from './session';
 import type {
     ApplicantType,
@@ -13,6 +14,7 @@ import type {
     DeclineReason,
     Document,
     InfoRequestAnswerInput,
+    Me,
     DocumentType,
     PurposeCode,
     RepresentativeRole,
@@ -57,7 +59,8 @@ export const queryKeys = {
 export function useTestUsers() {
     return useQuery({
         queryKey: queryKeys.testUsers,
-        queryFn: async () => unwrap(await api.GET('/auth/test-users')).items,
+        // вход — у data-collector (живой или его мок): те же токены `mock.<user_id>`, что у остальных моков
+        queryFn: async () => unwrap(await collector.GET('/auth/test-users')).items,
         staleTime: Infinity,
     });
 }
@@ -66,13 +69,35 @@ export function useMockLogin() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (userId: string) =>
-            unwrap(await api.POST('/auth/mock-login', { body: { user_id: userId } })),
+            unwrap(await collector.POST('/auth/mock-login', { body: { user_id: userId } })),
         onSuccess: ({ token, user }) => {
             // сначала профиль в кэш, потом токен: подписчики токена сразу видят готовый /me
             queryClient.setQueryData(queryKeys.me, user);
             session.setToken(token);
+            // ответ входа — только data-collector; подписи и id компаний основного API — после перечитывания
+            void queryClient.invalidateQueries({ queryKey: queryKeys.me });
         },
     });
+}
+
+/**
+ * Профиль: пользователь и компании — у data-collector (там вход). Подписание пока живёт в основном API (моки по
+ * openapi.yaml): оттуда — `pending_signatures` для колокольчика и id компаний, на которые завязаны его экраны
+ * (совпадение по ИНН). Основной API недоступен — профиль всё равно есть, без подписей.
+ */
+async function loadMe(): Promise<Me> {
+    const [live, legacy] = await Promise.all([
+        collector.GET('/me').then(unwrap),
+        api
+            .GET('/me')
+            .then(unwrap)
+            .catch(() => undefined),
+    ]);
+    const legacyByInn = new Map((legacy?.companies ?? []).map((c) => [c.inn, c]));
+    const companies = live.companies.map((c) => ({ ...c, applicant_id: legacyByInn.get(c.inn)?.applicant_id ?? c.applicant_id }));
+    // компании, привязанные в основном API (экран «Добавить компанию»), — тоже в профиле
+    for (const c of legacy?.companies ?? []) if (!companies.some((x) => x.inn === c.inn)) companies.push(c);
+    return { ...live, companies, pending_signatures: legacy?.pending_signatures ?? live.pending_signatures };
 }
 
 export function useMe(enabled = true) {
@@ -80,7 +105,7 @@ export function useMe(enabled = true) {
         queryKey: queryKeys.me,
         queryFn: async () => {
             try {
-                return unwrap(await api.GET('/me'));
+                return await loadMe();
             } catch (error) {
                 // токен протух — забываем его, гард уведёт на вход
                 if (isUnauthorized(error)) session.clear();

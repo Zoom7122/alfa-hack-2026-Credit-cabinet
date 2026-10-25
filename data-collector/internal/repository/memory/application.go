@@ -29,12 +29,24 @@ func (r *ApplicationRepository) Register(_ context.Context, reg domain.Registrat
 
 	rep := reg.Representative
 	userID := reg.UserID
-	if id, ok := r.s.userByINN[rep.INN]; ok && rep.INN != "" {
-		userID = id
-	} else if rep.INN != "" {
-		r.s.userByINN[rep.INN] = userID
+	switch {
+	case reg.ExistingUser:
+		// вошёл по токену: пользователь уже есть, по ИНН его не ищем (в Postgres — FK на users)
+		u, ok := r.s.users[userID]
+		if !ok {
+			return domain.Application{}, fmt.Errorf("user %s is not found", userID)
+		}
+		rep.FullName, rep.INN = u.FullName, u.INN
+	case rep.INN != "":
+		if id, ok := r.s.userByINN[rep.INN]; ok {
+			userID = id
+		} else {
+			r.s.userByINN[rep.INN] = userID
+		}
 	}
-	r.s.users[userID] = domain.Representative{UserID: userID, FullName: rep.FullName, INN: rep.INN}
+	if !reg.ExistingUser {
+		r.s.users[userID] = domain.Representative{UserID: userID, FullName: rep.FullName, INN: rep.INN}
+	}
 
 	companyID, known := r.s.companyByINN[reg.Company.INN]
 	if !known {
@@ -45,7 +57,10 @@ func (r *ApplicationRepository) Register(_ context.Context, reg domain.Registrat
 		r.s.companyByINN[c.INN] = companyID
 	}
 	rep.UserID = userID
-	r.s.members[[2]string{userID, companyID}] = rep
+	// вошедший по токену: уже записанную роль в компании не переписываем (как в Postgres)
+	if _, member := r.s.members[[2]string{userID, companyID}]; !member || !reg.ExistingUser {
+		r.s.members[[2]string{userID, companyID}] = rep
+	}
 
 	appID := ""
 	for id, a := range r.s.applications {

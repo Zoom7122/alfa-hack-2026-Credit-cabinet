@@ -88,6 +88,16 @@ type testApp struct {
 	tasks *memory.CollectionTaskRepository
 	apps  *memory.ApplicationRepository
 	root  string
+	auth  *service.AuthService
+}
+
+// seedTestUsers заводит тестовых пользователей (service.TestUsers) — как API при старте.
+func (a *testApp) seedTestUsers(t *testing.T) *testApp {
+	t.Helper()
+	if err := a.auth.Seed(context.Background(), service.TestUsers); err != nil {
+		t.Fatal(err)
+	}
+	return a
 }
 
 func newTestApp(t *testing.T) *testApp {
@@ -112,13 +122,15 @@ func newTestApp(t *testing.T) *testApp {
 		service.WithClock(func() time.Time { return fixedNow }),
 		service.WithIDGenerator(func() string { return "qst_test" }),
 	)
+	auth := service.NewAuthService(memory.NewUserRepository(tasks))
 	r := httptransport.NewRouter(
 		httptransport.NewApplicationHandler(applications, discardLog),
 		httptransport.NewQuestionnaireHandler(questionnaires, 4<<20, discardLog),
 		httptransport.NewCollectionHandler(collections, discardLog),
 		httptransport.NewInternalDataHandler(stubInternalData{}, discardLog),
+		httptransport.WithAuth(httptransport.NewAuthHandler(auth, discardLog)),
 	)
-	return &testApp{r: r, tasks: tasks, apps: apps, root: root}
+	return &testApp{r: r, tasks: tasks, apps: apps, root: root, auth: auth}
 }
 
 func (a *testApp) do(req *http.Request) *httptest.ResponseRecorder {
@@ -135,6 +147,15 @@ func (a *testApp) postJSON(path, body string) *httptest.ResponseRecorder {
 
 func (a *testApp) get(path string) *httptest.ResponseRecorder {
 	return a.do(httptest.NewRequest(http.MethodGet, path, nil))
+}
+
+// withToken — запрос с Authorization: Bearer <token>.
+func (a *testApp) withToken(req *http.Request, token string) *httptest.ResponseRecorder {
+	req.Header.Set("Authorization", "Bearer "+token)
+	if req.Method == http.MethodPost {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	return a.do(req)
 }
 
 // register регистрирует заявителя и возвращает id черновика заявки.

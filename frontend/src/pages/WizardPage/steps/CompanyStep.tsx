@@ -8,7 +8,7 @@ import { Typography } from '@alfalab/core-components/typography';
 import { useNavigate } from 'react-router-dom';
 
 import { ApiError } from '../../../api/client';
-import { useFindDraft, useRegister } from '../../../api/collector/queries';
+import { useRegister } from '../../../api/collector/queries';
 import { COLLECTOR_ROLE_LABELS, COLLECTOR_ROLES, type CollectorApplication, type CollectorPurpose, type CollectorRole } from '../../../api/collector/types';
 import { useCounterpartyLookup } from '../../../api/queries';
 import type { CounterpartyPrefill, Me } from '../../../api/types';
@@ -62,7 +62,9 @@ function CompanyFacts({ company }: { company: CounterpartyPrefill }) {
     );
 }
 
-function RoleCard({ value, onChange, disabled, error }: { value?: CollectorRole; onChange?: (r: CollectorRole) => void; disabled?: boolean; error?: string }) {
+type RoleCardProps = { value?: CollectorRole; onChange?: (r: CollectorRole) => void; disabled?: boolean; lockedHint?: string; error?: string };
+
+function RoleCard({ value, onChange, disabled, lockedHint = 'Роль указана при регистрации заявки', error }: RoleCardProps) {
     return (
         <FormCard title='Ваша роль в компании'>
             <RadioGroup
@@ -74,7 +76,7 @@ function RoleCard({ value, onChange, disabled, error }: { value?: CollectorRole;
                 onChange={(_, payload) => onChange?.(payload.value as CollectorRole)}
                 disabled={disabled}
                 error={error}
-                hint={disabled ? 'Роль указана при регистрации заявки' : undefined}
+                hint={disabled ? lockedHint : undefined}
                 radioListClassName='company-step__roles'
             >
                 {COLLECTOR_ROLES.map((role) => (
@@ -123,28 +125,29 @@ function lookupPlate(error: unknown, data: CounterpartyPrefill | undefined) {
 }
 
 /** Поля из 422 data-collector → поля формы. */
-const SERVER_FIELDS: Record<string, 'inn' | 'personInn' | 'role'> = { 'company.inn': 'inn', 'representative.inn': 'personInn', 'representative.role': 'role' };
+const SERVER_FIELDS: Record<string, 'inn' | 'role'> = { 'company.inn': 'inn', 'representative.role': 'role' };
 
 function CreateCompanyStep({ me, productCode, requested, purpose }: CreateProps) {
     const navigate = useNavigate();
     const register = useRegister(me.id);
-    const findDraft = useFindDraft(me.id);
-    const [searching, setSearching] = useState(false);
     const [inn, setInn] = useState('');
     const [name, setName] = useState('');
-    const [personInn, setPersonInn] = useState('');
-    const [chosenRole, setChosenRole] = useState<CollectorRole>();
+    // выбор роли — для конкретного ИНН: сменили ИНН — выбирать заново
+    const [chosen, setChosen] = useState<{ inn: string; role: CollectorRole }>();
 
     const debouncedInn = useDebouncedValue(inn, 400);
     const validInn = isInn(debouncedInn) && debouncedInn === inn ? inn : undefined;
     const lookup = useCounterpartyLookup(validInn);
     const soleProprietor = validInn?.length === 12;
     const suggestedRole = lookup.data?.director_name === me.full_name ? (soleProprietor ? 'OWNER' : 'DIRECTOR') : undefined;
-    const role = chosenRole ?? suggestedRole;
+    // своя компания из профиля — роль в ней уже известна
+    const linked = me.companies.find((c) => c.inn === validInn);
+    // роль в своей компании задана в профиле: data-collector её при регистрации не меняет
+    const role = (linked?.role as CollectorRole | undefined) ?? (chosen && chosen.inn === validInn ? chosen.role : undefined) ?? suggestedRole;
     const liquidating = Boolean(lookup.data?.registry_status && lookup.data.registry_status !== 'ACTIVE');
     const shownName = name || lookup.data?.short_name || '';
 
-    const serverErrors: Partial<Record<'inn' | 'personInn' | 'role', string>> = {};
+    const serverErrors: Partial<Record<'inn' | 'role', string>> = {};
     if (register.error instanceof ApiError) {
         for (const e of register.error.problem?.errors ?? []) {
             const field = SERVER_FIELDS[e.field ?? ''];
@@ -152,8 +155,7 @@ function CreateCompanyStep({ me, productCode, requested, purpose }: CreateProps)
         }
     }
     const innError = serverErrors.inn ?? (inn.length === 11 && inn === debouncedInn ? 'ИНН — 10 цифр для юрлица или 12 для ИП' : undefined);
-    const personInnError = serverErrors.personInn ?? (personInn && personInn.length !== 12 ? 'ИНН физлица — 12 цифр' : undefined);
-    const canContinue = Boolean(validInn && role && !liquidating && !personInnError);
+    const canContinue = Boolean(validInn && role && !liquidating);
 
     /** В черновик — продукт, сумма и цель, которые только что выбрали в подборе (даже если черновик уже был). */
     const openDraft = (id: string) => {
@@ -163,24 +165,13 @@ function CreateCompanyStep({ me, productCode, requested, purpose }: CreateProps)
         navigate(`/applications/${id}/edit/terms`, { replace: true });
     };
 
-    const submit = async () => {
+    const submit = () => {
         if (!validInn || !role) return;
-        setSearching(true);
-        const draft = await findDraft(validInn);
-        setSearching(false);
-        if (draft?.id) {
-            openDraft(draft.id);
-            return;
-        }
+        // с токеном data-collector оформляет заявку от имени вошедшего пользователя
+        // и по той же компании возвращает его прежний черновик — правки в нём сохраняем
         register.mutate(
-            {
-                representative: { full_name: me.full_name, inn: personInn || undefined, role },
-                company: { inn: validInn, name: shownName || undefined },
-            },
-            {
-                // data-collector мог вернуть уже существующий черновик (тот же ИНН физлица) — правки в нём сохраняем
-                onSuccess: (app) => openDraft(app.id ?? ''),
-            },
+            { representative: { full_name: me.full_name, role }, company: { inn: validInn, name: shownName || undefined } },
+            { onSuccess: (app) => openDraft(app.id ?? '') },
         );
     };
 
@@ -190,9 +181,9 @@ function CreateCompanyStep({ me, productCode, requested, purpose }: CreateProps)
         <StepLayout
             title='От чьего имени подаёте заявку'
             subtitle='Введите ИНН — остальное о компании соберём сами'
-            onNext={() => void submit()}
+            onNext={submit}
             nextDisabled={!canContinue}
-            nextLoading={register.isPending || searching}
+            nextLoading={register.isPending}
             hint={!canContinue && validInn && !role ? 'Укажите вашу роль в компании' : undefined}
         >
             <FormCard>
@@ -229,19 +220,15 @@ function CreateCompanyStep({ me, productCode, requested, purpose }: CreateProps)
 
             {validInn && !liquidating && (
                 <>
-                    <RoleCard value={role} onChange={setChosenRole} error={serverErrors.role} />
+                    <RoleCard
+                        value={role}
+                        onChange={(next) => validInn && setChosen({ inn: validInn, role: next })}
+                        disabled={Boolean(linked)}
+                        lockedHint='Роль в этой компании — из вашего профиля'
+                        error={serverErrors.role}
+                    />
                     <FormCard title='Кто оформляет заявку'>
-                        <Input label='ФИО' value={me.full_name} readOnly={true} block={true} size={56} />
-                        <Input
-                            label='Ваш ИНН физлица'
-                            value={personInn}
-                            onChange={(_, { value }) => setPersonInn(value.replace(/\D/g, '').slice(0, 12))}
-                            inputMode='numeric'
-                            block={true}
-                            size={56}
-                            hint='Необязательно: по нему банк узнает вас в следующих заявках'
-                            error={personInnError}
-                        />
+                        <Input label='ФИО' value={me.full_name} readOnly={true} block={true} size={56} hint='Из вашего профиля' />
                     </FormCard>
                 </>
             )}

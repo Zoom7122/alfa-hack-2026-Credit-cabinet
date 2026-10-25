@@ -39,6 +39,7 @@ func NewCollectionHandler(svc CollectionService, log *slog.Logger) *CollectionHa
 //	@Success		200	{object}	collectionTaskResponse
 //	@Failure		404	{object}	problem	"задачи нет"
 //	@Failure		500	{object}	problem
+//	@Security		bearer
 //	@Router			/collections/{id} [get]
 func (h *CollectionHandler) get(c *gin.Context) {
 	task, err := h.svc.Get(c.Request.Context(), c.Param("id"))

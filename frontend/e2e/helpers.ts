@@ -9,6 +9,10 @@ export const USERS = {
     soleProprietor: { id: 'usr_ip_smirnov', name: 'Смирнов Кирилл Андреевич' },
     vector: { id: 'usr_director_vector', name: 'Лебедева Вера Олеговна' },
     underwriter: { id: 'usr_underwriter_sokolova', name: 'Соколова Мария Игоревна' },
+    // тестовые пользователи data-collector — представители компаний сценариев mock-api
+    northDirector: { id: 'usr_director_north', name: 'Ковалёв Игорь Сергеевич' },
+    northAccountant: { id: 'usr_accountant_north', name: 'Литвинова Марина Олеговна' },
+    ipSmirnova: { id: 'usr_ip_smirnova', name: 'Смирнова Анна Викторовна' },
 } as const;
 
 export type UserKey = keyof typeof USERS;

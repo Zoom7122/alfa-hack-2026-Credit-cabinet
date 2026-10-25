@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "Сбор данных о заёмщике для скоринга: заявитель и компания, анкета с документами и сырые ответы\nвсех внешних систем (эмулятор mock-api). Сначала регистрация (POST /applicants → черновик заявки),\nзатем анкета с файлами (POST /applications/{id}/questionnaire). Сбор асинхронный: анкета ставит\nзадачу в очередь (outbox → Kafka), системы опрашивает worker.\nОшибки — RFC 9457 (`application/problem+json`).",
+        "description": "Сбор данных о заёмщике для скоринга: заявитель и компания, анкета с документами и сырые ответы\nвсех внешних систем (эмулятор mock-api). Сначала регистрация (POST /applicants → черновик заявки),\nзатем анкета с файлами (POST /applications/{id}/questionnaire). Сбор асинхронный: анкета ставит\nзадачу в очередь (outbox → Kafka), системы опрашивает worker.\nВход — мок-логином, как в api/openapi.yaml: GET /auth/test-users → POST /auth/mock-login → токен\n`mock.\u003cuser_id\u003e` в `Authorization: Bearer …`. С токеном регистрация идёт от имени пользователя; без него — анонимно.\nОшибки — RFC 9457 (`application/problem+json`).",
         "title": "data-collector API",
         "contact": {},
         "version": "0.2"
@@ -10,7 +10,12 @@
     "paths": {
         "/applicants": {
             "post": {
-                "description": "Одной транзакцией создаёт пользователя (с тем же ИНН физлица — находит существующего), компанию\n(с тем же ИНН — переиспользует вместе с собранными данными), связь с ролью в company_members\nи черновик заявки (DRAFT). Если у этого пользователя по этой компании уже есть черновик, возвращается он.\nПодписывать договор без доверенности может директор, у ИП — сам предприниматель (can_sign).\nДальше — анкета: POST /applications/{id}/questionnaire выводит заявку из DRAFT и запускает сбор данных.\n\n**Примеры** — заявители сценариев mock-api A–E (`examples/scenario-X.applicant.json`), в теле по умолчанию — сценарий A. Данные в моках привязаны к компании, поэтому анкету берите того же сценария: они в описании POST /applications/{id}/questionnaire.\n\n**A** — ООО «Северный ветер», ИНН 7799000012, опт продуктов — ожидается OFFERED.\n\n```json\n{\n  \"representative\": {\n    \"full_name\": \"Литвинова Марина Олеговна\",\n    \"inn\": \"779900010333\",\n    \"role\": \"ACCOUNTANT\"\n  },\n  \"company\": {\n    \"inn\": \"7799000012\",\n    \"name\": \"ООО «Северный ветер»\"\n  }\n}\n```\n\n**B** — ООО «Стройресурс», ИНН 7799000020, стройка — OFFERED, но меньше сумма или дольше срок.\n\n```json\n{\n  \"representative\": {\n    \"full_name\": \"Орлов Денис Павлович\",\n    \"inn\": \"779900020136\",\n    \"role\": \"DIRECTOR\"\n  },\n  \"company\": {\n    \"inn\": \"7799000020\",\n    \"name\": \"ООО «Стройресурс»\"\n  }\n}\n```\n\n**C** — ООО «Альтаир», ИНН 7799000037, опт — REJECTED.\n\n```json\n{\n  \"representative\": {\n    \"full_name\": \"Белов Артём Николаевич\",\n    \"inn\": \"779900030147\",\n    \"role\": \"DIRECTOR\"\n  },\n  \"company\": {\n    \"inn\": \"7799000037\"\n  }\n}\n```\n\n**D** — ИП Смирнова А. В., ИНН 779900010202, интернет-торговля — WAITING_FOR_INFO.\n\n```json\n{\n  \"representative\": {\n    \"full_name\": \"Смирнова Анна Викторовна\",\n    \"inn\": \"779900010202\",\n    \"role\": \"OWNER\"\n  },\n  \"company\": {\n    \"inn\": \"779900010202\"\n  }\n}\n```\n\n**E** — ООО «Техно-Сервис», ИНН 7799000044, ремонт оборудования — MANUAL_REVIEW.\n\n```json\n{\n  \"representative\": {\n    \"full_name\": \"Кузнецов Павел Андреевич\",\n    \"role\": \"FINANCE_EMPLOYEE\"\n  },\n  \"company\": {\n    \"inn\": \"7799000044\",\n    \"name\": \"ООО «Техно-Сервис»\"\n  }\n}\n```\n",
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "description": "Одной транзакцией создаёт пользователя (с тем же ИНН физлица — находит существующего), компанию\n(с тем же ИНН — переиспользует вместе с собранными данными), связь с ролью в company_members\nи черновик заявки (DRAFT). Если у этого пользователя по этой компании уже есть черновик, возвращается он.\nПодписывать договор без доверенности может директор, у ИП — сам предприниматель (can_sign).\nДальше — анкета: POST /applications/{id}/questionnaire выводит заявку из DRAFT и запускает сбор данных.\nС токеном `Authorization: Bearer mock.\u003cuser_id\u003e` (POST /auth/mock-login) заявка оформляется от имени вошедшего\nпользователя: нового пользователя не заводится, ФИО берётся из профиля (поле в теле всё равно обязательно),\n`representative.inn` не нужен, черновик по компании — его. Уже записанная роль в компании не меняется.\nСотрудник банка (UNDERWRITER) заявку подать не может — 403.\n\n**Примеры** — заявители сценариев mock-api A–E (`examples/scenario-X.applicant.json`), в теле по умолчанию — сценарий A. Данные в моках привязаны к компании, поэтому анкету берите того же сценария: они в описании POST /applications/{id}/questionnaire.\n\n**A** — ООО «Северный ветер», ИНН 7799000012, опт продуктов — ожидается OFFERED.\n\n```json\n{\n  \"representative\": {\n    \"full_name\": \"Литвинова Марина Олеговна\",\n    \"inn\": \"779900010333\",\n    \"role\": \"ACCOUNTANT\"\n  },\n  \"company\": {\n    \"inn\": \"7799000012\",\n    \"name\": \"ООО «Северный ветер»\"\n  }\n}\n```\n\n**B** — ООО «Стройресурс», ИНН 7799000020, стройка — OFFERED, но меньше сумма или дольше срок.\n\n```json\n{\n  \"representative\": {\n    \"full_name\": \"Орлов Денис Павлович\",\n    \"inn\": \"779900020136\",\n    \"role\": \"DIRECTOR\"\n  },\n  \"company\": {\n    \"inn\": \"7799000020\",\n    \"name\": \"ООО «Стройресурс»\"\n  }\n}\n```\n\n**C** — ООО «Альтаир», ИНН 7799000037, опт — REJECTED.\n\n```json\n{\n  \"representative\": {\n    \"full_name\": \"Белов Артём Николаевич\",\n    \"inn\": \"779900030147\",\n    \"role\": \"DIRECTOR\"\n  },\n  \"company\": {\n    \"inn\": \"7799000037\"\n  }\n}\n```\n\n**D** — ИП Смирнова А. В., ИНН 779900010202, интернет-торговля — WAITING_FOR_INFO.\n\n```json\n{\n  \"representative\": {\n    \"full_name\": \"Смирнова Анна Викторовна\",\n    \"inn\": \"779900010202\",\n    \"role\": \"OWNER\"\n  },\n  \"company\": {\n    \"inn\": \"779900010202\"\n  }\n}\n```\n\n**E** — ООО «Техно-Сервис», ИНН 7799000044, ремонт оборудования — MANUAL_REVIEW.\n\n```json\n{\n  \"representative\": {\n    \"full_name\": \"Кузнецов Павел Андреевич\",\n    \"role\": \"FINANCE_EMPLOYEE\"\n  },\n  \"company\": {\n    \"inn\": \"7799000044\",\n    \"name\": \"ООО «Техно-Сервис»\"\n  }\n}\n```\n",
                 "consumes": [
                     "application/json"
                 ],
@@ -51,6 +56,18 @@
                             "$ref": "#/definitions/Problem"
                         }
                     },
+                    "401": {
+                        "description": "неверный токен",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "токен сотрудника банка",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
                     "422": {
                         "description": "неверный ИНН или роль",
                         "schema": {
@@ -68,6 +85,11 @@
         },
         "/applications/{id}": {
             "get": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
                 "description": "Статус заявки (DRAFT → SUBMITTED → ENRICHING → VERIFYING), компания (реквизиты из ЕГРЮЛ — после сбора),\nпредставитель с ролью, сумма и срок, документы и последняя задача на сбор.",
                 "produces": [
                     "application/json"
@@ -109,6 +131,11 @@
         },
         "/applications/{id}/questionnaire": {
             "post": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
                 "description": "Анкета переводит заявку DRAFT → SUBMITTED и ставит задачу на сбор. Worker опрашивает моки\n(заявка ENRICHING, задача RUNNING) и сохраняет ответы (VERIFYING, задача COMPLETED). Следить —\nGET /applications/{id} или GET /collections/{id} из заголовка Location. Анкета по заявке\nотправляется один раз (повтор — 409); для нового сбора зарегистрируйте заявителя ещё раз — будет новый черновик.\n\n**Из Swagger UI:** Try it out → id заявки из ответа POST /applicants → в questionnaire уже подставлена\nанкета сценария A (заявка на ИНН 7799000012; анкеты других сценариев — ниже) → Execute.\nФайлы — в files через Add item: по одному полю на файл.\n\n**Анкета** (часть questionnaire, JSON; ИНН компании берётся из заявки): обязательны age, marital_status,\nchildren_count; product_code, requested, purpose пишутся в заявку. Без остальных данных система\nне опрашивается и попадает в skipped_sources: consents.bki_company и bki_person — БКИ, consents.tax —\nналоговая отчётность, director — Госуслуги и проверки руководителя, other_bank_biks — мультибанкинг,\nmarketplace_tokens — маркетплейсы, ofd_token — ОФД, collateral.cadastral_numbers — ЕГРН.\n\n**Файлы** (части files): до 10, считая подписи, каждый до 20 МБ: pdf, docx, xlsx, jpg, png, xml,\nподписи sig и p7s. Файл приходит целым или парой «документ + открепленная подпись»: balance.pdf +\nbalance.pdf.sig (или balance.sig); подпись без пары — присоединённая (документ внутри). Тип файла —\nв documents анкеты: `[{\"file_name\": \"balance.pdf\", \"type\": \"FINANCIAL_STATEMENTS\"}]`, без него — OTHER.\nБез файлов анкету можно прислать и как application/json. Одной транзакцией пишутся документы, анкета,\nзадача на сбор и события в outbox (о задаче и о документах — для будущих worker'ов подписи и OCR).\n\n**Примеры анкет** — сценарии mock-api A–E (`examples/scenario-X.json`). Заявку регистрируйте примером того же сценария из POST /applicants: данные в моках привязаны к компании.\n\n**A** — ООО «Северный ветер», ИНН 7799000012, опт продуктов — ожидается OFFERED. В documents указан тип файла: приложите в files `balance.pdf` и подпись `balance.pdf.sig` из `examples/files` или уберите documents.\n\n```json\n{\n  \"age\": 42,\n  \"marital_status\": \"MARRIED\",\n  \"children_count\": 2,\n  \"product_code\": \"WORKING_CAPITAL\",\n  \"requested\": {\n    \"amount\": 5000000,\n    \"term_months\": 24\n  },\n  \"purpose\": {\n    \"code\": \"WORKING_CAPITAL\",\n    \"description\": \"Закупка товара под сезон\"\n  },\n  \"documents\": [\n    {\n      \"file_name\": \"balance.pdf\",\n      \"type\": \"FINANCIAL_STATEMENTS\"\n    }\n  ],\n  \"director\": {\n    \"inn\": \"779900010139\",\n    \"last_name\": \"Ковалёв\",\n    \"first_name\": \"Игорь\",\n    \"middle_name\": \"Сергеевич\",\n    \"birth_date\": \"1984-07-19\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000781\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000782\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000781\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  },\n  \"other_bank_biks\": [\n    \"044525225\"\n  ],\n  \"ofd_token\": \"demo-ofd-token\",\n  \"poa_number\": \"0f5a2c1e-7b3d-4e8a-9c21-6d4b8e0a1f37\",\n  \"representative_inn\": \"779900010333\"\n}\n```\n\n**B** — ООО «Стройресурс», ИНН 7799000020, стройка — OFFERED, но меньше сумма или дольше срок.\n\n```json\n{\n  \"age\": 47,\n  \"marital_status\": \"MARRIED\",\n  \"children_count\": 3,\n  \"director\": {\n    \"inn\": \"779900020136\",\n    \"last_name\": \"Орлов\",\n    \"first_name\": \"Денис\",\n    \"middle_name\": \"Павлович\",\n    \"birth_date\": \"1979-02-11\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000801\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000802\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000801\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  },\n  \"other_bank_biks\": [\n    \"044525777\",\n    \"044525650\"\n  ],\n  \"collateral\": {\n    \"cadastral_numbers\": [\n      \"50:21:0110203:845\",\n      \"50:21:0110203:412\"\n    ],\n    \"vins\": [\n      \"XTC652005N1498213\"\n    ],\n    \"serials\": [\n      \"JCB3CX2023118457\"\n    ]\n  }\n}\n```\n\n**C** — ООО «Альтаир», ИНН 7799000037, опт — REJECTED.\n\n```json\n{\n  \"age\": 37,\n  \"marital_status\": \"DIVORCED\",\n  \"children_count\": 1,\n  \"director\": {\n    \"inn\": \"779900030147\",\n    \"last_name\": \"Белов\",\n    \"first_name\": \"Артём\",\n    \"middle_name\": \"Николаевич\",\n    \"birth_date\": \"1988-11-03\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000821\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000822\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000821\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  }\n}\n```\n\n**D** — ИП Смирнова А. В., ИНН 779900010202, интернет-торговля — WAITING_FOR_INFO.\n\n```json\n{\n  \"age\": 33,\n  \"marital_status\": \"SINGLE\",\n  \"children_count\": 0,\n  \"director\": {\n    \"inn\": \"779900010202\",\n    \"last_name\": \"Смирнова\",\n    \"first_name\": \"Анна\",\n    \"middle_name\": \"Викторовна\",\n    \"birth_date\": \"1993-05-27\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000841\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000842\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000841\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  },\n  \"marketplace_tokens\": {\n    \"wildberries\": \"demo-wb-token\",\n    \"ozon\": \"demo-ozon-token\"\n  }\n}\n```\n\n**E** — ООО «Техно-Сервис», ИНН 7799000044, ремонт оборудования — MANUAL_REVIEW.\n\n```json\n{\n  \"age\": 45,\n  \"marital_status\": \"MARRIED\",\n  \"children_count\": 2,\n  \"director\": {\n    \"inn\": \"779900040158\",\n    \"last_name\": \"Зайцева\",\n    \"first_name\": \"Ольга\",\n    \"middle_name\": \"Михайловна\",\n    \"birth_date\": \"1981-09-14\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000861\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000862\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000861\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  }\n}\n```\n",
                 "consumes": [
                     "multipart/form-data"
@@ -205,6 +232,84 @@
                 }
             }
         },
+        "/auth/mock-login": {
+            "post": {
+                "description": "Возвращает токен `mock.\u003cuser_id\u003e` и пользователя. Токен передаётся в `Authorization: Bearer …`:\nс ним POST /applicants оформляет заявку от имени этого пользователя, а GET /me возвращает его компании.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Войти под синтетическим пользователем",
+                "parameters": [
+                    {
+                        "description": "id тестового пользователя",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/MockLoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/MockLoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "битый JSON, нет user_id",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "пользователя нет или он не тестовый",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/test-users": {
+            "get": {
+                "description": "Тестовые пользователи стенда: директора, бухгалтеры и ИП компаний сценариев mock-api A–E, демо-персонажи\nэкранов кабинета и андеррайтер. Заводятся при старте API (SEED_TEST_USERS). Вход — POST /auth/mock-login,\nтолько под ними: пользователи, заведённые анонимной регистрацией, войти не могут. Токен этой ручке не нужен.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Список синтетических пользователей для входа",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/TestUsers"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/check-mock": {
             "get": {
                 "description": "Параллельно опрашивает 5 систем банка (эмулятор mock-api) и возвращает их ответы как есть.\nСекция системы, которая не ответила, — null; причина — в sources.",
@@ -255,6 +360,11 @@
         },
         "/collections/{id}": {
             "get": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
                 "description": "Задача на сбор, созданная POST /questionnaires. PENDING — ждёт worker, RUNNING — системы опрашиваются,\nCOMPLETED — сбор сохранён в raw_collections (строка raw_collection_id), FAILED — не выполнена, причина в error.\nУ COMPLETED в sources — состояние по каждой системе: DONE, PARTIAL, FAILED, SKIPPED.",
                 "produces": [
                     "application/json"
@@ -281,6 +391,43 @@
                     },
                     "404": {
                         "description": "задачи нет",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/me": {
+            "get": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "description": "Пользователь по токену `Authorization: Bearer mock.\u003cuser_id\u003e` и компании, от имени которых он действует.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Текущий пользователь и его компании",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/Me"
+                        }
+                    },
+                    "401": {
+                        "description": "нет или неверный токен",
                         "schema": {
                             "$ref": "#/definitions/Problem"
                         }
@@ -518,6 +665,47 @@
                 }
             }
         },
+        "CompanyAccess": {
+            "type": "object",
+            "required": [
+                "applicant_id",
+                "can_sign",
+                "inn",
+                "role",
+                "short_name"
+            ],
+            "properties": {
+                "applicant_id": {
+                    "type": "string",
+                    "example": "apl_north_wind"
+                },
+                "can_sign": {
+                    "description": "Может подписать договор без доверенности: директор, у ИП — сам предприниматель.",
+                    "type": "boolean"
+                },
+                "inn": {
+                    "type": "string",
+                    "example": "7799000012"
+                },
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "OWNER",
+                        "DIRECTOR",
+                        "CFO",
+                        "ACCOUNTANT",
+                        "FINANCE_EMPLOYEE",
+                        "BANKING_EMPLOYEE",
+                        "AUTHORIZED_EMPLOYEE"
+                    ],
+                    "example": "DIRECTOR"
+                },
+                "short_name": {
+                    "type": "string",
+                    "example": "ООО «Северный ветер»"
+                }
+            }
+        },
         "CompanyInput": {
             "type": "object",
             "required": [
@@ -616,6 +804,78 @@
                     "items": {
                         "$ref": "#/definitions/SourceResult"
                     }
+                }
+            }
+        },
+        "Me": {
+            "type": "object",
+            "required": [
+                "companies",
+                "full_name",
+                "id",
+                "pending_signatures",
+                "roles"
+            ],
+            "properties": {
+                "companies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CompanyAccess"
+                    }
+                },
+                "full_name": {
+                    "type": "string",
+                    "example": "Ковалёв Игорь Сергеевич"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "usr_director_north"
+                },
+                "pending_signatures": {
+                    "description": "Заявки, ждущие подписи пользователя как директора. Подписания в data-collector пока нет — всегда пусто.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "CLIENT",
+                            "UNDERWRITER"
+                        ]
+                    }
+                }
+            }
+        },
+        "MockLoginRequest": {
+            "type": "object",
+            "required": [
+                "user_id"
+            ],
+            "properties": {
+                "user_id": {
+                    "type": "string",
+                    "example": "usr_director_north"
+                }
+            }
+        },
+        "MockLoginResponse": {
+            "type": "object",
+            "required": [
+                "token",
+                "user"
+            ],
+            "properties": {
+                "token": {
+                    "description": "Токен для Authorization: Bearer …",
+                    "type": "string",
+                    "example": "mock.usr_director_north"
+                },
+                "user": {
+                    "$ref": "#/definitions/Me"
                 }
             }
         },
@@ -835,6 +1095,60 @@
                         "DONE",
                         "FAILED"
                     ]
+                }
+            }
+        },
+        "TestUser": {
+            "type": "object",
+            "required": [
+                "companies",
+                "full_name",
+                "id",
+                "persona",
+                "roles"
+            ],
+            "properties": {
+                "companies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CompanyAccess"
+                    }
+                },
+                "full_name": {
+                    "type": "string",
+                    "example": "Ковалёв Игорь Сергеевич"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "usr_director_north"
+                },
+                "persona": {
+                    "type": "string",
+                    "example": "Сценарий A: директор ООО «Северный ветер»"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "CLIENT",
+                            "UNDERWRITER"
+                        ]
+                    }
+                }
+            }
+        },
+        "TestUsers": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/TestUser"
+                    }
                 }
             }
         },
@@ -1367,6 +1681,14 @@
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "bearer": {
+            "description": "Bearer mock.\u003cuser_id\u003e из POST /auth/mock-login",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }

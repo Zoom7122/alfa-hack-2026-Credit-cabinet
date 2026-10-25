@@ -1,13 +1,20 @@
 // Сервис сбора данных о заёмщике для передачи в скоринг.
 //
-//	@title			data-collector API
-//	@version		0.2
-//	@description	Сбор данных о заёмщике для скоринга: заявитель и компания, анкета с документами и сырые ответы
-//	@description	всех внешних систем (эмулятор mock-api). Сначала регистрация (POST /applicants → черновик заявки),
-//	@description	затем анкета с файлами (POST /applications/{id}/questionnaire). Сбор асинхронный: анкета ставит
-//	@description	задачу в очередь (outbox → Kafka), системы опрашивает worker.
-//	@description	Ошибки — RFC 9457 (`application/problem+json`).
-//	@BasePath		/api/v1
+//	@title						data-collector API
+//	@version					0.2
+//	@description				Сбор данных о заёмщике для скоринга: заявитель и компания, анкета с документами и сырые ответы
+//	@description				всех внешних систем (эмулятор mock-api). Сначала регистрация (POST /applicants → черновик заявки),
+//	@description				затем анкета с файлами (POST /applications/{id}/questionnaire). Сбор асинхронный: анкета ставит
+//	@description				задачу в очередь (outbox → Kafka), системы опрашивает worker.
+//	@description				Вход — мок-логином, как в api/openapi.yaml: GET /auth/test-users → POST /auth/mock-login → токен
+//	@description				`mock.<user_id>` в `Authorization: Bearer …`. С токеном регистрация идёт от имени пользователя; без него — анонимно.
+//	@description				Ошибки — RFC 9457 (`application/problem+json`).
+//	@BasePath					/api/v1
+//
+//	@securityDefinitions.apikey	bearer
+//	@in							header
+//	@name						Authorization
+//	@description				Bearer mock.<user_id> из POST /auth/mock-login
 package main
 
 import (
@@ -76,6 +83,15 @@ func run(log *slog.Logger) error {
 	applications := postgres.NewApplicationRepository(pool, topic, documentsTopic)
 	collectionSvc := service.NewCollectionService(postgres.NewCollectionTaskRepository(pool))
 	applicationSvc := service.NewApplicationService(applications)
+
+	// мок-вход: тестовые пользователи заводятся при старте (их компании — со своими id, если уже есть)
+	authSvc := service.NewAuthService(postgres.NewUserRepository(pool))
+	if env.String("SEED_TEST_USERS", "true") != "false" {
+		if err := authSvc.Seed(ctx, service.TestUsers); err != nil {
+			return err
+		}
+		log.Info("test users seeded", "count", len(service.TestUsers))
+	}
 	questionnaireSvc := service.NewQuestionnaireService(applications, files, collectionSvc)
 
 	// внутренние данные банка: хендлер → сервис → клиент банка (без хранилища)
@@ -87,6 +103,7 @@ func run(log *slog.Logger) error {
 		httptransport.NewQuestionnaireHandler(questionnaireSvc, service.MaxFiles*maxFileSize+2<<20, log),
 		httptransport.NewCollectionHandler(collectionSvc, log),
 		httptransport.NewInternalDataHandler(internalDataSvc, log),
+		httptransport.WithAuth(httptransport.NewAuthHandler(authSvc, log)),
 	)
 
 	srv := &http.Server{

@@ -403,3 +403,66 @@ func toInternalDataResponse(d domain.InternalBankData) internalDataResponse {
 		CardIndex:     d.CardIndex,
 	}
 }
+
+// loginRequest — тело POST /auth/mock-login.
+type loginRequest struct {
+	UserID *string `json:"user_id" binding:"required" example:"usr_director_north"`
+} //	@name	MockLoginRequest
+
+// companyAccessResponse — компания пользователя и его роль в ней.
+type companyAccessResponse struct {
+	ApplicantID string `json:"applicant_id" validate:"required" example:"apl_north_wind"`
+	ShortName   string `json:"short_name" validate:"required" example:"ООО «Северный ветер»"`
+	INN         string `json:"inn" validate:"required" example:"7799000012"`
+	Role        string `json:"role" validate:"required" enums:"OWNER,DIRECTOR,CFO,ACCOUNTANT,FINANCE_EMPLOYEE,BANKING_EMPLOYEE,AUTHORIZED_EMPLOYEE" example:"DIRECTOR"`
+	// Может подписать договор без доверенности: директор, у ИП — сам предприниматель.
+	CanSign bool `json:"can_sign" validate:"required"`
+} //	@name	CompanyAccess
+
+// meResponse — текущий пользователь (Me в api/openapi.yaml).
+type meResponse struct {
+	ID        string                  `json:"id" validate:"required" example:"usr_director_north"`
+	FullName  string                  `json:"full_name" validate:"required" example:"Ковалёв Игорь Сергеевич"`
+	Roles     []string                `json:"roles" validate:"required" enums:"CLIENT,UNDERWRITER"`
+	Companies []companyAccessResponse `json:"companies" validate:"required"`
+	// Заявки, ждущие подписи пользователя как директора. Подписания в data-collector пока нет — всегда пусто.
+	PendingSignatures []string `json:"pending_signatures" validate:"required"`
+} //	@name	Me
+
+// testUserResponse — тестовый пользователь для экрана входа (TestUser в api/openapi.yaml).
+type testUserResponse struct {
+	ID        string                  `json:"id" validate:"required" example:"usr_director_north"`
+	FullName  string                  `json:"full_name" validate:"required" example:"Ковалёв Игорь Сергеевич"`
+	Roles     []string                `json:"roles" validate:"required" enums:"CLIENT,UNDERWRITER"`
+	Persona   string                  `json:"persona" validate:"required" example:"Сценарий A: директор ООО «Северный ветер»"`
+	Companies []companyAccessResponse `json:"companies" validate:"required"`
+} //	@name	TestUser
+
+type testUsersResponse struct {
+	Items []testUserResponse `json:"items" validate:"required"`
+} //	@name	TestUsers
+
+// loginResponse — ответ POST /auth/mock-login.
+type loginResponse struct {
+	// Токен для Authorization: Bearer …
+	Token string     `json:"token" validate:"required" example:"mock.usr_director_north"`
+	User  meResponse `json:"user" validate:"required"`
+} //	@name	MockLoginResponse
+
+func toCompanyAccess(cs []domain.CompanyAccess) []companyAccessResponse {
+	out := make([]companyAccessResponse, 0, len(cs))
+	for _, c := range cs {
+		out = append(out, companyAccessResponse{ApplicantID: c.CompanyID, ShortName: c.Name, INN: c.INN, Role: string(c.Role), CanSign: c.CanSign})
+	}
+	return out
+}
+
+func toMeResponse(u domain.User) meResponse {
+	return meResponse{ID: u.ID, FullName: u.FullName, Roles: []string{string(u.Role)}, Companies: toCompanyAccess(u.Companies),
+		PendingSignatures: []string{}}
+}
+
+func toTestUserResponse(u domain.User) testUserResponse {
+	return testUserResponse{ID: u.ID, FullName: u.FullName, Roles: []string{string(u.Role)}, Persona: u.Persona,
+		Companies: toCompanyAccess(u.Companies)}
+}

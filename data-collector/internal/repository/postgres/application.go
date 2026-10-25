@@ -34,6 +34,12 @@ RETURNING id, xmax = 0`
 INSERT INTO company_members (user_id, company_id, role, can_sign) VALUES ($1, $2, $3, $4)
 ON CONFLICT (user_id, company_id) DO UPDATE SET role = EXCLUDED.role, can_sign = EXCLUDED.can_sign`
 
+	// Вошедший по токену: роль в компании, если она уже есть, не переписывается — иначе одна регистрация
+	// задним числом поменяла бы роль и can_sign во всех его заявках по компании.
+	insertMemberKeepRole = `
+INSERT INTO company_members (user_id, company_id, role, can_sign) VALUES ($1, $2, $3, $4)
+ON CONFLICT (user_id, company_id) DO NOTHING`
+
 	selectDraft = `
 SELECT id FROM applications WHERE company_id = $1 AND created_by = $2 AND status = 'DRAFT'
 ORDER BY created_at DESC LIMIT 1`
@@ -101,7 +107,10 @@ func (r *ApplicationRepository) Register(ctx context.Context, reg domain.Registr
 	)
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
 		var userID, companyID string
-		if err := tx.QueryRow(ctx, upsertUser, reg.UserID, reg.Representative.FullName,
+		if reg.ExistingUser {
+			// вошёл по токену: пользователь уже есть, по ИНН его не ищем
+			userID = reg.UserID
+		} else if err := tx.QueryRow(ctx, upsertUser, reg.UserID, reg.Representative.FullName,
 			nullString(reg.Representative.INN)).Scan(&userID); err != nil {
 			return fmt.Errorf("upsert user: %w", err)
 		}
@@ -111,7 +120,11 @@ func (r *ApplicationRepository) Register(ctx context.Context, reg domain.Registr
 			return fmt.Errorf("upsert company: %w", err)
 		}
 		alreadyKnown = !inserted
-		if _, err := tx.Exec(ctx, upsertMember, userID, companyID, string(reg.Representative.Role),
+		member := upsertMember
+		if reg.ExistingUser {
+			member = insertMemberKeepRole
+		}
+		if _, err := tx.Exec(ctx, member, userID, companyID, string(reg.Representative.Role),
 			reg.Representative.CanSign); err != nil {
 			return fmt.Errorf("upsert company member: %w", err)
 		}

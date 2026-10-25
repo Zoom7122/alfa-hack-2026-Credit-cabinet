@@ -35,6 +35,8 @@ const (
 	codePayloadTooLarge   = "PAYLOAD_TOO_LARGE"
 	codeUnsupportedMedia  = "UNSUPPORTED_MEDIA_TYPE"
 	codeInternal          = "INTERNAL"
+	codeUnauthorized      = "UNAUTHORIZED"
+	codeForbidden         = "FORBIDDEN"
 	problemTypeBase       = "https://errors.credit-cabinet.local/"
 )
 
@@ -61,6 +63,26 @@ func fromValidationError(verr *service.ValidationError, detail string) problem {
 		fields = append(fields, problemField{Field: f.Field, Message: f.Message, Code: f.Code})
 	}
 	return validationProblem(http.StatusUnprocessableEntity, detail, fields)
+}
+
+func unauthorizedProblem(detail string) problem {
+	return problem{
+		Type:   problemTypeBase + "unauthorized",
+		Title:  "Unauthorized",
+		Status: http.StatusUnauthorized,
+		Detail: detail,
+		Code:   codeUnauthorized,
+	}
+}
+
+func forbiddenProblem(detail string) problem {
+	return problem{
+		Type:   problemTypeBase + "forbidden",
+		Title:  "Forbidden",
+		Status: http.StatusForbidden,
+		Detail: detail,
+		Code:   codeForbidden,
+	}
 }
 
 func notFoundProblem(detail string) problem {

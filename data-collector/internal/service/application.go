@@ -33,6 +33,8 @@ type ApplicationRepository interface {
 
 // RegisterInput — кто оформляет заявку и за какую компанию.
 type RegisterInput struct {
+	// UserID — пользователь, вошедший по токену: заявка оформляется от его имени, нового пользователя не будет.
+	UserID      string
 	FullName    string
 	PersonINN   string // ИНН физлица; необязательно
 	Role        domain.RepresentativeRole
@@ -85,8 +87,13 @@ func (s *ApplicationService) Register(ctx context.Context, in RegisterInput) (do
 	if name == "" {
 		name = "ИНН " + in.CompanyINN // до сбора: потом имя заменится данными ЕГРЮЛ
 	}
+	userID := s.newID("usr_")
+	if in.UserID != "" {
+		userID = in.UserID
+	}
 	app, err := s.apps.Register(ctx, domain.Registration{
-		UserID:        s.newID("usr_"),
+		UserID:        userID,
+		ExistingUser:  in.UserID != "",
 		CompanyID:     s.newID("apl_"),
 		ApplicationID: s.newID("app_"),
 		Representative: domain.Representative{FullName: in.FullName, INN: in.PersonINN, Role: in.Role,

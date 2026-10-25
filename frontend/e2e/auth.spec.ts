@@ -42,7 +42,8 @@ test.describe('Ошибки профиля /me', () => {
 
     test('500 — плашка с «Повторить», без петли редиректов', async ({ page }) => {
         let calls = 0;
-        await page.route('**/api/v1/me', (route) => {
+        // профиль — у data-collector (вход там); подписи — из основного API, его сбой профиль не ломает
+        await page.route('**/collector/api/v1/me', (route) => {
             calls += 1;
             return route.fulfill(problem(500, 'INTERNAL'));
         });
@@ -55,10 +56,10 @@ test.describe('Ошибки профиля /me', () => {
         expect(calls).toBe(1);
 
         // бэкенд ожил — «Повторить» показывает кабинет
-        await page.unroute('**/api/v1/me');
-        await page.route('**/api/v1/me', (route) =>
+        await page.unroute('**/collector/api/v1/me');
+        await page.route('**/collector/api/v1/me', (route) =>
             route.fulfill({
-                json: { id: 'usr_director_romashka', full_name: 'Петров Пётр Петрович', roles: ['CLIENT'], companies: [] },
+                json: { id: 'usr_director_romashka', full_name: 'Петров Пётр Петрович', roles: ['CLIENT'], companies: [], pending_signatures: [] },
             }),
         );
         await page.getByRole('button', { name: 'Повторить' }).click();
@@ -66,7 +67,7 @@ test.describe('Ошибки профиля /me', () => {
     });
 
     test('401 — сброс токена и переход на вход', async ({ page }) => {
-        await page.route('**/api/v1/me', (route) => route.fulfill(problem(401, 'UNAUTHORIZED')));
+        await page.route('**/collector/api/v1/me', (route) => route.fulfill(problem(401, 'UNAUTHORIZED')));
         await page.route('**/api/v1/auth/test-users', (route) => route.fulfill({ json: { items: [] } }));
         await seedToken(page, 'director');
         await page.goto('/');

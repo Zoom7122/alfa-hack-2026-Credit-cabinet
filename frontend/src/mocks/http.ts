@@ -3,6 +3,7 @@ import { HttpResponse } from 'msw';
 import { API_BASE_URL } from '../api/client';
 import type { Me, Problem } from '../api/types';
 import type { StoredApplication } from './data';
+import { collectorUser } from './collector/users';
 import { meFor, mutate, read, toApplication } from './store';
 
 /* Общее для MSW-обработчиков: пользователь по токену, Problem, проверки версии и идемпотентность. */
@@ -17,11 +18,18 @@ export function problem(status: number, code: Problem['code'], title: string, ex
     );
 }
 
-/** Пользователь по Bearer-токену. Токен мока — `mock.<user_id>`. */
+/**
+ * Пользователь по Bearer-токену. Токен мока — `mock.<user_id>`. Входит пользователь через data-collector: его
+ * тестовые пользователи сценариев A–E этим мокам не известны — для них это клиент без компаний, а не 401.
+ */
 export function currentUser(request: Request): Me | undefined {
     const token = (request.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
     if (!token.startsWith(MOCK_TOKEN_PREFIX)) return undefined;
-    return meFor(token.slice(MOCK_TOKEN_PREFIX.length));
+    const id = token.slice(MOCK_TOKEN_PREFIX.length);
+    const known = meFor(id);
+    if (known) return known;
+    const collector = collectorUser(id);
+    return collector ? { id, full_name: collector.full_name, roles: collector.roles, companies: [] } : undefined;
 }
 
 export const unauthorized = () => problem(401, 'UNAUTHORIZED', 'Нужно войти');

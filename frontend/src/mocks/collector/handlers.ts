@@ -16,6 +16,7 @@ import { mockFailure } from '../handlers';
 import { stepMs } from '../workflow';
 import { FAILING_COLLECTION_INN, scenarioByInn } from './scenarios';
 import { mutateCollector, newId, readCollector, type StoredCollectorApp } from './store';
+import { collectorUser, COLLECTOR_TEST_USERS } from './users';
 
 /* Мок data-collector по его swagger и README: регистрация, анкета с файлами, статус заявки, итог сбора. */
 
@@ -294,6 +295,44 @@ function buildDocuments(files: File[], specs: QuestionnaireInput['documents'], t
     return [...built.filter((_, i) => !targets.has(i)), ...built.filter((_, i) => targets.has(i))];
 }
 
+// ---------------------------------------------------------------- вход (мок-логин, как у data-collector)
+
+const unauthorized = (detail: string) => problem(401, 'UNAUTHORIZED', 'Unauthorized', detail);
+
+/** Пользователь по `Authorization: Bearer mock.<user_id>`. Без заголовка — анонимно; неверный токен — 401. */
+function authenticate(request: Request) {
+    const header = request.headers.get('Authorization');
+    if (!header) return { user: undefined };
+    // схема — без учёта регистра, как у data-collector
+    const token = /^bearer\s+(\S+)\s*$/i.exec(header.trim())?.[1];
+    const id = token?.match(/^mock\.(.+)$/)?.[1];
+    const user = id ? collectorUser(id) : undefined;
+    return user ? { user } : { error: unauthorized('токен недействителен') };
+}
+
+/** Вход — без проверки токена: по контракту она ему не нужна, и старый токен не мешает перелогиниться. */
+const AUTH_PATHS = ['/auth/test-users', '/auth/mock-login'];
+
+/** Роль пользователя в компании, если уже записана: заведённая или с прошлой регистрации. Не переписывается. */
+function memberRole(userId: string, inn: string): { role: CollectorRole; can_sign: boolean } | undefined {
+    const seeded = collectorUser(userId)?.companies.find((c) => c.inn === inn);
+    if (seeded) return { role: seeded.role, can_sign: seeded.can_sign };
+    const app = readCollector().apps.find((a) => a.representative.id === userId && a.company.inn === inn);
+    return app && { role: app.representative.role, can_sign: app.representative.can_sign };
+}
+
+/** Профиль: заведённые компании и те, по которым пользователь подавал заявки (company_members у сервиса). */
+function meOf(user: (typeof COLLECTOR_TEST_USERS)[number]) {
+    // сначала заведённые компании, потом добавленные регистрацией — по имени (как у сервиса)
+    const added: typeof user.companies = [];
+    for (const app of readCollector().apps) {
+        if (app.representative.id !== user.id || [...user.companies, ...added].some((c) => c.inn === app.company.inn)) continue;
+        added.push({ applicant_id: app.company.id, short_name: app.company.name ?? `ИНН ${app.company.inn}`, inn: app.company.inn, role: app.representative.role, can_sign: app.representative.can_sign });
+    }
+    added.sort((a, b) => a.short_name.localeCompare(b.short_name) || a.applicant_id.localeCompare(b.applicant_id));
+    return { id: user.id, full_name: user.full_name, roles: user.roles, companies: [...user.companies, ...added], pending_signatures: [] };
+}
+
 // ---------------------------------------------------------------- обработчики
 
 type RegisterBody = {
@@ -302,7 +341,32 @@ type RegisterBody = {
 };
 
 export const collectorHandlers = [
-    http.all(url('/*'), ({ request }) => mockFailure(request)),
+    http.all(url('/*'), ({ request }) => {
+        const failure = mockFailure(request);
+        if (failure) return failure;
+        if (AUTH_PATHS.some((p) => new URL(request.url).pathname.endsWith(p))) return undefined;
+        return authenticate(request).error;
+    }),
+
+    http.get(url('/auth/test-users'), async () => {
+        await delay(250);
+        return HttpResponse.json({ items: COLLECTOR_TEST_USERS });
+    }),
+
+    http.post(url('/auth/mock-login'), async ({ request }) => {
+        await delay(250);
+        const { user_id } = (await request.json().catch(() => ({}))) as { user_id?: string };
+        if (!user_id) return validation(400, 'тело запроса не прошло проверку', [{ field: 'user_id', code: 'required', message: 'обязательное поле' }]);
+        const user = collectorUser(user_id);
+        if (!user) return notFound('пользователь не найден');
+        return HttpResponse.json({ token: `mock.${user.id}`, user: meOf(user) });
+    }),
+
+    http.get(url('/me'), async ({ request }) => {
+        await delay(150);
+        const { user } = authenticate(request);
+        return user ? HttpResponse.json(meOf(user)) : unauthorized('нужен токен: Authorization: Bearer mock.<user_id>');
+    }),
 
     http.post(url('/applicants'), async ({ request }) => {
         await delay(400);
@@ -329,28 +393,47 @@ export const collectorHandlers = [
 
         const inn = company.inn;
         const role = rep.role as CollectorRole;
-        const fullName = rep.full_name ?? '';
+        // вошёл по токену — заявка от его имени: ФИО из профиля, черновик по компании — его
+        const { user } = authenticate(request);
+        if (user && !user.roles.includes('CLIENT')) return problem(403, 'FORBIDDEN', 'Forbidden', 'заявку на кредит подаёт клиент, а не сотрудник банка');
+        const fullName = user?.full_name ?? rep.full_name ?? '';
+        // вошедший: уже записанная роль в компании не переписывается
+        const kept = user ? memberRole(user.id, inn) : undefined;
         const { apps } = readCollector();
-        // тот же пользователь (по ИНН физлица) и та же компания — тот же черновик
-        const existingDraft = rep.inn && apps.find((a) => a.representative.inn === rep.inn && a.company.inn === inn && a.submitted_ms === undefined);
+        const existingDraft = apps.find(
+            (a) =>
+                a.company.inn === inn &&
+                a.submitted_ms === undefined &&
+                (user ? a.representative.id === user.id : Boolean(rep.inn) && a.representative.inn === rep.inn),
+        );
         if (existingDraft) {
             const updated = mutateCollector((d) => {
                 const app = d.apps.find((a) => a.id === existingDraft.id) ?? existingDraft;
-                app.representative = { ...app.representative, full_name: fullName, role, can_sign: canSign(role, inn.length === 12) };
+                app.representative = kept
+                    ? { ...app.representative, full_name: fullName, ...kept }
+                    : { ...app.representative, full_name: fullName, role, can_sign: canSign(role, inn.length === 12) };
                 return app;
             });
             return HttpResponse.json(toApplication(updated, true), { status: 201, headers: { Location: `/api/v1/applications/${updated.id}` } });
         }
         const known = apps.find((a) => a.company.inn === inn);
+        // компании тестовых пользователей заведены заранее — со своими id
+        const seeded = COLLECTOR_TEST_USERS.flatMap((u) => u.companies).find((c) => c.inn === inn);
         const now = new Date().toISOString();
         const app = mutateCollector((d) => {
             d.seq += 1;
             const created: StoredCollectorApp = {
                 id: newId('app'),
                 number: `A-2026-${String(d.seq).padStart(6, '0')}`,
-                company: known ? known.company : { id: newId('apl'), inn, name: company.name || undefined },
-                representative: { id: newId('usr'), full_name: fullName, inn: rep.inn || undefined, role, can_sign: canSign(role, inn.length === 12) },
-                already_known: Boolean(known),
+                company: known ? known.company : seeded ? { id: seeded.applicant_id, inn, name: seeded.short_name } : { id: newId('apl'), inn, name: company.name || undefined },
+                representative: {
+                    id: user?.id ?? newId('usr'),
+                    full_name: fullName,
+                    inn: user ? undefined : rep.inn || undefined,
+                    role: kept?.role ?? role,
+                    can_sign: kept?.can_sign ?? canSign(role, inn.length === 12),
+                },
+                already_known: Boolean(known ?? seeded),
                 created_at: now,
                 updated_at: now,
                 documents: [],

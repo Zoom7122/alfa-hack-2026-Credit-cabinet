@@ -138,7 +138,9 @@ type Application struct {
 // их связь и черновик заявки. Id новых строк; существующие пользователь (по ИНН),
 // компания (по ИНН) и черновик переиспользуются.
 type Registration struct {
-	UserID         string
+	UserID string
+	// ExistingUser — UserID — уже заведённый пользователь (вошёл по токену): его не ищут по ИНН и не создают.
+	ExistingUser   bool
 	CompanyID      string
 	ApplicationID  string
 	Representative Representative
