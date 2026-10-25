@@ -1,0 +1,1342 @@
+{
+  "case_id": "auto_ip_no_acceptable_amount",
+  "user_story": "AUTO",
+  "bank_profile": "default",
+  "request": {
+    "application_id": "app-auto_ip_no_acceptable_amount",
+    "borrower": {
+      "id": "borrower-auto_ip_no_acceptable_amount",
+      "type": "SOLE_PROPRIETOR",
+      "inn": "990000006607",
+      "name": "ИП Демо 66"
+    },
+    "facts_date": "2026-10-20",
+    "credit_request": {
+      "purpose": "BUSINESS_DEVELOPMENT",
+      "amount_rub": 5000000,
+      "term_months": 12,
+      "max_annual_rate": 24,
+      "min_acceptable_amount_rub": 4000000,
+      "max_acceptable_term_months": 24
+    },
+    "need": {
+      "confirmed_cost_rub": 6000000,
+      "own_contribution_rub": 1000000
+    },
+    "cash": {
+      "free_after_own_contribution_rub": 2000000,
+      "minimum_required_rub": 100000
+    },
+    "monthly_history": [
+      {
+        "month": "2025-10",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 1120000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2025-11",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 1120000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2025-12",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 1120000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2026-01",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 1120000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2026-02",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 1120000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2026-03",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 1120000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2026-04",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 1120000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2026-05",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 1120000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2026-06",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 1120000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2026-07",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 1120000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2026-08",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 1120000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      },
+      {
+        "month": "2026-09",
+        "operating_receipts_rub": 2000000,
+        "variable_payments_rub": 1120000,
+        "fixed_payments_rub": 300000,
+        "taxes_paid_rub": 100000,
+        "maintenance_investment_rub": 50000,
+        "owner_required_payments_rub": 150000,
+        "existing_debt_payment_rub": 50000
+      }
+    ],
+    "financial_debt_rub": 1200000,
+    "future_debt_payments": [
+      {
+        "month": "2026-11",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2026-12",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-01",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-02",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-03",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-04",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-05",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-06",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-07",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-08",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-09",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-10",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-11",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2027-12",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-01",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-02",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-03",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-04",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-05",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-06",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-07",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-08",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-09",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-10",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-11",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2028-12",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-01",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-02",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-03",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-04",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-05",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-06",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-07",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-08",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-09",
+        "payment_rub": 50000
+      },
+      {
+        "month": "2029-10",
+        "payment_rub": 50000
+      }
+    ],
+    "evidence": {
+      "confirmed_receipts_rub": 24000000,
+      "unexplained_difference_rub": 0,
+      "largest_buyer_group_receipts_rub": 3000000
+    },
+    "scoring": {
+      "ip": {
+        "active": true,
+        "bankrupt": false,
+        "material_forgery": false,
+        "credit_prohibited": false,
+        "identity_and_authority_verified": true,
+        "consents_verified": true,
+        "bureau_received": true,
+        "debts_complete": true,
+        "documents_complete": true,
+        "free_cash_source_verified": true,
+        "material_account_restriction": false,
+        "material_dispute_or_enforcement": false,
+        "key_buyer_loss": false,
+        "structural_business_change": false,
+        "business_age_months": 72,
+        "credit_history_months": 48,
+        "current_dpd_days": 0,
+        "worst_repaid_dpd_days_24m": 0,
+        "applications_90d": 0,
+        "overdue_taxes_rub": 0,
+        "bank_relationship_months": 36,
+        "owner_age": 34,
+        "marital_status": "MARRIED",
+        "dependents": 0,
+        "primary_income_source": "BUSINESS",
+        "qualification": "MANAGER_OR_HIGHLY_QUALIFIED",
+        "total_experience_months": 120,
+        "net_monthly_income_rub": 150000,
+        "car_class": "PREMIUM",
+        "education_level": "ACADEMIC_DEGREE",
+        "real_estate_status": "UNENCUMBERED_WHOLE",
+        "owner_experience_years": 10,
+        "business_location": "VERIFIED_PHYSICAL",
+        "location_stability_months": 36,
+        "income_evidence": "VERIFIED",
+        "buyer_contracts": "ACTIVE_AND_PERFORMED",
+        "military_status": "OTHER_OR_UNKNOWN"
+      },
+      "legal_entity": null
+    },
+    "ip_economic_data": {
+      "previous_comparable_receipts_rub": 20000000
+    }
+  },
+  "service_b_response": null,
+  "expected": {
+    "response": {
+      "application_id": "app-auto_ip_no_acceptable_amount",
+      "borrower_id": "borrower-auto_ip_no_acceptable_amount",
+      "status": "UNDER_REVIEW",
+      "message": "Заявка на рассмотрении",
+      "score": {
+        "model": "ip-v2",
+        "questionnaire": {
+          "points": 750,
+          "max_points": 750,
+          "criteria": [
+            {
+              "id": "IP_Q01",
+              "answer": "owner_age=34",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "IP_Q02",
+              "answer": "marital_status=MARRIED",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q03",
+              "answer": "dependents=0",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q04",
+              "answer": "primary_income_source=BUSINESS",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q05",
+              "answer": "qualification=MANAGER_OR_HIGHLY_QUALIFIED",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q06",
+              "answer": "total_experience_months=120",
+              "points": 35,
+              "max_points": 35
+            },
+            {
+              "id": "IP_Q07",
+              "answer": "net_monthly_income_rub=150000",
+              "points": 50,
+              "max_points": 50
+            },
+            {
+              "id": "IP_Q08",
+              "answer": "car_class=PREMIUM",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q09",
+              "answer": "bank_relationship_months=36",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "IP_Q10",
+              "answer": "education_level=ACADEMIC_DEGREE",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q11",
+              "answer": "real_estate_status=UNENCUMBERED_WHOLE",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q12",
+              "answer": "credit_history_months=48",
+              "points": 50,
+              "max_points": 50
+            },
+            {
+              "id": "IP_Q13",
+              "answer": "worst_repaid_dpd_days_24m=0",
+              "points": 100,
+              "max_points": 100
+            },
+            {
+              "id": "IP_Q14",
+              "answer": "current_dpd_days=0",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q15",
+              "answer": "applications_90d=0",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "IP_Q16",
+              "answer": "business_age_months=72",
+              "points": 60,
+              "max_points": 60
+            },
+            {
+              "id": "IP_Q17",
+              "answer": "owner_experience_years=10",
+              "points": 50,
+              "max_points": 50
+            },
+            {
+              "id": "IP_Q18",
+              "answer": "business_location=VERIFIED_PHYSICAL; location_stability_months=36",
+              "points": 20,
+              "max_points": 20
+            },
+            {
+              "id": "IP_Q19",
+              "answer": "overdue_taxes_rub=0",
+              "points": 45,
+              "max_points": 45
+            },
+            {
+              "id": "IP_Q20",
+              "answer": "income_evidence=VERIFIED",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "IP_Q21",
+              "answer": "buyer_contracts=ACTIVE_AND_PERFORMED",
+              "points": 20,
+              "max_points": 20
+            },
+            {
+              "id": "IP_Q22",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q23",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q24",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q25",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q26",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q27",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q28",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q29",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q30",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q31",
+              "answer": "OTHER_OR_UNKNOWN",
+              "points": 0,
+              "max_points": 0
+            }
+          ]
+        },
+        "economics": {
+          "points": 223.75,
+          "max_points": 250,
+          "criteria": [
+            {
+              "id": "IP_E01",
+              "value": 0.14,
+              "points": 18.75,
+              "max_points": 25
+            },
+            {
+              "id": "IP_E02",
+              "value": 0.178571428571,
+              "points": 22.5,
+              "max_points": 30
+            },
+            {
+              "id": "IP_E03",
+              "value": 0.357142857143,
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_E04",
+              "value": 4,
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_E05",
+              "value": 12,
+              "points": 20,
+              "max_points": 20
+            },
+            {
+              "id": "IP_E06",
+              "value": 0,
+              "points": 15,
+              "max_points": 15
+            },
+            {
+              "id": "IP_E07",
+              "value": 0.2,
+              "points": 15,
+              "max_points": 15
+            },
+            {
+              "id": "IP_E08",
+              "value": 0,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "IP_E09",
+              "value": 0.125,
+              "points": 15,
+              "max_points": 15
+            },
+            {
+              "id": "IP_E10",
+              "value": 1,
+              "points": 20,
+              "max_points": 20
+            },
+            {
+              "id": "IP_E11",
+              "value": 0,
+              "points": 15,
+              "max_points": 15
+            },
+            {
+              "id": "IP_E12",
+              "value": 0.166666666667,
+              "points": 7.5,
+              "max_points": 15
+            },
+            {
+              "id": "IP_E13",
+              "value": 0.318181818182,
+              "points": 20,
+              "max_points": 20
+            }
+          ]
+        },
+        "raw_total": 973.75,
+        "total": 974,
+        "grade": "A"
+      },
+      "terms": null,
+      "terms_confirmed": false,
+      "monthly_payment_rub": null,
+      "overpayment_rub": null,
+      "loan_id": null,
+      "review_reason": "BORROWER",
+      "reasons": [
+        {
+          "code": "NO_FEASIBLE_OFFER",
+          "message": "no feasible offer",
+          "fields": []
+        }
+      ]
+    },
+    "statements_called": false,
+    "ms2_called": true,
+    "bank_projection_called": false,
+    "admin_called": true,
+    "bank_check_request": null,
+    "manual_review_request": {
+      "policy_id": "credit-mvp-v2",
+      "application_id": "app-auto_ip_no_acceptable_amount",
+      "borrower": {
+        "id": "borrower-auto_ip_no_acceptable_amount",
+        "type": "SOLE_PROPRIETOR",
+        "inn": "990000006607",
+        "name": "ИП Демо 66"
+      },
+      "requested_terms": {
+        "purpose": "BUSINESS_DEVELOPMENT",
+        "amount_rub": 5000000,
+        "term_months": 12,
+        "max_annual_rate": 24,
+        "min_acceptable_amount_rub": 4000000,
+        "max_acceptable_term_months": 24
+      },
+      "score": {
+        "model": "ip-v2",
+        "questionnaire": {
+          "points": 750,
+          "max_points": 750,
+          "criteria": [
+            {
+              "id": "IP_Q01",
+              "answer": "owner_age=34",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "IP_Q02",
+              "answer": "marital_status=MARRIED",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q03",
+              "answer": "dependents=0",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q04",
+              "answer": "primary_income_source=BUSINESS",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q05",
+              "answer": "qualification=MANAGER_OR_HIGHLY_QUALIFIED",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q06",
+              "answer": "total_experience_months=120",
+              "points": 35,
+              "max_points": 35
+            },
+            {
+              "id": "IP_Q07",
+              "answer": "net_monthly_income_rub=150000",
+              "points": 50,
+              "max_points": 50
+            },
+            {
+              "id": "IP_Q08",
+              "answer": "car_class=PREMIUM",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q09",
+              "answer": "bank_relationship_months=36",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "IP_Q10",
+              "answer": "education_level=ACADEMIC_DEGREE",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q11",
+              "answer": "real_estate_status=UNENCUMBERED_WHOLE",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q12",
+              "answer": "credit_history_months=48",
+              "points": 50,
+              "max_points": 50
+            },
+            {
+              "id": "IP_Q13",
+              "answer": "worst_repaid_dpd_days_24m=0",
+              "points": 100,
+              "max_points": 100
+            },
+            {
+              "id": "IP_Q14",
+              "answer": "current_dpd_days=0",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q15",
+              "answer": "applications_90d=0",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "IP_Q16",
+              "answer": "business_age_months=72",
+              "points": 60,
+              "max_points": 60
+            },
+            {
+              "id": "IP_Q17",
+              "answer": "owner_experience_years=10",
+              "points": 50,
+              "max_points": 50
+            },
+            {
+              "id": "IP_Q18",
+              "answer": "business_location=VERIFIED_PHYSICAL; location_stability_months=36",
+              "points": 20,
+              "max_points": 20
+            },
+            {
+              "id": "IP_Q19",
+              "answer": "overdue_taxes_rub=0",
+              "points": 45,
+              "max_points": 45
+            },
+            {
+              "id": "IP_Q20",
+              "answer": "income_evidence=VERIFIED",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "IP_Q21",
+              "answer": "buyer_contracts=ACTIVE_AND_PERFORMED",
+              "points": 20,
+              "max_points": 20
+            },
+            {
+              "id": "IP_Q22",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q23",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q24",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q25",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q26",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q27",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q28",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q29",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q30",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q31",
+              "answer": "OTHER_OR_UNKNOWN",
+              "points": 0,
+              "max_points": 0
+            }
+          ]
+        },
+        "economics": {
+          "points": 223.75,
+          "max_points": 250,
+          "criteria": [
+            {
+              "id": "IP_E01",
+              "value": 0.14,
+              "points": 18.75,
+              "max_points": 25
+            },
+            {
+              "id": "IP_E02",
+              "value": 0.178571428571,
+              "points": 22.5,
+              "max_points": 30
+            },
+            {
+              "id": "IP_E03",
+              "value": 0.357142857143,
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_E04",
+              "value": 4,
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_E05",
+              "value": 12,
+              "points": 20,
+              "max_points": 20
+            },
+            {
+              "id": "IP_E06",
+              "value": 0,
+              "points": 15,
+              "max_points": 15
+            },
+            {
+              "id": "IP_E07",
+              "value": 0.2,
+              "points": 15,
+              "max_points": 15
+            },
+            {
+              "id": "IP_E08",
+              "value": 0,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "IP_E09",
+              "value": 0.125,
+              "points": 15,
+              "max_points": 15
+            },
+            {
+              "id": "IP_E10",
+              "value": 1,
+              "points": 20,
+              "max_points": 20
+            },
+            {
+              "id": "IP_E11",
+              "value": 0,
+              "points": 15,
+              "max_points": 15
+            },
+            {
+              "id": "IP_E12",
+              "value": 0.166666666667,
+              "points": 7.5,
+              "max_points": 15
+            },
+            {
+              "id": "IP_E13",
+              "value": 0.318181818182,
+              "points": 20,
+              "max_points": 20
+            }
+          ]
+        },
+        "raw_total": 973.75,
+        "total": 974,
+        "grade": "A"
+      },
+      "reasons": [
+        {
+          "code": "NO_FEASIBLE_OFFER",
+          "message": "no feasible offer",
+          "fields": []
+        }
+      ]
+    },
+    "bank_response": null,
+    "notification": {
+      "event_id": "app-auto_ip_no_acceptable_amount:BORROWER_REVIEW",
+      "occurred_at": "2026-10-23T12:00:00Z",
+      "kind": "BORROWER_REVIEW",
+      "application_id": "app-auto_ip_no_acceptable_amount",
+      "borrower": {
+        "id": "borrower-auto_ip_no_acceptable_amount",
+        "type": "SOLE_PROPRIETOR",
+        "inn": "990000006607",
+        "name": "ИП Демо 66"
+      },
+      "score": {
+        "model": "ip-v2",
+        "questionnaire": {
+          "points": 750,
+          "max_points": 750,
+          "criteria": [
+            {
+              "id": "IP_Q01",
+              "answer": "owner_age=34",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "IP_Q02",
+              "answer": "marital_status=MARRIED",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q03",
+              "answer": "dependents=0",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q04",
+              "answer": "primary_income_source=BUSINESS",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q05",
+              "answer": "qualification=MANAGER_OR_HIGHLY_QUALIFIED",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q06",
+              "answer": "total_experience_months=120",
+              "points": 35,
+              "max_points": 35
+            },
+            {
+              "id": "IP_Q07",
+              "answer": "net_monthly_income_rub=150000",
+              "points": 50,
+              "max_points": 50
+            },
+            {
+              "id": "IP_Q08",
+              "answer": "car_class=PREMIUM",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q09",
+              "answer": "bank_relationship_months=36",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "IP_Q10",
+              "answer": "education_level=ACADEMIC_DEGREE",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q11",
+              "answer": "real_estate_status=UNENCUMBERED_WHOLE",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q12",
+              "answer": "credit_history_months=48",
+              "points": 50,
+              "max_points": 50
+            },
+            {
+              "id": "IP_Q13",
+              "answer": "worst_repaid_dpd_days_24m=0",
+              "points": 100,
+              "max_points": 100
+            },
+            {
+              "id": "IP_Q14",
+              "answer": "current_dpd_days=0",
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_Q15",
+              "answer": "applications_90d=0",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "IP_Q16",
+              "answer": "business_age_months=72",
+              "points": 60,
+              "max_points": 60
+            },
+            {
+              "id": "IP_Q17",
+              "answer": "owner_experience_years=10",
+              "points": 50,
+              "max_points": 50
+            },
+            {
+              "id": "IP_Q18",
+              "answer": "business_location=VERIFIED_PHYSICAL; location_stability_months=36",
+              "points": 20,
+              "max_points": 20
+            },
+            {
+              "id": "IP_Q19",
+              "answer": "overdue_taxes_rub=0",
+              "points": 45,
+              "max_points": 45
+            },
+            {
+              "id": "IP_Q20",
+              "answer": "income_evidence=VERIFIED",
+              "points": 30,
+              "max_points": 30
+            },
+            {
+              "id": "IP_Q21",
+              "answer": "buyer_contracts=ACTIVE_AND_PERFORMED",
+              "points": 20,
+              "max_points": 20
+            },
+            {
+              "id": "IP_Q22",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q23",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q24",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q25",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q26",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q27",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q28",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q29",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q30",
+              "answer": "CONFIRMED",
+              "points": 0,
+              "max_points": 0
+            },
+            {
+              "id": "IP_Q31",
+              "answer": "OTHER_OR_UNKNOWN",
+              "points": 0,
+              "max_points": 0
+            }
+          ]
+        },
+        "economics": {
+          "points": 223.75,
+          "max_points": 250,
+          "criteria": [
+            {
+              "id": "IP_E01",
+              "value": 0.14,
+              "points": 18.75,
+              "max_points": 25
+            },
+            {
+              "id": "IP_E02",
+              "value": 0.178571428571,
+              "points": 22.5,
+              "max_points": 30
+            },
+            {
+              "id": "IP_E03",
+              "value": 0.357142857143,
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_E04",
+              "value": 4,
+              "points": 25,
+              "max_points": 25
+            },
+            {
+              "id": "IP_E05",
+              "value": 12,
+              "points": 20,
+              "max_points": 20
+            },
+            {
+              "id": "IP_E06",
+              "value": 0,
+              "points": 15,
+              "max_points": 15
+            },
+            {
+              "id": "IP_E07",
+              "value": 0.2,
+              "points": 15,
+              "max_points": 15
+            },
+            {
+              "id": "IP_E08",
+              "value": 0,
+              "points": 5,
+              "max_points": 10
+            },
+            {
+              "id": "IP_E09",
+              "value": 0.125,
+              "points": 15,
+              "max_points": 15
+            },
+            {
+              "id": "IP_E10",
+              "value": 1,
+              "points": 20,
+              "max_points": 20
+            },
+            {
+              "id": "IP_E11",
+              "value": 0,
+              "points": 15,
+              "max_points": 15
+            },
+            {
+              "id": "IP_E12",
+              "value": 0.166666666667,
+              "points": 7.5,
+              "max_points": 15
+            },
+            {
+              "id": "IP_E13",
+              "value": 0.318181818182,
+              "points": 20,
+              "max_points": 20
+            }
+          ]
+        },
+        "raw_total": 973.75,
+        "total": 974,
+        "grade": "A"
+      },
+      "requested_terms": {
+        "purpose": "BUSINESS_DEVELOPMENT",
+        "amount_rub": 5000000,
+        "term_months": 12,
+        "max_annual_rate": 24,
+        "min_acceptable_amount_rub": 4000000,
+        "max_acceptable_term_months": 24
+      },
+      "loan_id": null,
+      "terms": null,
+      "reasons": [
+        {
+          "code": "NO_FEASIBLE_OFFER",
+          "message": "no feasible offer",
+          "fields": []
+        }
+      ],
+      "problems": [],
+      "selection": null
+    },
+    "selection": null,
+    "bank_state_before": {
+      "K1": 650000000,
+      "Ka": 800000000,
+      "K0": 1000000000,
+      "RWA11": 8000000000,
+      "RWA12": 8000000000,
+      "RWA10": 8000000000,
+      "Lam": 600000000,
+      "Lat": 2500000000,
+      "D2": 2000000000,
+      "D3": 4000000000,
+      "Krd": 1500000000,
+      "Funding4": 1000000000,
+      "Invest": 150000000,
+      "Cash": 10000000,
+      "CashMin": 6000000,
+      "Reserves": 50000000,
+      "groups": {
+        "g1": 200000000,
+        "g2": 180000000,
+        "related": 100000000,
+        "small": 20000000
+      },
+      "related_groups": [
+        "related"
+      ],
+      "borrower_groups": {},
+      "issued_application_ids": [],
+      "issuance_enabled": true
+    },
+    "bank_state_saved": {
+      "K1": 650000000,
+      "Ka": 800000000,
+      "K0": 1000000000,
+      "RWA11": 8000000000,
+      "RWA12": 8000000000,
+      "RWA10": 8000000000,
+      "Lam": 600000000,
+      "Lat": 2500000000,
+      "D2": 2000000000,
+      "D3": 4000000000,
+      "Krd": 1500000000,
+      "Funding4": 1000000000,
+      "Invest": 150000000,
+      "Cash": 10000000,
+      "CashMin": 6000000,
+      "Reserves": 50000000,
+      "groups": {
+        "g1": 200000000,
+        "g2": 180000000,
+        "related": 100000000,
+        "small": 20000000
+      },
+      "related_groups": [
+        "related"
+      ],
+      "borrower_groups": {},
+      "issued_application_ids": [],
+      "issuance_enabled": true
+    },
+    "projected_bank_state": null
+  }
+}

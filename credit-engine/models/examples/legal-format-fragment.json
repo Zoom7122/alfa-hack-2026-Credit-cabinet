@@ -1,0 +1,247 @@
+{
+  "format_version": 1,
+  "id": "legal",
+  "version": "legal-v2-format-fragment",
+  "borrower_type": "LEGAL_ENTITY",
+  "title": "Фрагмент формата: формы Б и особый случай, не полный релиз",
+  "parameters": [
+    {
+      "id": "revenue",
+      "enabled": true,
+      "title": "revenue",
+      "source": {
+        "kind": "STATEMENTS",
+        "path": "current.profit_and_loss.revenue"
+      },
+      "json_name": "revenue",
+      "type": "NUMBER",
+      "unit": "RUB",
+      "required": true,
+      "number": {
+        "integer": true,
+        "lower": {
+          "value": 0,
+          "inclusive": true
+        }
+      }
+    },
+    {
+      "id": "sales_profit",
+      "enabled": true,
+      "title": "sales_profit",
+      "source": {
+        "kind": "STATEMENTS",
+        "path": "current.profit_and_loss.sales_profit"
+      },
+      "json_name": "sales_profit",
+      "type": "NUMBER",
+      "unit": "RUB",
+      "required": true,
+      "number": {
+        "integer": true
+      }
+    },
+    {
+      "id": "cost_of_sales",
+      "enabled": true,
+      "title": "cost_of_sales",
+      "source": {
+        "kind": "STATEMENTS",
+        "path": "current.profit_and_loss.cost_of_sales"
+      },
+      "json_name": "cost_of_sales",
+      "type": "NUMBER",
+      "unit": "RUB",
+      "required": true,
+      "number": {
+        "integer": true,
+        "lower": {
+          "value": 0,
+          "inclusive": true
+        }
+      }
+    },
+    {
+      "id": "gross_margin",
+      "enabled": true,
+      "title": "gross_margin",
+      "source": {
+        "kind": "COMPUTED",
+        "path": "LE_E10"
+      },
+      "json_name": "LE_E10",
+      "type": "NUMBER",
+      "unit": "RATIO",
+      "required": false,
+      "number": {
+        "integer": false
+      },
+      "depends_on": [
+        "revenue",
+        "cost_of_sales"
+      ]
+    }
+  ],
+  "criteria": [
+    {
+      "id": "LE_E10",
+      "enabled": true,
+      "title": "LE_E10",
+      "block": "ADDITIONAL",
+      "value_parameter": "gross_margin",
+      "max_points": 10,
+      "unknown_action": "NEED_INFO",
+      "special_cases": [
+        {
+          "id": "zero_revenue",
+          "when": {
+            "op": "EQ",
+            "parameter": "revenue",
+            "value": {
+              "number": 0
+            }
+          },
+          "points": 0,
+          "result": {
+            "mode": "NULL"
+          },
+          "review_reason": {
+            "code": "SPECIAL_LE_E10",
+            "message": "Годовая выручка равна нулю; показатель не рассчитывается.",
+            "fields": [
+              "LE_E10"
+            ]
+          }
+        }
+      ],
+      "cases": [
+        {
+          "id": "nonpositive",
+          "when": {
+            "op": "LE",
+            "parameter": "gross_margin",
+            "value": {
+              "number": 0
+            }
+          },
+          "points": 0
+        },
+        {
+          "id": "positive_under10",
+          "when": {
+            "op": "ALL",
+            "conditions": [
+              {
+                "op": "GT",
+                "parameter": "gross_margin",
+                "value": {
+                  "number": 0
+                }
+              },
+              {
+                "op": "LT",
+                "parameter": "gross_margin",
+                "value": {
+                  "number": 0.1
+                }
+              }
+            ]
+          },
+          "points": 2.5
+        },
+        {
+          "id": "10to20",
+          "when": {
+            "op": "ALL",
+            "conditions": [
+              {
+                "op": "GE",
+                "parameter": "gross_margin",
+                "value": {
+                  "number": 0.1
+                }
+              },
+              {
+                "op": "LT",
+                "parameter": "gross_margin",
+                "value": {
+                  "number": 0.2
+                }
+              }
+            ]
+          },
+          "points": 5
+        },
+        {
+          "id": "20to30",
+          "when": {
+            "op": "ALL",
+            "conditions": [
+              {
+                "op": "GE",
+                "parameter": "gross_margin",
+                "value": {
+                  "number": 0.2
+                }
+              },
+              {
+                "op": "LT",
+                "parameter": "gross_margin",
+                "value": {
+                  "number": 0.3
+                }
+              }
+            ]
+          },
+          "points": 7.5
+        },
+        {
+          "id": "30plus",
+          "when": {
+            "op": "GE",
+            "parameter": "gross_margin",
+            "value": {
+              "number": 0.3
+            }
+          },
+          "points": 10
+        }
+      ]
+    }
+  ],
+  "data_checks": [],
+  "stops": [],
+  "manual_reviews": [],
+  "classes": [
+    {
+      "grade": "D",
+      "min_total": 0,
+      "max_total": 549,
+      "reason": {
+        "code": "SCORE_CLASS_D",
+        "message": "Итоговый класс D.",
+        "fields": []
+      }
+    },
+    {
+      "grade": "C",
+      "min_total": 550,
+      "max_total": 649,
+      "reason": {
+        "code": "SCORE_CLASS_C",
+        "message": "Итоговый класс C.",
+        "fields": []
+      }
+    },
+    {
+      "grade": "B",
+      "min_total": 650,
+      "max_total": 799
+    },
+    {
+      "grade": "A",
+      "min_total": 800,
+      "max_total": 1000
+    }
+  ]
+}

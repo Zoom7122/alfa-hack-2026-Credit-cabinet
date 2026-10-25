@@ -1,0 +1,34 @@
+.wizard {
+    min-height: 100vh;
+}
+
+.wizard_loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wizard__body {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--gap-24);
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: var(--gap-32) var(--gap-40) var(--gap-56);
+}
+
+.wizard__content {
+    flex: 1;
+    max-width: 760px;
+    min-width: 0;
+}
+
+.wizard__notices {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-12);
+}
+
+.wizard__notices:not(:empty) {
+    margin-bottom: var(--gap-16);
+}

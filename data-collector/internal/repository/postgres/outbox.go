@@ -14,7 +14,7 @@ import (
 const (
 	selectUnpublished = `
 SELECT id, topic, key, payload FROM outbox
-WHERE topic = $1 AND published_at IS NULL
+WHERE topic = ANY($1) AND published_at IS NULL
 ORDER BY id
 LIMIT $2
 FOR UPDATE SKIP LOCKED`
@@ -32,11 +32,11 @@ func NewOutboxRepository(pool *pgxpool.Pool) *OutboxRepository {
 	return &OutboxRepository{pool: pool}
 }
 
-// PublishBatch берёт до limit неопубликованных событий топика, отдаёт их publish и помечает
+// PublishBatch берёт до limit неопубликованных событий топиков, отдаёт их publish и помечает
 // опубликованными — в одной транзакции. До её конца строки заблокированы (FOR UPDATE SKIP LOCKED):
 // параллельные publisher'ы берут разные события. Ошибка publish — события остаются
 // неопубликованными, у них растёт attempts и пишется last_error. Возвращает, сколько опубликовано.
-func (r *OutboxRepository) PublishBatch(ctx context.Context, topic string, limit int,
+func (r *OutboxRepository) PublishBatch(ctx context.Context, topics []string, limit int,
 	publish func(context.Context, []events.Message) error) (int, error) {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
@@ -44,7 +44,7 @@ func (r *OutboxRepository) PublishBatch(ctx context.Context, topic string, limit
 	}
 	defer func() { _ = tx.Rollback(ctx) }() // после Commit ничего не делает
 
-	rows, err := tx.Query(ctx, selectUnpublished, topic, limit)
+	rows, err := tx.Query(ctx, selectUnpublished, topics, limit)
 	if err != nil {
 		return 0, fmt.Errorf("select outbox: %w", err)
 	}

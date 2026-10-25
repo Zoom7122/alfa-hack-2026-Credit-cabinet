@@ -75,7 +75,8 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # API: анкета → задача на сбор (collection_tasks) + событие в outbox одной транзакцией.
+  # API: регистрация заявителя (users, companies, черновик заявки) и анкета с файлами →
+  # заявка SUBMITTED, documents, задача на сбор и события в outbox одной транзакцией.
   data-collector:
     build: ./data-collector
     environment:
@@ -84,6 +85,8 @@ services:
       BANK_API_URL: http://mock-api:8090/bank/v1
       BANK_API_TIMEOUT: 5s
       DOCUMENT_STORAGE_PATH: /data/documents
+      # файлы документов; этот же volume на чтение — у worker'а проверки подписи (и будущего OCR)
+      DOCUMENTS_DIR: /data/documents
     volumes:
       - documents:/data/documents
     ports:
@@ -95,7 +98,7 @@ services:
         condition: service_started
     restart: unless-stopped
 
-  # outbox → Kafka: публикует события о новых задачах на сбор.
+  # outbox → Kafka: события о задачах на сбор и о документах заявок.
   data-collector-publisher:
     build: ./data-collector
     entrypoint: ["/data-collector-publisher"]
@@ -109,7 +112,8 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # Kafka → задача RUNNING → опрос всех моков → raw_collections, задача COMPLETED.
+  # Kafka → задача RUNNING (заявка ENRICHING) → опрос всех моков → raw_collections,
+  # задача COMPLETED (заявка VERIFYING), реквизиты компании из ЕГРЮЛ.
   data-collector-worker:
     build: ./data-collector
     entrypoint: ["/data-collector-worker"]
@@ -135,6 +139,32 @@ services:
         condition: service_started
     restart: unless-stopped
 
+  # Kafka (data-collector.documents) → проверка ЭП документов заявки: файлы — из volume documents
+  # (только чтение), полномочия — из собранных ответов ЕГРЮЛ и МЧД → signature_reports, documents.signature_state.
+  # Профиль TEST: тестовые корни и CRL из data-collector/testdata/signature/trust (go run ./tools/sigdemo),
+  # это не проверка УКЭП. В образ тестовые корни не входят — только монтируются здесь.
+  data-collector-signature-worker:
+    build: ./data-collector
+    entrypoint: ["/data-collector-signature-worker"]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
+      KAFKA_BROKERS: kafka:9092
+      DOCUMENTS_DIR: /data/documents
+      SIGNATURE_PROFILE: TEST
+      SIGNATURE_TRUST_DIR: /etc/signature/trust
+      # сколько ждать завершения сбора данных (ЕГРЮЛ, МЧД) перед проверкой полномочий
+      SIGNATURE_AUTHORITY_WAIT: 20s
+      WORKER_CONCURRENCY: 4
+    volumes:
+      - documents:/data/documents:ro
+      - ./data-collector/testdata/signature/trust:/etc/signature/trust:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
   # Эмулятор внешних систем: свой префикс на каждую систему (список — mock-api/README.md)
   # и старый /bank/v1, который вызывает data-collector.
   mock-api:
@@ -143,6 +173,23 @@ services:
       HTTP_ADDR: :8090
     ports:
       - "${MOCK_API_PORT:-8090}:8090"
+    restart: unless-stopped
+
+  # Кабинет клиента и рабочее место банка: http://localhost:${FRONTEND_PORT:-3000}
+  # Пока API нет, данные отдают моки MSW в браузере (FRONTEND_API_MOCK=true).
+  # Когда появится сервис API, поставить FRONTEND_API_MOCK=false и указать его адрес в FRONTEND_API_UPSTREAM.
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_MOCK: ${FRONTEND_API_MOCK:-true}
+        # false — анкета и статус сбора идут в живой data-collector
+        VITE_COLLECTOR_MOCK: ${FRONTEND_COLLECTOR_MOCK:-true}
+    environment:
+      API_UPSTREAM: ${FRONTEND_API_UPSTREAM:-http://api:8080}
+      COLLECTOR_UPSTREAM: ${FRONTEND_COLLECTOR_UPSTREAM:-http://data-collector:8081}
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
     restart: unless-stopped
 
   # Логи всех контейнеров в браузере: http://localhost:${DOZZLE_PORT:-8888}
@@ -160,3 +207,4 @@ volumes:
   documents:
   pgdata:
   kafkadata:
+  documents:

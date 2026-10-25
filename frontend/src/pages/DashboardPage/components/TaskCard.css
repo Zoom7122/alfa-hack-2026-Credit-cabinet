@@ -1,0 +1,43 @@
+.task-card {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-16);
+    padding: var(--gap-20);
+    border-radius: var(--border-radius-20);
+    background: var(--color-light-base-bg-primary);
+}
+
+.task-card__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    flex: none;
+    border-radius: var(--border-radius-circle);
+    color: var(--color-light-text-primary-inverted);
+}
+
+.task-card__icon_kind_sign {
+    background: var(--color-light-accent-secondary);
+}
+
+.task-card__icon_kind_info {
+    background: var(--color-light-status-attention);
+}
+
+.task-card__icon_kind_offer {
+    background: var(--color-light-status-positive);
+}
+
+.task-card__text {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    gap: var(--gap-2);
+}
+
+.task-card__action {
+    flex: none;
+}

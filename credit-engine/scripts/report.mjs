@@ -1,0 +1,15 @@
+import assert from "node:assert/strict";
+import {readFile,writeFile} from "node:fs/promises";
+const output=process.env.CREDIT_ENGINE_UI_OUTPUT;
+const json=async name=>JSON.parse((await readFile(output+"/"+name,"utf8")).replace(/^\uFEFF/,""));
+const lines=(await readFile(output+"/go-tests.jsonl","utf8")).trim().split("\n").map(JSON.parse);
+const tests=lines.filter(v=>v.Test&&["pass","fail","skip"].includes(v.Action));
+const pass=tests.filter(v=>v.Action==="pass").length,fail=tests.filter(v=>v.Action==="fail").length,skip=tests.filter(v=>v.Action==="skip").length;
+assert.equal(fail,0);assert.equal(skip,0);
+const scenarios=(await readFile(output+"/network-scenarios.jsonl","utf8")).trim().split("\n").map(JSON.parse);
+assert.equal(scenarios.length,24);assert.ok(scenarios.every(s=>s.passed));
+const provenance=await json("go-provenance.json").catch(error=>{if(error.code==="ENOENT")return null;throw error;});
+const summary={status:"passed",go:{passed:pass,failed:fail,skipped:skip},javascript:await json("javascript.json"),browser:[await json("browser-workflow.json"),await json("admin-acceptance.json")],networkScenarios:scenarios,deliveryRetry:await json("delivery-retry.json"),runtime:[await json("runtime-smoke.json"),await json("rebuilt-runtime-smoke.json")],generation:await json("modelgen-check.json"),rebuiltGeneration:await json("rebuilt-modelgen.json")};
+if(provenance)summary.go.provenance=provenance;
+await writeFile(output+"/verification.json",JSON.stringify(summary,null,2));
+console.log(JSON.stringify({status:summary.status,go:pass,javascript:summary.javascript.passed,network:scenarios.length,browser:summary.browser.reduce((n,b)=>n+b.passed,0)}));

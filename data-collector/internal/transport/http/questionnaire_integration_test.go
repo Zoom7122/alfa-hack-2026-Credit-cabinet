@@ -1,7 +1,8 @@
 //go:build integration
 
-// Сквозной тест сбора против живого mock-api: POST /questionnaires с примерами
-// из examples/ (сценарии A–E) → событие из outbox → worker → GET /collections/{id}.
+// Сквозной тест сбора против живого mock-api по примерам из examples/ (сценарии A–E):
+// POST /applicants → POST /applications/{id}/questionnaire (у A — с документом и подписью) →
+// событие из outbox → worker → GET /collections/{id} и GET /applications/{id}.
 // Ответы систем — настоящие; очередь и хранилище — в памяти (Kafka и Postgres
 // проверяются в internal/worker/pipeline_integration_test.go).
 //
@@ -10,7 +11,6 @@
 package httptransport_test
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"os"
@@ -20,9 +20,6 @@ import (
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/client/mockapi"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/domain"
-	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/repository/memory"
-	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/service"
-	httptransport "github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/transport/http"
 )
 
 func mockAPIURL() string {
@@ -67,28 +64,23 @@ func TestIntegrationCollectScenarios(t *testing.T) {
 		"d": {domain.SystemEGRN, domain.SystemOpenBanking, domain.SystemOFD},
 		"e": {domain.SystemEGRN, domain.SystemOpenBanking, domain.SystemMarketplaces, domain.SystemOFD},
 	}
+	// Название компании после сбора — из ЕГРЮЛ.
+	names := map[string]string{
+		"a": `ООО "СЕВЕРНЫЙ ВЕТЕР"`, "b": `ООО "СТРОЙРЕСУРС"`, "c": `ООО "АЛЬТАИР"`,
+		"d": "Индивидуальный предприниматель Смирнова Анна Викторовна", "e": `ООО "ТЕХНО-СЕРВИС"`,
+	}
 	for _, sc := range []string{"a", "b", "c", "d", "e"} {
 		t.Run(sc, func(t *testing.T) {
-			body, err := os.ReadFile("../../../examples/scenario-" + sc + ".json")
-			if err != nil {
-				t.Fatal(err)
+			applicant := readExample(t, "scenario-"+sc+".applicant.json")
+			questionnaire := readExample(t, "scenario-"+sc+".json")
+			var files []file
+			if sc == "a" { // бухотчётность с открепленной подписью
+				files = []file{{"balance.pdf", readExample(t, "files/balance.pdf")}, {"balance.pdf.sig", readExample(t, "files/balance.pdf.sig")}}
 			}
-			tasks := memory.NewCollectionTaskRepository()
-			collections := service.NewCollectionService(tasks)
-			r := httptransport.NewRouter(
-				httptransport.NewQuestionnaireHandler(service.NewQuestionnaireService(memory.NewQuestionnaireRepository(), collections), discardLog),
-				httptransport.NewCollectionHandler(collections, discardLog),
-				httptransport.NewInternalDataHandler(stubInternalData{}, discardLog),
-			)
+			a := newTestApp(t)
+			appID := a.register(t, applicant)
 
-			w := post(r, string(body))
-			if w.Code != http.StatusAccepted {
-				t.Fatalf("status = %d, body = %s", w.Code, w.Body)
-			}
-			var created createdBody
-			if err := json.Unmarshal(w.Body.Bytes(), &created); err != nil {
-				t.Fatal(err)
-			}
+			created := decodeSubmitted(t, a.submitMultipart(t, appID, questionnaire, files...))
 			// системы без данных видны сразу, до сбора
 			var wantSkipped []string
 			for _, sys := range skipped[sc] {
@@ -98,9 +90,9 @@ func TestIntegrationCollectScenarios(t *testing.T) {
 				t.Fatalf("created collection = %+v, want skipped %v", c, wantSkipped)
 			}
 
-			runWorker(t, mockapi.New(mockAPIURL(), 5*time.Second, "044525999"), tasks)
+			runWorker(t, mockapi.New(mockAPIURL(), 5*time.Second, "044525999"), a.tasks)
 
-			code, c, _ := getCollection(t, r, created.Collection.ID)
+			code, c, _ := a.getCollection(t, created.Collection.ID)
 			if code != http.StatusOK || c.Status != "COMPLETED" || len(c.Sources) != len(domain.Systems) {
 				t.Fatalf("collection: %d %+v", code, c)
 			}
@@ -114,7 +106,16 @@ func TestIntegrationCollectScenarios(t *testing.T) {
 				}
 			}
 
-			rc, ok := tasks.Result(created.Collection.ID)
+			app := decodeApplication(t, a.get("/api/v1/applications/"+appID).Body.Bytes())
+			if app.Status != "VERIFYING" || app.Applicant.Name != names[sc] || app.Applicant.OGRN == "" {
+				t.Errorf("application after collection: status %s, applicant %+v", app.Status, app.Applicant)
+			}
+			if sc == "a" && (len(app.Documents) != 2 || app.Documents[0].Type != "FINANCIAL_STATEMENTS" ||
+				app.Documents[1].SignedDocumentID != app.Documents[0].ID) {
+				t.Errorf("documents = %+v", app.Documents)
+			}
+
+			rc, ok := a.tasks.Result(created.Collection.ID)
 			if !ok {
 				t.Fatal("collection is not saved")
 			}
@@ -183,17 +184,18 @@ func TestIntegrationCollectScenarios(t *testing.T) {
 	}
 }
 
-// Неизвестная компания: АБС её не знает, ЕГРЮЛ пуст, hh не с чем искать.
+// Неизвестная компания: АБС её не знает, ЕГРЮЛ пуст, hh не с чем искать; имя компании остаётся «ИНН …».
 func TestIntegrationUnknownCompany(t *testing.T) {
-	tasks := memory.NewCollectionTaskRepository()
-	task, err := service.NewCollectionService(tasks).Enqueue(context.Background(), "qst_test", domain.CollectInput{INN: "7799000999"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	runWorker(t, mockapi.New(mockAPIURL(), 5*time.Second, "044525999"), tasks)
-	rc, ok := tasks.Result(task.ID)
+	a := newTestApp(t)
+	appID := a.register(t, `{"representative":{"full_name":"Иванов Иван","role":"DIRECTOR"},"company":{"inn":"7799000999"}}`)
+	created := decodeSubmitted(t, a.postJSON("/api/v1/applications/"+appID+"/questionnaire", minimalQuestionnaire))
+	runWorker(t, mockapi.New(mockAPIURL(), 5*time.Second, "044525999"), a.tasks)
+	rc, ok := a.tasks.Result(created.Collection.ID)
 	if !ok {
 		t.Fatal("collection is not saved")
+	}
+	if app := decodeApplication(t, a.get("/api/v1/applications/"+appID).Body.Bytes()); app.Applicant.Name != "ИНН 7799000999" {
+		t.Errorf("applicant name = %q", app.Applicant.Name)
 	}
 	states := map[domain.System]domain.CollectState{}
 	for _, s := range rc.Systems {

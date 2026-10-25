@@ -1,0 +1,142 @@
+{
+  "format_version": 1,
+  "id": "supplier-demo",
+  "version": "supplier-format-fragment",
+  "borrower_type": "SOLE_PROPRIETOR",
+  "title": "Отключённые примерные параметры, без назначения новых бизнес-весов",
+  "facts_schema_version": "demo-facts-v1",
+  "parameters": [
+    {
+      "id": "annual_contract_value_rub",
+      "enabled": false,
+      "title": "annual_contract_value_rub",
+      "source": {
+        "kind": "SUPPLIER",
+        "path": "annual_contract_value_rub"
+      },
+      "json_name": "annual_contract_value_rub",
+      "type": "NUMBER",
+      "unit": "RUB",
+      "required": true,
+      "go_name": "AnnualContractValueRUB",
+      "number": {
+        "integer": false,
+        "lower": {
+          "value": 0,
+          "inclusive": true
+        }
+      }
+    },
+    {
+      "id": "has_confirmed_contracts",
+      "enabled": false,
+      "title": "has_confirmed_contracts",
+      "source": {
+        "kind": "SUPPLIER",
+        "path": "has_confirmed_contracts"
+      },
+      "json_name": "has_confirmed_contracts",
+      "type": "BOOLEAN",
+      "unit": "BOOLEAN",
+      "required": true,
+      "go_name": "HasConfirmedContracts"
+    }
+  ],
+  "criteria": [
+    {
+      "id": "DEMO_Q_BOOL",
+      "enabled": false,
+      "title": "DEMO_Q_BOOL",
+      "block": "QUESTIONNAIRE",
+      "value_parameter": "has_confirmed_contracts",
+      "max_points": 0,
+      "unknown_action": "NEED_INFO",
+      "special_cases": [],
+      "cases": [
+        {
+          "id": "yes",
+          "when": {
+            "op": "EQ",
+            "parameter": "has_confirmed_contracts",
+            "value": {
+              "boolean": true
+            }
+          },
+          "points": 0
+        },
+        {
+          "id": "no",
+          "when": {
+            "op": "EQ",
+            "parameter": "has_confirmed_contracts",
+            "value": {
+              "boolean": false
+            }
+          },
+          "points": 0
+        }
+      ],
+      "answer": {
+        "template": "has_confirmed_contracts=${has_confirmed_contracts}"
+      }
+    },
+    {
+      "id": "DEMO_E_NUMBER",
+      "enabled": false,
+      "title": "DEMO_E_NUMBER",
+      "block": "ADDITIONAL",
+      "value_parameter": "annual_contract_value_rub",
+      "max_points": 0,
+      "unknown_action": "NEED_INFO",
+      "special_cases": [],
+      "cases": [
+        {
+          "id": "known_nonnegative",
+          "when": {
+            "op": "GE",
+            "parameter": "annual_contract_value_rub",
+            "value": {
+              "number": 0
+            }
+          },
+          "points": 0
+        }
+      ]
+    }
+  ],
+  "data_checks": [],
+  "stops": [],
+  "manual_reviews": [],
+  "classes": [
+    {
+      "grade": "D",
+      "min_total": 0,
+      "max_total": 549,
+      "reason": {
+        "code": "SCORE_CLASS_D",
+        "message": "Итоговый класс D.",
+        "fields": []
+      }
+    },
+    {
+      "grade": "C",
+      "min_total": 550,
+      "max_total": 649,
+      "reason": {
+        "code": "SCORE_CLASS_C",
+        "message": "Итоговый класс C.",
+        "fields": []
+      }
+    },
+    {
+      "grade": "B",
+      "min_total": 650,
+      "max_total": 799
+    },
+    {
+      "grade": "A",
+      "min_total": 800,
+      "max_total": 1000
+    }
+  ]
+}

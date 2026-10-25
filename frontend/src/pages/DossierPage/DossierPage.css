@@ -1,0 +1,44 @@
+.dossier {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-24);
+    padding: var(--gap-32) var(--gap-40) var(--gap-56);
+}
+
+.dossier__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--gap-24);
+}
+
+.dossier__titles {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-8);
+}
+
+.dossier__title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--gap-12);
+}
+
+.dossier__actions {
+    display: flex;
+    flex: none;
+    gap: var(--gap-12);
+}
+
+.dossier__panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-16);
+    padding-top: var(--gap-24);
+}
+
+.dossier__skeleton {
+    height: 600px;
+    border-radius: var(--border-radius-24);
+}

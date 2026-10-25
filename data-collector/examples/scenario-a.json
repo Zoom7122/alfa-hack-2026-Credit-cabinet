@@ -2,7 +2,21 @@
   "age": 42,
   "marital_status": "MARRIED",
   "children_count": 2,
-  "inn": "7799000012",
+  "product_code": "WORKING_CAPITAL",
+  "requested": {
+    "amount": 5000000,
+    "term_months": 24
+  },
+  "purpose": {
+    "code": "WORKING_CAPITAL",
+    "description": "Закупка товара под сезон"
+  },
+  "documents": [
+    {
+      "file_name": "balance.pdf",
+      "type": "FINANCIAL_STATEMENTS"
+    }
+  ],
   "director": {
     "inn": "779900010139",
     "last_name": "Ковалёв",

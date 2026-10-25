@@ -1,0 +1,15 @@
+.decline-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-20);
+}
+
+.decline-dialog__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-4);
+}
+
+.decline-dialog__error {
+    margin-top: var(--gap-16);
+}

@@ -1,0 +1,45 @@
+.signing-documents {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-16);
+    padding: var(--gap-24);
+    border-radius: var(--border-radius-24);
+    background: var(--color-light-base-bg-primary);
+}
+
+.signing-documents__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-12);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.signing-documents__item {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-16);
+    padding: var(--gap-16);
+    border-radius: var(--border-radius-16);
+    background: var(--color-light-neutral-100);
+}
+
+.signing-documents__badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 48px;
+    flex: none;
+    border-radius: var(--border-radius-8);
+    background: var(--color-light-base-bg-primary);
+}
+
+.signing-documents__text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--gap-2);
+    min-width: 0;
+}

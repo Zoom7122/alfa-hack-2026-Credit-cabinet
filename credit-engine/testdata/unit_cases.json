@@ -1,0 +1,774 @@
+{
+  "bank_cases": [
+    "bank/bank_fixed_deal.json",
+    "bank/bank_negative_npv.json",
+    "bank/bank_npv_zero.json",
+    "bank/bank_n6_other_group.json",
+    "bank/bank_n12_capital_drop.json",
+    "bank/bank_n7_existing_group_crosses.json",
+    "bank/bank_issuance_disabled.json"
+  ],
+  "ranking_cases": [
+    {
+      "name": "90_percent_inclusive",
+      "max_npv": 1000,
+      "eligible_npvs": [
+        1000,
+        900
+      ],
+      "excluded_npvs": [
+        899.99
+      ]
+    },
+    {
+      "name": "coverage_before_profit",
+      "candidate_amounts": [
+        3000000,
+        2900000
+      ],
+      "candidate_npvs": [
+        1000,
+        2000
+      ],
+      "expected_amount": 3000000
+    },
+    {
+      "name": "equal_cost_preferred_term",
+      "preferred_term": 24,
+      "terms": [
+        23,
+        25,
+        24
+      ],
+      "expected_term": 24
+    }
+  ],
+  "bank_replay": {
+    "case": "bank/bank_fixed_deal.json",
+    "repeat": 2,
+    "expected_loan_count": 1,
+    "expected_saved_cash": 7000000,
+    "expected_notification_count": 1
+  },
+  "concurrency": {
+    "initial_bank": "../config/bank.default.json",
+    "amounts": [
+      3000000,
+      3000000
+    ],
+    "expected_verdicts": [
+      "ISSUED",
+      "BANK_REVIEW"
+    ],
+    "expected_saved_cash": 7000000,
+    "expected_loan_count": 1
+  },
+  "notification_failure": {
+    "commit_before_notify": true,
+    "first_send": "error",
+    "expected_business_verdict": "ISSUED",
+    "retry_same_request": "resend_same_event_id_only",
+    "expected_loan_count": 1
+  },
+  "priority_cases": [
+    {
+      "case": "confirmed_stop_and_missing_data",
+      "expected_status": "REJECTED",
+      "ms2_called": false
+    },
+    {
+      "case": "nonpositive_cfads_from_incomplete_or_unverified_cash_data_only",
+      "expected_status": "NEED_INFO",
+      "ms2_called": false
+    },
+    {
+      "case": "missing_data_and_manual_flag",
+      "expected_status": "NEED_INFO",
+      "ms2_called": false
+    },
+    {
+      "case": "class_d_and_manual_flag",
+      "expected_status": "REJECTED",
+      "ms2_called": false
+    }
+  ],
+  "transport_cases": [
+    {
+      "case": "ms2_conflict",
+      "expected_http_status": 409
+    },
+    {
+      "case": "dependency_response_has_wrong_borrower_or_application_id",
+      "expected_http_status": 502
+    }
+  ],
+  "single_factor_stops": [
+    {
+      "base_case": "decisions/uc04_ip_approved.json",
+      "set": {
+        "scoring.ip.active": false
+      },
+      "expected_status": "REJECTED",
+      "expected_reason": "INACTIVE_BORROWER",
+      "expected_score": null,
+      "statements_called": false,
+      "ms2_called": false,
+      "admin_called": false,
+      "bank_changed": false
+    },
+    {
+      "base_case": "decisions/uc04_ip_approved.json",
+      "set": {
+        "scoring.ip.bankrupt": true
+      },
+      "expected_status": "REJECTED",
+      "expected_reason": "BANKRUPT",
+      "expected_score": null,
+      "statements_called": false,
+      "ms2_called": false,
+      "admin_called": false,
+      "bank_changed": false
+    },
+    {
+      "base_case": "decisions/uc04_ip_approved.json",
+      "set": {
+        "scoring.ip.material_forgery": true
+      },
+      "expected_status": "REJECTED",
+      "expected_reason": "MATERIAL_FORGERY",
+      "expected_score": null,
+      "statements_called": false,
+      "ms2_called": false,
+      "admin_called": false,
+      "bank_changed": false
+    },
+    {
+      "base_case": "decisions/uc04_ip_approved.json",
+      "set": {
+        "scoring.ip.credit_prohibited": true
+      },
+      "expected_status": "REJECTED",
+      "expected_reason": "CREDIT_PROHIBITED",
+      "expected_score": null,
+      "statements_called": false,
+      "ms2_called": false,
+      "admin_called": false,
+      "bank_changed": false
+    },
+    {
+      "base_case": "decisions/uc04_ip_approved.json",
+      "set": {
+        "scoring.ip.current_dpd_days": 30
+      },
+      "expected_status": "REJECTED",
+      "expected_reason": "CURRENT_DPD_30_PLUS",
+      "expected_score": null,
+      "statements_called": false,
+      "ms2_called": false,
+      "admin_called": false,
+      "bank_changed": false
+    },
+    {
+      "base_case": "decisions/uc04_ip_approved.json",
+      "set": {
+        "scoring.ip.worst_repaid_dpd_days_24m": 90
+      },
+      "expected_status": "REJECTED",
+      "expected_reason": "WORST_REPAID_DPD_90_PLUS",
+      "expected_score": null,
+      "statements_called": false,
+      "ms2_called": false,
+      "admin_called": false,
+      "bank_changed": false
+    },
+    {
+      "base_case": "decisions/uc04_ip_approved.json",
+      "set": {
+        "monthly_history[*].variable_payments_rub": 1400000
+      },
+      "expected_status": "REJECTED",
+      "expected_reason": "NONPOSITIVE_VERIFIED_CFADS",
+      "expected_score": null,
+      "statements_called": false,
+      "ms2_called": false,
+      "admin_called": false,
+      "bank_changed": false
+    },
+    {
+      "base_case": "decisions/uc04_ip_approved.json",
+      "set": {
+        "monthly_history[*].variable_payments_rub": 1400001
+      },
+      "expected_status": "REJECTED",
+      "expected_reason": "NONPOSITIVE_VERIFIED_CFADS",
+      "expected_score": null,
+      "statements_called": false,
+      "ms2_called": false,
+      "admin_called": false,
+      "bank_changed": false
+    },
+    {
+      "base_case": "decisions/uc04_le_approved.json",
+      "set": {
+        "scoring.legal_entity.active": false
+      },
+      "expected_status": "REJECTED",
+      "expected_reason": "INACTIVE_BORROWER",
+      "expected_score": null,
+      "statements_called": false,
+      "ms2_called": false,
+      "admin_called": false,
+      "bank_changed": false
+    },
+    {
+      "base_case": "decisions/uc04_le_approved.json",
+      "set": {
+        "scoring.legal_entity.bankrupt": true
+      },
+      "expected_status": "REJECTED",
+      "expected_reason": "BANKRUPT",
+      "expected_score": null,
+      "statements_called": false,
+      "ms2_called": false,
+      "admin_called": false,
+      "bank_changed": false
+    },
+    {
+      "base_case": "decisions/uc04_le_approved.json",
+      "set": {
+        "scoring.legal_entity.material_forgery": true
+      },
+      "expected_status": "REJECTED",
+      "expected_reason": "MATERIAL_FORGERY",
+      "expected_score": null,
+      "statements_called": false,
+      "ms2_called": false,
+      "admin_called": false,
+      "bank_changed": false
+    },
+    {
+      "base_case": "decisions/uc04_le_approved.json",
+      "set": {
+        "scoring.legal_entity.credit_prohibited": true
+      },
+      "expected_status": "REJECTED",
+      "expected_reason": "CREDIT_PROHIBITED",
+      "expected_score": null,
+      "statements_called": false,
+      "ms2_called": false,
+      "admin_called": false,
+      "bank_changed": false
+    },
+    {
+      "base_case": "decisions/uc04_le_approved.json",
+      "set": {
+        "scoring.legal_entity.current_dpd_days": 30
+      },
+      "expected_status": "REJECTED",
+      "expected_reason": "CURRENT_DPD_30_PLUS",
+      "expected_score": null,
+      "statements_called": false,
+      "ms2_called": false,
+      "admin_called": false,
+      "bank_changed": false
+    },
+    {
+      "base_case": "decisions/uc04_le_approved.json",
+      "set": {
+        "scoring.legal_entity.worst_repaid_dpd_days_24m": 90
+      },
+      "expected_status": "REJECTED",
+      "expected_reason": "WORST_REPAID_DPD_90_PLUS",
+      "expected_score": null,
+      "statements_called": false,
+      "ms2_called": false,
+      "admin_called": false,
+      "bank_changed": false
+    },
+    {
+      "base_case": "decisions/uc04_le_approved.json",
+      "set": {
+        "scoring.legal_entity.liquidated_or_excluded": true
+      },
+      "expected_status": "REJECTED",
+      "expected_reason": "LIQUIDATED_OR_EXCLUDED",
+      "expected_score": null,
+      "statements_called": false,
+      "ms2_called": false,
+      "admin_called": false,
+      "bank_changed": false
+    },
+    {
+      "base_case": "decisions/uc04_le_approved.json",
+      "set": {
+        "monthly_history[*].variable_payments_rub": 1400000
+      },
+      "expected_status": "REJECTED",
+      "expected_reason": "NONPOSITIVE_VERIFIED_CFADS",
+      "expected_score": null,
+      "statements_called": false,
+      "ms2_called": false,
+      "admin_called": false,
+      "bank_changed": false
+    },
+    {
+      "base_case": "decisions/uc04_le_approved.json",
+      "set": {
+        "monthly_history[*].variable_payments_rub": 1400001
+      },
+      "expected_status": "REJECTED",
+      "expected_reason": "NONPOSITIVE_VERIFIED_CFADS",
+      "expected_score": null,
+      "statements_called": false,
+      "ms2_called": false,
+      "admin_called": false,
+      "bank_changed": false
+    }
+  ],
+  "cash_stop_confirmation": [
+    {
+      "base_case": "decisions/uc04_ip_approved.json",
+      "set": {
+        "monthly_history[*].variable_payments_rub": 1400000,
+        "scoring.ip.documents_complete": false
+      },
+      "expected_status": "NEED_INFO",
+      "ms2_called": false,
+      "admin_called": false,
+      "bank_changed": false
+    },
+    {
+      "base_case": "decisions/uc04_le_approved.json",
+      "set": {
+        "monthly_history[*].variable_payments_rub": 1400000,
+        "scoring.legal_entity.documents_complete": false
+      },
+      "expected_status": "NEED_INFO",
+      "ms2_called": false,
+      "admin_called": false,
+      "bank_changed": false
+    }
+  ],
+  "questionnaire_controls": [
+    {
+      "id": "IP_Q22",
+      "question": "Указаны ли ФИО, ИНН ИП и идентификатор заявки?",
+      "answers": [
+        {
+          "answer": "Да",
+          "points": 0.0
+        },
+        {
+          "answer": "Нет — нужны данные",
+          "points": 0.0
+        }
+      ],
+      "fields": "borrower.name + borrower.inn + application_id",
+      "expected_max_points": 0
+    },
+    {
+      "id": "IP_Q23",
+      "question": "ИП действует и деятельность не прекращена?",
+      "answers": [
+        {
+          "answer": "Да",
+          "points": 0.0
+        },
+        {
+          "answer": "Подтверждено прекращение — стоп",
+          "points": 0.0
+        }
+      ],
+      "fields": "active",
+      "expected_max_points": 0
+    },
+    {
+      "id": "IP_Q24",
+      "question": "Подтверждены ли банкротство, существенная подделка или запрет кредитования?",
+      "answers": [
+        {
+          "answer": "Нет",
+          "points": 0.0
+        },
+        {
+          "answer": "Да, хотя бы один факт — стоп",
+          "points": 0.0
+        }
+      ],
+      "fields": "bankrupt + material_forgery + credit_prohibited",
+      "expected_max_points": 0
+    },
+    {
+      "id": "IP_Q25",
+      "question": "Проверены ли личность, полномочия и необходимые согласия?",
+      "answers": [
+        {
+          "answer": "Да",
+          "points": 0.0
+        },
+        {
+          "answer": "Нет / неизвестно — нужны данные",
+          "points": 0.0
+        }
+      ],
+      "fields": "identity_and_authority_verified + consents_verified",
+      "expected_max_points": 0
+    },
+    {
+      "id": "IP_Q26",
+      "question": "Получены ли БКИ и полный перечень обязательств?",
+      "answers": [
+        {
+          "answer": "Да",
+          "points": 0.0
+        },
+        {
+          "answer": "Нет / неизвестно — нужны данные",
+          "points": 0.0
+        }
+      ],
+      "fields": "bureau_received + debts_complete",
+      "expected_max_points": 0
+    },
+    {
+      "id": "IP_Q27",
+      "question": "Есть ли существенное ограничение счёта, спор или взыскание?",
+      "answers": [
+        {
+          "answer": "Нет",
+          "points": 0.0
+        },
+        {
+          "answer": "Да — сотрудник",
+          "points": 0.0
+        }
+      ],
+      "fields": "material_account_restriction + material_dispute_or_enforcement",
+      "expected_max_points": 0
+    },
+    {
+      "id": "IP_Q28",
+      "question": "Потерян ли ключевой покупатель или существенно изменился бизнес?",
+      "answers": [
+        {
+          "answer": "Нет",
+          "points": 0.0
+        },
+        {
+          "answer": "Да — сотрудник",
+          "points": 0.0
+        }
+      ],
+      "fields": "key_buyer_loss + structural_business_change",
+      "expected_max_points": 0
+    },
+    {
+      "id": "IP_Q29",
+      "question": "Указаны ли цель, сумма, срок и максимальная ставка клиента?",
+      "answers": [
+        {
+          "answer": "Да; развитие бизнеса",
+          "points": 0.0
+        },
+        {
+          "answer": "Иная цель — сотрудник",
+          "points": 0.0
+        },
+        {
+          "answer": "Нет обязательных условий — нужны данные",
+          "points": 0.0
+        }
+      ],
+      "fields": "credit_request.*",
+      "expected_max_points": 0
+    },
+    {
+      "id": "IP_Q30",
+      "question": "Подтверждены ли документы, источник свободных денег и актуальность сведений?",
+      "answers": [
+        {
+          "answer": "Да",
+          "points": 0.0
+        },
+        {
+          "answer": "Нет / неизвестно — нужны данные",
+          "points": 0.0
+        }
+      ],
+      "fields": "documents_complete + free_cash_source_verified + facts_date",
+      "expected_max_points": 0
+    },
+    {
+      "id": "IP_Q31",
+      "question": "Каков заявленный статус воинской обязанности? Справочное поле из образца, баллы не начисляются.",
+      "answers": [
+        {
+          "answer": "Служба пройдена",
+          "points": 0.0
+        },
+        {
+          "answer": "Есть освобождение / отсрочка",
+          "points": 0.0
+        },
+        {
+          "answer": "Не относится к военнообязанным",
+          "points": 0.0
+        },
+        {
+          "answer": "Иной / неизвестный статус",
+          "points": 0.0
+        }
+      ],
+      "fields": "military_status",
+      "expected_max_points": 0
+    },
+    {
+      "id": "LE_Q21",
+      "question": "Указаны ли наименование, ИНН и идентификатор заявки?",
+      "answers": [
+        {
+          "answer": "Да",
+          "points": 0.0
+        },
+        {
+          "answer": "Нет — нужны данные",
+          "points": 0.0
+        }
+      ],
+      "fields": "borrower.name + borrower.inn + application_id",
+      "expected_max_points": 0
+    },
+    {
+      "id": "LE_Q22",
+      "question": "Организация действует и не ликвидируется / не исключается из реестра?",
+      "answers": [
+        {
+          "answer": "Да",
+          "points": 0.0
+        },
+        {
+          "answer": "Подтверждена ликвидация / исключение / прекращение — стоп",
+          "points": 0.0
+        }
+      ],
+      "fields": "active + liquidated_or_excluded",
+      "expected_max_points": 0
+    },
+    {
+      "id": "LE_Q23",
+      "question": "Подтверждены ли банкротство, существенная подделка или запрет кредитования?",
+      "answers": [
+        {
+          "answer": "Нет",
+          "points": 0.0
+        },
+        {
+          "answer": "Да, хотя бы один факт — стоп",
+          "points": 0.0
+        }
+      ],
+      "fields": "bankrupt + material_forgery + credit_prohibited",
+      "expected_max_points": 0
+    },
+    {
+      "id": "LE_Q24",
+      "question": "Проверены ли личность представителя, полномочия и необходимые согласия?",
+      "answers": [
+        {
+          "answer": "Да",
+          "points": 0.0
+        },
+        {
+          "answer": "Нет / неизвестно — нужны данные",
+          "points": 0.0
+        }
+      ],
+      "fields": "identity_and_authority_verified + consents_verified",
+      "expected_max_points": 0
+    },
+    {
+      "id": "LE_Q25",
+      "question": "Получены ли актуальные сведения БКИ?",
+      "answers": [
+        {
+          "answer": "Да",
+          "points": 0.0
+        },
+        {
+          "answer": "Нет / неизвестно — нужны данные",
+          "points": 0.0
+        }
+      ],
+      "fields": "bureau_received + debts_complete",
+      "expected_max_points": 0
+    },
+    {
+      "id": "LE_Q26",
+      "question": "Указаны ли цель, сумма, срок и максимальная ставка клиента?",
+      "answers": [
+        {
+          "answer": "Да; развитие бизнеса",
+          "points": 0.0
+        },
+        {
+          "answer": "Иная цель — сотрудник",
+          "points": 0.0
+        },
+        {
+          "answer": "Нет обязательных условий — нужны данные",
+          "points": 0.0
+        }
+      ],
+      "fields": "credit_request.*",
+      "expected_max_points": 0
+    },
+    {
+      "id": "LE_Q27",
+      "question": "Актуальны ли текущие факты и проверки?",
+      "answers": [
+        {
+          "answer": "Да, давность не больше 45 дней",
+          "points": 0.0
+        },
+        {
+          "answer": "Нет / неизвестно — нужны данные",
+          "points": 0.0
+        }
+      ],
+      "fields": "facts_date",
+      "expected_max_points": 0
+    }
+  ],
+  "typed_inputs": [
+    "IP/LE choose exactly one matching scoring branch",
+    "nil versus explicit 0 and false",
+    "unknown enum => 422; JSON wrong field type => 400",
+    "optional military status has no scoring or routing effect",
+    "physical location requires duration; verified online/mobile does not",
+    "complete=true cannot replace missing B statement",
+    "all form amounts have named fields; RUB/THOUSAND_RUB equal results",
+    "ignore supplied score/grade/calculated-ratio hints"
+  ],
+  "special_denominators": [
+    {
+      "id": "IP_E01",
+      "rule": "F ≤ 0 — подтверждённый стоп. При R = 0 отношение не рассчитывается."
+    },
+    {
+      "id": "IP_E02",
+      "rule": "F ≤ 0 — стоп. При D = 0 и F > 0 — 30 баллов."
+    },
+    {
+      "id": "IP_E03",
+      "rule": "F ≤ 0 — стоп. Учитываются долги, обслуживаемые из общего потока."
+    },
+    {
+      "id": "IP_E04",
+      "rule": "При подтверждённом Q = 0 — 25 баллов без деления."
+    },
+    {
+      "id": "IP_E05",
+      "rule": "Меньше 8 положительных месяцев — также ручное рассмотрение."
+    },
+    {
+      "id": "IP_E06",
+      "rule": "При среднем поступлении 0 отношение не рассчитывается."
+    },
+    {
+      "id": "IP_E07",
+      "rule": "Нулевая подтверждённая база: 0 баллов, сотрудник. Неизвестная база: нужны данные."
+    },
+    {
+      "id": "IP_E08",
+      "rule": "Нулевая подтверждённая база: 0 баллов, сотрудник. Неизвестная база: нужны данные."
+    },
+    {
+      "id": "IP_E10",
+      "rule": "Меньше 80%: нужны данные; итоговый балл пока не формируется."
+    },
+    {
+      "id": "IP_E11",
+      "rule": "Больше 10%: нужны данные. Больше 5% до 10% включительно: сотрудник."
+    },
+    {
+      "id": "IP_E12",
+      "rule": "Стоимость потребности = 0: 0 баллов и ручной маршрут."
+    },
+    {
+      "id": "IP_E13",
+      "rule": "R − V ≤ 0: 0 баллов, сотрудник. F ≤ 0 остаётся стопом."
+    },
+    {
+      "id": "LE_E01",
+      "rule": "Подтверждённая стр. 1500 = 0: 20 баллов без деления."
+    },
+    {
+      "id": "LE_E02",
+      "rule": "Подтверждённая стр. 1500 = 0: 15 баллов без деления."
+    },
+    {
+      "id": "LE_E03",
+      "rule": "Подтверждённая стр. 1500 = 0: 10 баллов без деления."
+    },
+    {
+      "id": "LE_E04",
+      "rule": "Активы = 0: 0 баллов, сотрудник. Капитал ≤ 0: также сотрудник."
+    },
+    {
+      "id": "LE_E05",
+      "rule": "Стр. 1600 = 0: 0 баллов и сотрудник."
+    },
+    {
+      "id": "LE_E06",
+      "rule": "Стр. 1200 = 0: 0 баллов и сотрудник, коэффициент не рассчитывается."
+    },
+    {
+      "id": "LE_E07",
+      "rule": "При прибыли от продаж ≤ 0 — 0 баллов и сотрудник; деление не выполняется."
+    },
+    {
+      "id": "LE_E08",
+      "rule": "Проценты = 0, прибыль > 0: 20 баллов. Прибыль ≤ 0: 0 баллов, сотрудник."
+    },
+    {
+      "id": "LE_E09",
+      "rule": "Обе строки долга подтверждённо равны 0: 10 баллов без деления."
+    },
+    {
+      "id": "LE_E10",
+      "rule": "Выручка = 0: 0 баллов и сотрудник."
+    },
+    {
+      "id": "LE_E11",
+      "rule": "Выручка = 0: 0 баллов и сотрудник. Прибыль от продаж ≤ 0: сотрудник."
+    },
+    {
+      "id": "LE_E12",
+      "rule": "Выручка = 0: 0 баллов и сотрудник. Убыток в обоих годах: сотрудник."
+    },
+    {
+      "id": "LE_E13",
+      "rule": "Средние активы = 0: 0 баллов и сотрудник."
+    },
+    {
+      "id": "LE_E14",
+      "rule": "Текущий или средний капитал ≤ 0: 0 баллов и сотрудник; ROE не интерпретируется."
+    },
+    {
+      "id": "LE_E15",
+      "rule": "Нулевая подтверждённая база: 0 баллов, сотрудник. Неизвестная база: нужны данные."
+    },
+    {
+      "id": "LE_E16",
+      "rule": "Средние активы = 0: 0 баллов и сотрудник."
+    },
+    {
+      "id": "LE_E17",
+      "rule": "Выручка = 0: 0 баллов и сотрудник."
+    },
+    {
+      "id": "LE_E18",
+      "rule": "Себестоимость и средние запасы = 0: 10 баллов. Себестоимость = 0 при запасах > 0: 0 баллов, сотрудник."
+    }
+  ]
+}

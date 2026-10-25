@@ -29,7 +29,9 @@ var (
 // CollectionTask — задача на сбор данных о компании по анкете.
 type CollectionTask struct {
 	ID              string // tsk_<ULID>
+	ApplicationID   string // app_…; пусто у задач, созданных до заявок
 	QuestionnaireID string
+	DocumentIDs     []string     // документы, пришедшие с анкетой
 	Input           CollectInput // нормализованные данные для сбора; токены — только пока задача не завершена
 	Status          TaskStatus
 	Skipped         []System // системы без входных данных, в порядке Systems: не опрашиваются

@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 /data-collector/financial_parser/testdata/*
 !/data-collector/financial_parser/testdata/README.md
+.idea/

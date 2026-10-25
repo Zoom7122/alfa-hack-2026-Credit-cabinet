@@ -4,52 +4,78 @@ package service
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
+	"io"
+	"slices"
+	"strings"
+	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/oklog/ulid/v2"
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/domain"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/storage"
 )
 
 const (
 	minAge      = 18
 	maxAge      = 100
 	maxChildren = 20
+
+	maxProductCode   = 64
+	maxTermMonths    = 600
+	maxPurposeLength = 2000
 )
 
-// Repository — хранилище анкет. Объявлено здесь, у потребителя:
-// сервису всё равно, память это или Postgres.
-type Repository interface {
-	Save(ctx context.Context, q domain.Questionnaire) error
+// saveTimeout — на запись заявки, когда клиент уже отключился.
+const saveTimeout = 5 * time.Second
+
+// FileStorage — где лежат файлы документов. Объявлено у потребителя.
+type FileStorage interface {
+	Stage(name string, r io.Reader) (storage.Staged, error)
+	Commit(st storage.Staged, key string) error
+	Discard(staged ...storage.Staged)
+	Remove(keys ...string)
 }
 
-// Collector — постановка сбора данных о компании в очередь (CollectionService).
+// Collector — проверка данных для сбора и задача на сбор (CollectionService).
 type Collector interface {
 	Validate(in domain.CollectInput) []FieldError
-	Enqueue(ctx context.Context, questionnaireID string, in domain.CollectInput) (domain.CollectionTask, error)
+	NewTask(questionnaireID string, in domain.CollectInput) domain.CollectionTask
 }
 
-// CreateInput — данные анкеты, пришедшие с формы.
-type CreateInput struct {
+// SubmitInput — анкета с формы, данные заявки и принятые файлы.
+type SubmitInput struct {
 	Age           int
 	MaritalStatus domain.MaritalStatus
 	ChildrenCount int
-	Company       domain.CollectInput // по чему собирать данные: ИНН, руководитель, согласия, токены, залог
+	Company       domain.CollectInput // по чему собирать данные; ИНН берётся из компании заявки
+	ProductCode   string
+	Requested     *domain.RequestedTerms
+	Purpose       *domain.Purpose
+	Documents     []DocumentSpec   // типы документов по именам файлов
+	Files         []storage.Staged // принятые через StageFile
 }
 
-// Created — сохранённая анкета и задача на сбор данных по ней.
-type Created struct {
+// Submitted — отправленная заявка, анкета, задача на сбор и документы.
+type Submitted struct {
+	Application   domain.Application
 	Questionnaire domain.Questionnaire
 	Task          domain.CollectionTask
+	Documents     []domain.Document
 }
 
-// QuestionnaireService принимает анкеты, сохраняет их и ставит сбор данных о компании в очередь.
+// QuestionnaireService принимает анкету по заявке вместе с файлами, отправляет заявку
+// и ставит сбор данных о компании в очередь.
 type QuestionnaireService struct {
-	repo      Repository
+	apps      ApplicationRepository
+	files     FileStorage
 	collector Collector
 	now       func() time.Time
-	newID     func() string
+	newID     func() string // анкеты: qst_…
+	newDocID  func() string // документы: doc_…
 }
 
 // Option настраивает QuestionnaireService (используется в тестах).
@@ -58,17 +84,24 @@ type Option func(*QuestionnaireService)
 // WithClock подменяет источник времени.
 func WithClock(now func() time.Time) Option { return func(s *QuestionnaireService) { s.now = now } }
 
-// WithIDGenerator подменяет генератор идентификаторов.
+// WithIDGenerator подменяет генератор идентификаторов анкет.
 func WithIDGenerator(newID func() string) Option {
 	return func(s *QuestionnaireService) { s.newID = newID }
 }
 
-func NewQuestionnaireService(repo Repository, collector Collector, opts ...Option) *QuestionnaireService {
+// WithDocumentIDGenerator подменяет генератор идентификаторов документов.
+func WithDocumentIDGenerator(newID func() string) Option {
+	return func(s *QuestionnaireService) { s.newDocID = newID }
+}
+
+func NewQuestionnaireService(apps ApplicationRepository, files FileStorage, collector Collector, opts ...Option) *QuestionnaireService {
 	s := &QuestionnaireService{
-		repo:      repo,
+		apps:      apps,
+		files:     files,
 		collector: collector,
 		now:       time.Now,
 		newID:     func() string { return "qst_" + ulid.MustNew(ulid.Now(), rand.Reader).String() },
+		newDocID:  monotonicID("doc_"),
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -76,14 +109,60 @@ func NewQuestionnaireService(repo Repository, collector Collector, opts ...Optio
 	return s
 }
 
-// Create проверяет анкету и данные для сбора, сохраняет анкету и ставит сбор данных о компании
-// в очередь. Нарушения возвращаются как *ValidationError — все сразу, и ничего не сохраняется.
-// Системы опрашивает worker; состояние сбора — в задаче (CollectionService.Get).
-func (s *QuestionnaireService) Create(ctx context.Context, in CreateInput) (Created, error) {
+// monotonicID — генератор ULID с префиксом, возрастающих даже в пределах одной миллисекунды:
+// документы одной анкеты отдаются в том порядке, в каком пришли.
+func monotonicID(prefix string) func() string {
+	var mu sync.Mutex
+	entropy := ulid.Monotonic(rand.Reader, 0)
+	return func() string {
+		mu.Lock()
+		defer mu.Unlock()
+		return prefix + ulid.MustNew(ulid.Now(), entropy).String()
+	}
+}
+
+// StageFile принимает файл во временную папку хранилища. ErrFileTooLarge — файл больше лимита.
+func (s *QuestionnaireService) StageFile(name string, r io.Reader) (storage.Staged, error) {
+	st, err := s.files.Stage(name, r)
+	if errors.Is(err, storage.ErrTooLarge) {
+		return storage.Staged{}, ErrFileTooLarge
+	}
+	return st, err
+}
+
+// Discard удаляет принятые файлы, если запрос не дошёл до Submit.
+func (s *QuestionnaireService) Discard(files []storage.Staged) {
+	s.files.Discard(files...)
+}
+
+// Submit проверяет анкету, данные для сбора и файлы, переносит файлы на постоянное место и одной
+// транзакцией отправляет заявку (SUBMITTED) и ставит задачу на сбор. Нарушения — *ValidationError,
+// все сразу, и ничего не сохраняется. ErrNotFound — заявки нет; ErrInvalidTransition — анкету
+// по ней уже отправили. Принятые файлы во временной папке не остаются.
+func (s *QuestionnaireService) Submit(ctx context.Context, applicationID string, in SubmitInput) (Submitted, error) {
+	defer s.files.Discard(in.Files...)
+
+	app, ok, err := s.apps.Get(ctx, applicationID)
+	if err != nil {
+		return Submitted{}, fmt.Errorf("get application: %w", err)
+	}
+	if !ok {
+		return Submitted{}, ErrNotFound
+	}
+	if app.Status != domain.ApplicationDraft {
+		return Submitted{}, ErrInvalidTransition
+	}
+
+	in.Company.INN = app.Company.INN
+	in.ProductCode = strings.TrimSpace(in.ProductCode)
+	now := s.now().UTC()
 	fields := validate(in)
 	fields = append(fields, s.collector.Validate(in.Company)...)
+	fields = append(fields, validateApplication(in)...)
+	planned, fileFields := planDocuments(app.ID, app.Representative.UserID, in.Files, in.Documents, s.newDocID, now)
+	fields = append(fields, fileFields...)
 	if len(fields) > 0 {
-		return Created{}, &ValidationError{Fields: fields}
+		return Submitted{}, &ValidationError{Fields: fields}
 	}
 
 	q := domain.Questionnaire{
@@ -91,20 +170,45 @@ func (s *QuestionnaireService) Create(ctx context.Context, in CreateInput) (Crea
 		Age:           in.Age,
 		MaritalStatus: in.MaritalStatus,
 		ChildrenCount: in.ChildrenCount,
-		CreatedAt:     s.now().UTC(),
+		CreatedAt:     now,
 	}
-	if err := s.repo.Save(ctx, q); err != nil {
-		return Created{}, fmt.Errorf("save questionnaire: %w", err)
+	task := s.collector.NewTask(q.ID, in.Company)
+	task.ApplicationID = app.ID
+	docs := make([]domain.Document, 0, len(planned))
+	for _, p := range planned {
+		docs = append(docs, p.doc)
+		task.DocumentIDs = append(task.DocumentIDs, p.doc.ID)
 	}
 
-	task, err := s.collector.Enqueue(ctx, q.ID, in.Company)
-	if err != nil {
-		return Created{Questionnaire: q}, fmt.Errorf("enqueue company data collection: %w", err)
+	// Файлы — на постоянное место, затем одна транзакция. Не вышло — файлы этого запроса удаляются.
+	keys := make([]string, 0, len(planned))
+	for _, p := range planned {
+		if err := s.files.Commit(p.staged, p.doc.StorageKey); err != nil {
+			s.files.Remove(keys...)
+			return Submitted{}, fmt.Errorf("save document %s: %w", p.doc.FileName, err)
+		}
+		keys = append(keys, p.doc.StorageKey)
 	}
-	return Created{Questionnaire: q, Task: task}, nil
+	// Отправку доводим до конца, даже если клиент отключился: файлы уже на месте.
+	saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), saveTimeout)
+	defer cancel()
+	sub := domain.Submission{ApplicationID: app.ID, ActorID: app.Representative.UserID, Questionnaire: q,
+		ProductCode: in.ProductCode, Requested: in.Requested, Purpose: in.Purpose, Documents: docs, Task: task,
+		SubmittedAt: now}
+	if err := s.apps.Submit(saveCtx, sub); err != nil {
+		s.files.Remove(keys...)
+		if errors.Is(err, domain.ErrApplicationNotDraft) {
+			return Submitted{}, ErrInvalidTransition
+		}
+		return Submitted{}, fmt.Errorf("submit application: %w", err)
+	}
+
+	app.Status, app.SubmittedAt, app.CollectionTaskID = domain.ApplicationSubmitted, now, task.ID
+	app.ProductCode, app.Requested, app.Purpose, app.Documents = sub.ProductCode, sub.Requested, sub.Purpose, docs
+	return Submitted{Application: app, Questionnaire: q, Task: task, Documents: docs}, nil
 }
 
-func validate(in CreateInput) []FieldError {
+func validate(in SubmitInput) []FieldError {
 	var fields []FieldError
 	if in.Age < minAge || in.Age > maxAge {
 		fields = append(fields, FieldError{
@@ -126,6 +230,35 @@ func validate(in CreateInput) []FieldError {
 			Code:    "out_of_range",
 			Message: fmt.Sprintf("количество детей и иждивенцев должно быть от 0 до %d", maxChildren),
 		})
+	}
+	return fields
+}
+
+// validateApplication проверяет данные заявки: продукт, сумму и срок, цель.
+func validateApplication(in SubmitInput) []FieldError {
+	var fields []FieldError
+	add := func(field, code, msg string) {
+		fields = append(fields, FieldError{Field: field, Code: code, Message: msg})
+	}
+
+	if len(in.ProductCode) > maxProductCode {
+		add("product_code", "too_long", fmt.Sprintf("не длиннее %d символов", maxProductCode))
+	}
+	if r := in.Requested; r != nil {
+		if r.Amount <= 0 {
+			add("requested.amount", "out_of_range", "сумма должна быть больше нуля")
+		}
+		if r.TermMonths <= 0 || r.TermMonths > maxTermMonths {
+			add("requested.term_months", "out_of_range", fmt.Sprintf("срок от 1 до %d месяцев", maxTermMonths))
+		}
+	}
+	if p := in.Purpose; p != nil {
+		if !slices.Contains(domain.PurposeCodes, p.Code) {
+			add("purpose.code", "invalid_value", "допустимые значения: "+strings.Join(domain.PurposeCodes, ", "))
+		}
+		if utf8.RuneCountInString(p.Description) > maxPurposeLength {
+			add("purpose.description", "too_long", fmt.Sprintf("не длиннее %d символов", maxPurposeLength))
+		}
 	}
 	return fields
 }

@@ -1,0 +1,713 @@
+{
+  "format_version": 1,
+  "id": "ip",
+  "version": "ip-v2-format-fragment",
+  "borrower_type": "SOLE_PROPRIETOR",
+  "title": "Фрагмент формата: существующие правила v2, не полный релиз",
+  "parameters": [
+    {
+      "id": "owner_age",
+      "enabled": true,
+      "title": "owner_age",
+      "source": {
+        "kind": "APPLICATION",
+        "path": "scoring.ip.owner_age"
+      },
+      "json_name": "owner_age",
+      "type": "NUMBER",
+      "unit": "YEARS",
+      "required": true,
+      "number": {
+        "integer": true,
+        "lower": {
+          "value": 0,
+          "inclusive": true
+        }
+      }
+    },
+    {
+      "id": "business_location",
+      "enabled": true,
+      "title": "business_location",
+      "source": {
+        "kind": "APPLICATION",
+        "path": "scoring.ip.business_location"
+      },
+      "json_name": "business_location",
+      "type": "STRING",
+      "unit": "CATEGORY",
+      "required": true,
+      "string_values": [
+        "VERIFIED_PHYSICAL",
+        "VERIFIED_ONLINE_OR_MOBILE",
+        "UNVERIFIED"
+      ]
+    },
+    {
+      "id": "location_stability_months",
+      "enabled": true,
+      "title": "location_stability_months",
+      "source": {
+        "kind": "APPLICATION",
+        "path": "scoring.ip.location_stability_months"
+      },
+      "json_name": "location_stability_months",
+      "type": "NUMBER",
+      "unit": "MONTHS",
+      "required": true,
+      "number": {
+        "integer": true,
+        "lower": {
+          "value": 0,
+          "inclusive": true
+        }
+      },
+      "required_when": {
+        "op": "EQ",
+        "parameter": "business_location",
+        "value": {
+          "string": "VERIFIED_PHYSICAL"
+        }
+      }
+    },
+    {
+      "id": "military_status",
+      "enabled": true,
+      "title": "military_status",
+      "source": {
+        "kind": "APPLICATION",
+        "path": "scoring.ip.military_status"
+      },
+      "json_name": "military_status",
+      "type": "STRING",
+      "unit": "CATEGORY",
+      "required": false,
+      "string_values": [
+        "SERVED",
+        "EXEMPT_OR_DEFERRED",
+        "NOT_LIABLE",
+        "OTHER_OR_UNKNOWN"
+      ]
+    },
+    {
+      "id": "current_dpd_days",
+      "enabled": true,
+      "title": "current_dpd_days",
+      "source": {
+        "kind": "APPLICATION",
+        "path": "scoring.ip.current_dpd_days"
+      },
+      "json_name": "current_dpd_days",
+      "type": "NUMBER",
+      "unit": "DAYS",
+      "required": true,
+      "number": {
+        "integer": true,
+        "lower": {
+          "value": 0,
+          "inclusive": true
+        }
+      }
+    },
+    {
+      "id": "bureau_received",
+      "enabled": true,
+      "title": "bureau_received",
+      "source": {
+        "kind": "APPLICATION",
+        "path": "scoring.ip.bureau_received"
+      },
+      "json_name": "bureau_received",
+      "type": "BOOLEAN",
+      "unit": "BOOLEAN",
+      "required": true
+    },
+    {
+      "id": "previous_receipts",
+      "enabled": true,
+      "title": "previous_receipts",
+      "source": {
+        "kind": "APPLICATION",
+        "path": "ip_economic_data.previous_comparable_receipts_rub"
+      },
+      "json_name": "previous_comparable_receipts_rub",
+      "type": "NUMBER",
+      "unit": "RUB",
+      "required": true,
+      "number": {
+        "integer": true,
+        "lower": {
+          "value": 0,
+          "inclusive": true
+        }
+      }
+    },
+    {
+      "id": "annual_receipts",
+      "enabled": true,
+      "title": "annual_receipts",
+      "source": {
+        "kind": "COMPUTED",
+        "path": "cash.receipts"
+      },
+      "json_name": "receipts",
+      "type": "NUMBER",
+      "unit": "RUB",
+      "required": true,
+      "number": {
+        "integer": false
+      }
+    },
+    {
+      "id": "receipt_growth",
+      "enabled": true,
+      "title": "receipt_growth",
+      "source": {
+        "kind": "COMPUTED",
+        "path": "IP_E07"
+      },
+      "json_name": "IP_E07",
+      "type": "NUMBER",
+      "unit": "RATIO",
+      "required": false,
+      "number": {
+        "integer": false
+      },
+      "depends_on": [
+        "annual_receipts",
+        "previous_receipts"
+      ]
+    }
+  ],
+  "criteria": [
+    {
+      "id": "IP_Q01",
+      "enabled": true,
+      "title": "IP_Q01",
+      "block": "QUESTIONNAIRE",
+      "value_parameter": "owner_age",
+      "max_points": 30,
+      "unknown_action": "NEED_INFO",
+      "special_cases": [],
+      "cases": [
+        {
+          "id": "under20",
+          "when": {
+            "op": "LT",
+            "parameter": "owner_age",
+            "value": {
+              "number": 20
+            }
+          },
+          "points": 5
+        },
+        {
+          "id": "20to25",
+          "when": {
+            "op": "ALL",
+            "conditions": [
+              {
+                "op": "GE",
+                "parameter": "owner_age",
+                "value": {
+                  "number": 20
+                }
+              },
+              {
+                "op": "LE",
+                "parameter": "owner_age",
+                "value": {
+                  "number": 25
+                }
+              }
+            ]
+          },
+          "points": 10
+        },
+        {
+          "id": "26to30",
+          "when": {
+            "op": "ALL",
+            "conditions": [
+              {
+                "op": "GT",
+                "parameter": "owner_age",
+                "value": {
+                  "number": 25
+                }
+              },
+              {
+                "op": "LE",
+                "parameter": "owner_age",
+                "value": {
+                  "number": 30
+                }
+              }
+            ]
+          },
+          "points": 15
+        },
+        {
+          "id": "31to35",
+          "when": {
+            "op": "ALL",
+            "conditions": [
+              {
+                "op": "GT",
+                "parameter": "owner_age",
+                "value": {
+                  "number": 30
+                }
+              },
+              {
+                "op": "LE",
+                "parameter": "owner_age",
+                "value": {
+                  "number": 35
+                }
+              }
+            ]
+          },
+          "points": 30
+        },
+        {
+          "id": "36to49",
+          "when": {
+            "op": "ALL",
+            "conditions": [
+              {
+                "op": "GT",
+                "parameter": "owner_age",
+                "value": {
+                  "number": 35
+                }
+              },
+              {
+                "op": "LE",
+                "parameter": "owner_age",
+                "value": {
+                  "number": 49
+                }
+              }
+            ]
+          },
+          "points": 25
+        },
+        {
+          "id": "50to65",
+          "when": {
+            "op": "ALL",
+            "conditions": [
+              {
+                "op": "GT",
+                "parameter": "owner_age",
+                "value": {
+                  "number": 49
+                }
+              },
+              {
+                "op": "LE",
+                "parameter": "owner_age",
+                "value": {
+                  "number": 65
+                }
+              }
+            ]
+          },
+          "points": 20
+        },
+        {
+          "id": "over65",
+          "when": {
+            "op": "GT",
+            "parameter": "owner_age",
+            "value": {
+              "number": 65
+            }
+          },
+          "points": 5
+        }
+      ],
+      "answer": {
+        "template": "owner_age=${owner_age}"
+      }
+    },
+    {
+      "id": "IP_Q18",
+      "enabled": true,
+      "title": "IP_Q18",
+      "block": "QUESTIONNAIRE",
+      "value_parameter": "business_location",
+      "max_points": 20,
+      "unknown_action": "NEED_INFO",
+      "special_cases": [],
+      "cases": [
+        {
+          "id": "physical_under12",
+          "when": {
+            "op": "ALL",
+            "conditions": [
+              {
+                "op": "EQ",
+                "parameter": "business_location",
+                "value": {
+                  "string": "VERIFIED_PHYSICAL"
+                }
+              },
+              {
+                "op": "LT",
+                "parameter": "location_stability_months",
+                "value": {
+                  "number": 12
+                }
+              }
+            ]
+          },
+          "points": 5
+        },
+        {
+          "id": "physical_12to23",
+          "when": {
+            "op": "ALL",
+            "conditions": [
+              {
+                "op": "EQ",
+                "parameter": "business_location",
+                "value": {
+                  "string": "VERIFIED_PHYSICAL"
+                }
+              },
+              {
+                "op": "GE",
+                "parameter": "location_stability_months",
+                "value": {
+                  "number": 12
+                }
+              },
+              {
+                "op": "LT",
+                "parameter": "location_stability_months",
+                "value": {
+                  "number": 24
+                }
+              }
+            ]
+          },
+          "points": 15
+        },
+        {
+          "id": "physical_24plus",
+          "when": {
+            "op": "ALL",
+            "conditions": [
+              {
+                "op": "EQ",
+                "parameter": "business_location",
+                "value": {
+                  "string": "VERIFIED_PHYSICAL"
+                }
+              },
+              {
+                "op": "GE",
+                "parameter": "location_stability_months",
+                "value": {
+                  "number": 24
+                }
+              }
+            ]
+          },
+          "points": 20
+        },
+        {
+          "id": "online",
+          "when": {
+            "op": "EQ",
+            "parameter": "business_location",
+            "value": {
+              "string": "VERIFIED_ONLINE_OR_MOBILE"
+            }
+          },
+          "points": 20
+        },
+        {
+          "id": "unverified",
+          "when": {
+            "op": "EQ",
+            "parameter": "business_location",
+            "value": {
+              "string": "UNVERIFIED"
+            }
+          },
+          "points": 0
+        }
+      ],
+      "answer": {
+        "template": "business_location=${business_location}",
+        "cases": [
+          {
+            "when": {
+              "op": "EQ",
+              "parameter": "business_location",
+              "value": {
+                "string": "VERIFIED_PHYSICAL"
+              }
+            },
+            "template": "business_location=${business_location}; location_stability_months=${location_stability_months}"
+          }
+        ]
+      }
+    },
+    {
+      "id": "IP_Q31",
+      "enabled": true,
+      "title": "IP_Q31",
+      "block": "QUESTIONNAIRE",
+      "value_parameter": "military_status",
+      "max_points": 0,
+      "unknown_action": "ZERO",
+      "special_cases": [],
+      "cases": [
+        {
+          "id": "control",
+          "when": {
+            "op": "ALWAYS"
+          },
+          "points": 0
+        }
+      ],
+      "answer": {
+        "template": "${military_status}",
+        "unknown_text": "OTHER_OR_UNKNOWN"
+      }
+    },
+    {
+      "id": "IP_E07",
+      "enabled": true,
+      "title": "IP_E07",
+      "block": "ADDITIONAL",
+      "value_parameter": "receipt_growth",
+      "max_points": 15,
+      "unknown_action": "NEED_INFO",
+      "special_cases": [
+        {
+          "id": "zero_base",
+          "when": {
+            "op": "EQ",
+            "parameter": "previous_receipts",
+            "value": {
+              "number": 0
+            }
+          },
+          "points": 0,
+          "result": {
+            "mode": "NULL"
+          },
+          "review_reason": {
+            "code": "SPECIAL_IP_E07",
+            "message": "Подтверждённая база сравнения поступлений или выручки равна нулю.",
+            "fields": [
+              "IP_E07"
+            ]
+          }
+        }
+      ],
+      "cases": [
+        {
+          "id": "below_minus20",
+          "when": {
+            "op": "LT",
+            "parameter": "receipt_growth",
+            "value": {
+              "number": -0.2
+            }
+          },
+          "points": 0
+        },
+        {
+          "id": "minus20_to_minus5",
+          "when": {
+            "op": "ALL",
+            "conditions": [
+              {
+                "op": "GE",
+                "parameter": "receipt_growth",
+                "value": {
+                  "number": -0.2
+                }
+              },
+              {
+                "op": "LT",
+                "parameter": "receipt_growth",
+                "value": {
+                  "number": -0.05
+                }
+              }
+            ]
+          },
+          "points": 3.75
+        },
+        {
+          "id": "minus5_to5",
+          "when": {
+            "op": "ALL",
+            "conditions": [
+              {
+                "op": "GE",
+                "parameter": "receipt_growth",
+                "value": {
+                  "number": -0.05
+                }
+              },
+              {
+                "op": "LT",
+                "parameter": "receipt_growth",
+                "value": {
+                  "number": 0.05
+                }
+              }
+            ]
+          },
+          "points": 7.5
+        },
+        {
+          "id": "5_to15",
+          "when": {
+            "op": "ALL",
+            "conditions": [
+              {
+                "op": "GE",
+                "parameter": "receipt_growth",
+                "value": {
+                  "number": 0.05
+                }
+              },
+              {
+                "op": "LT",
+                "parameter": "receipt_growth",
+                "value": {
+                  "number": 0.15
+                }
+              }
+            ]
+          },
+          "points": 11.25
+        },
+        {
+          "id": "15plus",
+          "when": {
+            "op": "GE",
+            "parameter": "receipt_growth",
+            "value": {
+              "number": 0.15
+            }
+          },
+          "points": 15
+        }
+      ]
+    }
+  ],
+  "data_checks": [
+    {
+      "id": "bureau_confirmed",
+      "enabled": true,
+      "title": "Получен отчёт БКИ",
+      "satisfied_when": {
+        "op": "EQ",
+        "parameter": "bureau_received",
+        "value": {
+          "boolean": true
+        }
+      },
+      "fields": [
+        "scoring.ip.bureau_received"
+      ],
+      "message": "Требуется подтверждённый отчёт БКИ."
+    }
+  ],
+  "stops": [
+    {
+      "id": "current_dpd_stop",
+      "enabled": true,
+      "title": "Текущая просрочка",
+      "when": {
+        "op": "GE",
+        "parameter": "current_dpd_days",
+        "value": {
+          "number": 30
+        }
+      },
+      "reason": {
+        "code": "CURRENT_DPD_30_PLUS",
+        "message": "Текущая просрочка составляет не менее 30 дней.",
+        "fields": [
+          "scoring.ip.current_dpd_days"
+        ]
+      }
+    }
+  ],
+  "manual_reviews": [
+    {
+      "id": "current_dpd_manual",
+      "enabled": true,
+      "title": "Текущая просрочка 1–29 дней",
+      "when": {
+        "op": "ALL",
+        "conditions": [
+          {
+            "op": "GE",
+            "parameter": "current_dpd_days",
+            "value": {
+              "number": 1
+            }
+          },
+          {
+            "op": "LE",
+            "parameter": "current_dpd_days",
+            "value": {
+              "number": 29
+            }
+          }
+        ]
+      },
+      "reason": {
+        "code": "CURRENT_DPD_1_29",
+        "message": "Текущая просрочка составляет от 1 до 29 дней.",
+        "fields": [
+          "scoring.ip.current_dpd_days"
+        ]
+      }
+    }
+  ],
+  "classes": [
+    {
+      "grade": "D",
+      "min_total": 0,
+      "max_total": 549,
+      "reason": {
+        "code": "SCORE_CLASS_D",
+        "message": "Итоговый класс D.",
+        "fields": []
+      }
+    },
+    {
+      "grade": "C",
+      "min_total": 550,
+      "max_total": 649,
+      "reason": {
+        "code": "SCORE_CLASS_C",
+        "message": "Итоговый класс C.",
+        "fields": []
+      }
+    },
+    {
+      "grade": "B",
+      "min_total": 650,
+      "max_total": 799
+    },
+    {
+      "grade": "A",
+      "min_total": 800,
+      "max_total": 1000
+    }
+  ]
+}

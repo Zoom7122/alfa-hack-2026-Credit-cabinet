@@ -29,10 +29,13 @@ type problemField struct {
 } //	@name	ProblemField
 
 const (
-	codeValidationFailed = "VALIDATION_FAILED"
-	codeNotFound         = "NOT_FOUND"
-	codeInternal         = "INTERNAL"
-	problemTypeBase      = "https://errors.credit-cabinet.local/"
+	codeValidationFailed  = "VALIDATION_FAILED"
+	codeNotFound          = "NOT_FOUND"
+	codeInvalidTransition = "INVALID_TRANSITION"
+	codePayloadTooLarge   = "PAYLOAD_TOO_LARGE"
+	codeUnsupportedMedia  = "UNSUPPORTED_MEDIA_TYPE"
+	codeInternal          = "INTERNAL"
+	problemTypeBase       = "https://errors.credit-cabinet.local/"
 )
 
 func writeProblem(c *gin.Context, p problem) {
@@ -70,6 +73,36 @@ func notFoundProblem(detail string) problem {
 	}
 }
 
+func conflictProblem(detail string) problem {
+	return problem{
+		Type:   problemTypeBase + "invalid-transition",
+		Title:  "Invalid transition",
+		Status: http.StatusConflict,
+		Detail: detail,
+		Code:   codeInvalidTransition,
+	}
+}
+
+func tooLargeProblem(detail string) problem {
+	return problem{
+		Type:   problemTypeBase + "payload-too-large",
+		Title:  "Payload too large",
+		Status: http.StatusRequestEntityTooLarge,
+		Detail: detail,
+		Code:   codePayloadTooLarge,
+	}
+}
+
+func unsupportedMediaProblem(detail string) problem {
+	return problem{
+		Type:   problemTypeBase + "unsupported-media-type",
+		Title:  "Unsupported media type",
+		Status: http.StatusUnsupportedMediaType,
+		Detail: detail,
+		Code:   codeUnsupportedMedia,
+	}
+}
+
 func internalProblem() problem {
 	return problem{
 		Type:   problemTypeBase + "internal",
@@ -86,7 +119,7 @@ func bindingProblem(err error) problem {
 		fields := make([]problemField, 0, len(verrs))
 		for _, fe := range verrs {
 			fields = append(fields, problemField{
-				Field:   jsonFieldName(fe.Field()),
+				Field:   fieldPath(fe),
 				Message: "обязательное поле",
 				Code:    fe.Tag(),
 			})
@@ -102,6 +135,14 @@ func bindingProblem(err error) problem {
 		}})
 	}
 	return validationProblem(http.StatusBadRequest, "некорректный JSON в теле запроса", nil)
+}
+
+// fieldPath — путь поля как в JSON (representative.full_name): корень — тип запроса — отбрасывается.
+func fieldPath(fe validator.FieldError) string {
+	if _, path, ok := strings.Cut(fe.Namespace(), "."); ok {
+		return path
+	}
+	return jsonFieldName(fe.Field())
 }
 
 // jsonFieldName превращает имя Go-поля DTO в имя JSON-поля (ChildrenCount → children_count).

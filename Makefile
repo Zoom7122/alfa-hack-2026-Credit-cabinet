@@ -5,7 +5,7 @@ DOZZLE_PORT ?= 8888
 KAFKA_UI_PORT ?= 8086
 MODULES := data-collector db mock-api
 
-.PHONY: help env up down restart build ps logs migrate migrate-status test test-integration clean
+.PHONY: help env up down restart build ps logs migrate migrate-status test test-integration clean front
 
 help: ## список команд
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-16s %s\n", $$1, $$2}'
@@ -18,7 +18,11 @@ up: env ## собрать и поднять все сервисы
 	@echo "Логи: http://localhost:$(DOZZLE_PORT)"
 	@echo "Kafka UI: http://localhost:$(KAFKA_UI_PORT)"
 
-down: ## остановить сервисы (данные БД и Kafka сохраняются)
+front: env ## собрать и поднять только frontend
+	docker compose up -d --build frontend
+	@echo "Frontend: http://localhost:$(or $(FRONTEND_PORT),3000)"
+
+down: ## остановить сервисы (данные БД сохраняются)
 	docker compose down
 
 restart: down up ## перезапустить всё

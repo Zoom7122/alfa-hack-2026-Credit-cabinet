@@ -1,0 +1,40 @@
+.score-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-16);
+    padding: var(--gap-24);
+    border-radius: var(--border-radius-24);
+    background: var(--color-light-base-bg-primary);
+}
+
+.score-card__head,
+.score-card__max {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--gap-16);
+}
+
+.score-card__factors {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-12);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.score-card__factor {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr) 56px;
+    align-items: center;
+    gap: var(--gap-16);
+}
+
+.score-card__points {
+    text-align: right;
+}
+
+.score-card__bar {
+    display: block;
+}

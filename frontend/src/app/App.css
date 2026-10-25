@@ -1,0 +1,15 @@
+.app {
+    min-height: 100vh;
+}
+
+.app__content {
+    max-width: 1440px;
+    margin: 0 auto;
+}
+
+.app__loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+}

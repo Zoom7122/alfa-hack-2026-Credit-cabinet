@@ -82,7 +82,7 @@ func run(log *slog.Logger) error {
 	// сбор: клиент внешних систем (mock-api) + задачи и результаты в Postgres
 	w := worker.New(
 		mockapi.New(mockURL, mockTimeout, env.String("OWN_BANK_BIK", "044525999")),
-		postgres.NewCollectionTaskRepository(pool, topic),
+		postgres.NewCollectionTaskRepository(pool),
 		worker.Config{CollectTimeout: collectTimeout, MaxAttempts: maxAttempts},
 		log,
 	)

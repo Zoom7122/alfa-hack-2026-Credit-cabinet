@@ -1,0 +1,21 @@
+.logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex: none;
+    border-radius: var(--border-radius-8);
+    background: var(--color-light-accent-primary);
+    color: var(--color-light-text-primary-inverted);
+}
+
+.logo_inverted {
+    background: var(--color-light-base-bg-primary);
+    color: var(--color-light-accent-primary);
+}
+
+.logo__sign {
+    width: 24px;
+    height: 24px;
+}

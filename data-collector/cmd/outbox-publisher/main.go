@@ -37,7 +37,8 @@ func run(log *slog.Logger) error {
 		return errors.New("DATABASE_URL is not set")
 	}
 	brokers := kafka.Brokers(env.String("KAFKA_BROKERS", "localhost:9094"))
-	topic := env.String("KAFKA_TOPIC", events.DefaultTopic)
+	topics := []string{env.String("KAFKA_TOPIC", events.DefaultTopic),
+		env.String("KAFKA_DOCUMENTS_TOPIC", events.DocumentsTopic)}
 	partitions, err := env.PositiveInt("KAFKA_TOPIC_PARTITIONS", 3)
 	if err != nil {
 		return err
@@ -61,8 +62,10 @@ func run(log *slog.Logger) error {
 	}
 	defer pool.Close()
 
-	if err := kafka.EnsureTopic(brokers, topic, int32(partitions)); err != nil {
-		return err
+	for _, topic := range topics {
+		if err := kafka.EnsureTopic(brokers, topic, int32(partitions)); err != nil {
+			return err
+		}
 	}
 	producer, err := kafka.NewProducer(brokers, "data-collector-publisher")
 	if err != nil {
@@ -71,12 +74,12 @@ func run(log *slog.Logger) error {
 	defer producer.Close()
 
 	p := outbox.New(postgres.NewOutboxRepository(pool), producer, outbox.Config{
-		Topic:          topic,
+		Topics:         topics,
 		BatchSize:      batchSize,
 		PollInterval:   pollInterval,
 		PublishTimeout: publishTimeout,
 	}, log)
-	log.Info("outbox publisher started", "brokers", brokers, "topic", topic, "poll_interval", pollInterval)
+	log.Info("outbox publisher started", "brokers", brokers, "topics", topics, "poll_interval", pollInterval)
 	if err := p.Run(ctx); err != nil {
 		return err
 	}

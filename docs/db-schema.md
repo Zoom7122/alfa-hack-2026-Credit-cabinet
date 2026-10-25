@@ -36,6 +36,8 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 | `persona` | text | ✔ | что демонстрирует пользователь (`/auth/test-users`) |
 | `created_at` | timestamptz | | |
 
+Индексы: уникальный `(inn) where role = 'CLIENT' and inn is not null` — клиент с тем же ИНН ФЛ один (регистрация в data-collector его находит).
+
 ### companies
 
 Компания или ИП, одна строка на ИНН. Вторая заявка той же компании переиспользует строку и свежие снапшоты.
@@ -62,7 +64,7 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 |---|---|---|---|
 | `user_id` | text | | PK, FK → `users` |
 | `company_id` | text | | PK, FK → `companies` |
-| `role` | text | | `DIRECTOR`, `OWNER`, `CFO`, `ACCOUNTANT`, `AUTHORIZED_EMPLOYEE` |
+| `role` | text | | `OWNER` (собственник), `DIRECTOR` (генеральный директор), `CFO` / `ACCOUNTANT` (финансовый директор или бухгалтер), `FINANCE_EMPLOYEE` (отвечает за финансирование), `BANKING_EMPLOYEE` (работает с банковскими продуктами), `AUTHORIZED_EMPLOYEE` (иной уполномоченный сотрудник) |
 | `can_sign` | boolean | | `true` только у действующего директора ЮЛ или у самого ИП |
 
 ### applications
@@ -164,13 +166,15 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 
 ### collection_tasks
 
-Задача на сбор данных data-collector: строка на анкету, принятую `POST /api/v1/questionnaires`. Создаётся одной транзакцией с событием в `outbox`. Выполняет её worker по событию из Kafka: `PENDING` → `RUNNING` → `COMPLETED`, результат — строка `raw_collections`.
+Задача на сбор данных data-collector: строка на анкету, принятую `POST /api/v1/applications/{id}/questionnaire`. Создаётся одной транзакцией с отправкой заявки и событием в `outbox`. Выполняет её worker по событию из Kafka: `PENDING` → `RUNNING` → `COMPLETED` (заявка — `ENRICHING` → `VERIFYING`), результат — строка `raw_collections`.
 
 | Колонка | Тип | Null | Описание |
 |---|---|---|---|
 | `id` | text | | PK, `tsk_<ULID>` |
-| `questionnaire_id` | text | | `qst_<ULID>`. Без FK: анкеты пока хранятся в памяти data-collector |
+| `application_id` | text | ✔ | FK → `applications`. `NULL` — задачи, созданные до заявок |
+| `questionnaire_id` | text | | `qst_<ULID>`; анкета лежит в `applications.form` |
 | `inn` | text | | ИНН компании или ИП, `CHECK` 10 или 12 цифр |
+| `document_ids` | text[] | | документы (`documents.id`), пришедшие с анкетой |
 | `status` | text | | `PENDING`, `RUNNING`, `COMPLETED`, `FAILED` |
 | `request` | jsonb | | входные данные сбора без токенов, как `raw_collections.request` |
 | `secrets` | jsonb | ✔ | токены маркетплейсов и ОФД для worker'а. `NULL` — токенов нет или задача завершена |
@@ -182,7 +186,7 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 | `finished_at` | timestamptz | ✔ | |
 | `updated_at` | timestamptz | | |
 
-Индексы: `(questionnaire_id)`, `(status, created_at)`.
+Индексы: `(questionnaire_id)`, `(status, created_at)`, `(application_id)`.
 
 ### outbox
 
@@ -292,7 +296,7 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 | `info_request_id` | text | ✔ | FK → `info_requests` |
 | `signed_document_id` | text | ✔ | FK → `documents`. Для открепленной подписи `.sig` — какой документ подписан |
 | `recognition` | jsonb | ✔ | `Document.recognition`: состояние, распознанный тип, извлечённые поля, уверенность |
-| `signature_state` | text | | `NOT_SIGNED`, `PENDING`, `DONE`, `FAILED` — состояние проверки ЭП (`Document.signatures.state`) |
+| `signature_state` | text | | `NOT_SIGNED`, `PENDING`, `DONE`, `FAILED` — состояние проверки ЭП (`Document.signatures.state`). Worker подписи ставит `DONE` (или `FAILED`, если файла нет) документу и файлу его подписи вместе с отчётом |
 | `signature_verdict` | text | ✔ | вердикт последнего отчёта ЭП, для списков. Остальная сводка (`policy`, `policy_satisfied`, число подписей) берётся из последнего `signature_reports` |
 | `uploaded_at` | timestamptz | | |
 | `deleted_at` | timestamptz | ✔ | soft delete |
@@ -309,11 +313,19 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 | `policy` | text | | `GENERIC`, `POWER_OF_ATTORNEY`, `FINANCIAL_STATEMENTS`, `LOAN_CONTRACT` |
 | `policy_satisfied` | boolean | | |
 | `trust_mode` | text | | `MOCK`, `LIVE` |
-| `report` | jsonb | | `SignatureReport` целиком: каждая подпись, сертификат, отзыв, полномочия и МЧД, результаты всех 14 проверок |
+| `report` | jsonb | | `SignatureReport` целиком: каждая подпись, сертификат, отзыв, полномочия и МЧД, результаты всех 14 проверок. У worker'а подписи — ещё этапы с их проверками, профиль и его ограничения |
 | `requested_by` | text | ✔ | FK → `users` |
 | `verified_at` | timestamptz | | |
+| `signature_document_id` | text | ✔ | FK → `documents`: файл открепленной подписи. `NULL` — подпись внутри документа |
+| `document_sha256` | text | ✔ | sha256 проверенных байтов документа, посчитан до проверки, — версия документа |
+| `signature_sha256` | text | ✔ | sha256 файла подписи; у подписи внутри PDF — подписи CMS из `/Contents` |
+| `profile` | text | ✔ | профиль проверки: `TEST` (тестовые корни и моки реестров, не УКЭП). `NULL` — отчёт не от worker'а подписи |
+| `integrity_status`, `format_status`, `certificate_status`, `identity_status`, `authority_status` | text | ✔ | статус этапа: `VERIFIED`, `INVALID`, `INDETERMINATE`, `NOT_REQUIRED` — целостность, формат и охват, сертификат, личность подписанта, полномочия |
+| `decision` | text | ✔ | итог по правилам банка, те же значения |
+| `failure_reason` | text | ✔ | почему не `VERIFIED`: причина первого непройденного этапа |
+| `idempotency_key` | text | ✔ | UK. Один автоматический отчёт на версию документа и подписи; `NULL` — ручная проверка |
 
-Индекс: `(document_id, verified_at desc)`.
+Индекс: `(document_id, verified_at desc)`. У отчёта с `profile` заполнены `document_sha256`, все статусы этапов и `decision` (CHECK).
 
 ### signings
 

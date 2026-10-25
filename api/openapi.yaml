@@ -1206,8 +1206,12 @@ components:
       enum: [CLIENT, UNDERWRITER]
     RepresentativeRole:
       type: string
-      description: Роль пользователя в компании. Подписывать договор может только DIRECTOR (для ИП — сам ИП)
-      enum: [DIRECTOR, OWNER, CFO, ACCOUNTANT, AUTHORIZED_EMPLOYEE]
+      description: |
+        Роль пользователя в компании. Подписывать договор может только DIRECTOR (для ИП — сам ИП), остальным нужна МЧД.
+        OWNER — собственник бизнеса, DIRECTOR — генеральный директор, CFO / ACCOUNTANT — финансовый директор или
+        бухгалтер, FINANCE_EMPLOYEE — сотрудник, отвечающий за финансирование, BANKING_EMPLOYEE — сотрудник,
+        работающий с банковскими продуктами, AUTHORIZED_EMPLOYEE — иной сотрудник, уполномоченный оформлять заявку.
+      enum: [DIRECTOR, OWNER, CFO, ACCOUNTANT, FINANCE_EMPLOYEE, BANKING_EMPLOYEE, AUTHORIZED_EMPLOYEE]
     CompanyAccess:
       type: object
       required: [applicant_id, short_name, inn, role, can_sign]

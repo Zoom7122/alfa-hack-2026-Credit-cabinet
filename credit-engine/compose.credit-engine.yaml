@@ -1,0 +1,63 @@
+# Requires the external stack's network, PostgreSQL, and statements supplier.
+x-runtime: &runtime
+  image: credit-engine:${CREDIT_ENGINE_TAG:-local}
+  build:
+    context: .
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  networks: [stack]
+  restart: unless-stopped
+
+services:
+  admin-service:
+    <<: *runtime
+    entrypoint: ["/admin-service"]
+    ports: ["127.0.0.1:${ADMIN_PORT:-8084}:8084"]
+    environment:
+      ADMIN_ADDR: ":8084"
+      ADMIN_DATABASE_URL: ${ADMIN_DATABASE_URL:?Set ADMIN_DATABASE_URL}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:?Set ADMIN_USERNAME}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?Set ADMIN_PASSWORD_HASH}
+      ADMIN_EVENTS_TOKEN: ${ADMIN_EVENTS_TOKEN:?Set ADMIN_EVENTS_TOKEN}
+      ADMIN_PUBLIC_ORIGIN: ${ADMIN_PUBLIC_ORIGIN:-http://localhost:8084}
+      ADMIN_COOKIE_SECURE: ${ADMIN_COOKIE_SECURE:-false}
+      ADMIN_SCORING_URL: http://scoring-service:8082
+      ADMIN_SCORING_TIMEOUT: 2s
+      ADMIN_REQUEST_TIMEOUT: 30s
+      HTTP_WRITE_TIMEOUT: 45s
+
+  bank-state-service:
+    <<: *runtime
+    entrypoint: ["/bank-state-service"]
+    environment:
+      BANK_ADDR: ":8083"
+      ADMIN_URL: http://admin-service:8084
+      ADMIN_EVENTS_TOKEN: ${ADMIN_EVENTS_TOKEN:?Set ADMIN_EVENTS_TOKEN}
+      BANK_STATE_FILE: ${BANK_STATE_FILE:-config/bank.default.json}
+    depends_on: [admin-service]
+
+  scoring-service:
+    <<: *runtime
+    entrypoint: ["/scoring-service"]
+    ports: ["127.0.0.1:${SCORING_PORT:-8082}:8082"]
+    environment:
+      SCORING_ADDR: ":8082"
+      BANK_URL: http://bank-state-service:8083
+      STATEMENTS_URL: ${STATEMENTS_URL:?Set STATEMENTS_URL}
+      FACTS_URL: ${FACTS_URL:-}
+    depends_on: [bank-state-service]
+
+  admin-migrate:
+    <<: *runtime
+    profiles: [tools]
+    restart: "no"
+    entrypoint: ["/admin-migrate"]
+    command: ["up"]
+    environment:
+      ADMIN_DATABASE_URL: ${ADMIN_DATABASE_URL:?Set ADMIN_DATABASE_URL}
+
+networks:
+  stack:
+    external: true
+    name: ${CREDIT_ENGINE_NETWORK:?Set the existing stack network name}

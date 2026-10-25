@@ -1,0 +1,29 @@
+.summary-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-12);
+    margin: 0;
+    padding: var(--gap-24);
+    border-radius: var(--border-radius-24);
+    background: var(--color-light-neutral-100);
+}
+
+.summary-list__row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--gap-24);
+}
+
+.summary-list__label,
+.summary-list__value {
+    margin: 0;
+}
+
+.summary-list__value {
+    text-align: right;
+}
+
+.summary-list_plain {
+    padding: 0;
+    background: none;
+}
