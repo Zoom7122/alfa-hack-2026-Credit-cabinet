@@ -15,6 +15,8 @@ var (
 	ErrFileTooLarge = errors.New("file is too large")
 	// ErrUnauthorized — нет токена или пользователя по нему.
 	ErrUnauthorized = errors.New("unauthorized")
+	// ErrForbidden — действие доступно не этому пользователю: анкету отправляет только автор заявки.
+	ErrForbidden = errors.New("forbidden")
 )
 
 // FieldError — нарушение правила для одного поля анкеты.

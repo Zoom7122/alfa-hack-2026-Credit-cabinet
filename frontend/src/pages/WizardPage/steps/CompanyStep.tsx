@@ -8,10 +8,10 @@ import { Typography } from '@alfalab/core-components/typography';
 import { useNavigate } from 'react-router-dom';
 
 import { ApiError } from '../../../api/client';
-import { useRegister } from '../../../api/collector/queries';
+import { useCompanyLookup, useRegister } from '../../../api/collector/queries';
 import { COLLECTOR_ROLE_LABELS, COLLECTOR_ROLES, type CollectorApplication, type CollectorPurpose, type CollectorRole } from '../../../api/collector/types';
-import { useCounterpartyLookup } from '../../../api/queries';
-import type { CounterpartyPrefill, Me } from '../../../api/types';
+import type { components } from '../../../api/collector/schema';
+import type { Me } from '../../../api/types';
 import { formatIsoDate } from '../../../shared/lib/format';
 import { isInn } from '../../../shared/lib/inn';
 import { useDebouncedValue } from '../../../shared/lib/useDebouncedValue';
@@ -34,13 +34,16 @@ export function CompanyStep(props: CreateProps | EditProps) {
     return props.mode === 'create' ? <CreateCompanyStep {...props} /> : <EditCompanyStep {...props} />;
 }
 
+type CounterpartyPrefill = components['schemas']['CounterpartyPrefill'];
+
 /** Реквизиты из подсказки реестра — только для чтения. Источник правды — ЕГРЮЛ, его опросит data-collector. */
 function CompanyFacts({ company }: { company: CounterpartyPrefill }) {
     const isSoleProprietor = company.applicant_type === 'SOLE_PROPRIETOR';
     const facts: { label: string; value?: string; wide?: boolean }[] = [
         { label: isSoleProprietor ? 'ОГРНИП' : 'ОГРН', value: company.ogrn },
         { label: 'Дата регистрации', value: company.registration_date && formatIsoDate(company.registration_date) },
-        { label: 'Основной ОКВЭД', value: company.okved_main && `${company.okved_main.code} ${company.okved_main.title ?? ''}`.trim(), wide: true },
+        { label: 'КПП', value: company.kpp },
+        { label: 'Регион', value: company.region },
         { label: isSoleProprietor ? 'Предприниматель' : 'Руководитель', value: company.director_name, wide: true },
     ];
     return (
@@ -108,7 +111,7 @@ function EditCompanyStep({ app, nextHref }: EditProps) {
 function lookupPlate(error: unknown, data: CounterpartyPrefill | undefined) {
     if (data?.registry_status && data.registry_status !== 'ACTIVE') {
         return (
-            <Plate view='negative' title='Компания ликвидируется или реорганизуется'>
+            <Plate view='negative' title='Компания ликвидирована'>
                 Кредит для неё оформить не получится.
             </Plate>
         );
@@ -116,8 +119,16 @@ function lookupPlate(error: unknown, data: CounterpartyPrefill | undefined) {
     if (data) return <Plate view='positive' title='Нашли компанию в реестре'>Остальное о компании соберём сами из открытых источников</Plate>;
     if (error instanceof ApiError && error.status === 404) {
         return (
-            <Plate view='attention' title='В подсказках реестра такой компании нет'>
-                Проверьте цифры. Если всё верно — продолжайте: реквизиты возьмём из ЕГРЮЛ при сборе данных.
+            <Plate view='attention' title='В ЕГРЮЛ такой компании нет'>
+                Проверьте цифры. Если всё верно — продолжайте: банк перепроверит при сборе данных.
+            </Plate>
+        );
+    }
+    if (error) {
+        const timeout = error instanceof ApiError && error.status === 504;
+        return (
+            <Plate view='attention' title={timeout ? 'Реестр сейчас не отвечает' : 'Не удалось проверить компанию в реестре'}>
+                Можно продолжать — реквизиты подтянем сами при сборе данных.
             </Plate>
         );
     }
@@ -129,7 +140,7 @@ const SERVER_FIELDS: Record<string, 'inn' | 'role'> = { 'company.inn': 'inn', 'r
 
 function CreateCompanyStep({ me, productCode, requested, purpose }: CreateProps) {
     const navigate = useNavigate();
-    const register = useRegister(me.id);
+    const register = useRegister();
     const [inn, setInn] = useState('');
     const [name, setName] = useState('');
     // выбор роли — для конкретного ИНН: сменили ИНН — выбирать заново
@@ -137,7 +148,7 @@ function CreateCompanyStep({ me, productCode, requested, purpose }: CreateProps)
 
     const debouncedInn = useDebouncedValue(inn, 400);
     const validInn = isInn(debouncedInn) && debouncedInn === inn ? inn : undefined;
-    const lookup = useCounterpartyLookup(validInn);
+    const lookup = useCompanyLookup(validInn);
     const soleProprietor = validInn?.length === 12;
     const suggestedRole = lookup.data?.director_name === me.full_name ? (soleProprietor ? 'OWNER' : 'DIRECTOR') : undefined;
     // своя компания из профиля — роль в ней уже известна

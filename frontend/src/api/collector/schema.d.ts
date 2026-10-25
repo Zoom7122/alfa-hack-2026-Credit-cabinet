@@ -11,7 +11,49 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Компании текущего пользователя
+         * @description Компании, от имени которых действует вошедший пользователь, с его ролью и реквизитами из ЕГРЮЛ
+         *     (после сбора данных; до него — только ИНН и название). Первая — основная (заведённая тестовому пользователю).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Applicants"];
+                    };
+                };
+                /** @description нет или неверный токен */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
         put?: never;
         /**
          * Зарегистрировать заявителя: кто оформляет кредит и за какую компанию
@@ -21,7 +63,9 @@ export interface paths {
          *     Подписывать договор без доверенности может директор, у ИП — сам предприниматель (can_sign).
          *     Дальше — анкета: POST /applications/{id}/questionnaire выводит заявку из DRAFT и запускает сбор данных.
          *     С токеном `Authorization: Bearer mock.<user_id>` (POST /auth/mock-login) заявка оформляется от имени вошедшего
-         *     пользователя: нового пользователя не заводится, ФИО берётся из профиля, черновик по компании — его.
+         *     пользователя: нового пользователя не заводится, ФИО берётся из профиля (поле в теле всё равно обязательно),
+         *     `representative.inn` не нужен, черновик по компании — его. Уже записанная роль в компании не меняется.
+         *     Сотрудник банка (UNDERWRITER) заявку подать не может — 403.
          *
          *     **Примеры** — заявители сценариев mock-api A–E (`examples/scenario-X.applicant.json`), в теле по умолчанию — сценарий A. Данные в моках привязаны к компании, поэтому анкету берите того же сценария: они в описании POST /applications/{id}/questionnaire.
          *
@@ -145,6 +189,15 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
+                /** @description токен сотрудника банка */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
                 /** @description неверный ИНН или роль */
                 422: {
                     headers: {
@@ -165,6 +218,80 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Заявки компаний пользователя
+         * @description Заявки всех компаний вошедшего пользователя — его и коллег по компании, новые сверху (до 100).
+         *     Черновики — только свои: чужой черновик не виден и не отправляется.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description только эта компания (apl_…) */
+                    company_id?: string;
+                    /** @description статусы через запятую: DRAFT,SUBMITTED,ENRICHING,VERIFYING */
+                    status?: string;
+                    /** @description true — только заявки, оформленные самим пользователем */
+                    mine?: boolean;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Applications"];
+                    };
+                };
+                /** @description нет или неверный токен */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description неизвестный статус */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -205,6 +332,128 @@ export interface paths {
                     };
                 };
                 /** @description заявки нет */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/documents/{documentId}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Файл документа заявки */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description id заявки (app_…) */
+                    id: string;
+                    /** @description id документа (doc_…) */
+                    documentId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/octet-stream": string;
+                    };
+                };
+                /** @description заявки или документа нет */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/octet-stream": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/octet-stream": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/documents/{documentId}/signature-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Отчёт проверки электронной подписи
+         * @description Последний отчёт worker'а подписи по документу или его открепленной подписи (signature_reports.report):
+         *     итог (decision, verdict), этапы проверки с причинами, подписант, сертификат, время подписи, политика.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description id заявки (app_…) */
+                    id: string;
+                    /** @description id документа (doc_…) */
+                    documentId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description отчёт (signature.Report) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": Record<string, never>;
+                    };
+                };
+                /** @description заявки или документа нет (NOT_FOUND) или подпись ещё не проверяли (REPORT_NOT_READY) */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -604,6 +853,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/applications/{id}/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Журнал заявки для клиента
+         * @description События заявки по времени: создание, отправка анкеты, начало и итог сбора данных, проверка подписи.
+         *     Служебные события без текста для клиента не отдаются.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description id заявки (app_…) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Timeline"];
+                    };
+                };
+                /** @description заявки нет */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/mock-login": {
         parameters: {
             query?: never;
@@ -650,7 +960,7 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description пользователя нет */
+                /** @description пользователя нет или он не тестовый */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -686,7 +996,8 @@ export interface paths {
         /**
          * Список синтетических пользователей для входа
          * @description Тестовые пользователи стенда: директора, бухгалтеры и ИП компаний сценариев mock-api A–E, демо-персонажи
-         *     экранов кабинета и андеррайтер. Заводятся при старте API (SEED_TEST_USERS). Вход — POST /auth/mock-login.
+         *     экранов кабинета и андеррайтер. Заводятся при старте API (SEED_TEST_USERS). Вход — POST /auth/mock-login,
+         *     только под ними: пользователи, заведённые анонимной регистрацией, войти не могут. Токен этой ручке не нужен.
          */
         get: {
             parameters: {
@@ -860,6 +1171,96 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/counterparty/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Реквизиты компании по ИНН
+         * @description Синхронный запрос в ЕГРЮЛ/ЕГРИП (эмулятор mock-api) — подсказка на шаге «Компания» до регистрации.
+         *     already_known — компания уже есть в системе (по ней подавали заявку). Нужен токен.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description ИНН */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CounterpartyLookupRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CounterpartyPrefill"];
+                    };
+                };
+                /** @description битый JSON, нет inn */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description нет или неверный токен */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description в реестре нет */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description неверный ИНН */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description реестр не ответил: таймаут, сбой или капча (UPSTREAM_TIMEOUT) */
+                504: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me": {
         parameters: {
             query?: never;
@@ -938,6 +1339,35 @@ export interface components {
             /** @enum {string} */
             type?: "LEGAL_ENTITY" | "SOLE_PROPRIETOR";
         };
+        ApplicantProfile: {
+            /** @enum {string} */
+            applicant_type: "LEGAL_ENTITY" | "SOLE_PROPRIETOR";
+            can_sign: boolean;
+            director_name?: string;
+            full_name?: string;
+            /** @example apl_north_wind */
+            id: string;
+            /** @example 7799000012 */
+            inn: string;
+            kpp?: string;
+            /** @enum {string} */
+            my_role: "OWNER" | "DIRECTOR" | "CFO" | "ACCOUNTANT" | "FINANCE_EMPLOYEE" | "BANKING_EMPLOYEE" | "AUTHORIZED_EMPLOYEE";
+            /** @example 1217700412345 */
+            ogrn?: string;
+            region?: string;
+            /** @example 2021-03-14 */
+            registration_date?: string;
+            /**
+             * @description ACTIVE или LIQUIDATED (в выписке есть дата прекращения). Нет — реквизиты ещё не собирали.
+             * @enum {string}
+             */
+            registry_status?: "ACTIVE" | "LIQUIDATED";
+            /** @example ООО "СЕВЕРНЫЙ ВЕТЕР" */
+            short_name: string;
+        };
+        Applicants: {
+            items: components["schemas"]["ApplicantProfile"][];
+        };
         Application: {
             applicant?: components["schemas"]["Applicant"];
             /**
@@ -965,6 +1395,9 @@ export interface components {
             status?: "DRAFT" | "SUBMITTED" | "ENRICHING" | "VERIFYING";
             submitted_at?: string;
             updated_at?: string;
+        };
+        Applications: {
+            items: components["schemas"]["Application"][];
         };
         CollectionSource: {
             calls?: number;
@@ -1043,6 +1476,31 @@ export interface components {
              */
             name?: string;
         };
+        CounterpartyLookupRequest: {
+            /** @example 7799000012 */
+            inn: string;
+        };
+        CounterpartyPrefill: {
+            /** @description Компания уже есть в системе: по ней подавали заявку. */
+            already_known: boolean;
+            /** @enum {string} */
+            applicant_type: "LEGAL_ENTITY" | "SOLE_PROPRIETOR";
+            /** @example Ковалёв Игорь Сергеевич */
+            director_name?: string;
+            full_name: string;
+            /** @example 7799000012 */
+            inn: string;
+            kpp?: string;
+            /** @example 1217700412345 */
+            ogrn?: string;
+            region?: string;
+            /** @example 2021-03-14 */
+            registration_date?: string;
+            /** @enum {string} */
+            registry_status: "ACTIVE" | "LIQUIDATED";
+            /** @example ООО "СЕВЕРНЫЙ ВЕТЕР" */
+            short_name: string;
+        };
         Document: {
             /** @example balance.pdf */
             file_name?: string;
@@ -1055,6 +1513,11 @@ export interface components {
             sha256?: string;
             /** @enum {string} */
             signature_state?: "NOT_SIGNED" | "PENDING" | "DONE" | "FAILED";
+            /**
+             * @description Итог проверки подписи (после DONE или FAILED); нет — подпись не проверяли.
+             * @enum {string}
+             */
+            signature_verdict?: "VALID" | "VALID_WITH_WARNINGS" | "INVALID" | "INDETERMINATE";
             /** @description У открепленной подписи (type=SIGNATURE) — какой документ она подписывает. */
             signed_document_id?: string;
             /** @example 48213 */
@@ -1188,6 +1651,25 @@ export interface components {
         };
         TestUsers: {
             items: components["schemas"]["TestUser"][];
+        };
+        Timeline: {
+            items: components["schemas"]["TimelineEvent"][];
+        };
+        TimelineEvent: {
+            /** @enum {string} */
+            actor_kind: "CLIENT" | "SYSTEM";
+            at: string;
+            from_status?: string;
+            id: string;
+            /** @example Данные о компании собраны */
+            message: string;
+            to_status?: string;
+            /**
+             * @description Тип события модуля: application.created, application.submitted, enrich.started, enrich.completed, enrich.failed,
+             *     document.signatures_verified.
+             * @example enrich.completed
+             */
+            type: string;
         };
         "domain.Account": {
             AccountDetails?: components["schemas"]["domain.AccountDetails"][];

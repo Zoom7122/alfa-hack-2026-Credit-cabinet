@@ -44,9 +44,10 @@ type RegisterInput struct {
 
 // ApplicationService регистрирует заявителя (пользователь, компания, черновик заявки) и отдаёт заявки.
 type ApplicationService struct {
-	apps  ApplicationRepository
-	now   func() time.Time
-	newID func(prefix string) string
+	apps     ApplicationRepository
+	registry Registry // необязательно: ликвидированную компанию не оформить
+	now      func() time.Time
+	newID    func(prefix string) string
 }
 
 // ApplicationOption настраивает ApplicationService (используется в тестах).
@@ -55,6 +56,12 @@ type ApplicationOption func(*ApplicationService)
 // WithApplicationClock подменяет источник времени.
 func WithApplicationClock(now func() time.Time) ApplicationOption {
 	return func(s *ApplicationService) { s.now = now }
+}
+
+// WithRegistryCheck — перед регистрацией спрашивать ЕГРЮЛ: ликвидированную компанию не оформить.
+// Реестр не ответил или компании в нём нет — регистрация идёт как обычно.
+func WithRegistryCheck(registry Registry) ApplicationOption {
+	return func(s *ApplicationService) { s.registry = registry }
 }
 
 // WithApplicationIDGenerator подменяет генератор идентификаторов: prefix — usr_, apl_, app_.
@@ -80,6 +87,12 @@ func (s *ApplicationService) Register(ctx context.Context, in RegisterInput) (do
 	in = normalizeRegister(in)
 	if fields := validateRegister(in); len(fields) > 0 {
 		return domain.Application{}, &ValidationError{Fields: fields}
+	}
+	if s.registry != nil {
+		if card, found, err := s.registry.LookupCompany(ctx, in.CompanyINN); err == nil && found && card.TerminatedOn != "" {
+			return domain.Application{}, &ValidationError{Fields: []FieldError{{Field: "company.inn", Code: "company_liquidated",
+				Message: "компания ликвидирована " + card.TerminatedOn + " — кредит на неё не оформить"}}}
+		}
 	}
 
 	companyType := domain.CompanyTypeByINN(in.CompanyINN)

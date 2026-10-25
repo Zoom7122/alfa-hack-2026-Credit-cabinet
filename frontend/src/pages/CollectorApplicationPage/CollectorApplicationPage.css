@@ -68,3 +68,7 @@
     height: 480px;
     border-radius: var(--border-radius-24);
 }
+
+.collector-application__panel {
+    padding-top: var(--gap-24);
+}

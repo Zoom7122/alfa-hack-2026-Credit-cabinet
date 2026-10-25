@@ -1,13 +1,19 @@
 import { type QueryClient, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import type { SignatureReportJson } from './signatureReport';
+
 import { ApiError, unwrap } from '../client';
 import { collector } from './client';
-import { forgetApplication, rememberApplication, useCollectorIndex } from './localIndex';
 import type { CollectionTask, CollectorApplication, QuestionnaireInput, RegisterInput } from './types';
 
 export const collectorKeys = {
     application: (id: string) => ['collector', 'application', id] as const,
     collection: (id: string) => ['collector', 'collection', id] as const,
+    applications: ['collector', 'applications'] as const,
+    applicants: ['collector', 'applicants'] as const,
+    timeline: (id: string) => ['collector', 'timeline', id] as const,
+    signatureReport: (appId: string, docId: string, state: string) => ['collector', 'signature-report', appId, docId, state] as const,
+    lookup: (inn: string) => ['collector', 'lookup', inn] as const,
 };
 
 const POLL_MS = 2_000;
@@ -20,26 +26,27 @@ const MAX_POLL_MS = 30 * 60_000;
  * поэтому смотрим ещё и на задачу, если она уже в кэше.
  */
 function shouldPoll(app: CollectorApplication | undefined, queryClient: QueryClient) {
-    if (!app || !IN_PROGRESS.has(app.status ?? '')) return false;
+    if (!app) return false;
+    const recent = !app.submitted_at || Date.now() - new Date(app.submitted_at).getTime() < MAX_POLL_MS;
+    // подпись worker проверяет и после сбора — ждём итог по документам
+    if (app.status === 'VERIFYING') return recent && Boolean(app.documents?.some((d) => d.signature_state === 'PENDING'));
+    if (!IN_PROGRESS.has(app.status ?? '')) return false;
     const task = app.collection_task_id ? queryClient.getQueryData<CollectionTask>(collectorKeys.collection(app.collection_task_id)) : undefined;
-    if (task?.status === 'FAILED' || task?.status === 'COMPLETED') return task.status === 'COMPLETED' && app.status !== 'VERIFYING';
-    return !app.submitted_at || Date.now() - new Date(app.submitted_at).getTime() < MAX_POLL_MS;
+    if (task?.status === 'FAILED' || task?.status === 'COMPLETED') return task.status === 'COMPLETED';
+    return recent;
 }
 
-/** Регистрация заявителя: пользователь, компания и черновик (или уже существующий черновик по этой паре). */
-export function useRegister(userId: string) {
+/** Регистрация заявителя от имени вошедшего: компания и черновик (или его прежний черновик по этой компании). */
+export function useRegister() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (body: RegisterInput) => unwrap(await collector.POST('/applicants', { body })),
-        onSuccess: (app, body) => {
+        onSuccess: (app) => {
             queryClient.setQueryData(collectorKeys.application(app.id ?? ''), app);
-            rememberApplication(userId, {
-                id: app.id ?? '',
-                number: app.number,
-                company_inn: body.company.inn,
-                company_name: app.applicant?.name ?? body.company.name,
-                created_at: app.created_at ?? new Date().toISOString(),
-            });
+            // новая компания в профиле, новая заявка в списке
+            void queryClient.invalidateQueries({ queryKey: collectorKeys.applications });
+            void queryClient.invalidateQueries({ queryKey: collectorKeys.applicants });
+            void queryClient.invalidateQueries({ queryKey: ['me'] });
         },
     });
 }
@@ -69,30 +76,77 @@ export function useCollection(taskId: string | undefined) {
     });
 }
 
-/** Заявки пользователя по локальному индексу — каждая своим GET. */
-export function useCollectorApplications(userId: string) {
-    const index = useCollectorIndex(userId);
+/** Заявки компаний пользователя (свои и коллег), новые сверху. Пока какая-то собирается — опрашиваем. */
+export function useCollectorApplications() {
     const queryClient = useQueryClient();
-    return useQueries({
-        queries: index.map((entry) => ({
-            queryKey: collectorKeys.application(entry.id),
-            queryFn: async () => {
-                try {
-                    return unwrap(await collector.GET('/applications/{id}', { params: { path: { id: entry.id } } }));
-                } catch (e) {
-                    // заявки в сервисе больше нет — убираем её из локального списка
-                    if (e instanceof ApiError && e.status === 404) forgetApplication(userId, entry.id);
-                    throw e;
-                }
-            },
-            refetchInterval: (query: { state: { data?: CollectorApplication } }) => (shouldPoll(query.state.data, queryClient) ? POLL_MS : false),
-        })),
-        combine: (results) => ({
-            items: results.flatMap((r) => (r.data ? [r.data] : [])),
-            isPending: results.some((r) => r.isPending),
-            isError: results.some((r) => r.isError),
-        }),
+    return useQuery({
+        queryKey: collectorKeys.applications,
+        queryFn: async () => unwrap(await collector.GET('/applications')).items,
+        refetchInterval: (query) => (query.state.data?.some((a) => shouldPoll(a, queryClient)) ? POLL_MS : false),
     });
+}
+
+/** Компании пользователя с реквизитами из ЕГРЮЛ (после сбора). */
+export function useCollectorApplicants() {
+    return useQuery({
+        queryKey: collectorKeys.applicants,
+        queryFn: async () => unwrap(await collector.GET('/applicants')).items,
+    });
+}
+
+/** Журнал заявки; опрашивается, пока опрашивается сама заявка (сбор, проверка подписи). */
+export function useCollectorTimeline(app: CollectorApplication | undefined) {
+    const queryClient = useQueryClient();
+    const id = app?.id ?? '';
+    return useQuery({
+        queryKey: collectorKeys.timeline(id),
+        queryFn: async () => unwrap(await collector.GET('/applications/{id}/timeline', { params: { path: { id } } })).items,
+        enabled: Boolean(id),
+        refetchInterval: () => (shouldPoll(queryClient.getQueryData(collectorKeys.application(id)), queryClient) ? POLL_MS : false),
+    });
+}
+
+/** Отчёт о подписи. state — signature_state документа: сменился (проверили) — перечитываем. */
+export function useCollectorSignatureReport(applicationId: string, documentId: string | undefined, state: string) {
+    return useQuery({
+        queryKey: collectorKeys.signatureReport(applicationId, documentId ?? '', state),
+        queryFn: async () =>
+            unwrap(
+                await collector.GET('/applications/{id}/documents/{documentId}/signature-report', {
+                    params: { path: { id: applicationId, documentId: documentId ?? '' } },
+                }),
+            ) as SignatureReportJson,
+        enabled: Boolean(documentId),
+        retry: false,
+        staleTime: Infinity,
+    });
+}
+
+/** Подсказка реквизитов по ИНН — синхронно из ЕГРЮЛ через data-collector. */
+export function useCompanyLookup(inn: string | undefined) {
+    return useQuery({
+        queryKey: collectorKeys.lookup(inn ?? ''),
+        queryFn: async () => unwrap(await collector.POST('/counterparty/lookup', { body: { inn: inn ?? '' } })),
+        enabled: Boolean(inn),
+        retry: false,
+        staleTime: 5 * 60_000,
+    });
+}
+
+/** Скачать файл документа: с токеном, поэтому через fetch, а не ссылкой. */
+export async function downloadCollectorDocument(applicationId: string, documentId: string, fileName: string) {
+    const { data, response, error } = await collector.GET('/applications/{id}/documents/{documentId}/content', {
+        params: { path: { id: applicationId, documentId } },
+        parseAs: 'blob',
+    });
+    if (error !== undefined || !response.ok || !data) throw new ApiError(response.status, 'Не удалось скачать файл');
+    const url = URL.createObjectURL(data);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    // сразу отзывать нельзя: Safari и Firefox начинают загрузку не мгновенно
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 export type SubmitFile = { file: File; name: string };

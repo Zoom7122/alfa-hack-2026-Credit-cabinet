@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"mime/multipart"
@@ -84,11 +85,29 @@ func (stubSystems) CompanyCard(fnsData json.RawMessage) (domain.CompanyCard, boo
 
 // testApp — роутер со всеми хендлерами поверх хранилищ в памяти и временной папки для файлов.
 type testApp struct {
-	r     *gin.Engine
-	tasks *memory.CollectionTaskRepository
-	apps  *memory.ApplicationRepository
-	root  string
-	auth  *service.AuthService
+	r       *gin.Engine
+	tasks   *memory.CollectionTaskRepository
+	apps    *memory.ApplicationRepository
+	root    string
+	auth    *service.AuthService
+	cabinet *memory.CabinetRepository
+}
+
+// stubRegistry — ЕГРЮЛ: 7799000012 есть, 7700000000 — реестр не отвечает, остальных нет.
+type stubRegistry struct{}
+
+func (stubRegistry) LookupCompany(_ context.Context, inn string) (domain.CompanyCard, bool, error) {
+	switch inn {
+	case "7799000012":
+		return domain.CompanyCard{INN: inn, Type: domain.CompanyLegalEntity, OGRN: "1217700412345", KPP: "779901001",
+			FullName: `ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ "СЕВЕРНЫЙ ВЕТЕР"`, ShortName: `ООО "СЕВЕРНЫЙ ВЕТЕР"`,
+			RegistrationDate: "2021-03-14", DirectorName: "Ковалёв Игорь Сергеевич"}, true, nil
+	case "7799000099":
+		return domain.CompanyCard{INN: inn, Type: domain.CompanyLegalEntity, ShortName: `ООО "ТРАНЗИТ"`, TerminatedOn: "2025-01-10"}, true, nil
+	case "7700000000":
+		return domain.CompanyCard{}, false, errors.New("timeout")
+	}
+	return domain.CompanyCard{}, false, nil
 }
 
 // seedTestUsers заводит тестовых пользователей (service.TestUsers) — как API при старте.
@@ -115,6 +134,7 @@ func newTestApp(t *testing.T) *testApp {
 	)
 	n := 0
 	applications := service.NewApplicationService(apps,
+		service.WithRegistryCheck(stubRegistry{}),
 		service.WithApplicationClock(func() time.Time { return fixedNow }),
 		service.WithApplicationIDGenerator(func(prefix string) string { n++; return prefix + "test" + strings.Repeat("0", n) }),
 	)
@@ -123,14 +143,18 @@ func newTestApp(t *testing.T) *testApp {
 		service.WithIDGenerator(func() string { return "qst_test" }),
 	)
 	auth := service.NewAuthService(memory.NewUserRepository(tasks))
+	cabinetRepo := memory.NewCabinetRepository(tasks)
+	cabinet := service.NewCabinetService(cabinetRepo, apps, stubRegistry{},
+		service.FileOpenerFunc(func(key string) (io.ReadCloser, error) { return files.Open(key) }))
 	r := httptransport.NewRouter(
 		httptransport.NewApplicationHandler(applications, discardLog),
 		httptransport.NewQuestionnaireHandler(questionnaires, 4<<20, discardLog),
 		httptransport.NewCollectionHandler(collections, discardLog),
 		httptransport.NewInternalDataHandler(stubInternalData{}, discardLog),
 		httptransport.WithAuth(httptransport.NewAuthHandler(auth, discardLog)),
+		httptransport.WithCabinet(httptransport.NewCabinetHandler(cabinet, discardLog)),
 	)
-	return &testApp{r: r, tasks: tasks, apps: apps, root: root, auth: auth}
+	return &testApp{r: r, tasks: tasks, apps: apps, root: root, auth: auth, cabinet: cabinetRepo}
 }
 
 func (a *testApp) do(req *http.Request) *httptest.ResponseRecorder {
@@ -192,6 +216,12 @@ type file struct {
 // submitMultipart отправляет анкету по заявке: JSON в части questionnaire и файлы в частях files.
 func (a *testApp) submitMultipart(t *testing.T, appID, questionnaire string, files ...file) *httptest.ResponseRecorder {
 	t.Helper()
+	return a.submitMultipartAs(t, "", appID, questionnaire, files...)
+}
+
+// submitMultipartAs — то же с токеном вошедшего пользователя; пустой token — без него.
+func (a *testApp) submitMultipartAs(t *testing.T, token, appID, questionnaire string, files ...file) *httptest.ResponseRecorder {
+	t.Helper()
 	var buf bytes.Buffer
 	mw := multipart.NewWriter(&buf)
 	if questionnaire != "" {
@@ -211,6 +241,9 @@ func (a *testApp) submitMultipart(t *testing.T, appID, questionnaire string, fil
 	}
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/applications/"+appID+"/questionnaire", &buf)
 	req.Header.Set("Content-Type", mw.FormDataContentType())
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
 	return a.do(req)
 }
 

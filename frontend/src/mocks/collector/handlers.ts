@@ -12,6 +12,7 @@ import {
     type CollectorSystem,
     type QuestionnaireInput,
 } from '../../api/collector/types';
+import { REGISTRY_TIMEOUT_INN, registry } from '../data';
 import { mockFailure } from '../handlers';
 import { stepMs } from '../workflow';
 import { FAILING_COLLECTION_INN, scenarioByInn } from './scenarios';
@@ -33,6 +34,11 @@ function problem(status: number, code: string, title: string, detail?: string, e
 
 const validation = (status: 400 | 422, detail: string, errors: Field[]) => problem(status, 'VALIDATION_FAILED', 'Ошибка в данных', detail, errors);
 const notFound = (detail: string) => problem(404, 'NOT_FOUND', 'Не найдено', detail);
+const isTestUser = (id: string | undefined) => COLLECTOR_TEST_USERS.some((u) => u.id === id);
+/** Content-Disposition как у Go (mime.FormatMediaType): не-ASCII имя — через filename*. */
+function attachment(name: string) {
+    return /^[\x20-\x7e]*$/.test(name) && !/["\\]/.test(name) ? `attachment; filename="${name}"` : `attachment; filename*=utf-8''${encodeURIComponent(name)}`;
+}
 
 const INN = /^(\d{10}|\d{12})$/;
 const PERSON_INN = /^\d{12}$/;
@@ -103,12 +109,72 @@ function toApplication(app: StoredCollectorApp, withKnown = false): CollectorApp
         product_code: q?.product_code,
         requested: q?.requested,
         purpose: q?.purpose,
-        documents: app.documents,
+        documents: app.documents.map((d) => {
+            const state = signatureState(app, d);
+            // тестовый профиль проверки — не выше VALID_WITH_WARNINGS
+            return { ...d, signature_state: state, signature_verdict: state === 'DONE' ? 'VALID_WITH_WARNINGS' : undefined };
+        }),
         collection_task_id: app.task_id,
         created_at: app.created_at,
         submitted_at: app.submitted_ms === undefined ? undefined : iso(app.submitted_ms),
         updated_at: app.updated_at,
     };
+}
+
+/** Подпись worker проверяет после сбора: PENDING → DONE через два шага конвейера. */
+function signatureState(app: StoredCollectorApp, doc: CollectorDocument): CollectorDocument['signature_state'] {
+    if (doc.signature_state !== 'PENDING' || app.submitted_ms === undefined) return doc.signature_state;
+    return Date.now() - app.submitted_ms >= 2 * stepMs() ? 'DONE' : 'PENDING';
+}
+
+/** Отчёт worker'а подписи (signature.Report) — тестовый профиль, как у data-collector. */
+function signatureReport(app: StoredCollectorApp, requested: CollectorDocument) {
+    // по id .sig — отчёт этой подписи о подписанном ею документе
+    const doc = requested.type === 'SIGNATURE' ? (app.documents.find((d) => d.id === requested.signed_document_id) ?? requested) : requested;
+    const sig = requested.type === 'SIGNATURE' ? requested : app.documents.find((d) => d.signed_document_id === doc.id);
+    const director = app.questionnaire?.director;
+    const signer = director ? `${director.last_name} ${director.first_name} ${director.middle_name ?? ''}`.trim() : app.representative.full_name;
+    const at = iso((app.submitted_ms ?? Date.now()) + 2 * stepMs());
+    const ok = { status: 'VERIFIED' };
+    return {
+        id: `sigr_${(sig ?? doc).id?.slice(4)}`,
+        profile: 'TEST',
+        profile_notice: 'Профиль TEST: подпись проверена тестовыми корнями и моками реестров. Это не проверка УКЭП, поэтому вердикт не выше VALID_WITH_WARNINGS.',
+        file_name: doc.file_name,
+        signature_file_name: sig?.file_name,
+        format: 'CADES_BES',
+        decision: 'VERIFIED',
+        verdict: 'VALID_WITH_WARNINGS',
+        policy: doc.type === 'FINANCIAL_STATEMENTS' ? 'FINANCIAL_STATEMENTS' : 'GENERIC',
+        policy_result: { satisfied: true, message: 'подпись проверена по профилю TEST' },
+        stages: { integrity: ok, format: ok, certificate: ok, identity: ok, authority: ok, decision: ok },
+        signing_time: { value: app.created_at, source: 'SIGNED_ATTRIBUTE' },
+        signer: { kind: 'INDIVIDUAL', full_name: signer, position: 'Генеральный директор' },
+        certificate: { issuer: { name: 'Тестовый УЦ Альфа-Хак', accredited: false }, valid_to: '2027-12-31T00:00:00Z' },
+        limitations: ['аккредитация УЦ и квалифицированность сертификата не проверяются'],
+        verified_at: at,
+    };
+}
+
+/** Журнал заявки — как application_events у data-collector. */
+function timelineOf(app: StoredCollectorApp) {
+    const events: { id: string; at: string; type: string; message: string; actor_kind: 'CLIENT' | 'SYSTEM' }[] = [
+        { id: 'evt_1', at: app.created_at, type: 'application.created', message: 'Заявка создана', actor_kind: 'CLIENT' },
+    ];
+    const status = statusOf(app);
+    if (app.submitted_ms !== undefined) {
+        events.push({ id: 'evt_2', at: iso(app.submitted_ms), type: 'application.submitted', message: 'Заявка отправлена на рассмотрение', actor_kind: 'CLIENT' });
+    }
+    if (status === 'ENRICHING' || status === 'VERIFYING') {
+        events.push({ id: 'evt_3', at: iso((app.submitted_ms ?? 0) + stepMs()), type: 'enrich.started', message: 'Начали собирать данные о компании', actor_kind: 'SYSTEM' });
+    }
+    if (status === 'VERIFYING') {
+        events.push({ id: 'evt_4', at: iso((app.submitted_ms ?? 0) + 2 * stepMs()), type: 'enrich.completed', message: 'Данные о компании собраны', actor_kind: 'SYSTEM' });
+    }
+    if (toTask(app).status === 'FAILED') {
+        events.push({ id: 'evt_4', at: iso((app.submitted_ms ?? 0) + 2 * stepMs()), type: 'enrich.failed', message: 'Сбор данных о компании не удался', actor_kind: 'SYSTEM' });
+    }
+    return events.reverse();
 }
 
 /** Системы без входных данных (domain.SkippedSystems) — с причиной. */
@@ -393,6 +459,12 @@ export const collectorHandlers = [
 
         const inn = company.inn;
         const role = rep.role as CollectorRole;
+        const liquidated = registry.find((r) => r.inn === inn && r.registry_status && r.registry_status !== 'ACTIVE');
+        if (liquidated) {
+            return validation(422, 'ошибка в данных заявителя', [
+                { field: 'company.inn', code: 'company_liquidated', message: 'компания ликвидирована — кредит на неё не оформить' },
+            ]);
+        }
         // вошёл по токену — заявка от его имени: ФИО из профиля, черновик по компании — его
         const { user } = authenticate(request);
         if (user && !user.roles.includes('CLIENT')) return problem(403, 'FORBIDDEN', 'Forbidden', 'заявку на кредит подаёт клиент, а не сотрудник банка');
@@ -459,6 +531,10 @@ export const collectorHandlers = [
         }
         const app = readCollector().apps.find((a) => a.id === params.id);
         if (!app) return notFound('заявка не найдена');
+        // анкету отправляет только автор заявки; заявку тестового пользователя — только с его токеном
+        const { user: actor } = authenticate(request);
+        if (actor && actor.id !== app.representative.id) return problem(403, 'FORBIDDEN', 'Forbidden', 'анкету отправляет тот, кто оформил заявку');
+        if (!actor && isTestUser(app.representative.id)) return unauthorized('заявка оформлена тестовым пользователем — нужен его токен');
 
         let raw: unknown;
         let files: File[] = [];
@@ -522,5 +598,115 @@ export const collectorHandlers = [
         const app = readCollector().apps.find((a) => a.task_id === params.id);
         if (!app) return notFound('задача не найдена');
         return HttpResponse.json(toTask(app));
+    }),
+
+    http.get(url('/applicants'), async ({ request }) => {
+        await delay(200);
+        const { user } = authenticate(request);
+        if (!user) return unauthorized('нужен токен: Authorization: Bearer mock.<user_id>');
+        const items = meOf(user).companies.map((c) => {
+            // реквизиты — после сбора по компании (как companies.registry у data-collector)
+            const scenario = scenarioByInn(c.inn);
+            const collected = scenario && readCollector().apps.some((a) => a.company.inn === c.inn && statusOf(a) === 'VERIFYING');
+            const prefill = registry.find((r) => r.inn === c.inn);
+            return {
+                id: c.applicant_id,
+                inn: c.inn,
+                applicant_type: c.inn.length === 12 ? 'SOLE_PROPRIETOR' : 'LEGAL_ENTITY',
+                short_name: collected ? scenario.egrulName : c.short_name,
+                ...(collected && {
+                    ogrn: scenario.ogrn,
+                    full_name: prefill?.full_name,
+                    registration_date: prefill?.registration_date,
+                    director_name: prefill?.director_name,
+                    registry_status: 'ACTIVE',
+                }),
+                my_role: c.role,
+                can_sign: c.can_sign,
+            };
+        });
+        return HttpResponse.json({ items });
+    }),
+
+    http.get(url('/applications'), async ({ request }) => {
+        await delay(200);
+        const { user } = authenticate(request);
+        if (!user) return unauthorized('нужен токен: Authorization: Bearer mock.<user_id>');
+        const params = new URL(request.url).searchParams;
+        const statuses = (params.get('status') ?? '')
+            .split(',')
+            .map((x) => x.trim().toUpperCase())
+            .filter(Boolean);
+        if (statuses.some((x) => !['DRAFT', 'SUBMITTED', 'ENRICHING', 'VERIFYING'].includes(x))) {
+            return validation(422, 'неизвестный статус', [{ field: 'status', code: 'invalid_value', message: 'допустимые значения: DRAFT, SUBMITTED, ENRICHING, VERIFYING' }]);
+        }
+        const companyId = params.get('company_id');
+        const onlyMine = params.get('mine') === 'true';
+        // заявки компаний пользователя — его и коллег по компании; черновики — только свои
+        const inns = new Set(meOf(user).companies.map((c) => c.inn));
+        const items = readCollector()
+            .apps.filter((a) => inns.has(a.company.inn) && (!companyId || a.company.id === companyId))
+            .filter((a) => (a.representative.id === user.id || (!onlyMine && a.submitted_ms !== undefined)))
+            .map((a) => toApplication(a))
+            .filter((a) => !statuses.length || statuses.includes(a.status ?? ''))
+            .sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+            .slice(0, 100);
+        return HttpResponse.json({ items });
+    }),
+
+    http.get(url('/applications/:id/timeline'), async ({ params }) => {
+        await delay(150);
+        const app = readCollector().apps.find((a) => a.id === params.id);
+        if (!app) return notFound('заявка не найдена');
+        return HttpResponse.json({ items: timelineOf(app) });
+    }),
+
+    http.get(url('/applications/:id/documents/:documentId/content'), async ({ params }) => {
+        await delay(150);
+        const app = readCollector().apps.find((a) => a.id === params.id);
+        const doc = app?.documents.find((d) => d.id === params.documentId);
+        if (!doc) return notFound('заявка или документ не найдены');
+        // содержимого мок не хранит — отдаём заглушку того же типа
+        return new HttpResponse(`Мок data-collector: ${doc.file_name}`, {
+            headers: { 'Content-Type': doc.mime_type ?? 'application/octet-stream', 'Content-Disposition': attachment(doc.file_name ?? 'document') },
+        });
+    }),
+
+    http.get(url('/applications/:id/documents/:documentId/signature-report'), async ({ params }) => {
+        await delay(150);
+        const app = readCollector().apps.find((a) => a.id === params.id);
+        const doc = app?.documents.find((d) => d.id === params.documentId);
+        if (!app || !doc) return notFound('заявка или документ не найдены');
+        const state = signatureState(app, doc);
+        // отчёт пишется и при FAILED (нет файла, внутренняя ошибка)
+        if (state !== 'DONE' && state !== 'FAILED') return problem(404, 'REPORT_NOT_READY', 'Не найдено', 'подпись этого документа ещё не проверяли');
+        return HttpResponse.json(signatureReport(app, doc));
+    }),
+
+    http.post(url('/counterparty/lookup'), async ({ request }) => {
+        await delay(300);
+        if (!authenticate(request).user) return unauthorized('нужен токен: Authorization: Bearer mock.<user_id>');
+        const { inn } = (await request.json().catch(() => ({}))) as { inn?: string | null };
+        if (inn === undefined || inn === null) return validation(400, 'тело запроса не прошло проверку', [{ field: 'inn', code: 'required', message: 'обязательное поле' }]);
+        if (!INN.test(inn)) return validation(422, 'неверный ИНН', [{ field: 'inn', code: 'invalid_format', message: 'ИНН — 10 цифр для юрлица или 12 для ИП' }]);
+        if (inn === REGISTRY_TIMEOUT_INN) {
+            await delay(1500);
+            return problem(504, 'UPSTREAM_TIMEOUT', 'Gateway timeout', 'ЕГРЮЛ не ответил — продолжайте, реквизиты соберём при сборе данных');
+        }
+        const found = registry.find((r) => r.inn === inn);
+        if (!found) return notFound('компания с таким ИНН не найдена в ЕГРЮЛ');
+        return HttpResponse.json({
+            inn,
+            applicant_type: found.applicant_type,
+            short_name: found.short_name ?? found.full_name,
+            full_name: found.full_name,
+            ogrn: found.ogrn,
+            kpp: found.kpp ?? undefined,
+            registration_date: found.registration_date,
+            director_name: found.director_name,
+            region: found.legal_address?.full,
+            registry_status: found.registry_status === 'ACTIVE' || !found.registry_status ? 'ACTIVE' : 'LIQUIDATED',
+            already_known: readCollector().apps.some((a) => a.company.inn === inn) || COLLECTOR_TEST_USERS.some((u) => u.companies.some((c) => c.inn === inn)),
+        });
     }),
 ];

@@ -7,7 +7,7 @@ import { Typography } from '@alfalab/core-components/typography';
 import { PlusMIcon } from '@alfalab/icons-glyph/PlusMIcon';
 import { Link } from 'react-router-dom';
 
-import { useCollectionsOf, useCollectorApplications } from '../../api/collector/queries';
+import { useCollectionsOf, useCollectorApplicants, useCollectorApplications } from '../../api/collector/queries';
 import { useApplicants, useApplications, useApplicationStatuses, useProducts } from '../../api/queries';
 import type { ApplicationStatusView, ApplicationSummary, CompanyAccess, Me } from '../../api/types';
 import { COLLECTION_FAILED, COLLECTOR_STATUS, collectorSummary } from '../../shared/lib/collector';
@@ -59,12 +59,16 @@ export function DashboardPage({ me, company }: Props) {
     const applicants = useApplicants();
     const applications = useApplications({ applicantId: company?.applicant_id });
 
-    const collector = useCollectorApplications(me.id);
-    const collections = useCollectionsOf(collector.items);
+    // заявки data-collector — всех компаний пользователя (его и коллег), с сервера
+    const collector = useCollectorApplications();
+    // черновик продолжает только автор: чужой (если сервис его вдруг отдаст) не показываем
+    const collectorItems = (collector.data ?? []).filter((a) => a.status !== 'DRAFT' || a.representative?.id === me.id);
+    const collections = useCollectionsOf(collectorItems);
+    const collectorApplicants = useCollectorApplicants();
 
     // черновики анкеты теперь в data-collector — демо-черновики моков не показываем
     const all = (applications.data ?? []).filter((a) => a.client_stage !== 'FILLING');
-    const fromCollector = collector.items.map((app) => ({ app, summary: collectorSummary(app, app.id ? readDraft(me.id, app.id) : undefined) }));
+    const fromCollector = collectorItems.map((app) => ({ app, summary: collectorSummary(app, app.id ? readDraft(me.id, app.id) : undefined) }));
     const active = all.filter((a) => ACTIVE_STAGES.includes(a.client_stage));
     const closed = all.filter((a) => !ACTIVE_STAGES.includes(a.client_stage));
     // у data-collector все заявки пока активные: дальше VERIFYING он статусы не ведёт
@@ -74,7 +78,11 @@ export function DashboardPage({ me, company }: Props) {
     const statuses = useApplicationStatuses(all.filter((a) => STAGES_WITH_TASKS.includes(a.client_stage)));
     const productName = (code: string) => products.data?.find((p) => p.code === code)?.name ?? 'Кредит';
     const tasks = buildTasks(active, statuses, productName);
-    const applicant = applicants.data?.find((a) => a.id === company?.applicant_id);
+    // реквизиты компании — из data-collector (ЕГРЮЛ после сбора), иначе из моков экранов 07–15
+    const profile = collectorApplicants.data?.find((a) => a.inn === company?.inn);
+    const legacy = applicants.data?.find((a) => a.id === company?.applicant_id || a.inn === company?.inn);
+    // у data-collector реквизиты появляются после сбора; до него — из моков
+    const applicant = profile?.ogrn ? profile : (legacy ?? profile);
     const { first, middle } = splitName(me.full_name);
 
     const filters: { id: Filter; label: string }[] = [
@@ -194,7 +202,7 @@ export function DashboardPage({ me, company }: Props) {
                 </section>
 
                 <aside className='dashboard__aside'>
-                    {company && <CompanyCard company={company} applicant={applicant} loading={applicants.isLoading} />}
+                    {company && <CompanyCard company={company} applicant={applicant} loading={collectorApplicants.isLoading && applicants.isLoading} />}
 
                     <section className='dashboard__card dashboard__card_size_s'>
                         <Typography.Title tag='h2' view='xsmall' font='system'>

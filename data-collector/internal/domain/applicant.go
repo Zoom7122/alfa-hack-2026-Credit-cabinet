@@ -58,6 +58,7 @@ type Representative struct {
 	INN      string // ИНН физлица; может быть пустым
 	Role     RepresentativeRole
 	CanSign  bool
+	HasLogin bool // тестовый пользователь (persona): входит по мок-входу, анкету без его токена не отправить
 }
 
 // Company — компания или ИП; в API — Applicant.
@@ -81,6 +82,7 @@ type CompanyCard struct {
 	RegistrationDate string // YYYY-MM-DD
 	DirectorName     string
 	Region           string
+	TerminatedOn     string // YYYY-MM-DD: компания ликвидирована (в выписке есть дата прекращения)
 }
 
 // Name — как называть компанию: короткое имя, если есть.
@@ -100,6 +102,11 @@ const (
 	ApplicationEnriching ApplicationStatus = "ENRICHING" // worker опрашивает системы
 	ApplicationVerifying ApplicationStatus = "VERIFYING" // данные собраны, дальше — проверки
 )
+
+// Valid — статус из тех, что ставит модуль.
+func (s ApplicationStatus) Valid() bool {
+	return s == ApplicationDraft || s == ApplicationSubmitted || s == ApplicationEnriching || s == ApplicationVerifying
+}
 
 // Цели кредита (PurposeCode в api/openapi.yaml).
 var PurposeCodes = []string{"WORKING_CAPITAL", "EQUIPMENT", "VEHICLE", "REAL_ESTATE", "REFINANCING",

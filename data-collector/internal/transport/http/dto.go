@@ -1,6 +1,8 @@
 package httptransport
 
 import (
+	"cmp"
+	"slices"
 	"time"
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/domain"
@@ -223,8 +225,10 @@ type documentResponse struct {
 	SizeBytes int64  `json:"size_bytes" example:"48213"`
 	SHA256    string `json:"sha256"`
 	// У открепленной подписи (type=SIGNATURE) — какой документ она подписывает.
-	SignedDocumentID string    `json:"signed_document_id,omitempty"`
-	SignatureState   string    `json:"signature_state" enums:"NOT_SIGNED,PENDING,DONE,FAILED"`
+	SignedDocumentID string `json:"signed_document_id,omitempty"`
+	SignatureState   string `json:"signature_state" enums:"NOT_SIGNED,PENDING,DONE,FAILED"`
+	// Итог проверки подписи (после DONE или FAILED); нет — подпись не проверяли.
+	SignatureVerdict string    `json:"signature_verdict,omitempty" enums:"VALID,VALID_WITH_WARNINGS,INVALID,INDETERMINATE"`
 	RecognitionState string    `json:"recognition_state" enums:"NOT_APPLICABLE,PENDING,PROCESSING,DONE,FAILED"`
 	UploadedAt       time.Time `json:"uploaded_at"`
 } //	@name	Document
@@ -306,7 +310,7 @@ func toDocumentResponses(docs []domain.Document) []documentResponse {
 	for _, d := range docs {
 		out = append(out, documentResponse{ID: d.ID, Type: string(d.Type), FileName: d.FileName, MimeType: d.MimeType,
 			SizeBytes: d.SizeBytes, SHA256: d.SHA256, SignedDocumentID: d.SignedDocumentID,
-			SignatureState: string(d.SignatureState), RecognitionState: string(d.RecognitionState), UploadedAt: d.UploadedAt})
+			SignatureState: string(d.SignatureState), SignatureVerdict: d.SignatureVerdict, RecognitionState: string(d.RecognitionState), UploadedAt: d.UploadedAt})
 	}
 	return out
 }
@@ -465,4 +469,130 @@ func toMeResponse(u domain.User) meResponse {
 func toTestUserResponse(u domain.User) testUserResponse {
 	return testUserResponse{ID: u.ID, FullName: u.FullName, Roles: []string{string(u.Role)}, Persona: u.Persona,
 		Companies: toCompanyAccess(u.Companies)}
+}
+
+// applicantProfileResponse — компания пользователя (Applicant в api/openapi.yaml): роль и реквизиты из ЕГРЮЛ.
+type applicantProfileResponse struct {
+	ID               string `json:"id" validate:"required" example:"apl_north_wind"`
+	INN              string `json:"inn" validate:"required" example:"7799000012"`
+	ApplicantType    string `json:"applicant_type" validate:"required" enums:"LEGAL_ENTITY,SOLE_PROPRIETOR"`
+	ShortName        string `json:"short_name" validate:"required" example:"ООО \"СЕВЕРНЫЙ ВЕТЕР\""`
+	FullName         string `json:"full_name,omitempty"`
+	OGRN             string `json:"ogrn,omitempty" example:"1217700412345"`
+	KPP              string `json:"kpp,omitempty"`
+	RegistrationDate string `json:"registration_date,omitempty" example:"2021-03-14"`
+	DirectorName     string `json:"director_name,omitempty"`
+	Region           string `json:"region,omitempty"`
+	// ACTIVE или LIQUIDATED (в выписке есть дата прекращения). Нет — реквизиты ещё не собирали.
+	RegistryStatus string `json:"registry_status,omitempty" enums:"ACTIVE,LIQUIDATED"`
+	MyRole         string `json:"my_role" validate:"required" enums:"OWNER,DIRECTOR,CFO,ACCOUNTANT,FINANCE_EMPLOYEE,BANKING_EMPLOYEE,AUTHORIZED_EMPLOYEE"`
+	CanSign        bool   `json:"can_sign" validate:"required"`
+} //	@name	ApplicantProfile
+
+type applicantsResponse struct {
+	Items []applicantProfileResponse `json:"items" validate:"required"`
+} //	@name	Applicants
+
+type applicationsResponse struct {
+	Items []applicationResponse `json:"items" validate:"required"`
+} //	@name	Applications
+
+// timelineEventResponse — событие журнала заявки для клиента.
+type timelineEventResponse struct {
+	ID string    `json:"id" validate:"required"`
+	At time.Time `json:"at" validate:"required"`
+	// Тип события модуля: application.created, application.submitted, enrich.started, enrich.completed, enrich.failed,
+	// document.signatures_verified.
+	Type       string `json:"type" validate:"required" example:"enrich.completed"`
+	Message    string `json:"message" validate:"required" example:"Данные о компании собраны"`
+	FromStatus string `json:"from_status,omitempty"`
+	ToStatus   string `json:"to_status,omitempty"`
+	ActorKind  string `json:"actor_kind" validate:"required" enums:"CLIENT,SYSTEM"`
+} //	@name	TimelineEvent
+
+type timelineResponse struct {
+	Items []timelineEventResponse `json:"items" validate:"required"`
+} //	@name	Timeline
+
+type lookupRequest struct {
+	INN *string `json:"inn" binding:"required" example:"7799000012"`
+} //	@name	CounterpartyLookupRequest
+
+// counterpartyResponse — реквизиты из ЕГРЮЛ/ЕГРИП (CounterpartyPrefill в api/openapi.yaml).
+type counterpartyResponse struct {
+	INN              string `json:"inn" validate:"required" example:"7799000012"`
+	ApplicantType    string `json:"applicant_type" validate:"required" enums:"LEGAL_ENTITY,SOLE_PROPRIETOR"`
+	ShortName        string `json:"short_name" validate:"required" example:"ООО \"СЕВЕРНЫЙ ВЕТЕР\""`
+	FullName         string `json:"full_name" validate:"required"`
+	OGRN             string `json:"ogrn,omitempty" example:"1217700412345"`
+	KPP              string `json:"kpp,omitempty"`
+	RegistrationDate string `json:"registration_date,omitempty" example:"2021-03-14"`
+	DirectorName     string `json:"director_name,omitempty" example:"Ковалёв Игорь Сергеевич"`
+	Region           string `json:"region,omitempty"`
+	RegistryStatus   string `json:"registry_status" validate:"required" enums:"ACTIVE,LIQUIDATED"`
+	// Компания уже есть в системе: по ней подавали заявку.
+	AlreadyKnown bool `json:"already_known" validate:"required"`
+} //	@name	CounterpartyPrefill
+
+func registryStatus(card domain.CompanyCard) string {
+	if card.TerminatedOn != "" {
+		return "LIQUIDATED"
+	}
+	return "ACTIVE"
+}
+
+func toApplicantProfile(p domain.CompanyProfile) applicantProfileResponse {
+	r := applicantProfileResponse{ID: p.ID, INN: p.INN, ApplicantType: string(p.Type), ShortName: p.Name, OGRN: p.OGRN,
+		MyRole: string(p.Role), CanSign: p.CanSign}
+	if c := p.Card; c != nil {
+		r.FullName, r.KPP, r.RegistrationDate, r.DirectorName, r.Region = c.FullName, c.KPP, c.RegistrationDate, c.DirectorName, c.Region
+		r.RegistryStatus = registryStatus(*c)
+		if c.OGRN != "" {
+			r.OGRN = c.OGRN
+		}
+	}
+	return r
+}
+
+func toCounterparty(c domain.CompanyCard, known bool) counterpartyResponse {
+	return counterpartyResponse{INN: c.INN, ApplicantType: string(c.Type), ShortName: c.Name(), FullName: c.FullName, OGRN: c.OGRN,
+		KPP: c.KPP, RegistrationDate: c.RegistrationDate, DirectorName: c.DirectorName, Region: c.Region,
+		RegistryStatus: registryStatus(c), AlreadyKnown: known}
+}
+
+// eventMessages — тексты для клиента у событий без сохранённого message. Остальные события — служебные.
+var eventMessages = map[string]string{
+	"application.created":          "Черновик заявки создан",
+	"application.submitted":        "Анкета отправлена",
+	"enrich.started":               "Начали собирать данные о компании",
+	"enrich.completed":             "Данные о компании собраны",
+	"enrich.failed":                "Сбор данных о компании не удался",
+	"document.signatures_verified": "Проверили электронную подпись документа",
+}
+
+func toTimelineEvent(e domain.ApplicationEvent) (timelineEventResponse, bool) {
+	msg := e.Message
+	if msg == "" {
+		msg = eventMessages[e.Type]
+	}
+	if msg == "" {
+		return timelineEventResponse{}, false
+	}
+	actor := "SYSTEM"
+	if e.ActorID != "" {
+		actor = "CLIENT"
+	}
+	return timelineEventResponse{ID: e.ID, At: e.At, Type: e.Type, Message: msg, FromStatus: string(e.From),
+		ToStatus: string(e.To), ActorKind: actor}, true
+}
+
+// sortByOrder — компании в порядке профиля пользователя; которых нет в профиле — в конце.
+func sortByOrder(items []applicantProfileResponse, order map[string]int) {
+	rank := func(id string) int {
+		if i, ok := order[id]; ok {
+			return i
+		}
+		return len(order)
+	}
+	slices.SortStableFunc(items, func(a, b applicantProfileResponse) int { return cmp.Compare(rank(a.ID), rank(b.ID)) })
 }

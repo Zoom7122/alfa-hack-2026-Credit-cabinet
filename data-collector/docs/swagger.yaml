@@ -25,6 +25,72 @@ definitions:
         - SOLE_PROPRIETOR
         type: string
     type: object
+  ApplicantProfile:
+    properties:
+      applicant_type:
+        enum:
+        - LEGAL_ENTITY
+        - SOLE_PROPRIETOR
+        type: string
+      can_sign:
+        type: boolean
+      director_name:
+        type: string
+      full_name:
+        type: string
+      id:
+        example: apl_north_wind
+        type: string
+      inn:
+        example: "7799000012"
+        type: string
+      kpp:
+        type: string
+      my_role:
+        enum:
+        - OWNER
+        - DIRECTOR
+        - CFO
+        - ACCOUNTANT
+        - FINANCE_EMPLOYEE
+        - BANKING_EMPLOYEE
+        - AUTHORIZED_EMPLOYEE
+        type: string
+      ogrn:
+        example: "1217700412345"
+        type: string
+      region:
+        type: string
+      registration_date:
+        example: "2021-03-14"
+        type: string
+      registry_status:
+        description: ACTIVE или LIQUIDATED (в выписке есть дата прекращения). Нет
+          — реквизиты ещё не собирали.
+        enum:
+        - ACTIVE
+        - LIQUIDATED
+        type: string
+      short_name:
+        example: ООО "СЕВЕРНЫЙ ВЕТЕР"
+        type: string
+    required:
+    - applicant_type
+    - can_sign
+    - id
+    - inn
+    - my_role
+    - short_name
+    type: object
+  Applicants:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/ApplicantProfile'
+        type: array
+    required:
+    - items
+    type: object
   Application:
     properties:
       applicant:
@@ -69,6 +135,15 @@ definitions:
         type: string
       updated_at:
         type: string
+    type: object
+  Applications:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/Application'
+        type: array
+    required:
+    - items
     type: object
   CollectionSource:
     properties:
@@ -217,6 +292,58 @@ definitions:
     required:
     - inn
     type: object
+  CounterpartyLookupRequest:
+    properties:
+      inn:
+        example: "7799000012"
+        type: string
+    required:
+    - inn
+    type: object
+  CounterpartyPrefill:
+    properties:
+      already_known:
+        description: 'Компания уже есть в системе: по ней подавали заявку.'
+        type: boolean
+      applicant_type:
+        enum:
+        - LEGAL_ENTITY
+        - SOLE_PROPRIETOR
+        type: string
+      director_name:
+        example: Ковалёв Игорь Сергеевич
+        type: string
+      full_name:
+        type: string
+      inn:
+        example: "7799000012"
+        type: string
+      kpp:
+        type: string
+      ogrn:
+        example: "1217700412345"
+        type: string
+      region:
+        type: string
+      registration_date:
+        example: "2021-03-14"
+        type: string
+      registry_status:
+        enum:
+        - ACTIVE
+        - LIQUIDATED
+        type: string
+      short_name:
+        example: ООО "СЕВЕРНЫЙ ВЕТЕР"
+        type: string
+    required:
+    - already_known
+    - applicant_type
+    - full_name
+    - inn
+    - registry_status
+    - short_name
+    type: object
   Document:
     properties:
       file_name:
@@ -244,6 +371,15 @@ definitions:
         - PENDING
         - DONE
         - FAILED
+        type: string
+      signature_verdict:
+        description: Итог проверки подписи (после DONE или FAILED); нет — подпись
+          не проверяли.
+        enum:
+        - VALID
+        - VALID_WITH_WARNINGS
+        - INVALID
+        - INDETERMINATE
         type: string
       signed_document_id:
         description: У открепленной подписи (type=SIGNATURE) — какой документ она
@@ -527,6 +663,46 @@ definitions:
         type: array
     required:
     - items
+    type: object
+  Timeline:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/TimelineEvent'
+        type: array
+    required:
+    - items
+    type: object
+  TimelineEvent:
+    properties:
+      actor_kind:
+        enum:
+        - CLIENT
+        - SYSTEM
+        type: string
+      at:
+        type: string
+      from_status:
+        type: string
+      id:
+        type: string
+      message:
+        example: Данные о компании собраны
+        type: string
+      to_status:
+        type: string
+      type:
+        description: |-
+          Тип события модуля: application.created, application.submitted, enrich.started, enrich.completed, enrich.failed,
+          document.signatures_verified.
+        example: enrich.completed
+        type: string
+    required:
+    - actor_kind
+    - at
+    - id
+    - message
+    - type
     type: object
   domain.Account:
     properties:
@@ -890,6 +1066,30 @@ info:
   version: "0.2"
 paths:
   /applicants:
+    get:
+      description: |-
+        Компании, от имени которых действует вошедший пользователь, с его ролью и реквизитами из ЕГРЮЛ
+        (после сбора данных; до него — только ИНН и название). Первая — основная (заведённая тестовому пользователю).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Applicants'
+        "401":
+          description: нет или неверный токен
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
+      summary: Компании текущего пользователя
+      tags:
+      - cabinet
     post:
       consumes:
       - application/json
@@ -1026,6 +1226,48 @@ paths:
       summary: 'Зарегистрировать заявителя: кто оформляет кредит и за какую компанию'
       tags:
       - applicants
+  /applications:
+    get:
+      description: |-
+        Заявки всех компаний вошедшего пользователя — его и коллег по компании, новые сверху (до 100).
+        Черновики — только свои: чужой черновик не виден и не отправляется.
+      parameters:
+      - description: только эта компания (apl_…)
+        in: query
+        name: company_id
+        type: string
+      - description: 'статусы через запятую: DRAFT,SUBMITTED,ENRICHING,VERIFYING'
+        in: query
+        name: status
+        type: string
+      - description: true — только заявки, оформленные самим пользователем
+        in: query
+        name: mine
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Applications'
+        "401":
+          description: нет или неверный токен
+          schema:
+            $ref: '#/definitions/Problem'
+        "422":
+          description: неизвестный статус
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
+      summary: Заявки компаний пользователя
+      tags:
+      - cabinet
   /applications/{id}:
     get:
       description: |-
@@ -1055,6 +1297,76 @@ paths:
       security:
       - bearer: []
       summary: Заявка
+      tags:
+      - applications
+  /applications/{id}/documents/{documentId}/content:
+    get:
+      parameters:
+      - description: id заявки (app_…)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: id документа (doc_…)
+        in: path
+        name: documentId
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "404":
+          description: заявки или документа нет
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
+      summary: Файл документа заявки
+      tags:
+      - applications
+  /applications/{id}/documents/{documentId}/signature-report:
+    get:
+      description: |-
+        Последний отчёт worker'а подписи по документу или его открепленной подписи (signature_reports.report):
+        итог (decision, verdict), этапы проверки с причинами, подписант, сертификат, время подписи, политика.
+      parameters:
+      - description: id заявки (app_…)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: id документа (doc_…)
+        in: path
+        name: documentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: отчёт (signature.Report)
+          schema:
+            type: object
+        "404":
+          description: заявки или документа нет (NOT_FOUND) или подпись ещё не проверяли
+            (REPORT_NOT_READY)
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
+      summary: Отчёт проверки электронной подписи
       tags:
       - applications
   /applications/{id}/questionnaire:
@@ -1385,6 +1697,37 @@ paths:
         из моков'
       tags:
       - questionnaires
+  /applications/{id}/timeline:
+    get:
+      description: |-
+        События заявки по времени: создание, отправка анкеты, начало и итог сбора данных, проверка подписи.
+        Служебные события без текста для клиента не отдаются.
+      parameters:
+      - description: id заявки (app_…)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Timeline'
+        "404":
+          description: заявки нет
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
+      summary: Журнал заявки для клиента
+      tags:
+      - applications
   /auth/mock-login:
     post:
       consumes:
@@ -1507,6 +1850,52 @@ paths:
       summary: Состояние сбора данных по анкете
       tags:
       - collections
+  /counterparty/lookup:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Синхронный запрос в ЕГРЮЛ/ЕГРИП (эмулятор mock-api) — подсказка на шаге «Компания» до регистрации.
+        already_known — компания уже есть в системе (по ней подавали заявку). Нужен токен.
+      parameters:
+      - description: ИНН
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/CounterpartyLookupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/CounterpartyPrefill'
+        "400":
+          description: битый JSON, нет inn
+          schema:
+            $ref: '#/definitions/Problem'
+        "401":
+          description: нет или неверный токен
+          schema:
+            $ref: '#/definitions/Problem'
+        "404":
+          description: в реестре нет
+          schema:
+            $ref: '#/definitions/Problem'
+        "422":
+          description: неверный ИНН
+          schema:
+            $ref: '#/definitions/Problem'
+        "504":
+          description: 'реестр не ответил: таймаут, сбой или капча (UPSTREAM_TIMEOUT)'
+          schema:
+            $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
+      summary: Реквизиты компании по ИНН
+      tags:
+      - cabinet
   /me:
     get:
       description: 'Пользователь по токену `Authorization: Bearer mock.<user_id>`

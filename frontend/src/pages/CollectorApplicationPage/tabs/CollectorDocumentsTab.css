@@ -1,0 +1,36 @@
+.collector-documents {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--gap-24);
+}
+
+.collector-documents__main {
+    display: flex;
+    flex: 1 1 560px;
+    flex-direction: column;
+    gap: var(--gap-16);
+    min-width: 0;
+    overflow-x: auto;
+    padding: var(--gap-24);
+    border-radius: var(--border-radius-24);
+    background: var(--color-light-base-bg-primary);
+}
+
+.collector-documents__name {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-2);
+}
+
+.collector-documents__signature {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--gap-8);
+}
+
+.collector-documents__actions {
+    display: flex;
+    justify-content: flex-end;
+}

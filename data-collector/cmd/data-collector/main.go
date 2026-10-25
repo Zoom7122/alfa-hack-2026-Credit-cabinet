@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -29,6 +30,7 @@ import (
 	"time"
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/client/bank"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/client/mockapi"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/env"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/events"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/repository/postgres"
@@ -51,6 +53,12 @@ func run(log *slog.Logger) error {
 
 	addr := env.String("HTTP_ADDR", ":8081")
 	bankURL := env.String("BANK_API_URL", "http://localhost:8090/bank/v1")
+	// mock-api: синхронная подсказка реквизитов по ИНН (ЕГРЮЛ) для кабинета
+	mockAPIURL := env.String("MOCK_API_URL", "http://localhost:8090")
+	lookupTimeout, err := env.Duration("LOOKUP_TIMEOUT", 3*time.Second)
+	if err != nil {
+		return err
+	}
 	bankTimeout, err := env.Duration("BANK_API_TIMEOUT", 5*time.Second)
 	if err != nil {
 		return err
@@ -82,7 +90,9 @@ func run(log *slog.Logger) error {
 	// при отправке задача на сбор и события пишутся в outbox той же транзакцией, системы опрашивает worker
 	applications := postgres.NewApplicationRepository(pool, topic, documentsTopic)
 	collectionSvc := service.NewCollectionService(postgres.NewCollectionTaskRepository(pool))
-	applicationSvc := service.NewApplicationService(applications)
+	// ЕГРЮЛ эмулятора: подсказка по ИНН и проверка на ликвидацию при регистрации
+	registry := mockapi.New(mockAPIURL, lookupTimeout, "")
+	applicationSvc := service.NewApplicationService(applications, service.WithRegistryCheck(registry))
 
 	// мок-вход: тестовые пользователи заводятся при старте (их компании — со своими id, если уже есть)
 	authSvc := service.NewAuthService(postgres.NewUserRepository(pool))
@@ -94,6 +104,11 @@ func run(log *slog.Logger) error {
 	}
 	questionnaireSvc := service.NewQuestionnaireService(applications, files, collectionSvc)
 
+	// кабинет клиента: компании и заявки пользователя, журнал, документы, отчёты о подписи, подсказка по ИНН
+	cabinetSvc := service.NewCabinetService(postgres.NewCabinetRepository(pool), applications,
+		registry,
+		service.FileOpenerFunc(func(key string) (io.ReadCloser, error) { return files.Open(key) }))
+
 	// внутренние данные банка: хендлер → сервис → клиент банка (без хранилища)
 	internalDataSvc := service.NewInternalDataService(bank.New(bankURL, bankTimeout))
 
@@ -104,6 +119,7 @@ func run(log *slog.Logger) error {
 		httptransport.NewCollectionHandler(collectionSvc, log),
 		httptransport.NewInternalDataHandler(internalDataSvc, log),
 		httptransport.WithAuth(httptransport.NewAuthHandler(authSvc, log)),
+		httptransport.WithCabinet(httptransport.NewCabinetHandler(cabinetSvc, log)),
 	)
 
 	srv := &http.Server{

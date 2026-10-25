@@ -512,6 +512,7 @@ func (*Client) CompanyCard(fnsData json.RawMessage) (domain.CompanyCard, bool) {
 				G  string `json:"g"`  // «ГЕНЕРАЛЬНЫЙ ДИРЕКТОР: ФИО»
 				K  string `json:"k"`  // ul — юрлицо, fl — ИП
 				RN string `json:"rn"` // регион
+				E  string `json:"e"`  // дата прекращения ДД.ММ.ГГГГ — у ликвидированных
 			} `json:"rows"`
 		} `json:"egrul"`
 	}
@@ -529,6 +530,9 @@ func (*Client) CompanyCard(fnsData json.RawMessage) (domain.CompanyCard, bool) {
 	}
 	if _, name, ok := strings.Cut(row.G, ":"); ok {
 		card.DirectorName = strings.TrimSpace(name)
+	}
+	if t, err := time.Parse("02.01.2006", row.E); err == nil {
+		card.TerminatedOn = t.Format(time.DateOnly)
 	}
 	return card, true
 }

@@ -96,6 +96,8 @@ make swagger            # перегенерировать docs/ после пр
 | `MAX_FILE_SIZE_MB` | API, worker подписи | `20` | лимит одного файла |
 | `BANK_API_URL` | API | `http://localhost:8090/bank/v1` | корень старого API банка (`/check-mock`) |
 | `BANK_API_TIMEOUT` | API | `5s` | таймаут одного запроса к старому API банка |
+| `MOCK_API_URL` | API | `http://localhost:8090` | эмулятор внешних систем: ЕГРЮЛ для подсказки по ИНН (`/counterparty/lookup`) |
+| `LOOKUP_TIMEOUT` | API | `3s` | таймаут подсказки по ИНН; дольше — `504 UPSTREAM_TIMEOUT` |
 | `KAFKA_BROKERS` | publisher, worker'ы | `localhost:9094` | брокеры через запятую |
 | `KAFKA_TOPIC_PARTITIONS` | publisher, worker'ы | `3` | партиций у топика, если его надо создать |
 | `PUBLISHER_POLL_INTERVAL` | publisher | `500ms` | пауза, когда в outbox пусто. При ошибках подряд пауза удваивается, но не дольше 5 с |
@@ -280,6 +282,21 @@ curl -s -X POST localhost:8081/api/v1/applicants -H 'Authorization: Bearer mock.
 ### `GET /api/v1/applications/{id}` — заявка
 
 Номер, статус, компания (после сбора — имя и ОГРН из ЕГРЮЛ), представитель с ролью и `can_sign`, продукт, сумма и срок, цель, документы и `collection_task_id` — последняя задача на сбор. Ошибки: `404` — заявки нет.
+
+### Кабинет клиента
+
+Для экранов кабинета (главная, вкладки «Документы» и «История», шаг «Компания»):
+
+- `GET /applicants` (нужен токен) — компании пользователя с его ролью, `can_sign` и реквизитами из ЕГРЮЛ после сбора (ОГРН, дата регистрации); основная — первой.
+- `GET /applications?company_id=&status=DRAFT,SUBMITTED&mine=true` (нужен токен) — заявки компаний пользователя, его и коллег, новые сверху, до 100. Черновики коллег не отдаются; `mine=true` — только свои. Неизвестный статус — `422`.
+- `GET /applications/{id}/timeline` — журнал заявки для клиента: создание, отправка анкеты, сбор данных, проверка подписи (`type`, `at`, `from`/`to`, `actor_kind`, `message`).
+- `GET /applications/{id}/documents/{documentId}/content` — файл документа (`Content-Disposition: attachment`, имя по RFC 2231). Файла нет на диске — `404`.
+- `GET /applications/{id}/documents/{documentId}/signature-report` — последний отчёт worker'а подписи (JSON из `signature_reports.report`): по id документа — последний по любой его подписи, по id `.sig` — отчёт этой подписи. `404` с кодом `REPORT_NOT_READY` — подпись ещё не проверяли, `NOT_FOUND` — заявки или документа нет. Итог проверки есть и в списке документов заявки — `signature_verdict`.
+- `POST /counterparty/lookup` `{"inn": "7799000012"}` (нужен токен) — реквизиты из ЕГРЮЛ/ЕГРИП синхронно: название, ОГРН, КПП, дата регистрации, регион, руководитель, `registry_status` (`ACTIVE`/`LIQUIDATED`), `already_known`. Ошибки: `404` — в реестре нет, `422` — неверный ИНН, `504` (`UPSTREAM_TIMEOUT`) — реестр не ответил за `LOOKUP_TIMEOUT`, ответил ошибкой или капчей (причина — в логе).
+
+Регистрация (`POST /applicants`) тоже спрашивает ЕГРЮЛ: ликвидированную компанию не оформить (`422`, `company.inn` — `company_liquidated`); реестр не ответил — регистрация идёт как обычно. Анкету (`POST …/questionnaire`) отправляет только автор заявки: с чужим токеном — `403`, заявку тестового пользователя без токена — `401`.
+
+Журнал, файл и отчёт пока открыты без токена, как и `GET /applications/{id}`.
 
 ### `GET /api/v1/collections/{id}` — состояние сбора
 

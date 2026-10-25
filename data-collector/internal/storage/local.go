@@ -97,9 +97,18 @@ func (s *Local) Remove(keys ...string) {
 	}
 }
 
-// Open открывает файл документа на чтение.
+// Open открывает файл документа на чтение. Ключ не выходит за папку хранилища (ErrUnsafeKey),
+// файла нет — ErrNotFound.
 func (s *Local) Open(key string) (*os.File, error) {
-	return os.Open(s.path(key))
+	name, err := localName(key)
+	if err != nil {
+		return nil, err
+	}
+	f, err := os.OpenInRoot(s.root, name)
+	if err != nil {
+		return nil, classify(err)
+	}
+	return f, nil
 }
 
 func (s *Local) path(key string) string {

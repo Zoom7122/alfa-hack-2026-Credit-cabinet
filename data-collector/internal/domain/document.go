@@ -64,6 +64,7 @@ type Document struct {
 	UploadedBy       string // usr_…
 	SignedDocumentID string // у открепленной подписи — какой документ она подписывает
 	SignatureState   SignatureState
+	SignatureVerdict string // итог проверки подписи (VALID, VALID_WITH_WARNINGS, INVALID, INDETERMINATE); пусто — не проверяли
 	RecognitionState RecognitionState
 	UploadedAt       time.Time
 }

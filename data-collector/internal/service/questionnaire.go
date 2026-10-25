@@ -48,6 +48,9 @@ type Collector interface {
 
 // SubmitInput — анкета с формы, данные заявки и принятые файлы.
 type SubmitInput struct {
+	// ActorID — вошедший по токену пользователь; пусто — без токена. Анкету отправляет только автор
+	// заявки, а заявку тестового пользователя — только с его токеном.
+	ActorID       string
 	Age           int
 	MaritalStatus domain.MaritalStatus
 	ChildrenCount int
@@ -148,6 +151,12 @@ func (s *QuestionnaireService) Submit(ctx context.Context, applicationID string,
 	}
 	if !ok {
 		return Submitted{}, ErrNotFound
+	}
+	switch {
+	case in.ActorID != "" && in.ActorID != app.Representative.UserID:
+		return Submitted{}, ErrForbidden
+	case in.ActorID == "" && app.Representative.HasLogin:
+		return Submitted{}, ErrUnauthorized
 	}
 	if app.Status != domain.ApplicationDraft {
 		return Submitted{}, ErrInvalidTransition

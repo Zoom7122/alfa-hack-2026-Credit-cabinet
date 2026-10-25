@@ -16,6 +16,41 @@ const docTemplate = `{
     "basePath": "{{.BasePath}}",
     "paths": {
         "/applicants": {
+            "get": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "description": "Компании, от имени которых действует вошедший пользователь, с его ролью и реквизитами из ЕГРЮЛ\n(после сбора данных; до него — только ИНН и название). Первая — основная (заведённая тестовому пользователю).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cabinet"
+                ],
+                "summary": "Компании текущего пользователя",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/Applicants"
+                        }
+                    },
+                    "401": {
+                        "description": "нет или неверный токен",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -90,6 +125,69 @@ const docTemplate = `{
                 }
             }
         },
+        "/applications": {
+            "get": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "description": "Заявки всех компаний вошедшего пользователя — его и коллег по компании, новые сверху (до 100).\nЧерновики — только свои: чужой черновик не виден и не отправляется.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cabinet"
+                ],
+                "summary": "Заявки компаний пользователя",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "только эта компания (apl_…)",
+                        "name": "company_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "статусы через запятую: DRAFT,SUBMITTED,ENRICHING,VERIFYING",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "true — только заявки, оформленные самим пользователем",
+                        "name": "mine",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/Applications"
+                        }
+                    },
+                    "401": {
+                        "description": "нет или неверный токен",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "неизвестный статус",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/applications/{id}": {
             "get": {
                 "security": [
@@ -123,6 +221,111 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "заявки нет",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/documents/{documentId}/content": {
+            "get": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Файл документа заявки",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки (app_…)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "id документа (doc_…)",
+                        "name": "documentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "404": {
+                        "description": "заявки или документа нет",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/documents/{documentId}/signature-report": {
+            "get": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "description": "Последний отчёт worker'а подписи по документу или его открепленной подписи (signature_reports.report):\nитог (decision, verdict), этапы проверки с причинами, подписант, сертификат, время подписи, политика.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Отчёт проверки электронной подписи",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки (app_…)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "id документа (doc_…)",
+                        "name": "documentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "отчёт (signature.Report)",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "404": {
+                        "description": "заявки или документа нет (NOT_FOUND) или подпись ещё не проверяли (REPORT_NOT_READY)",
                         "schema": {
                             "$ref": "#/definitions/Problem"
                         }
@@ -226,6 +429,52 @@ const docTemplate = `{
                     },
                     "422": {
                         "description": "нарушено правило анкеты или файлов: формат, размер, пары подписей, больше 10 файлов",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/timeline": {
+            "get": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "description": "События заявки по времени: создание, отправка анкеты, начало и итог сбора данных, проверка подписи.\nСлужебные события без текста для клиента не отдаются.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Журнал заявки для клиента",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки (app_…)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/Timeline"
+                        }
+                    },
+                    "404": {
+                        "description": "заявки нет",
                         "schema": {
                             "$ref": "#/definitions/Problem"
                         }
@@ -411,6 +660,75 @@ const docTemplate = `{
                 }
             }
         },
+        "/counterparty/lookup": {
+            "post": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "description": "Синхронный запрос в ЕГРЮЛ/ЕГРИП (эмулятор mock-api) — подсказка на шаге «Компания» до регистрации.\nalready_known — компания уже есть в системе (по ней подавали заявку). Нужен токен.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cabinet"
+                ],
+                "summary": "Реквизиты компании по ИНН",
+                "parameters": [
+                    {
+                        "description": "ИНН",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CounterpartyLookupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/CounterpartyPrefill"
+                        }
+                    },
+                    "400": {
+                        "description": "битый JSON, нет inn",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "нет или неверный токен",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "в реестре нет",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "неверный ИНН",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "504": {
+                        "description": "реестр не ответил: таймаут, сбой или капча (UPSTREAM_TIMEOUT)",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/me": {
             "get": {
                 "security": [
@@ -483,6 +801,95 @@ const docTemplate = `{
                 }
             }
         },
+        "ApplicantProfile": {
+            "type": "object",
+            "required": [
+                "applicant_type",
+                "can_sign",
+                "id",
+                "inn",
+                "my_role",
+                "short_name"
+            ],
+            "properties": {
+                "applicant_type": {
+                    "type": "string",
+                    "enum": [
+                        "LEGAL_ENTITY",
+                        "SOLE_PROPRIETOR"
+                    ]
+                },
+                "can_sign": {
+                    "type": "boolean"
+                },
+                "director_name": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "apl_north_wind"
+                },
+                "inn": {
+                    "type": "string",
+                    "example": "7799000012"
+                },
+                "kpp": {
+                    "type": "string"
+                },
+                "my_role": {
+                    "type": "string",
+                    "enum": [
+                        "OWNER",
+                        "DIRECTOR",
+                        "CFO",
+                        "ACCOUNTANT",
+                        "FINANCE_EMPLOYEE",
+                        "BANKING_EMPLOYEE",
+                        "AUTHORIZED_EMPLOYEE"
+                    ]
+                },
+                "ogrn": {
+                    "type": "string",
+                    "example": "1217700412345"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "registration_date": {
+                    "type": "string",
+                    "example": "2021-03-14"
+                },
+                "registry_status": {
+                    "description": "ACTIVE или LIQUIDATED (в выписке есть дата прекращения). Нет — реквизиты ещё не собирали.",
+                    "type": "string",
+                    "enum": [
+                        "ACTIVE",
+                        "LIQUIDATED"
+                    ]
+                },
+                "short_name": {
+                    "type": "string",
+                    "example": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+                }
+            }
+        },
+        "Applicants": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ApplicantProfile"
+                    }
+                }
+            }
+        },
         "Application": {
             "type": "object",
             "properties": {
@@ -540,6 +947,20 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
+                }
+            }
+        },
+        "Applications": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Application"
+                    }
                 }
             }
         },
@@ -731,6 +1152,78 @@ const docTemplate = `{
                 }
             }
         },
+        "CounterpartyLookupRequest": {
+            "type": "object",
+            "required": [
+                "inn"
+            ],
+            "properties": {
+                "inn": {
+                    "type": "string",
+                    "example": "7799000012"
+                }
+            }
+        },
+        "CounterpartyPrefill": {
+            "type": "object",
+            "required": [
+                "already_known",
+                "applicant_type",
+                "full_name",
+                "inn",
+                "registry_status",
+                "short_name"
+            ],
+            "properties": {
+                "already_known": {
+                    "description": "Компания уже есть в системе: по ней подавали заявку.",
+                    "type": "boolean"
+                },
+                "applicant_type": {
+                    "type": "string",
+                    "enum": [
+                        "LEGAL_ENTITY",
+                        "SOLE_PROPRIETOR"
+                    ]
+                },
+                "director_name": {
+                    "type": "string",
+                    "example": "Ковалёв Игорь Сергеевич"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "inn": {
+                    "type": "string",
+                    "example": "7799000012"
+                },
+                "kpp": {
+                    "type": "string"
+                },
+                "ogrn": {
+                    "type": "string",
+                    "example": "1217700412345"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "registration_date": {
+                    "type": "string",
+                    "example": "2021-03-14"
+                },
+                "registry_status": {
+                    "type": "string",
+                    "enum": [
+                        "ACTIVE",
+                        "LIQUIDATED"
+                    ]
+                },
+                "short_name": {
+                    "type": "string",
+                    "example": "ООО \"СЕВЕРНЫЙ ВЕТЕР\""
+                }
+            }
+        },
         "Document": {
             "type": "object",
             "properties": {
@@ -766,6 +1259,16 @@ const docTemplate = `{
                         "PENDING",
                         "DONE",
                         "FAILED"
+                    ]
+                },
+                "signature_verdict": {
+                    "description": "Итог проверки подписи (после DONE или FAILED); нет — подпись не проверяли.",
+                    "type": "string",
+                    "enum": [
+                        "VALID",
+                        "VALID_WITH_WARNINGS",
+                        "INVALID",
+                        "INDETERMINATE"
                     ]
                 },
                 "signed_document_id": {
@@ -1156,6 +1659,60 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/TestUser"
                     }
+                }
+            }
+        },
+        "Timeline": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/TimelineEvent"
+                    }
+                }
+            }
+        },
+        "TimelineEvent": {
+            "type": "object",
+            "required": [
+                "actor_kind",
+                "at",
+                "id",
+                "message",
+                "type"
+            ],
+            "properties": {
+                "actor_kind": {
+                    "type": "string",
+                    "enum": [
+                        "CLIENT",
+                        "SYSTEM"
+                    ]
+                },
+                "at": {
+                    "type": "string"
+                },
+                "from_status": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Данные о компании собраны"
+                },
+                "to_status": {
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Тип события модуля: application.created, application.submitted, enrich.started, enrich.completed, enrich.failed,\ndocument.signatures_verified.",
+                    "type": "string",
+                    "example": "enrich.completed"
                 }
             }
         },

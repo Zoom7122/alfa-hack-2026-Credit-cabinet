@@ -28,6 +28,10 @@ export async function loginAs(page: Page, user: UserKey) {
 }
 
 /** Сразу положить токен мока, минуя экран входа. */
+/** Прогон против живого data-collector (E2E_COLLECTOR_LIVE=1): тесты на сбои и данные из моков пропускаются. */
+export const COLLECTOR_LIVE = process.env.E2E_COLLECTOR_LIVE === '1';
+export const MOCK_ONLY = 'только в моке data-collector';
+
 export async function seedToken(page: Page, user: UserKey) {
     await page.addInitScript(
         ([key, token]) => window.localStorage.setItem(key, token),

@@ -107,10 +107,18 @@ func (h *QuestionnaireHandler) submit(c *gin.Context) {
 		return
 	}
 
-	res, err := h.svc.Submit(c.Request.Context(), c.Param("id"), req.toSubmitInput(files))
+	in := req.toSubmitInput(files)
+	if user, ok := currentUser(c); ok {
+		in.ActorID = user.ID
+	}
+	res, err := h.svc.Submit(c.Request.Context(), c.Param("id"), in)
 	if err != nil {
 		var verr *service.ValidationError
 		switch {
+		case errors.Is(err, service.ErrForbidden):
+			writeProblem(c, forbiddenProblem("анкету отправляет тот, кто оформил заявку"))
+		case errors.Is(err, service.ErrUnauthorized):
+			writeProblem(c, unauthorizedProblem("заявка оформлена тестовым пользователем — нужен его токен: Authorization: Bearer mock.<user_id>"))
 		case errors.As(err, &verr):
 			writeProblem(c, fromValidationError(verr, "анкета не прошла проверку"))
 		case errors.Is(err, service.ErrNotFound):

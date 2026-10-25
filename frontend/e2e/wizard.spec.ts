@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 import { expect, type Page, test } from '@playwright/test';
 
-import { expectPath, seedToken, setMockFailures } from './helpers';
+import { COLLECTOR_LIVE, expectPath, MOCK_ONLY, seedToken, setMockFailures } from './helpers';
 
 /* Анкета на API data-collector (в тестах — его MSW-моки, src/mocks/collector). */
 
@@ -87,7 +87,7 @@ test.describe('Анкета — компания', () => {
         await page.goto(NEW);
         await page.getByLabel('ИНН компании или ИП').fill('7799000012');
         await expect(page.getByText('Нашли компанию в реестре')).toBeVisible();
-        await expect(page.getByLabel('Название')).toHaveValue('ООО «Северный ветер»');
+        await expect(page.getByLabel('Название')).toHaveValue(/ООО «Северный ветер»|ООО "СЕВЕРНЫЙ ВЕТЕР"/);
         await expect(page.getByLabel('Руководитель')).toHaveValue('Ковалёв Игорь Сергеевич');
         await expect(page.getByLabel('ФИО')).toHaveValue('Литвинова Марина Олеговна');
         // роль в своей компании — из профиля, сменить нельзя
@@ -105,20 +105,32 @@ test.describe('Анкета — компания', () => {
         await page.goto(NEW);
         // каждый раз новый ИНН: у живого сервиса компания из прошлого прогона уже была бы в профиле
         await page.getByLabel('ИНН компании или ИП').fill(`77${String(Date.now()).slice(-8)}`);
-        await expect(page.getByText('В подсказках реестра такой компании нет')).toBeVisible();
+        await expect(page.getByText('В ЕГРЮЛ такой компании нет')).toBeVisible();
         await chooseRole(page, 'Генеральный директор');
         await next(page);
         await expect(page).toHaveURL(/\/edit\/terms$/);
     });
 
     test('ликвидируемая компания — дальше нельзя', async ({ page }) => {
+        test.skip(COLLECTOR_LIVE, MOCK_ONLY);
         await page.goto(NEW);
         await page.getByLabel('ИНН компании или ИП').fill('7709876543');
-        await expect(page.getByText('Компания ликвидируется или реорганизуется')).toBeVisible();
+        await expect(page.getByText('Компания ликвидирована')).toBeVisible();
         await expect(page.getByRole('button', { name: 'Продолжить' })).toBeDisabled();
     });
 
+    test('реестр не ответил — плашка, можно продолжать', async ({ page }) => {
+        test.skip(COLLECTOR_LIVE, MOCK_ONLY);
+        await page.goto(NEW);
+        await page.getByLabel('ИНН компании или ИП').fill('7700000000');
+        await expect(page.getByText('Реестр сейчас не отвечает')).toBeVisible({ timeout: 10_000 });
+        await chooseRole(page, 'Генеральный директор');
+        await next(page);
+        await expect(page).toHaveURL(/\/edit\/terms$/);
+    });
+
     test('422 от data-collector — ошибка у поля', async ({ page }) => {
+        test.skip(COLLECTOR_LIVE, MOCK_ONLY);
         await page.goto(NEW);
         await setMockFailures(page, [{ method: 'POST', path: '/collector/api/v1/applicants$', status: 422, field: 'company.inn', times: 1 }]);
         await page.getByLabel('ИНН компании или ИП').fill('7799000012');
@@ -258,6 +270,7 @@ test.describe('Анкета — отправка', () => {
     });
 
     test('422 data-collector — ошибка разложена по шагам', async ({ page }) => {
+        test.skip(COLLECTOR_LIVE, MOCK_ONLY);
         await register(page);
         await toReview(page);
         await setMockFailures(page, [{ method: 'POST', path: '/questionnaire$', status: 422, field: 'director.inn', times: 1 }]);
@@ -297,6 +310,7 @@ test.describe('Анкета — надёжность', () => {
     });
 
     test('ошибка сервера у поля пропадает, когда поле исправили', async ({ page }) => {
+        test.skip(COLLECTOR_LIVE, MOCK_ONLY);
         await register(page);
         await toReview(page);
         await setMockFailures(page, [{ method: 'POST', path: '/questionnaire$', status: 422, field: 'director.inn', times: 1 }]);

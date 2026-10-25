@@ -16,7 +16,19 @@ async function enableMocks() {
     await createWorker({ api, collector }).start({ onUnhandledRequest: 'bypass', quiet: true });
 }
 
+/** Ключи прежних версий фронта: список заявок теперь отдаёт data-collector. */
+function dropLegacyKeys() {
+    try {
+        for (const key of Object.keys(localStorage)) {
+            if (key.startsWith('credit-cabinet:collector-apps:')) localStorage.removeItem(key);
+        }
+    } catch {
+        // хранилище недоступно — чистить нечего
+    }
+}
+
 function render() {
+    dropLegacyKeys();
     // файлы анкет, на которые не ссылается ни один черновик (отправленные, брошенные), — из IndexedDB
     void import('./pages/WizardPage/draft').then((m) => m.collectOrphanFiles());
     createRoot(document.getElementById('root')!).render(

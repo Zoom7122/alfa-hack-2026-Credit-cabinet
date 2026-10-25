@@ -84,6 +84,8 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
       BANK_API_URL: http://mock-api:8090/bank/v1
       BANK_API_TIMEOUT: 5s
+      # подсказка реквизитов по ИНН (POST /counterparty/lookup) — синхронно в ЕГРЮЛ эмулятора
+      MOCK_API_URL: http://mock-api:8090
       # файлы документов; этот же volume на чтение — у worker'а проверки подписи (и будущего OCR)
       DOCUMENTS_DIR: /data/documents
     volumes:

@@ -94,6 +94,19 @@ func (r *ApplicationRepository) Get(_ context.Context, id string) (domain.Applic
 	return r.s.application(id), true, nil
 }
 
+// List — заявки по id в том же порядке; пропавшие пропускаются.
+func (r *ApplicationRepository) List(_ context.Context, ids []string) ([]domain.Application, error) {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	out := make([]domain.Application, 0, len(ids))
+	for _, id := range ids {
+		if _, ok := r.s.applications[id]; ok {
+			out = append(out, r.s.application(id))
+		}
+	}
+	return out, nil
+}
+
 // Submit отправляет заявку: документы, анкета, задача на сбор, события в outbox.
 // domain.ErrApplicationNotDraft — заявка уже не черновик.
 func (r *ApplicationRepository) Submit(_ context.Context, sub domain.Submission) error {
@@ -149,6 +162,7 @@ func (s *store) application(id string) domain.Application {
 	app.Company = s.companies[a.companyID]
 	app.Representative = s.members[[2]string{a.userID, a.companyID}]
 	app.Representative.FullName = s.users[a.userID].FullName
+	_, app.Representative.HasLogin = s.personas[a.userID]
 	app.Documents = append([]domain.Document(nil), a.app.Documents...)
 	if app.UpdatedAt.IsZero() {
 		app.UpdatedAt = time.Now().UTC()
