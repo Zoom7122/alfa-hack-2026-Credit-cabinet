@@ -8,7 +8,7 @@ run:
 run-publisher:
 	go run ./cmd/outbox-publisher
 
-# Kafka → сбор со всех моков → raw_collections; нужны DATABASE_URL, KAFKA_BROKERS, MOCK_API_URL
+# Kafka → сбор внешних систем / обработка финансовых документов; нужны DATABASE_URL, KAFKA_BROKERS
 run-worker:
 	go run ./cmd/worker
 
