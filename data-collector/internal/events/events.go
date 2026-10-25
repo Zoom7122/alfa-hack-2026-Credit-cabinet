@@ -11,7 +11,7 @@ import (
 const (
 	// DefaultTopic — топик задач на сбор данных; читает worker сбора.
 	DefaultTopic = "data-collector.collection-tasks"
-	// DocumentsTopic — топик документов заявок; его будут читать worker'ы проверки ЭП и OCR.
+	// DocumentsTopic — топик документов заявок; его читает worker проверки ЭП, позже — OCR.
 	DocumentsTopic = "data-collector.documents"
 
 	// CollectionRequested — создана задача на сбор данных по анкете.
@@ -52,8 +52,9 @@ func NewCollectionRequested(t domain.CollectionTask) CollectionRequestedEvent {
 }
 
 // DocumentsSubmittedEvent — тело сообщения о документах заявки. Ключ — id заявки.
-// Файлы лежат в общем хранилище по storage_key; worker подписи берёт документы
-// с signature_state = PENDING, worker OCR — с recognition_state = PENDING.
+// Файлы лежат в общем хранилище по storage_key. Worker подписи берёт из события только id
+// и проверяет документы с подписью (signature_state = PENDING) и PDF/XML со встроенной;
+// worker OCR — с recognition_state = PENDING.
 type DocumentsSubmittedEvent struct {
 	Event         string        `json:"event"` // DocumentsSubmitted
 	ApplicationID string        `json:"application_id"`

@@ -33,12 +33,14 @@ var DocumentTypes = []DocumentType{DocFinancialStatements, DocTaxReturn, DocBank
 // Valid сообщает, входит ли значение в допустимый перечень.
 func (t DocumentType) Valid() bool { return slices.Contains(DocumentTypes, t) }
 
-// SignatureState — проверка электронной подписи документа (её сделает отдельный worker).
+// SignatureState — проверка электронной подписи документа (её делает worker подписи).
 type SignatureState string
 
 const (
 	SignatureNotSigned SignatureState = "NOT_SIGNED" // подписи нет (встроенную в PDF/XML worker найдёт сам)
 	SignaturePending   SignatureState = "PENDING"    // есть подпись, ждёт проверки
+	SignatureDone      SignatureState = "DONE"       // проверена: отчёт в signature_reports, вердикт — в signature_verdict
+	SignatureFailed    SignatureState = "FAILED"     // проверить не удалось: нет файла или внутренняя ошибка (отчёт тоже есть)
 )
 
 // RecognitionState — распознавание документа (его сделает отдельный worker OCR).

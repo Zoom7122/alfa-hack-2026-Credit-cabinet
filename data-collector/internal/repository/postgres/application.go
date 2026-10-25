@@ -181,12 +181,20 @@ func (r *ApplicationRepository) Get(ctx context.Context, id string) (domain.Appl
 		app.SubmittedAt = submittedAt.UTC()
 	}
 
-	rows, err := r.pool.Query(ctx, selectDocuments, id)
-	if err != nil {
-		return domain.Application{}, false, fmt.Errorf("select documents: %w", err)
+	if app.Documents, err = queryDocuments(ctx, r.pool, id); err != nil {
+		return domain.Application{}, false, err
 	}
-	app.Documents, err = pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.Document, error) {
-		d := domain.Document{ApplicationID: id}
+	return app, true, nil
+}
+
+// queryDocuments — документы заявки без удалённых, в порядке id.
+func queryDocuments(ctx context.Context, pool *pgxpool.Pool, applicationID string) ([]domain.Document, error) {
+	rows, err := pool.Query(ctx, selectDocuments, applicationID)
+	if err != nil {
+		return nil, fmt.Errorf("select documents: %w", err)
+	}
+	docs, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.Document, error) {
+		d := domain.Document{ApplicationID: applicationID}
 		var docType, signatureState, recognitionState string
 		err := row.Scan(&d.ID, &docType, &d.FileName, &d.MimeType, &d.SizeBytes, &d.SHA256, &d.StorageKey,
 			&d.UploadedBy, &d.SignedDocumentID, &signatureState, &recognitionState, &d.UploadedAt)
@@ -195,9 +203,9 @@ func (r *ApplicationRepository) Get(ctx context.Context, id string) (domain.Appl
 		return d, err
 	})
 	if err != nil {
-		return domain.Application{}, false, fmt.Errorf("read documents: %w", err)
+		return nil, fmt.Errorf("read documents: %w", err)
 	}
-	return app, true, nil
+	return docs, nil
 }
 
 // Submit одной транзакцией отправляет заявку: документы, анкета и сумма со сроком в applications

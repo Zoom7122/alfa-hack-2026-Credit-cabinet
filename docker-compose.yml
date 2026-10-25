@@ -84,7 +84,7 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
       BANK_API_URL: http://mock-api:8090/bank/v1
       BANK_API_TIMEOUT: 5s
-      # файлы документов; этот volume подключат и будущие worker'ы проверки подписи и OCR
+      # файлы документов; этот же volume на чтение — у worker'а проверки подписи (и будущего OCR)
       DOCUMENTS_DIR: /data/documents
     volumes:
       - documents:/data/documents
@@ -130,6 +130,32 @@ services:
         condition: service_healthy
       mock-api:
         condition: service_started
+    restart: unless-stopped
+
+  # Kafka (data-collector.documents) → проверка ЭП документов заявки: файлы — из volume documents
+  # (только чтение), полномочия — из собранных ответов ЕГРЮЛ и МЧД → signature_reports, documents.signature_state.
+  # Профиль TEST: тестовые корни и CRL из data-collector/testdata/signature/trust (go run ./tools/sigdemo),
+  # это не проверка УКЭП. В образ тестовые корни не входят — только монтируются здесь.
+  data-collector-signature-worker:
+    build: ./data-collector
+    entrypoint: ["/data-collector-signature-worker"]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
+      KAFKA_BROKERS: kafka:9092
+      DOCUMENTS_DIR: /data/documents
+      SIGNATURE_PROFILE: TEST
+      SIGNATURE_TRUST_DIR: /etc/signature/trust
+      # сколько ждать завершения сбора данных (ЕГРЮЛ, МЧД) перед проверкой полномочий
+      SIGNATURE_AUTHORITY_WAIT: 20s
+      WORKER_CONCURRENCY: 4
+    volumes:
+      - documents:/data/documents:ro
+      - ./data-collector/testdata/signature/trust:/etc/signature/trust:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
     restart: unless-stopped
 
   # Эмулятор внешних систем: свой префикс на каждую систему (список — mock-api/README.md)

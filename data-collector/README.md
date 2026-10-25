@@ -6,8 +6,9 @@
 - **Заявитель, компания и заявка** — в Postgres: `users`, `companies`, `company_members`, `applications`, журнал `application_events`.
 - **Анкета** — в `applications.form`; **документы** — строки `documents`, сами файлы — на диске (в docker — volume `documents`).
 - **Задачи на сбор**, **outbox** и **сырые ответы внешних систем** — `collection_tasks`, `outbox`, `raw_collections`.
+- **Проверка электронных подписей** документов (открепленные и присоединённые CMS/CAdES, подпись внутри PDF) — отчёты в `signature_reports`, итог — в `documents.signature_state` и `signature_verdict` (см. [Проверка подписи](#проверка-подписи-data-collector-signature-worker)).
 
-Схема — в [db/](../db/), миграции `00001`–`00004`.
+Схема — в [db/](../db/), миграции `00001`–`00005`.
 
 ## Как идёт работа
 
@@ -21,7 +22,8 @@ POST /applications/{id}/questionnaire ──────▶ файлы → stagi
 data-collector-publisher              ──────▶ outbox → Kafka: data-collector.collection-tasks, data-collector.documents
 data-collector-worker                 ◀────── задача RUNNING, заявка ENRICHING → опрос всех моков → raw_collections,
                                               задача COMPLETED, заявка VERIFYING, реквизиты компании из ЕГРЮЛ
-будущие worker'ы подписи и OCR        ◀────── data-collector.documents (сейчас без потребителей)
+data-collector-signature-worker       ◀────── data-collector.documents → файлы из volume (только чтение) → проверка подписи
+                                              → signature_reports, documents.signature_state (у OCR потребителя пока нет)
 GET /applications/{id}, /collections/{id} ──▶ статус заявки и итог сбора по каждой системе
 ```
 
@@ -38,15 +40,16 @@ GET /applications/{id}, /collections/{id} ──▶ статус заявки и
 
 ## Бинари
 
-Один модуль и один Docker-образ, три бинаря:
+Один модуль и один Docker-образ, четыре бинаря:
 
 | Бинарь | Пакет | Что делает |
 |---|---|---|
 | `data-collector` | `cmd/data-collector` | HTTP API: регистрация, анкета с файлами, заявки, состояние сбора, `/check-mock` |
 | `data-collector-publisher` | `cmd/outbox-publisher` | переносит события из `outbox` в Kafka (оба топика). Несколько реплик безопасны: события блокируются `FOR UPDATE SKIP LOCKED` |
 | `data-collector-worker` | `cmd/worker` | читает топик задач в consumer group `data-collector-worker`, опрашивает системы, пишет результат. Реплики делят партиции топика |
+| `data-collector-signature-worker` | `cmd/signature-worker` | читает топик документов в consumer group `data-collector-signature-worker`, проверяет подписи и пишет отчёты в `signature_reports`. Реплики делят партиции топика |
 
-Топики создают publisher и worker при старте (`KAFKA_TOPIC_PARTITIONS` партиций). Новая группа читает топик с начала, так что задачи, созданные до первого запуска worker'а, не теряются.
+Топики создают publisher и worker'ы при старте (`KAFKA_TOPIC_PARTITIONS` партиций). Новая группа читает топик с начала, так что задачи, созданные до первого запуска worker'а, не теряются.
 
 ## Слои
 
@@ -57,7 +60,9 @@ GET /applications/{id}, /collections/{id} ──▶ статус заявки и
 | Сбор | `internal/worker` | обработка сообщения о задаче: `RUNNING` → опрос систем → `COMPLETED`, реквизиты компании |
 | Outbox | `internal/outbox` | publisher: пачка событий из `outbox` → брокер |
 | Kafka | `internal/kafka` | sarama: настройки клиента, создание топика, синхронный продюсер, цикл consumer group с ручным коммитом оффсетов |
-| Файлы | `internal/storage` | файлы документов на диске: приём потоком во временную папку, перенос на место, откат |
+| Проверка подписи | `internal/signature` | разбор CMS/CAdES (DER, без сторонних библиотек), криптопроверка, цепочка и CRL, личность и полномочия подписанта, правила банка, отчёт; `sigtest` — тестовый УЦ и подписи для тестов и демо |
+| | `internal/sigworker` | обработка события о документах: документы из БД → файлы → проверка → отчёт, ожидание сбора данных, повторы |
+| Файлы | `internal/storage` | файлы документов на диске: приём потоком во временную папку, перенос на место, откат; `Reader` — чтение только внутри хранилища |
 | Хранилище | `internal/repository/postgres` | заявки с компанией, пользователем и документами; задачи, outbox, `raw_collections` (pgx) |
 | | `internal/repository/memory` | то же в памяти — для тестов |
 | Внешние системы | `internal/client/mockapi` | HTTP-клиент ко всем 19 системам эмулятора [mock-api](../mock-api/): какие эндпоинты вызвать, куда положить ответ, реквизиты из ЕГРЮЛ |
@@ -71,35 +76,42 @@ GET /applications/{id}, /collections/{id} ──▶ статус заявки и
 make run                # API, HTTP_ADDR по умолчанию :8081
 make run-publisher      # outbox → Kafka
 make run-worker         # Kafka → сбор → raw_collections
+make run-signature-worker # Kafka → проверка подписей → signature_reports (профиль TEST)
+make sigdemo            # перевыпустить тестовый УЦ и демо-подписи в examples/files
 make test               # юнит-тесты, внешние сервисы не нужны
 make test-integration   # против живых mock-api, Postgres и Kafka: из корня — `make up && make test-integration`
 make swagger            # перегенерировать docs/ после правки аннотаций или examples/
 ```
 
-Всем трём бинарям нужен `DATABASE_URL` (Postgres со схемой из модуля db).
+Всем четырём бинарям нужен `DATABASE_URL` (Postgres со схемой из модуля db).
 
 | Переменная | Кому | По умолчанию | Что это |
 |---|---|---|---|
 | `DATABASE_URL` | всем | — | Postgres: заявки, задачи на сбор, outbox, `raw_collections`. Обязательна |
 | `KAFKA_TOPIC` | всем | `data-collector.collection-tasks` | топик задач на сбор |
-| `KAFKA_DOCUMENTS_TOPIC` | API, publisher | `data-collector.documents` | топик событий о документах |
+| `KAFKA_DOCUMENTS_TOPIC` | API, publisher, worker подписи | `data-collector.documents` | топик событий о документах |
 | `HTTP_ADDR` | API | `:8081` | адрес HTTP-сервера |
-| `DOCUMENTS_DIR` | API | `data/documents` (в образе — `/data/documents`) | куда класть файлы документов |
-| `MAX_FILE_SIZE_MB` | API | `20` | лимит одного файла |
+| `DOCUMENTS_DIR` | API, worker подписи | `data/documents` (в образе — `/data/documents`) | куда класть файлы документов; worker подписи читает их оттуда |
+| `MAX_FILE_SIZE_MB` | API, worker подписи | `20` | лимит одного файла |
 | `BANK_API_URL` | API | `http://localhost:8090/bank/v1` | корень старого API банка (`/check-mock`) |
 | `BANK_API_TIMEOUT` | API | `5s` | таймаут одного запроса к старому API банка |
-| `KAFKA_BROKERS` | publisher, worker | `localhost:9094` | брокеры через запятую |
-| `KAFKA_TOPIC_PARTITIONS` | publisher, worker | `3` | партиций у топика, если его надо создать |
+| `KAFKA_BROKERS` | publisher, worker'ы | `localhost:9094` | брокеры через запятую |
+| `KAFKA_TOPIC_PARTITIONS` | publisher, worker'ы | `3` | партиций у топика, если его надо создать |
 | `PUBLISHER_POLL_INTERVAL` | publisher | `500ms` | пауза, когда в outbox пусто. При ошибках подряд пауза удваивается, но не дольше 5 с |
 | `PUBLISHER_BATCH_SIZE` | publisher | `100` | событий за один круг |
 | `PUBLISHER_PUBLISH_TIMEOUT` | publisher | `10s` | на отправку пачки в Kafka; не успели — события остаются в outbox |
-| `KAFKA_GROUP` | worker | `data-collector-worker` | consumer group |
-| `WORKER_CONCURRENCY` | worker | `4` | сколько задач выполняется одновременно |
+| `KAFKA_GROUP` | worker'ы | `data-collector-worker`, у worker'а подписи — `data-collector-signature-worker` | consumer group |
+| `WORKER_CONCURRENCY` | worker'ы | `4` | сколько сообщений обрабатывается одновременно |
 | `WORKER_MAX_ATTEMPTS` | worker | `3` | сколько раз брать задачу, прежде чем перевести её в `FAILED` |
 | `MOCK_API_URL` | worker | `http://localhost:8090` | корень эмулятора внешних систем |
 | `MOCK_API_TIMEOUT` | worker | `5s` | таймаут одного запроса к внешней системе |
 | `COLLECT_TIMEOUT` | worker | `8s` | таймаут всего сбора по задаче |
 | `OWN_BANK_BIK` | worker | `044525999` | БИК нашего банка: по нему проверяются блокировки ФНС |
+| `SIGNATURE_PROFILE` | worker подписи | `TEST` | профиль проверки; другого нет — с иным значением worker не стартует |
+| `SIGNATURE_TRUST_DIR` | worker подписи | — (`make run-signature-worker`: `testdata/signature/trust`) | доверенные корни и CRL профиля: `*.pem`/`*.crt`/`*.cer` (самоподписанный УЦ — корень, остальные — промежуточные), `*.crl`. Пусто — корней нет, сертификат всегда `INDETERMINATE` |
+| `SIGNATURE_RULES_FILE` | worker подписи | — | JSON с правилами банка по типам документов (формат `signature.Rules`); пусто — правила MVP |
+| `SIGNATURE_AUTHORITY_WAIT` | worker подписи | `20s` | сколько ждать завершения сбора данных по заявке (ЕГРЮЛ, МЧД) перед проверкой полномочий |
+| `SIGNATURE_RETRY_ATTEMPTS` | worker подписи | `3` | попыток запроса к БД и чтения файла, прежде чем не подтвердить сообщение |
 
 В docker-compose всё нужное уже задано. Файлы лежат в volume `documents`: образ distroless работает от `nonroot` (uid 65532), папка в образе принадлежит ему, и новый volume берёт этого владельца. Посмотреть файлы (в distroless нет shell):
 
@@ -191,7 +203,7 @@ curl -s localhost:8081/api/v1/collections/tsk_…                  # PENDING →
 - Подпись без пары принимается как **присоединённая** (документ внутри контейнера, см. [docs/e-signature.md](../docs/e-signature.md)).
 - `422`: больше 10 файлов, недопустимый формат, пустой файл, файл больше лимита, два файла с одним именем, две подписи к одному документу, подпись к подписи, неоднозначная подпись (`a.pdf` + `a.xlsx` + `a.sig`), тип в `documents` для чужого файла.
 
-Документы для будущих worker'ов: у документа с открепленной подписью, у самой подписи и у присоединённой подписи `signature_state = PENDING`, у остальных — `NOT_SIGNED` (встроенные подписи PDF/XML worker подписи найдёт сам). Распознавание: `recognition.state = PENDING` у pdf, docx, xlsx, jpg, png; `NOT_APPLICABLE` у подписей и xml. Подпись — строка `type = SIGNATURE` с `signed_document_id` → документ.
+Документы для worker'ов: у документа с открепленной подписью, у самой подписи и у присоединённой подписи `signature_state = PENDING`, у остальных — `NOT_SIGNED` (встроенные подписи PDF/XML worker подписи найдёт сам). После проверки — `DONE` (или `FAILED`, если файла нет) и вердикт в `signature_verdict`. Распознавание: `recognition.state = PENDING` у pdf, docx, xlsx, jpg, png; `NOT_APPLICABLE` у подписей и xml. Подпись — строка `type = SIGNATURE` с `signed_document_id` → документ.
 
 Файлы пишутся потоком во временную папку `DOCUMENTS_DIR/.staging`, после проверки переносятся (`rename` на том же диске) в `DOCUMENTS_DIR/{application_id}/{document_id}.{ext}` — это `documents.storage_key`. Не прошла проверка или транзакция — файлы запроса удаляются.
 
@@ -266,9 +278,9 @@ curl -s localhost:8081/api/v1/collections/tsk_…                  # PENDING →
 | Топик | Событие | Ключ | Тело | Кто читает |
 |---|---|---|---|---|
 | `data-collector.collection-tasks` | `collection.requested` | id задачи | `event`, `task_id`, `application_id`, `questionnaire_id`, `inn`, `created_at` | worker сбора |
-| `data-collector.documents` | `documents.submitted` | id заявки | `event`, `application_id`, `company_inn`, `documents[]` (`id`, `type`, `file_name`, `mime_type`, `size_bytes`, `sha256`, `storage_key`, `signed_document_id`, `signature_state`, `recognition_state`), `created_at` | будущие worker'ы проверки подписи и OCR |
+| `data-collector.documents` | `documents.submitted` | id заявки | `event`, `application_id`, `company_inn`, `documents[]` (`id`, `type`, `file_name`, `mime_type`, `size_bytes`, `sha256`, `storage_key`, `signed_document_id`, `signature_state`, `recognition_state`), `created_at` | worker проверки подписи; будущий OCR |
 
-Будущим worker'ам подписи и OCR — свои consumer group на `data-collector.documents`. Файлы они читают из того же volume (read-only) по `storage_key`, результат пишут в `documents.signature_state`, `signature_reports`, `documents.recognition`. Сейчас эти worker'ы не реализованы.
+У каждого читателя `data-collector.documents` своя consumer group. Worker подписи берёт из события только id заявки и документов, всё остальное — из БД; файлы читает из того же volume (read-only). Будущий OCR будет писать в `documents.recognition` — сейчас он не реализован.
 
 ### Таблицы
 
@@ -329,6 +341,17 @@ curl -s localhost:8081/api/v1/collections/tsk_…                  # PENDING →
 
 Что означают данные каждой системы — в [docs/mock-api-guide.md](../docs/mock-api-guide.md).
 
+#### Таблица `signature_reports`
+
+Одна строка — одна проверка одной подписи, только вставка. Worker подписи заполняет старые колонки (`document_id`, `verdict`, `policy`, `policy_satisfied`, `trust_mode = MOCK`, `report`, `verified_at`) и добавленные миграцией `00005`:
+- `signature_document_id` — файл открепленной подписи (`NULL` — подпись внутри документа);
+- `document_sha256`, `signature_sha256` — версия документа и подписи: sha256 проверенных байтов, посчитанный до проверки;
+- `profile` — профиль проверки, сейчас всегда `TEST`;
+- `integrity_status`, `format_status`, `certificate_status`, `identity_status`, `authority_status`, `decision` — статус каждого этапа и итог: `VERIFIED`, `INVALID`, `INDETERMINATE`, `NOT_REQUIRED`;
+- `failure_reason` — почему не `VERIFIED`: причина первого непройденного этапа;
+- `idempotency_key` — уникален: один автоматический отчёт на версию документа и подписи;
+- `report` — подробный отчёт: каждая проверка этапов, подписант, сертификат, отзыв, основание полномочий и МЧД, ограничения профиля.
+
 ```sql
 -- последний сбор по компании: балл БКИ, ЗСК и состояние систем
 SELECT bki->'legal'->'score'->>'value'    AS bki_score,
@@ -349,6 +372,12 @@ ORDER BY a.created_at DESC LIMIT 5;
 
 -- документы, ждущие проверки подписи
 SELECT application_id, file_name, storage_key FROM documents WHERE signature_state = 'PENDING' AND signed_document_id IS NULL;
+
+-- проверка подписей по заявке: этапы, итог и причина
+SELECT d.file_name, r.integrity_status, r.format_status, r.certificate_status, r.identity_status,
+       r.authority_status, r.decision, r.verdict, r.failure_reason
+FROM signature_reports r JOIN documents d ON d.id = r.document_id
+WHERE d.application_id = 'app_…' ORDER BY r.verified_at;
 
 -- события, которые publisher ещё не доставил в Kafka
 SELECT id, key, attempts, last_error, created_at FROM outbox WHERE published_at IS NULL ORDER BY id;
@@ -374,3 +403,54 @@ curl -s 'localhost:8081/api/v1/check-mock?inn=7701234567'
 ### `GET /healthz`
 
 Проверка, что сервис поднят.
+
+## Проверка подписи (`data-collector-signature-worker`)
+
+Worker читает `data-collector.documents` в своей consumer group. Из события берутся только id заявки и документов; путь к файлу — `documents.storage_key` из БД, и читается он только внутри `DOCUMENTS_DIR`: ключ должен быть ровно `{application_id}/{document_id}.{ext}`, а `..`, абсолютные пути и symlink'и в любом компоненте пути отвергаются (`os.Root`). Volume смонтирован только на чтение — оригинал и подпись не меняются. Перед проверкой считается sha256 обоих файлов и сверяется с `documents.sha256`; проверяются ровно эти байты.
+
+Что проверяется:
+- пара «документ + открепленная подпись» (`.sig`/`.p7s` с `signed_document_id`) — подпись CMS/CAdES над исходными байтами файла, формат файла не важен (PDF, XLS, XLSX, …);
+- `.sig`/`.p7s` без пары — присоединённая подпись, документ внутри контейнера;
+- PDF без открепленной подписи — подпись внутри PDF (PAdES). Она проверяется тем же кодом, что открепленная, если в файле одна подпись, её `/ByteRange` начинается с нуля и доходит до последнего байта, а единственный непокрытый промежуток — значение `/Contents` с самой подписью (hex-строка CMS и выравнивающие нули, другие данные там — `INVALID`). Подписаны все байты файла, кроме подписи, — изменить документ незаметно нельзя. Файл, дописанный после подписания (инкрементальные изменения, в том числе метка времени документа), несколько подписей, устаревший `adbe.pkcs7.sha1` — `INDETERMINATE`: какие изменения после подписи допустимы, не разбирается. Время подписи — `/M` словаря подписи (как и `signing-time`, оно заявлено подписантом). Подписи в PDF нет — отчёта нет;
+- XML без открепленной подписи — ищется подпись XMLDSig. Нашлась — отчёт `INDETERMINATE`: канонизация и ссылки XMLDSig не проверяются. Не нашлась — отчёта нет.
+
+| Этап | Колонка | Что проверяется |
+|---|---|---|
+| целостность | `integrity_status` | файлы прочитаны и не менялись после загрузки; хеш документа совпадает с подписанным `message-digest`; значение подписи верно для ключа сертификата |
+| формат и охват | `format_status` | CMS SignedData в DER (или PEM, base64), одна подпись, подписаны данные документа целиком (у PDF — `/ByteRange` от нуля до конца файла, вне его только `/Contents`, после подписи файл не дописан); атрибуты CAdES-BES, `signing-certificate-v2` указывает на сертификат подписанта (без него — замечание, формат `CMS`); алгоритм поддержан |
+| сертификат | `certificate_status` | цепочка до доверенного корня профиля, срок действия на заявленное время подписи и на время проверки, `keyUsage` (digitalSignature/nonRepudiation), отзыв по CRL всей цепочки |
+| личность | `identity_status` | подписант опознаётся по ИНН ФЛ или СНИЛС; организация или ИП в сертификате (ИНН ЮЛ, ОГРН, ОГРНИП) — это заявитель |
+| полномочия | `authority_status` | ИП подписывает сам за себя; за ООО — руководитель по ЕГРЮЛ (ИНН из «Прозрачного бизнеса»); остальные — по действующей МЧД от заявителя с полномочием для типа документа |
+| итог | `decision` | `INVALID`, если хоть один этап `INVALID`; иначе `INDETERMINATE`, если хоть один `INDETERMINATE`; иначе `VERIFIED`. Причина — `failure_reason` |
+
+Правила банка — `signature.DefaultRules()` (свои — JSON в `SIGNATURE_RULES_FILE`):
+
+| Тип документа | Политика | Личность и полномочия | Представителю по МЧД нужно |
+|---|---|---|---|
+| `FINANCIAL_STATEMENTS`, `TAX_RETURN` | `FINANCIAL_STATEMENTS` | да | `FINANCIAL_DOCS_SIGN` |
+| `MANAGEMENT_REPORT` | `GENERIC` | да | `FINANCIAL_DOCS_SIGN` |
+| `POWER_OF_ATTORNEY` | `POWER_OF_ATTORNEY` | да | — только руководитель |
+| `LOAN_AGREEMENT_DRAFT` | `LOAN_CONTRACT` | да | — только руководитель |
+| `BANK_STATEMENT`, `EGRN_EXTRACT`, `COLLATERAL_TITLE`, `CONTRACT_WITH_CUSTOMER`, `LEASE_AGREEMENT` | `GENERIC` | `NOT_REQUIRED`: подписывает третья сторона | — |
+| остальные (`OTHER`, `CHARTER`, …) | `GENERIC` | да | `LOAN_APPLICATION_SUBMIT` |
+
+Полномочия проверяются по уже собранным ответам ЕГРЮЛ и реестра МЧД — колонкам `fns` и `m4d` последнего сбора по заявке. Событие о документах публикуется вместе с задачей на сбор, поэтому worker ждёт завершения сбора до `SIGNATURE_AUTHORITY_WAIT`. Нет данных (сбор не завершён или упал, система не ответила, МЧД искали по другому представителю из анкеты) — полномочия `INDETERMINATE`, а целостность, формат и сертификат остаются как есть: отсутствие данных не превращается в ошибку подписи.
+
+Повторы и идемпотентность:
+- ключ `auto:TEST:{документ}@{sha256}:{подпись}@{sha256}` уникален в `signature_reports.idempotency_key`: повторная доставка события проверку пропускает, параллельная не запишет второй отчёт (`ON CONFLICT DO NOTHING`);
+- отчёт, `documents.signature_state` (`DONE`, или `FAILED`, если файла нет или проверка упала) с `signature_verdict` и событие `document.signatures_verified` в журнале заявки пишутся одной транзакцией, оффсет Kafka коммитится только после неё;
+- сбой БД или чтения файла повторяется `SIGNATURE_RETRY_ATTEMPTS` раз с паузой, затем сообщение не подтверждается: worker завершается и после перезапуска получит его снова (как worker сбора; DLQ в проекте нет). Нет файла, небезопасный путь, неподдержанный формат, паника проверки — это результат (`INDETERMINATE`), а не повтор.
+
+**Профиль TEST — не проверка УКЭП.** Корни и CRL — локальный тестовый УЦ из `SIGNATURE_TRUST_DIR` (в compose — `testdata/signature/trust`, выпускается `make sigdemo`; в образ не входит), системные корни не используются. Алгоритмы — RSA от 2048 бит (PKCS#1 v1.5 и PSS), ECDSA P-256/384/521, Ed25519 с SHA-256/384/512. ГОСТ Р 34.10/34.11 — `INDETERMINATE`: в стеке нет сертифицированного СКЗИ, и RSA вместо ГОСТ не подставляется. Аккредитация УЦ, признаки КЭП, метки времени (CAdES-T) и OCSP не проверяются, время подписи — заявленное подписантом. Поэтому верная подпись получает вердикт `VALID_WITH_WARNINGS`, а не `VALID`; в отчёте `profile = TEST`, `trust_mode = MOCK` и список ограничений. Реестры ЕГРЮЛ и МЧД — моки mock-api.
+
+Подпись подтверждает, что файл не изменён и кем подписан, а не достоверность цифр и платёжеспособность: worker содержимое документа не разбирает и в скоринг ничего не передаёт, распознавание — отдельный модуль.
+
+Демо: `examples/files/balance.pdf.sig` — подпись бухгалтера по МЧД для сценария A, пары с другими исходами и PDF с подписью внутри — [examples/files/signature-demo](examples/files/signature-demo/README.md).
+
+```bash
+curl -si -X POST localhost:8081/api/v1/applications/app_…/questionnaire \
+  -F 'questionnaire=<examples/scenario-a.json' \
+  -F files=@examples/files/balance.pdf -F files=@examples/files/balance.pdf.sig
+docker compose exec postgres psql -U credit -d credit_cabinet -c \
+  "SELECT decision, verdict, failure_reason FROM signature_reports ORDER BY verified_at DESC LIMIT 5"
+```
