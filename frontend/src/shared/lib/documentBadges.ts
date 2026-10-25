@@ -1,5 +1,5 @@
-import type { Document, SignatureReport } from '../../../api/types';
-import { formatCompactMoney } from '../../../shared/lib/format';
+import type { Document, SignatureReport } from '../../api/types';
+import { formatCompactMoney } from './format';
 
 /* Бейджи вкладки «Документы» (экран 15): распознавание и электронная подпись. */
 

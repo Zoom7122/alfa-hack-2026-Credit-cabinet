@@ -45,11 +45,17 @@ type TransitionOptions = {
     message: string;
     type?: TimelineEvent['type'];
     actor?: UserRef;
+    /** Кто сделал переход; по умолчанию CLIENT, если есть actor, иначе SYSTEM. */
+    actorKind?: TimelineEvent['actor_kind'];
     next?: boolean;
 };
 
 /** Переход FSM: статус, версия, запись в историю, событие application.status_changed. */
-export function transition(app: StoredApplication, to: ApplicationStatus, { message, type = 'STATUS_CHANGED', actor, next }: TransitionOptions) {
+export function transition(
+    app: StoredApplication,
+    to: ApplicationStatus,
+    { message, type = 'STATUS_CHANGED', actor, actorKind, next }: TransitionOptions,
+) {
     const from = app.status;
     const updated = mutate((d) => {
         const index = d.applications.findIndex((a) => a.id === app.id);
@@ -65,7 +71,7 @@ export function transition(app: StoredApplication, to: ApplicationStatus, { mess
         delete d.pipeline[app.id];
         return result;
     });
-    addTimeline(updated, { type, from_status: from, to_status: to, actor_kind: actor ? 'CLIENT' : 'SYSTEM', actor, message });
+    addTimeline(updated, { type, from_status: from, to_status: to, actor_kind: actorKind ?? (actor ? 'CLIENT' : 'SYSTEM'), actor, message });
     emit(app.applicant.id, 'application.status_changed', {
         application_id: app.id,
         from,
@@ -113,6 +119,10 @@ function advance(app: StoredApplication) {
         case 'DECIDING': {
             // персонаж «ИП Смирнов»: серая зона скоринга, решение за андеррайтером
             if (app.applicant.id === 'apl_smirnov') {
+                // в очередь андеррайтеров, SLA — 4 часа; после ответа клиента — тому же исполнителю, с его заметками
+                mutate((d) => {
+                    d.bo[app.id] = { assignee: null, ...d.bo[app.id], sla_due_at: new Date(Date.now() + 4 * 3_600_000).toISOString() };
+                });
                 return transition(app, 'MANUAL_REVIEW', { message: 'Заявку смотрит специалист банка' });
             }
             const offers = buildOffers(app, Date.now());
@@ -163,9 +173,9 @@ export function tick(now = Date.now()) {
     }
 }
 
-/** События после lastId по компаниям пользователя. */
-export function eventsSince(lastId: string, applicantIds: Set<string>): StoredWsEvent[] {
-    return read().events.filter((e) => e.id > lastId && applicantIds.has(e.applicant_id));
+/** События после lastId: по компаниям пользователя или все (для андеррайтера). */
+export function eventsSince(lastId: string, applicantIds?: Set<string>): StoredWsEvent[] {
+    return read().events.filter((e) => e.id > lastId && (!applicantIds || applicantIds.has(e.applicant_id)));
 }
 
 export const lastEventId = () => read().events.at(-1)?.id ?? '';

@@ -3,7 +3,7 @@ import { Typography } from '@alfalab/core-components/typography';
 import type { Application } from '../../../api/types';
 import { PURPOSE_LABELS } from '../../../shared/lib/dictionaries';
 import { formatMoney, formatMonths, shortName } from '../../../shared/lib/format';
-import { InfoCard } from './InfoCard';
+import { InfoCard } from '../../../shared/ui/InfoCard/InfoCard';
 import './ParamsCard.css';
 
 export function ParamsCard({ app }: { app: Application }) {

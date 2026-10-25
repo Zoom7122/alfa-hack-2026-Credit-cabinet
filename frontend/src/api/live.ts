@@ -67,6 +67,11 @@ export function useLiveUpdates(token: string | null) {
                         void queryClient.invalidateQueries({ queryKey: ['applications', 'signature-report', id] });
                     }
                     break;
+                case 'backoffice.queue_changed':
+                    // андеррайтеру: очередь и открытое досье
+                    void queryClient.invalidateQueries({ queryKey: ['backoffice', 'queue'] });
+                    if (id) void queryClient.invalidateQueries({ queryKey: queryKeys.boDossier(id) });
+                    break;
                 default:
                     break;
             }
@@ -79,6 +84,7 @@ export function useLiveUpdates(token: string | null) {
                 // перечитываем открытое: источник правды всё равно REST
                 void queryClient.invalidateQueries({ queryKey: ['applications'] });
                 void queryClient.invalidateQueries({ queryKey: queryKeys.me });
+                void queryClient.invalidateQueries({ queryKey: ['backoffice'] });
                 retry = 0;
                 ping = setInterval(() => socket?.send(JSON.stringify({ type: 'ping', data: {} })), PING_MS);
             };

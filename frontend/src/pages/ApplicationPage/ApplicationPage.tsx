@@ -16,8 +16,8 @@ import { formatMoney, formatMonths, formatUpdated } from '../../shared/lib/forma
 import { Breadcrumbs } from '../../shared/ui/Breadcrumbs/Breadcrumbs';
 import { VisuallyHidden } from '../../shared/ui/VisuallyHidden/VisuallyHidden';
 import { CancelDialog } from './components/CancelDialog';
-import { EventList } from './components/EventList';
-import { InfoCard } from './components/InfoCard';
+import { EventList } from '../../shared/ui/EventList/EventList';
+import { InfoCard } from '../../shared/ui/InfoCard/InfoCard';
 import { ParamsCard } from './components/ParamsCard';
 import { InfoRequestsStatus } from './status/InfoRequestsStatus';
 import { OffersStatus } from './status/OffersStatus';

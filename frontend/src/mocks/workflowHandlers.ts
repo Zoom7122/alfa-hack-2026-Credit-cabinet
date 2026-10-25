@@ -296,14 +296,25 @@ export const wsHandlers = [
             return;
         }
         const companies = companyIds(me);
+        const isUnderwriter = me.roles.includes('UNDERWRITER');
         let last = new URL(client.url).searchParams.get('last_event_id') ?? lastEventId();
         // сокет сам «двигает» конвейер, чтобы статус менялся и без запросов со страницы
         const timer = setInterval(() => {
             tick();
-            for (const event of eventsSince(last, companies)) {
-                const { applicant_id: _applicant, ...envelope } = event;
-                client.send(JSON.stringify(envelope));
+            for (const event of isUnderwriter ? eventsSince(last) : eventsSince(last, companies)) {
                 last = event.id;
+                const { applicant_id: _applicant, ...envelope } = event;
+                // андеррайтеру — только события очереди back-office (docs/websocket.md)
+                if (isUnderwriter) {
+                    if (event.type === 'application.status_changed') {
+                        client.send(JSON.stringify({ ...envelope, type: 'backoffice.queue_changed', data: { application_id: event.data.application_id, status: event.data.to } }));
+                    } else if (event.type === 'backoffice.queue_changed') {
+                        client.send(JSON.stringify(envelope));
+                    }
+                    continue;
+                }
+                if (event.type === 'backoffice.queue_changed') continue;
+                client.send(JSON.stringify(envelope));
             }
         }, 500);
         client.addEventListener('message', (e) => {

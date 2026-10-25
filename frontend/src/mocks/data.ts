@@ -101,6 +101,30 @@ export const applicantSeeds: Applicant[] = [
         my_role: 'DIRECTOR',
         can_sign: true,
     },
+    // компании без пользователей-клиентов — только для очереди банка (макет 16)
+    ...(
+        [
+            ['apl_technoline', '7709876501', 'ООО «ТехноЛайн»', 'LEGAL_ENTITY', '2016-04-11', '49.41', 'Грузовые перевозки', 'Тихонов Артём Сергеевич'],
+            ['apl_sever_agro', '2901122334', 'ООО «Север Агро»', 'LEGAL_ENTITY', '2011-08-30', '01.11', 'Выращивание зерновых', 'Белова Ирина Павловна'],
+            ['apl_bakery', '5001928374', 'ООО «Пекарня №1»', 'LEGAL_ENTITY', '2019-02-05', '10.71', 'Производство хлеба', 'Громов Олег Ильич'],
+            ['apl_kim', '780198765432', 'ИП Ким Е. В.', 'SOLE_PROPRIETOR', '2026-01-20', '47.19', 'Розничная торговля', 'Ким Елена Викторовна'],
+            ['apl_beta', '7811223344', 'ООО «Бета Логистик»', 'LEGAL_ENTITY', '2018-10-01', '52.29', 'Логистика', 'Зуев Пётр Андреевич'],
+        ] as const
+    ).map(
+        ([id, inn, short_name, applicant_type, registration_date, code, title, director_name]): Applicant => ({
+            id,
+            inn,
+            applicant_type,
+            full_name: short_name,
+            short_name,
+            registration_date,
+            okved_main: { code, title },
+            director_name,
+            registry_status: 'ACTIVE',
+            my_role: 'DIRECTOR',
+            can_sign: false,
+        }),
+    ),
 ];
 
 /** Поля, без которых заявку не отправить (dot-path ApplicationInput). Залог и поручители — по условиям продукта. */
@@ -279,6 +303,11 @@ const applicantRefs = {
     romashka: { id: 'apl_romashka', short_name: 'ООО «Ромашка»', inn: '7701234567' },
     smirnov: { id: 'apl_smirnov', short_name: 'ИП Смирнов К. А.', inn: '771234567890' },
     vector: { id: 'apl_vector', short_name: 'ООО «Вектор Строй»', inn: '7724567890' },
+    technoline: { id: 'apl_technoline', short_name: 'ООО «ТехноЛайн»', inn: '7709876501' },
+    severAgro: { id: 'apl_sever_agro', short_name: 'ООО «Север Агро»', inn: '2901122334' },
+    bakery: { id: 'apl_bakery', short_name: 'ООО «Пекарня №1»', inn: '5001928374' },
+    kim: { id: 'apl_kim', short_name: 'ИП Ким Е. В.', inn: '780198765432' },
+    beta: { id: 'apl_beta', short_name: 'ООО «Бета Логистик»', inn: '7811223344' },
 };
 
 /** Анкета «Ромашки» из выданного в мае кредита — из неё предзаполняются новые черновики. */
@@ -337,7 +366,28 @@ const seeds: Seed[] = [
         input: { purpose: { code: 'WORKING_CAPITAL', description: 'Закупка товара под сезон' }, ...romashkaProfile },
     },
     { id: 'app_000061', number: 'A-2026-000061', applicant: 'romashka', status: 'DECLINED', product: 'EQUIPMENT', amount: 7_500_000, term: 48, created: '2026-03-03T09:00:00Z', updated: '2026-03-06T13:00:00Z' },
-    { id: 'app_000147', number: 'A-2026-000147', applicant: 'smirnov', status: 'MANUAL_REVIEW', product: 'WORKING_CAPITAL', amount: 2_500_000, term: 18, created: '2026-10-24T07:30:00Z', updated: '2026-10-24T08:05:00Z' },
+    {
+        id: 'app_000147',
+        number: 'A-2026-000147',
+        applicant: 'smirnov',
+        status: 'MANUAL_REVIEW',
+        product: 'WORKING_CAPITAL',
+        amount: 2_500_000,
+        term: 18,
+        created: '2026-10-24T07:30:00Z',
+        updated: '2026-10-24T08:05:00Z',
+        input: {
+            purpose: { code: 'WORKING_CAPITAL', description: 'Закупка зерна и оборудования для второй точки' },
+            financials: { annual_revenue: 18_400_000, annual_revenue_year: 2025, net_profit: 1_100_000, avg_monthly_turnover: 1_300_000, employees_count: 9 },
+            has_no_debts: true,
+        },
+    },
+    // очередь банка: ручное рассмотрение у других компаний и заявка в обработке
+    { id: 'app_000145', number: 'A-2026-000145', applicant: 'technoline', status: 'MANUAL_REVIEW', product: 'VEHICLE', amount: 8_000_000, term: 36, created: '2026-10-24T06:10:00Z', updated: '2026-10-24T06:40:00Z' },
+    { id: 'app_000142', number: 'A-2026-000142', applicant: 'severAgro', status: 'MANUAL_REVIEW', product: 'CREDIT_LINE', amount: 15_000_000, term: 24, created: '2026-10-23T12:00:00Z', updated: '2026-10-23T13:00:00Z' },
+    { id: 'app_000139', number: 'A-2026-000139', applicant: 'bakery', status: 'MANUAL_REVIEW', product: 'EQUIPMENT', amount: 4_200_000, term: 30, created: '2026-10-23T09:00:00Z', updated: '2026-10-23T09:40:00Z' },
+    { id: 'app_000136', number: 'A-2026-000136', applicant: 'kim', status: 'MANUAL_REVIEW', product: 'WORKING_CAPITAL', amount: 900_000, term: 12, created: '2026-10-22T15:00:00Z', updated: '2026-10-22T15:30:00Z' },
+    { id: 'app_000150', number: 'A-2026-000150', applicant: 'beta', status: 'ENRICHING', product: 'WORKING_CAPITAL', amount: 6_000_000, term: 24, created: '2026-10-25T08:00:00Z', updated: '2026-10-25T08:01:00Z' },
     { id: 'app_000152', number: 'A-2026-000152', applicant: 'vector', status: 'REJECTED', product: 'EQUIPMENT', amount: 12_000_000, term: 48, created: '2026-10-22T07:30:00Z', updated: '2026-10-22T07:41:00Z' },
     { id: 'app_000155', number: 'A-2026-000155', applicant: 'vector', status: 'OFFERED', product: 'VEHICLE', amount: 4_000_000, term: 36, created: '2026-10-23T09:00:00Z', updated: '2026-10-24T09:12:00Z' },
 ];

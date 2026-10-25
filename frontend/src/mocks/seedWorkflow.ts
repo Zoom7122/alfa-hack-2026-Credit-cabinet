@@ -275,6 +275,7 @@ export function seedWorkflow(apps: StoredApplication[], now = Date.now()): Seede
             message: 'Заявка отправлена',
         });
         event(app, 1, { type: 'STATUS_CHANGED', from_status: 'SUBMITTED', to_status: 'ENRICHING', actor_kind: 'SYSTEM', message: 'Заявка принята' });
+        if (app.status === 'ENRICHING') continue;
         event(app, 2, { type: 'STATUS_CHANGED', from_status: 'ENRICHING', to_status: 'VERIFYING', actor_kind: 'SYSTEM', message: 'Данные о компании собраны' });
 
         switch (app.status) {

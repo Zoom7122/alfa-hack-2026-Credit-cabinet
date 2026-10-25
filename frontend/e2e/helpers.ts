@@ -11,7 +11,7 @@ export const USERS = {
     underwriter: { id: 'usr_underwriter_sokolova', name: 'Соколова Мария Игоревна' },
 } as const;
 
-type UserKey = keyof typeof USERS;
+export type UserKey = keyof typeof USERS;
 
 export async function loginAs(page: Page, user: UserKey) {
     const { name } = USERS[user];

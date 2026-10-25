@@ -13,7 +13,7 @@ import { formatDay, formatMoney, formatRate, shortName } from '../../../shared/l
 import { newIdempotencyKey } from '../../../shared/lib/idempotency';
 import { ResultCard } from '../components/ResultCard';
 import { StageBar } from '../components/StageBar';
-import { SummaryList } from '../components/SummaryList';
+import { SummaryList } from '../../../shared/ui/SummaryList/SummaryList';
 import { contractOf } from './signingDocs';
 import './WaitingSignerStatus.css';
 

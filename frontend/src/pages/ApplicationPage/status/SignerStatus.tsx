@@ -22,9 +22,9 @@ import {
 import type { Application, ApplicationStatusView, Document, SigningMethod } from '../../../api/types';
 import { formatMoney, formatMonths, formatRate, formatUpdated, initials, shortName } from '../../../shared/lib/format';
 import { newIdempotencyKey, useIdempotencyKeys } from '../../../shared/lib/idempotency';
-import { InfoCard } from '../components/InfoCard';
+import { InfoCard } from '../../../shared/ui/InfoCard/InfoCard';
 import { StageBar } from '../components/StageBar';
-import { SummaryList } from '../components/SummaryList';
+import { SummaryList } from '../../../shared/ui/SummaryList/SummaryList';
 import { contractOf } from './signingDocs';
 import { SigningDocuments } from './SigningDocuments';
 import './SignerStatus.css';

@@ -17,7 +17,7 @@ test.describe('Доступ по ролям', () => {
         await page.goto('/');
         await expectPath(page, '/backoffice');
 
-        await page.getByRole('button', { name: 'Сменить пользователя' }).click();
+        await page.getByRole('button', { name: 'Выйти' }).click();
         await expectPath(page, '/login');
         expect(await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)).toBeNull();
     });

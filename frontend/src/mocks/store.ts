@@ -10,6 +10,7 @@ import type {
     RepresentativeRole,
 } from '../api/types';
 import { applicantSeeds, products, REGISTRY_TIMEOUT_INN, registry, seedApplications, type StoredApplication, testUsers } from './data';
+import { seedBackoffice, type StoredBo } from './backoffice';
 import { ACTIONS } from './fsm';
 import { signatureSummary } from './signatures';
 import {
@@ -25,7 +26,7 @@ import {
  * Изменяемая «база» мока. Живёт в localStorage, чтобы черновики переживали перезагрузку.
  * Номер версии в ключе — сменить, если поменялись сиды.
  */
-const DB_KEY = 'credit-cabinet:mock-db:v8';
+const DB_KEY = 'credit-cabinet:mock-db:v10';
 
 /** Документ + время, когда мок «распознает» его (в контракт не попадает). */
 export type { StoredDocument } from './seedWorkflow';
@@ -52,6 +53,8 @@ type Db = {
     events: StoredWsEvent[];
     seq: number;
     signing: Record<string, StoredSigning>;
+    /** Бэк-офис: исполнитель, SLA, перезапросы источников, внутренние комментарии. */
+    bo: Record<string, StoredBo>;
 };
 
 function seed(): Db {
@@ -66,6 +69,7 @@ function seed(): Db {
         declines: {},
         events: [],
         seq: 0,
+        bo: seedBackoffice(applications, Date.now()),
     };
 }
 

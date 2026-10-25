@@ -18,7 +18,7 @@ import { DOCUMENT_LABELS } from '../../../shared/lib/dictionaries';
 import { formatFileSize, formatUpdated, shortName } from '../../../shared/lib/format';
 import { DocumentUploader } from '../../../shared/ui/DocumentUploader/DocumentUploader';
 import { VisuallyHidden } from '../../../shared/ui/VisuallyHidden/VisuallyHidden';
-import { type Badge, recognitionBadge, signatureBadge } from './documentBadges';
+import { type Badge, recognitionBadge, signatureBadge } from '../../../shared/lib/documentBadges';
 import { SIGNATURE_PANEL_ID, SignaturePanel } from './SignaturePanel';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import './DocumentsTab.css';

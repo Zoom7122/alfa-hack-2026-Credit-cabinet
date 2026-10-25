@@ -3,7 +3,7 @@ import { Skeleton } from '@alfalab/core-components/skeleton';
 
 import { useTimeline } from '../../../api/queries';
 import { FormCard } from '../../../shared/ui/FormCard/FormCard';
-import { EventList } from '../components/EventList';
+import { EventList } from '../../../shared/ui/EventList/EventList';
 import './HistoryTab.css';
 
 /** Вкладка «История»: клиентская версия журнала заявки, новые сверху. */

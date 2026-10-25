@@ -10,8 +10,8 @@ import { ApiError } from '../../../api/client';
 import { useSignatureReport } from '../../../api/queries';
 import type { Document, SignatureReport } from '../../../api/types';
 import { formatDate, shortName } from '../../../shared/lib/format';
-import { SummaryList, type SummaryRow } from '../components/SummaryList';
-import { VERDICT_BADGES } from './documentBadges';
+import { SummaryList, type SummaryRow } from '../../../shared/ui/SummaryList/SummaryList';
+import { VERDICT_BADGES } from '../../../shared/lib/documentBadges';
 import './SignaturePanel.css';
 
 type SignatureInfo = NonNullable<SignatureReport['signatures']>[number];

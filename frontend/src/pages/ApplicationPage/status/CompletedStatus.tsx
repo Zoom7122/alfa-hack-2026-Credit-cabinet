@@ -8,7 +8,7 @@ import type { Application, ApplicationStatusView, SigningMethod } from '../../..
 import { formatDate, formatDay, formatMoney, shortName } from '../../../shared/lib/format';
 import { ResultCard } from '../components/ResultCard';
 import { StageBar } from '../components/StageBar';
-import { type SummaryRow, SummaryList } from '../components/SummaryList';
+import { type SummaryRow, SummaryList } from '../../../shared/ui/SummaryList/SummaryList';
 import { contractOf } from './signingDocs';
 import { SigningDocuments } from './SigningDocuments';
 import './CompletedStatus.css';

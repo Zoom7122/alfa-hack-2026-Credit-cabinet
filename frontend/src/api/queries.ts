@@ -18,6 +18,9 @@ import type {
     RepresentativeRole,
     RequestedTerms,
     SigningMethod,
+    BoApplicationListItem,
+    BoDecisionInput,
+    SourceCode,
 } from './types';
 
 type CatalogParams = { purpose?: PurposeCode; applicantType?: ApplicantType };
@@ -45,6 +48,8 @@ export const queryKeys = {
     signing: (id: string) => ['applications', 'signing', id] as const,
     signatureReport: (id: string, documentId: string, verifiedAt?: string | null) =>
         ['applications', 'signature-report', id, documentId, verifiedAt ?? null] as const,
+    boQueue: (params: { assignee?: string }) => ['backoffice', 'queue', params] as const,
+    boDossier: (id: string) => ['backoffice', 'dossier', id] as const,
     /** Всё по одной заявке — для инвалидации по WS-событию. */
     anyOf: (id: string) => (query: { queryKey: readonly unknown[] }) => query.queryKey[0] === 'applications' && query.queryKey[2] === id,
 };
@@ -540,5 +545,89 @@ export function useSignatureReport(applicationId: string, documentId: string | u
             ),
         enabled: Boolean(documentId),
         staleTime: 60_000,
+    });
+}
+
+// ---------------------------------------------------------------- рабочее место банка
+
+const QUEUE_PAGES = 20;
+
+/** Очередь андеррайтера целиком (статистика и группы считаются по ней). assignee: me | none | user_id (boListApplications). */
+export function useBoQueue(params: { assignee?: string } = {}) {
+    return useQuery({
+        queryKey: queryKeys.boQueue(params),
+        queryFn: async () => {
+            const items: BoApplicationListItem[] = [];
+            let cursor: string | undefined;
+            for (let page = 0; page < QUEUE_PAGES; page += 1) {
+                const res = unwrap(
+                    await api.GET('/backoffice/applications', { params: { query: { assignee: params.assignee, limit: 100, cursor } } }),
+                );
+                items.push(...res.items);
+                if (!res.next_cursor) break;
+                cursor = res.next_cursor;
+            }
+            return items;
+        },
+        placeholderData: keepPreviousData,
+        // SLA и «ждут клиента» меняются со временем, а не только по событиям
+        refetchInterval: 60_000,
+    });
+}
+
+const SOURCE_POLL_MS = 2_000;
+
+export function useBoDossier(id: string | undefined) {
+    return useQuery({
+        queryKey: queryKeys.boDossier(id ?? ''),
+        queryFn: async () => unwrap(await api.GET('/backoffice/applications/{applicationId}', path(id ?? ''))),
+        enabled: Boolean(id),
+        // WS-событий о готовности источника нет — опрашиваем, пока источник собирается
+        refetchInterval: (query) =>
+            query.state.data?.sources.some((s) => s.state === 'PENDING' || s.state === 'RUNNING') ? SOURCE_POLL_MS : false,
+    });
+}
+
+export function useBoAssign() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (applicationId: string) => unwrap(await api.POST('/backoffice/applications/{applicationId}/assign', path(applicationId))),
+        onSettled: () => void queryClient.invalidateQueries({ queryKey: ['backoffice'] }),
+    });
+}
+
+export function useBoDecide(applicationId: string) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ version, idempotencyKey, ...body }: BoDecisionInput & { version: number; idempotencyKey: string }) =>
+            unwrap(
+                await api.POST('/backoffice/applications/{applicationId}/decision', {
+                    params: { path: { applicationId }, header: { 'If-Match': String(version), 'Idempotency-Key': idempotencyKey } },
+                    body,
+                }),
+            ),
+        onSuccess: (dossier) => {
+            queryClient.setQueryData(queryKeys.boDossier(applicationId), dossier);
+            void queryClient.invalidateQueries({ queryKey: ['backoffice', 'queue'] });
+        },
+        // заявку изменили (412) или её уже решили (409) — перечитываем досье
+        onError: (error) => {
+            if (error instanceof ApiError && STALE.has(error.status)) {
+                void queryClient.invalidateQueries({ queryKey: queryKeys.boDossier(applicationId) });
+            }
+        },
+    });
+}
+
+export function useBoRefreshSource(applicationId: string) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (sourceCode: SourceCode) =>
+            unwrap(
+                await api.POST('/backoffice/applications/{applicationId}/sources/{sourceCode}/refresh', {
+                    params: { path: { applicationId, sourceCode } },
+                }),
+            ),
+        onSuccess: () => void queryClient.invalidateQueries({ queryKey: queryKeys.boDossier(applicationId) }),
     });
 }
