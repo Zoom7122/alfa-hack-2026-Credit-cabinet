@@ -7,7 +7,15 @@
 !internal/
 !internal/**
 !contracts/
-!contracts/*.go
+!contracts/**
+!models/
+!models/**
+!migrations/
+!migrations/**
+!docs/
+!docs/02_inputs_and_scoring.md
 !config/
 !config/*.json
 **/*_test.go
+**/testdata/
+**/testdata/**

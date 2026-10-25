@@ -1,0 +1,137 @@
+{
+  "components": {
+    "schemas": {
+      "FactsBorrower": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "inn": {
+            "minLength": 1,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "enum": [
+              "SOLE_PROPRIETOR",
+              "LEGAL_ENTITY"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "inn"
+        ],
+        "type": "object"
+      },
+      "ScoringFactsRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "application_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "borrower": {
+            "$ref": "#/components/schemas/FactsBorrower"
+          },
+          "facts_schema_version": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "model_version": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "application_id",
+          "borrower",
+          "model_version",
+          "facts_schema_version"
+        ],
+        "type": "object"
+      },
+      "ScoringFactsResponseEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "additional_facts": {
+            "description": "Must also validate against the exact generated named schema selected by the immutable model/schema version pair. This envelope alone is not a complete business-facts schema.",
+            "type": "object"
+          },
+          "application_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "borrower_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "borrower_type": {
+            "enum": [
+              "SOLE_PROPRIETOR",
+              "LEGAL_ENTITY"
+            ],
+            "type": "string"
+          },
+          "facts_date": {
+            "format": "date",
+            "type": "string"
+          },
+          "facts_schema_version": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "model_version": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "application_id",
+          "borrower_id",
+          "borrower_type",
+          "model_version",
+          "facts_schema_version",
+          "facts_date",
+          "additional_facts"
+        ],
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "This release contains no models requiring supplier facts; MS1 does not call the supplier.",
+    "title": "Scoring facts supplier contract",
+    "version": "2.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {},
+  "x-modelgen-documents-version": "1",
+  "x-scoring-models": [
+    {
+      "borrower_type": "SOLE_PROPRIETOR",
+      "definition_sha256": "afe124a79494069c965750900105923b8c9ef8098ebbbc92a3f7743097caee8e",
+      "facts_schema_sha256": "",
+      "facts_schema_version": "",
+      "id": "ip",
+      "uses_facts": false,
+      "version": "ip-v2"
+    },
+    {
+      "borrower_type": "LEGAL_ENTITY",
+      "definition_sha256": "7c15147cf700c3586d658af2d680dba13207e25bd49d08a6d5738f776ef3748c",
+      "facts_schema_sha256": "",
+      "facts_schema_version": "",
+      "id": "legal",
+      "uses_facts": false,
+      "version": "legal-v2"
+    }
+  ],
+  "x-scoring-release": "2.0.0"
+}

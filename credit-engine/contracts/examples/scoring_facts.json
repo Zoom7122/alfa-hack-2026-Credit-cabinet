@@ -1,0 +1,701 @@
+{
+  "description": "Fictitious protocol examples only. No active model or new scoring weights. annual_contract_value_rub is required business data for this example; both named keys must be present, null is explicit unknown.",
+  "evaluation_date": "2026-10-23",
+  "required_business_facts": [
+    "annual_contract_value_rub"
+  ],
+  "request_schema": "./scoring_facts.openapi.json#/components/schemas/ScoringFactsRequest",
+  "response_schema": "./scoring_facts.openapi.json#/components/schemas/ExampleScoringFactsResponse",
+  "cases": [
+    {
+      "name": "known_zero_and_false",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 200,
+      "response": {
+        "application_id": "app-facts-demo-001",
+        "borrower_id": "borrower-demo-001",
+        "borrower_type": "SOLE_PROPRIETOR",
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1",
+        "facts_date": "2026-10-20",
+        "additional_facts": {
+          "annual_contract_value_rub": 0,
+          "has_confirmed_contracts": false
+        }
+      },
+      "expected_classification": "CONTINUE_SCORING",
+      "expected_ms1_http_status": 200,
+      "expected_decision_status": null
+    },
+    {
+      "name": "unknown_required_fact",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 200,
+      "response": {
+        "application_id": "app-facts-demo-001",
+        "borrower_id": "borrower-demo-001",
+        "borrower_type": "SOLE_PROPRIETOR",
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1",
+        "facts_date": "2026-10-20",
+        "additional_facts": {
+          "annual_contract_value_rub": null,
+          "has_confirmed_contracts": false
+        }
+      },
+      "expected_classification": "NEED_INFO",
+      "expected_ms1_http_status": 200,
+      "expected_decision_status": "NEED_INFO"
+    },
+    {
+      "name": "unknown_optional_fact",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 200,
+      "response": {
+        "application_id": "app-facts-demo-001",
+        "borrower_id": "borrower-demo-001",
+        "borrower_type": "SOLE_PROPRIETOR",
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1",
+        "facts_date": "2026-10-20",
+        "additional_facts": {
+          "annual_contract_value_rub": 0,
+          "has_confirmed_contracts": null
+        }
+      },
+      "expected_classification": "CONTINUE_SCORING",
+      "expected_ms1_http_status": 200,
+      "expected_decision_status": null
+    },
+    {
+      "name": "missing_envelope_field",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 200,
+      "response": {
+        "application_id": "app-facts-demo-001",
+        "borrower_id": "borrower-demo-001",
+        "borrower_type": "SOLE_PROPRIETOR",
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1",
+        "additional_facts": {
+          "annual_contract_value_rub": 0,
+          "has_confirmed_contracts": false
+        }
+      },
+      "expected_classification": "INVALID_FACTS_RESPONSE",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "null_facts_block",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 200,
+      "response": {
+        "application_id": "app-facts-demo-001",
+        "borrower_id": "borrower-demo-001",
+        "borrower_type": "SOLE_PROPRIETOR",
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1",
+        "facts_date": "2026-10-20",
+        "additional_facts": null
+      },
+      "expected_classification": "INVALID_FACTS_RESPONSE",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "missing_named_business_field",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 200,
+      "response": {
+        "application_id": "app-facts-demo-001",
+        "borrower_id": "borrower-demo-001",
+        "borrower_type": "SOLE_PROPRIETOR",
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1",
+        "facts_date": "2026-10-20",
+        "additional_facts": {
+          "annual_contract_value_rub": 0
+        }
+      },
+      "expected_classification": "INVALID_FACTS_RESPONSE",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "wrong_number_type",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 200,
+      "response": {
+        "application_id": "app-facts-demo-001",
+        "borrower_id": "borrower-demo-001",
+        "borrower_type": "SOLE_PROPRIETOR",
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1",
+        "facts_date": "2026-10-20",
+        "additional_facts": {
+          "annual_contract_value_rub": "100",
+          "has_confirmed_contracts": false
+        }
+      },
+      "expected_classification": "INVALID_FACTS_RESPONSE",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "wrong_boolean_type",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 200,
+      "response": {
+        "application_id": "app-facts-demo-001",
+        "borrower_id": "borrower-demo-001",
+        "borrower_type": "SOLE_PROPRIETOR",
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1",
+        "facts_date": "2026-10-20",
+        "additional_facts": {
+          "annual_contract_value_rub": 0,
+          "has_confirmed_contracts": 0
+        }
+      },
+      "expected_classification": "INVALID_FACTS_RESPONSE",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "outside_declared_domain",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 200,
+      "response": {
+        "application_id": "app-facts-demo-001",
+        "borrower_id": "borrower-demo-001",
+        "borrower_type": "SOLE_PROPRIETOR",
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1",
+        "facts_date": "2026-10-20",
+        "additional_facts": {
+          "annual_contract_value_rub": -1,
+          "has_confirmed_contracts": false
+        }
+      },
+      "expected_classification": "INVALID_FACTS_RESPONSE",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "foreign_application_id",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 200,
+      "response": {
+        "application_id": "other-application",
+        "borrower_id": "borrower-demo-001",
+        "borrower_type": "SOLE_PROPRIETOR",
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1",
+        "facts_date": "2026-10-20",
+        "additional_facts": {
+          "annual_contract_value_rub": 0,
+          "has_confirmed_contracts": false
+        }
+      },
+      "expected_classification": "FACTS_ID_MISMATCH",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "foreign_borrower_id",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 200,
+      "response": {
+        "application_id": "app-facts-demo-001",
+        "borrower_id": "other-borrower",
+        "borrower_type": "SOLE_PROPRIETOR",
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1",
+        "facts_date": "2026-10-20",
+        "additional_facts": {
+          "annual_contract_value_rub": 0,
+          "has_confirmed_contracts": false
+        }
+      },
+      "expected_classification": "FACTS_ID_MISMATCH",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "foreign_borrower_type",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 200,
+      "response": {
+        "application_id": "app-facts-demo-001",
+        "borrower_id": "borrower-demo-001",
+        "borrower_type": "LEGAL_ENTITY",
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1",
+        "facts_date": "2026-10-20",
+        "additional_facts": {
+          "annual_contract_value_rub": 0,
+          "has_confirmed_contracts": false
+        }
+      },
+      "expected_classification": "FACTS_ID_MISMATCH",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "wrong_model_version",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 200,
+      "response": {
+        "application_id": "app-facts-demo-001",
+        "borrower_id": "borrower-demo-001",
+        "borrower_type": "SOLE_PROPRIETOR",
+        "model_version": "ip-demo-v2",
+        "facts_schema_version": "demo-facts-v1",
+        "facts_date": "2026-10-20",
+        "additional_facts": {
+          "annual_contract_value_rub": 0,
+          "has_confirmed_contracts": false
+        }
+      },
+      "expected_classification": "FACTS_VERSION_MISMATCH",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "wrong_schema_version",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 200,
+      "response": {
+        "application_id": "app-facts-demo-001",
+        "borrower_id": "borrower-demo-001",
+        "borrower_type": "SOLE_PROPRIETOR",
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v2",
+        "facts_date": "2026-10-20",
+        "additional_facts": {
+          "annual_contract_value_rub": 0,
+          "has_confirmed_contracts": false
+        }
+      },
+      "expected_classification": "FACTS_VERSION_MISMATCH",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "invalid_date",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 200,
+      "response": {
+        "application_id": "app-facts-demo-001",
+        "borrower_id": "borrower-demo-001",
+        "borrower_type": "SOLE_PROPRIETOR",
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1",
+        "facts_date": "2026-02-30",
+        "additional_facts": {
+          "annual_contract_value_rub": 0,
+          "has_confirmed_contracts": false
+        }
+      },
+      "expected_classification": "INVALID_FACTS_RESPONSE",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "future_date",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 200,
+      "response": {
+        "application_id": "app-facts-demo-001",
+        "borrower_id": "borrower-demo-001",
+        "borrower_type": "SOLE_PROPRIETOR",
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1",
+        "facts_date": "2026-10-24",
+        "additional_facts": {
+          "annual_contract_value_rub": 0,
+          "has_confirmed_contracts": false
+        }
+      },
+      "expected_classification": "INVALID_FACTS_RESPONSE",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "unexpected_business_field",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 200,
+      "response": {
+        "application_id": "app-facts-demo-001",
+        "borrower_id": "borrower-demo-001",
+        "borrower_type": "SOLE_PROPRIETOR",
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1",
+        "facts_date": "2026-10-20",
+        "additional_facts": {
+          "annual_contract_value_rub": 0,
+          "has_confirmed_contracts": false,
+          "unexpected": 1
+        }
+      },
+      "expected_classification": "INVALID_FACTS_RESPONSE",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "unexpected_envelope_field",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 200,
+      "response": {
+        "application_id": "app-facts-demo-001",
+        "borrower_id": "borrower-demo-001",
+        "borrower_type": "SOLE_PROPRIETOR",
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1",
+        "facts_date": "2026-10-20",
+        "additional_facts": {
+          "annual_contract_value_rub": 0,
+          "has_confirmed_contracts": false
+        },
+        "score": 999
+      },
+      "expected_classification": "INVALID_FACTS_RESPONSE",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "unexpected_http_204",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 204,
+      "response": null,
+      "expected_classification": "FACTS_UNAVAILABLE",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "unexpected_http_400",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 400,
+      "response": null,
+      "expected_classification": "FACTS_UNAVAILABLE",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "unexpected_http_404",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 404,
+      "response": null,
+      "expected_classification": "FACTS_UNAVAILABLE",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "unexpected_http_422",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 422,
+      "response": null,
+      "expected_classification": "FACTS_UNAVAILABLE",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "unexpected_http_500",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 500,
+      "response": null,
+      "expected_classification": "FACTS_UNAVAILABLE",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "unexpected_http_503",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 503,
+      "response": null,
+      "expected_classification": "FACTS_UNAVAILABLE",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "timeout",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "transport_error": "timeout",
+      "expected_classification": "DEPENDENCY_TIMEOUT",
+      "expected_ms1_http_status": 504,
+      "expected_decision_status": null
+    },
+    {
+      "name": "connection_failure",
+      "request": {
+        "application_id": "app-facts-demo-001",
+        "borrower": {
+          "id": "borrower-demo-001",
+          "type": "SOLE_PROPRIETOR",
+          "inn": "990000000001"
+        },
+        "model_version": "ip-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "transport_error": "connection_failure",
+      "expected_classification": "FACTS_UNAVAILABLE",
+      "expected_ms1_http_status": 502,
+      "expected_decision_status": null
+    },
+    {
+      "name": "legal_entity_named_facts",
+      "request": {
+        "application_id": "app-facts-demo-002",
+        "borrower": {
+          "id": "borrower-demo-002",
+          "type": "LEGAL_ENTITY",
+          "inn": "9900000001"
+        },
+        "model_version": "legal-demo-v1",
+        "facts_schema_version": "demo-facts-v1"
+      },
+      "provider_status": 200,
+      "response": {
+        "application_id": "app-facts-demo-002",
+        "borrower_id": "borrower-demo-002",
+        "borrower_type": "LEGAL_ENTITY",
+        "model_version": "legal-demo-v1",
+        "facts_schema_version": "demo-facts-v1",
+        "facts_date": "2026-10-20",
+        "additional_facts": {
+          "annual_contract_value_rub": 12345.67,
+          "has_confirmed_contracts": true
+        }
+      },
+      "expected_classification": "CONTINUE_SCORING",
+      "expected_ms1_http_status": 200,
+      "expected_decision_status": null
+    }
+  ]
+}

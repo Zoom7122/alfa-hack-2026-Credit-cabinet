@@ -9,12 +9,13 @@ import (
 )
 
 type inputData struct {
-	missing       []string
-	manual        []contracts.Reason
-	flow          CashFlow
-	cashConfirmed bool
-	receiptsRUB   big.Int
-	cfadsRUB      big.Int
+	missing                                                     []string
+	manual                                                      []contracts.Reason
+	flow                                                        CashFlow
+	cashConfirmed                                               bool
+	receiptsRUB                                                 big.Int
+	cfadsRUB                                                    big.Int
+	variableRUB, fixedRUB, historicalDebtRUB, annualRequiredRUB big.Int
 }
 
 func knownStops(r contracts.DecisionRequest) []contracts.Reason {
@@ -192,6 +193,10 @@ func history(r contracts.DecisionRequest, now time.Time, d *inputData) bool {
 	}
 	d.flow.Receipts, _ = d.receiptsRUB.Float64()
 	d.cfadsRUB.Set(&annualCFADS)
+	d.variableRUB.Set(&annualVariable)
+	d.fixedRUB.Set(&annualFixed)
+	d.historicalDebtRUB.Set(&annualDebt)
+	d.annualRequiredRUB.Set(&annualRequired)
 	d.flow.CFADS, _ = annualCFADS.Float64()
 	d.flow.Variable, _ = annualVariable.Float64()
 	d.flow.Fixed, _ = annualFixed.Float64()

@@ -1,0 +1,154 @@
+# Isolated acceptance only. All credentials and supplier data are fictional.
+x-runtime: &runtime
+  image: ${CREDIT_ENGINE_TEST_IMAGE:-credit-engine:acceptance}
+  build: {context: .}
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  labels: {credit.engine.task: "${CREDIT_ENGINE_TEST_LABEL:?Use scripts/verify.sh}"}
+
+x-node: &node
+  image: mcr.microsoft.com/playwright:v1.63.0-noble
+  working_dir: /workspace/credit-engine
+  volumes:
+    - "${CREDIT_ENGINE_TEST_SOURCE:-.}:/workspace/credit-engine:ro"
+    - "${CREDIT_ENGINE_TEST_SOURCE:-.}/.work:/workspace/credit-engine/.work"
+    - "${CREDIT_ENGINE_TEST_WORK_HOST:?Use scripts/verify.sh}:/test-work"
+  environment: &test-env
+    CREDIT_ENGINE_UI_TEST: "1"
+    CREDIT_ENGINE_UI_OUTPUT: "${CREDIT_ENGINE_TEST_OUTPUT:?Use scripts/verify.sh}"
+    CREDIT_ENGINE_RUN_ID: "${CREDIT_ENGINE_TEST_LABEL}"
+    CREDIT_ENGINE_SCORING_URL: http://scoring-service:8082
+    CREDIT_ENGINE_BANK_URL: http://bank-state-service:8083
+    CREDIT_ENGINE_ADMIN_URL: http://admin-service:18084
+    CREDIT_ENGINE_FACTS_URL: http://fixtures:18090
+    PLAYWRIGHT_MODULE: /workspace/credit-engine/.work/playwright/node_modules/playwright/index.mjs
+    HOME: /workspace/credit-engine/.work/browser-home
+    TMPDIR: /workspace/credit-engine/.work/tmp-browser
+  labels: {credit.engine.task: "${CREDIT_ENGINE_TEST_LABEL}"}
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: credit_engine_admin_test
+      POSTGRES_USER: credit_test
+      POSTGRES_PASSWORD: credit_test_password
+    tmpfs: ["/var/lib/postgresql/data:rw,size=1g"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U credit_test -d credit_engine_admin_test"]
+      interval: 1s
+      timeout: 3s
+      retries: 40
+    labels: {credit.engine.task: "${CREDIT_ENGINE_TEST_LABEL}"}
+
+  admin-migrate:
+    <<: *runtime
+    entrypoint: ["/admin-migrate"]
+    command: ["up"]
+    environment:
+      ADMIN_DATABASE_URL: postgres://credit_test:credit_test_password@postgres:5432/credit_engine_admin_test?sslmode=disable
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  admin-service:
+    <<: *runtime
+    entrypoint: ["/admin-service"]
+    ports: ["127.0.0.1:${CREDIT_ENGINE_TEST_PORT:-18084}:18084"]
+    environment:
+      ADMIN_ADDR: ":18084"
+      ADMIN_DATABASE_URL: postgres://credit_test:credit_test_password@postgres:5432/credit_engine_admin_test?sslmode=disable
+      ADMIN_USERNAME: editor
+      ADMIN_PASSWORD_HASH: "$$2a$$10$$EWuECD9zM/WTJv1IbDlfG.LUvUkOWslI3qcfYVvlEqmZkq/jeYQiK"
+      ADMIN_EVENTS_TOKEN: fictional-ms2-service-token-1234567890
+      ADMIN_PUBLIC_ORIGIN: http://localhost:18084
+      ADMIN_COOKIE_SECURE: "false"
+      ADMIN_SCORING_URL: http://scoring-service:8082
+    depends_on:
+      admin-migrate: {condition: service_completed_successfully}
+
+  fixtures:
+    <<: *node
+    command: ["node", "scripts/fixtures.mjs"]
+
+  bank-state-service:
+    <<: *runtime
+    entrypoint: ["/bank-state-service"]
+    volumes: ["${CREDIT_ENGINE_TEST_WORK_HOST}:/test-work:ro"]
+    environment:
+      BANK_STATE_FILE: /test-work/bank-state.json
+      ADMIN_URL: http://admin-service:18084
+      ADMIN_EVENTS_TOKEN: fictional-ms2-service-token-1234567890
+    depends_on:
+      admin-service: {condition: service_started}
+
+  scoring-service:
+    <<: *runtime
+    environment:
+      BANK_URL: http://fixtures:18090/bank
+      STATEMENTS_URL: http://fixtures:18090
+      DEMO_EVALUATION_DATE: "2026-10-23"
+    depends_on: [bank-state-service, fixtures]
+
+  bank-rebuilt:
+    <<: *runtime
+    profiles: [checks]
+    entrypoint: ["/bank-state-service"]
+    environment:
+      ADMIN_URL: http://admin-service:18084
+      ADMIN_EVENTS_TOKEN: fictional-ms2-service-token-1234567890
+
+  scoring-rebuilt:
+    <<: *runtime
+    profiles: [checks]
+    entrypoint: ["/scoring-rebuilt"]
+    volumes: ["${CREDIT_ENGINE_TEST_WORK_HOST}/scoring-rebuilt:/scoring-rebuilt:ro"]
+    environment:
+      BANK_URL: http://bank-rebuilt:8083
+      STATEMENTS_URL: http://fixtures:18090
+      FACTS_URL: http://fixtures:18090
+      DEMO_EVALUATION_DATE: "2026-10-23"
+
+  node:
+    <<: *node
+    profiles: [checks]
+    entrypoint: ["node"]
+
+  browser:
+    <<: *node
+    profiles: [checks]
+    network_mode: service:admin-service
+    init: true
+    shm_size: 1g
+    tmpfs: ["/workspace/credit-engine/.work/tmp-browser:rw,exec,size=512m"]
+    entrypoint: ["node"]
+
+  go:
+    image: golang:1.26.8-bookworm
+    profiles: [checks]
+    working_dir: /workspace/credit-engine
+    volumes:
+      - "${CREDIT_ENGINE_TEST_SOURCE:-.}:/workspace/credit-engine:ro"
+      - "${CREDIT_ENGINE_TEST_SOURCE:-.}/.work:/workspace/credit-engine/.work"
+    environment:
+      CREDIT_ENGINE_TEST_ISOLATED: "1"
+      CREDIT_ENGINE_TEST_DSN: postgres://credit_test:credit_test_password@postgres:5432/credit_engine_admin_test?sslmode=disable
+      CREDIT_ENGINE_UI_OUTPUT: "${CREDIT_ENGINE_TEST_OUTPUT}"
+      GOCACHE: /workspace/credit-engine/.work/linux-gocache
+      GOMODCACHE: /workspace/credit-engine/.work/gomodcache
+      GOPATH: /workspace/credit-engine/.work/linux-gopath
+      GOTMPDIR: /workspace/credit-engine/.work/tmp-linux
+      TMPDIR: /workspace/credit-engine/.work/tmp-linux
+      HOME: /workspace/credit-engine/.work/container-config
+      GOENV: "off"
+      GOTOOLCHAIN: local
+      GOTELEMETRY: "off"
+      GOFLAGS: "-mod=readonly -p=2"
+      CGO_ENABLED: "1"
+      GIN_MODE: release
+    labels: {credit.engine.task: "${CREDIT_ENGINE_TEST_LABEL}"}
+    entrypoint: ["sh", "scripts/check-go.sh"]
+
+networks:
+  default:
+    labels: {credit.engine.task: "${CREDIT_ENGINE_TEST_LABEL}"}

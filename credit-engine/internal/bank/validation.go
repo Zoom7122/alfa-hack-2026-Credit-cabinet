@@ -60,6 +60,11 @@ func validatePayload(b contracts.Borrower, c contracts.CreditRequest, score cont
 	default:
 		return invalid("score.grade")
 	}
+	for i, criterion := range score.Economics.Criteria {
+		if err := criterion.ValidateValue(); err != nil {
+			return invalid(fmt.Sprintf("score.economics.criteria[%d].value", i))
+		}
+	}
 	return nil
 }
 func validateTerms(t contracts.LoanTerms) error {
