@@ -221,6 +221,7 @@ type Evidence struct {
 
 type DecisionRequest struct {
 	ApplicationID      string          `json:"application_id"`
+	ModelVersion       *string         `json:"model_version,omitempty"`
 	Borrower           Borrower        `json:"borrower"`
 	FactsDate          *string         `json:"facts_date"`
 	CreditRequest      *CreditRequest  `json:"credit_request"`
@@ -602,10 +603,12 @@ type QuestionnaireCriterion struct {
 }
 
 type EconomicCriterion struct {
-	ID        string   `json:"id"`
-	Value     *float64 `json:"value"`
-	Points    float64  `json:"points"`
-	MaxPoints int      `json:"max_points"`
+	ID    string   `json:"id"`
+	Value *float64 `json:"value"`
+	// BooleanValue shares the wire key "value" with Value; at most one is set.
+	BooleanValue *bool   `json:"-"`
+	Points       float64 `json:"points"`
+	MaxPoints    int     `json:"max_points"`
 }
 
 type QuestionnaireResult struct {

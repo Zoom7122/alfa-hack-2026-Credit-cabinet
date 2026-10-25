@@ -35,8 +35,16 @@ type httpPipeline struct {
 }
 
 func newHTTPPipeline(t *testing.T, stateFile string) *httpPipeline {
+	return newHTTPPipelineWithSettings(t, stateFile, nil)
+}
+
+func newHTTPPipelineWithSettings(t *testing.T, stateFile string, overrides map[string]string) *httpPipeline {
 	t.Helper()
-	sc, err := config.LoadScoring(environment(map[string]string{"STATEMENTS_URL": "http://b.invalid", "BANK_URL": "http://bank.invalid", "POLICY_FILE": "../../config/policy.json", "DEMO_EVALUATION_DATE": "2026-10-23"}))
+	values := map[string]string{"STATEMENTS_URL": "http://b.invalid", "BANK_URL": "http://bank.invalid", "POLICY_FILE": "../../config/policy.json", "DEMO_EVALUATION_DATE": "2026-10-23"}
+	for key, value := range overrides {
+		values[key] = value
+	}
+	sc, err := config.LoadScoring(environment(values))
 	if err != nil {
 		t.Fatal(err)
 	}

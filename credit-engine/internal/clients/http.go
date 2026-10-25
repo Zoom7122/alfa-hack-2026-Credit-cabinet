@@ -30,8 +30,9 @@ func (e *Error) Error() string { return fmt.Sprintf("REST %s (%d)", e.Code, e.St
 func (e *Error) Unwrap() error { return e.cause }
 
 type transport struct {
-	base url.URL
-	http *http.Client
+	base    url.URL
+	http    *http.Client
+	headers http.Header
 }
 
 func newTransport(base string, c *http.Client) (*transport, error) {
@@ -86,6 +87,9 @@ func (t *transport) exchange(ctx context.Context, method string, parts []string,
 		return 0, nil, &Error{Status: 500, Code: "INVALID_OUTGOING_REQUEST", cause: err}
 	}
 	req.Header.Set("Accept", "application/json")
+	for key, values := range t.headers {
+		req.Header[key] = append([]string(nil), values...)
+	}
 	if payload != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}

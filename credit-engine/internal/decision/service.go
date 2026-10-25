@@ -101,6 +101,10 @@ func (s *Service) Decide(ctx context.Context, r contracts.DecisionRequest) (cont
 	return result, nil
 }
 
+func (s *Service) ModelVersion(r contracts.DecisionRequest) (string, error) {
+	return s.evaluator.ModelVersion(r)
+}
+
 func (s *Service) manual(ctx context.Context, r contracts.DecisionRequest, result contracts.DecisionResponse) (contracts.DecisionResponse, error) {
 	if err := ctx.Err(); err != nil {
 		return contracts.DecisionResponse{}, err

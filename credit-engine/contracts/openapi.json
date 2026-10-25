@@ -1,1582 +1,20 @@
 {
-  "openapi": "3.1.0",
-  "info": {
-    "title": "Credit MVP internal contracts",
-    "version": "2.0.0",
-    "description": "Implement only MS1 and MS2. EXTERNAL-B and EXTERNAL-MS3 paths are contracts for other owners. Money input: integer RUB; loan annual rates: percentages, 24 = 24%, range 0..100 inclusive, at most two decimal places. Internal policy rates and ratios remain fractions. Scoring v2: raw named questionnaire inputs (750), internally computed economics (250); B uses named BalanceShit and ProfitAndLoss fields."
-  },
-  "paths": {
-    "/api/v1/decisions": {
-      "post": {
-        "operationId": "evaluateDecision",
-        "tags": [
-          "MS1"
-        ],
-        "description": "A calls MS1. MS1 obtains legal-entity reports from B, scores and selects one deal.",
-        "responses": {
-          "200": {
-            "description": "Business result / accepted notification",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DecisionResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Technical error; not a credit status",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Technical error; not a credit status",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Technical error; not a credit status",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Technical error; not a credit status",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "504": {
-            "description": "Technical error; not a credit status",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Unexpected internal technical error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DecisionRequest"
-              }
-            }
-          }
-        },
-        "servers": [
-          {
-            "url": "http://localhost:8082"
-          }
-        ]
-      }
-    },
-    "/api/v1/bank/check-and-issue": {
-      "post": {
-        "operationId": "checkAndIssue",
-        "tags": [
-          "MS2"
-        ],
-        "description": "Atomic bank projection and educational issuance on success. Only one selected deal. MS3 delivery errors are represented by notification_status=PENDING; they do not undo the recorded result.",
-        "responses": {
-          "200": {
-            "description": "Business result / accepted notification",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BankCheckResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Technical error; not a credit status",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Technical error; not a credit status",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Technical error; not a credit status",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Unexpected internal technical error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BankCheckRequest"
-              }
-            }
-          }
-        },
-        "servers": [
-          {
-            "url": "http://localhost:8083"
-          }
-        ]
-      }
-    },
-    "/api/v1/bank/manual-reviews": {
-      "post": {
-        "operationId": "forwardManualReview",
-        "tags": [
-          "MS2"
-        ],
-        "description": "Forward to MS3; do not project or change bank financial state. MS3 delivery errors are represented by notification_status=PENDING; they do not undo the recorded result.",
-        "responses": {
-          "202": {
-            "description": "Business result / accepted notification",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ManualReviewResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Technical error; not a credit status",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Technical error; not a credit status",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Technical error; not a credit status",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Unexpected internal technical error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ManualReviewRequest"
-              }
-            }
-          }
-        },
-        "servers": [
-          {
-            "url": "http://localhost:8083"
-          }
-        ]
-      }
-    },
-    "/api/v1/bank/state": {
-      "get": {
-        "operationId": "getBankState",
-        "tags": [
-          "MS2"
-        ],
-        "description": "Read-only teaching endpoint; not a reset or a source for MS1 optimization.",
-        "responses": {
-          "200": {
-            "description": "Business result / accepted notification",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BankStateResponse"
-                }
-              }
-            }
-          }
-        },
-        "servers": [
-          {
-            "url": "http://localhost:8083"
-          }
-        ]
-      }
-    },
-    "/healthz": {
-      "get": {
-        "operationId": "getHealth",
-        "tags": [
-          "MS1-MS2"
-        ],
-        "description": "",
-        "responses": {
-          "200": {
-            "description": "Business result / accepted notification",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Health"
-                }
-              }
-            }
-          }
-        },
-        "servers": [
-          {
-            "url": "http://localhost:8082"
-          },
-          {
-            "url": "http://localhost:8083"
-          }
-        ]
-      }
-    },
-    "/api/v1/borrowers/{borrower_id}/statements": {
-      "get": {
-        "operationId": "getStatements",
-        "tags": [
-          "EXTERNAL-B"
-        ],
-        "description": "Expected external B contract. Do not implement B in our module.",
-        "responses": {
-          "200": {
-            "description": "Business result / accepted notification",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StatementsResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Reports not found: MS1 returns NEED_INFO"
-          }
-        },
-        "parameters": [
-          {
-            "name": "borrower_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "years",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "example": "2024,2025"
-          }
-        ]
-      }
-    },
-    "/api/v1/credit-events": {
-      "post": {
-        "operationId": "acceptCreditEvent",
-        "tags": [
-          "EXTERNAL-MS3"
-        ],
-        "description": "Expected external MS3 receiver. Our module implements only its HTTP client. event_id deduplicates retries.",
-        "responses": {
-          "202": {
-            "description": "Business result / accepted notification",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EventAck"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Technical error; not a credit status",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Technical error; not a credit status",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Technical error; not a credit status",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Technical error; not a credit status",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "504": {
-            "description": "Technical error; not a credit status",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Unexpected internal technical error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminEvent"
-              }
-            }
-          }
-        }
-      }
-    }
-  },
   "components": {
     "schemas": {
-      "BorrowerType": {
-        "type": "string",
-        "enum": [
-          "SOLE_PROPRIETOR",
-          "LEGAL_ENTITY"
-        ]
-      },
-      "Grade": {
-        "type": "string",
-        "enum": [
-          "A",
-          "B",
-          "C",
-          "D"
-        ]
-      },
-      "DecisionStatus": {
-        "type": "string",
-        "enum": [
-          "APPROVED",
-          "NEED_INFO",
-          "UNDER_REVIEW",
-          "REJECTED"
-        ]
-      },
-      "ReviewReason": {
-        "type": "string",
-        "enum": [
-          "BORROWER",
-          "BANK"
-        ]
-      },
-      "StatementUnit": {
-        "type": "string",
-        "enum": [
-          "RUB",
-          "THOUSAND_RUB"
-        ]
-      },
-      "BankVerdict": {
-        "type": "string",
-        "enum": [
-          "ISSUED",
-          "BANK_REVIEW"
-        ]
-      },
-      "NotificationStatus": {
-        "type": "string",
-        "enum": [
-          "DELIVERED",
-          "PENDING"
-        ]
-      },
-      "EventType": {
-        "type": "string",
-        "enum": [
-          "LOAN_ISSUED",
-          "BORROWER_REVIEW",
-          "BANK_REVIEW"
-        ]
-      },
-      "MaritalStatus": {
-        "type": "string",
-        "enum": [
-          "MARRIED",
-          "NEVER_MARRIED",
-          "DIVORCED_ONCE",
-          "DIVORCED_MULTIPLE",
-          "WIDOWED"
-        ]
-      },
-      "IncomeSource": {
-        "type": "string",
-        "enum": [
-          "BUSINESS",
-          "PUBLIC_EMPLOYMENT",
-          "PRIVATE_EMPLOYMENT",
-          "PENSION",
-          "SELF_EMPLOYED_OR_GPH",
-          "NONE"
-        ]
-      },
-      "Qualification": {
-        "type": "string",
-        "enum": [
-          "NONE",
-          "SUPPORT",
-          "SPECIALIST",
-          "MANAGER_OR_HIGHLY_QUALIFIED"
-        ]
-      },
-      "CarClass": {
-        "type": "string",
-        "enum": [
-          "NONE",
-          "ECONOMY",
-          "COMFORT",
-          "PREMIUM"
-        ]
-      },
-      "EducationLevel": {
-        "type": "string",
-        "enum": [
-          "BELOW_GENERAL",
-          "GENERAL",
-          "VOCATIONAL",
-          "HIGHER",
-          "ACADEMIC_DEGREE"
-        ]
-      },
-      "RealEstateStatus": {
-        "type": "string",
-        "enum": [
-          "UNENCUMBERED_WHOLE",
-          "UNENCUMBERED_SHARE",
-          "ENCUMBERED_ONLY",
-          "NONE"
-        ]
-      },
-      "BusinessLocation": {
-        "type": "string",
-        "enum": [
-          "VERIFIED_PHYSICAL",
-          "VERIFIED_ONLINE_OR_MOBILE",
-          "UNVERIFIED"
-        ]
-      },
-      "IncomeEvidence": {
-        "type": "string",
-        "enum": [
-          "VERIFIED",
-          "DOCUMENTS_PENDING_CROSSCHECK",
-          "NONE"
-        ]
-      },
-      "BuyerContracts": {
-        "type": "string",
-        "enum": [
-          "ACTIVE_AND_PERFORMED",
-          "REPEAT_ORDERS",
-          "PLANS_ONLY"
-        ]
-      },
-      "MilitaryStatus": {
-        "type": "string",
-        "enum": [
-          "SERVED",
-          "EXEMPT_OR_DEFERRED",
-          "NOT_LIABLE",
-          "OTHER_OR_UNKNOWN"
-        ]
-      },
-      "AuditorOpinion": {
-        "type": "string",
-        "enum": [
-          "UNMODIFIED",
-          "NOT_REQUIRED",
-          "MATERIAL_MODIFICATION",
-          "REQUIRED_MISSING"
-        ]
-      },
-      "NeedEvidence": {
-        "type": "string",
-        "enum": [
-          "CONTRACT_AND_COST",
-          "VERIFIED_ESTIMATE",
-          "ORAL_ONLY"
-        ]
-      },
-      "Borrower": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "type": {
-            "$ref": "#/components/schemas/BorrowerType"
-          },
-          "inn": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "type"
-        ]
-      },
-      "CreditRequest": {
-        "type": "object",
-        "properties": {
-          "purpose": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "amount_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "term_months": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int32"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "max_annual_rate": {
-            "description": "Maximum annual loan rate in percent: 23.75 means 23.75%. Values outside 0..100 or more precise than 0.01 percentage point return 422.",
-            "anyOf": [
-              {
-                "type": "number",
-                "format": "double",
-                "minimum": 0,
-                "maximum": 100,
-                "multipleOf": 0.01
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "min_acceptable_amount_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "max_acceptable_term_months": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int32"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": []
-      },
-      "Need": {
-        "type": "object",
-        "properties": {
-          "confirmed_cost_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "own_contribution_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": []
-      },
-      "Cash": {
-        "type": "object",
-        "properties": {
-          "free_after_own_contribution_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "minimum_required_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": []
-      },
-      "MonthCash": {
-        "type": "object",
-        "properties": {
-          "month": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "operating_receipts_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "variable_payments_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "fixed_payments_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "taxes_paid_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "maintenance_investment_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "owner_required_payments_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "existing_debt_payment_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": []
-      },
-      "DebtPayment": {
-        "type": "object",
-        "properties": {
-          "month": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "payment_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": []
-      },
-      "Evidence": {
-        "type": "object",
-        "properties": {
-          "confirmed_receipts_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "unexplained_difference_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "largest_buyer_group_receipts_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": []
-      },
-      "DecisionRequest": {
-        "type": "object",
-        "properties": {
-          "application_id": {
-            "type": "string"
-          },
-          "borrower": {
-            "$ref": "#/components/schemas/Borrower"
-          },
-          "facts_date": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "credit_request": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/CreditRequest"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "need": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Need"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "cash": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Cash"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "monthly_history": {
-            "anyOf": [
-              {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/MonthCash"
-                }
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "financial_debt_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "future_debt_payments": {
-            "anyOf": [
-              {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/DebtPayment"
-                }
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "scoring": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ScoringInput"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "evidence": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Evidence"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "ip_economic_data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/IpEconomicData"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "application_id",
-          "borrower"
-        ]
-      },
-      "AnnualReport": {
-        "type": "object",
-        "properties": {
-          "year": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int32"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "period_end": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "balance": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/BalanceShit"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "profit_and_loss": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ProfitAndLoss"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": []
-      },
-      "StatementsResponse": {
-        "type": "object",
-        "properties": {
-          "borrower_id": {
-            "type": "string"
-          },
-          "annual_reports": {
-            "anyOf": [
-              {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/AnnualReport"
-                }
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "borrower_id"
-        ]
-      },
-      "Reason": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "fields": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "code",
-          "message",
-          "fields"
-        ]
-      },
-      "ScoreResult": {
-        "type": "object",
-        "properties": {
-          "model": {
-            "type": "string"
-          },
-          "questionnaire": {
-            "$ref": "#/components/schemas/QuestionnaireResult"
-          },
-          "economics": {
-            "$ref": "#/components/schemas/EconomicResult"
-          },
-          "raw_total": {
-            "type": "number",
-            "format": "double"
-          },
-          "total": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "grade": {
-            "$ref": "#/components/schemas/Grade"
-          }
-        },
-        "required": [
-          "model",
-          "questionnaire",
-          "economics",
-          "raw_total",
-          "total",
-          "grade"
-        ]
-      },
-      "LoanTerms": {
-        "type": "object",
-        "properties": {
-          "amount_rub": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "term_months": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "annual_rate": {
-            "type": "number",
-            "format": "double",
-            "description": "Annual loan rate in percent: 24 means 24%.",
-            "minimum": 0,
-            "maximum": 100,
-            "multipleOf": 0.01
-          }
-        },
-        "required": [
-          "amount_rub",
-          "term_months",
-          "annual_rate"
-        ]
-      },
-      "SelectionAudit": {
-        "type": "object",
-        "properties": {
-          "feasible_candidate_count": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "same_amount_candidate_count": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "max_npv_rub": {
-            "type": "number",
-            "format": "double"
-          },
-          "selected_npv_rub": {
-            "type": "number",
-            "format": "double"
-          },
-          "profit_retention": {
-            "type": "number",
-            "format": "double"
-          },
-          "monthly_payment_rub": {
-            "type": "number",
-            "format": "double"
-          },
-          "overpayment_rub": {
-            "type": "number",
-            "format": "double"
-          }
-        },
-        "required": [
-          "feasible_candidate_count",
-          "same_amount_candidate_count",
-          "max_npv_rub",
-          "selected_npv_rub",
-          "profit_retention",
-          "monthly_payment_rub",
-          "overpayment_rub"
-        ]
-      },
-      "DecisionResponse": {
-        "type": "object",
-        "properties": {
-          "application_id": {
-            "type": "string"
-          },
-          "borrower_id": {
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/DecisionStatus"
-          },
-          "message": {
-            "type": "string"
-          },
-          "score": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ScoreResult"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "terms": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/LoanTerms"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "terms_confirmed": {
-            "type": "boolean"
-          },
-          "monthly_payment_rub": {
-            "anyOf": [
-              {
-                "type": "number",
-                "format": "double"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "overpayment_rub": {
-            "anyOf": [
-              {
-                "type": "number",
-                "format": "double"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "loan_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "review_reason": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ReviewReason"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "reasons": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Reason"
-            }
-          }
-        },
-        "required": [
-          "application_id",
-          "borrower_id",
-          "status",
-          "message",
-          "score",
-          "terms",
-          "terms_confirmed",
-          "monthly_payment_rub",
-          "overpayment_rub",
-          "loan_id",
-          "review_reason",
-          "reasons"
-        ]
-      },
-      "BankCheckRequest": {
-        "type": "object",
-        "properties": {
-          "policy_id": {
-            "type": "string"
-          },
-          "application_id": {
-            "type": "string"
-          },
-          "borrower": {
-            "$ref": "#/components/schemas/Borrower"
-          },
-          "requested_terms": {
-            "$ref": "#/components/schemas/CreditRequest"
-          },
-          "terms": {
-            "$ref": "#/components/schemas/LoanTerms"
-          },
-          "score": {
-            "$ref": "#/components/schemas/ScoreResult"
-          },
-          "selection": {
-            "$ref": "#/components/schemas/SelectionAudit"
-          }
-        },
-        "required": [
-          "policy_id",
-          "application_id",
-          "borrower",
-          "requested_terms",
-          "terms",
-          "score",
-          "selection"
-        ]
-      },
-      "CheckResult": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string"
-          },
-          "before": {
-            "anyOf": [
-              {
-                "type": "number",
-                "format": "double"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "after": {
-            "anyOf": [
-              {
-                "type": "number",
-                "format": "double"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "operator": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "limit": {
-            "anyOf": [
-              {
-                "type": "number",
-                "format": "double"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "passed": {
-            "type": "boolean"
-          },
-          "detail": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "code",
-          "before",
-          "after",
-          "operator",
-          "limit",
-          "passed",
-          "detail"
-        ]
-      },
-      "BankCheckResponse": {
-        "type": "object",
-        "properties": {
-          "application_id": {
-            "type": "string"
-          },
-          "verdict": {
-            "$ref": "#/components/schemas/BankVerdict"
-          },
-          "loan_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "checks": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CheckResult"
-            }
-          },
-          "event_id": {
-            "type": "string"
-          },
-          "notification_status": {
-            "$ref": "#/components/schemas/NotificationStatus"
-          }
-        },
-        "required": [
-          "application_id",
-          "verdict",
-          "loan_id",
-          "checks",
-          "event_id",
-          "notification_status"
-        ]
-      },
-      "ManualReviewRequest": {
-        "type": "object",
-        "properties": {
-          "policy_id": {
-            "type": "string"
-          },
-          "application_id": {
-            "type": "string"
-          },
-          "borrower": {
-            "$ref": "#/components/schemas/Borrower"
-          },
-          "requested_terms": {
-            "$ref": "#/components/schemas/CreditRequest"
-          },
-          "score": {
-            "$ref": "#/components/schemas/ScoreResult"
-          },
-          "reasons": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Reason"
-            }
-          }
-        },
-        "required": [
-          "policy_id",
-          "application_id",
-          "borrower",
-          "requested_terms",
-          "score",
-          "reasons"
-        ]
-      },
-      "ManualReviewResponse": {
-        "type": "object",
-        "properties": {
-          "application_id": {
-            "type": "string"
-          },
-          "event_id": {
-            "type": "string"
-          },
-          "notification_status": {
-            "$ref": "#/components/schemas/NotificationStatus"
-          }
-        },
-        "required": [
-          "application_id",
-          "event_id",
-          "notification_status"
-        ]
-      },
       "AdminEvent": {
-        "type": "object",
         "properties": {
-          "event_id": {
+          "application_id": {
             "type": "string"
           },
-          "occurred_at": {
+          "borrower": {
+            "$ref": "#/components/schemas/Borrower"
+          },
+          "event_id": {
             "type": "string"
           },
           "kind": {
             "$ref": "#/components/schemas/EventType"
           },
-          "application_id": {
-            "type": "string"
-          },
-          "borrower": {
-            "$ref": "#/components/schemas/Borrower"
-          },
-          "score": {
-            "$ref": "#/components/schemas/ScoreResult"
-          },
-          "requested_terms": {
-            "$ref": "#/components/schemas/CreditRequest"
-          },
           "loan_id": {
             "anyOf": [
               {
@@ -1587,32 +25,41 @@
               }
             ]
           },
-          "terms": {
+          "occurred_at": {
+            "type": "string"
+          },
+          "problems": {
+            "items": {
+              "$ref": "#/components/schemas/CheckResult"
+            },
+            "type": "array"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/Reason"
+            },
+            "type": "array"
+          },
+          "requested_terms": {
+            "$ref": "#/components/schemas/CreditRequest"
+          },
+          "score": {
+            "$ref": "#/components/schemas/ScoreResult"
+          },
+          "selection": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/LoanTerms"
+                "$ref": "#/components/schemas/SelectionAudit"
               },
               {
                 "type": "null"
               }
             ]
           },
-          "reasons": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Reason"
-            }
-          },
-          "problems": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CheckResult"
-            }
-          },
-          "selection": {
+          "terms": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/SelectionAudit"
+                "$ref": "#/components/schemas/LoanTerms"
               },
               {
                 "type": "null"
@@ -1633,152 +80,694 @@
           "reasons",
           "problems",
           "selection"
-        ]
+        ],
+        "type": "object"
       },
-      "EventAck": {
-        "type": "object",
+      "AnnualReport": {
         "properties": {
+          "balance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BalanceShit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "profit_and_loss": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfitAndLoss"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "year": {
+            "anyOf": [
+              {
+                "format": "int32",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "AuditorOpinion": {
+        "enum": [
+          "UNMODIFIED",
+          "NOT_REQUIRED",
+          "MATERIAL_MODIFICATION",
+          "REQUIRED_MISSING"
+        ],
+        "type": "string"
+      },
+      "BalanceShit": {
+        "properties": {
+          "additional_capital": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1350 — Добавочный капитал"
+          },
+          "cash_and_equivalents": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1250 — Деньги и денежные эквиваленты"
+          },
+          "charter_capital": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1310 — Уставный капитал"
+          },
+          "current_assets": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1200 — Итого оборотные активы"
+          },
+          "current_liabilities": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1500 — Итого краткосрочные обязательства"
+          },
+          "deferred_income": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1530 — Доходы будущих периодов"
+          },
+          "deferred_tax_assets": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1180 — Отложенные налоговые активы"
+          },
+          "deferred_tax_liabilities": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1420 — Отложенные налоговые обязательства"
+          },
+          "equity": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1300 — Итого капитал и резервы"
+          },
+          "fixed_assets": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1150 — Основные средства"
+          },
+          "income_bearing_tangible_investments": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1160 — Доходные вложения в материальные ценности"
+          },
+          "intangible_assets": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1110 — Нематериальные активы"
+          },
+          "intangible_exploration_assets": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1130 — Нематериальные поисковые активы"
+          },
+          "inventories": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1210 — Запасы"
+          },
+          "long_term_borrowings": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1410 — Долгосрочные заёмные средства"
+          },
+          "long_term_financial_investments": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1170 — Долгосрочные финансовые вложения"
+          },
+          "long_term_liabilities": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1400 — Итого долгосрочные обязательства"
+          },
+          "long_term_provisions": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1430 — Долгосрочные оценочные обязательства"
+          },
+          "non_current_assets": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1100 — Итого внеоборотные активы"
+          },
+          "other_current_assets": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1260 — Прочие оборотные активы"
+          },
+          "other_long_term_liabilities": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1450 — Прочие долгосрочные обязательства"
+          },
+          "other_non_current_assets": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1190 — Прочие внеоборотные активы"
+          },
+          "other_short_term_liabilities": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1550 — Прочие краткосрочные обязательства"
+          },
+          "payables": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1520 — Кредиторская задолженность"
+          },
+          "receivables": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1230 — Дебиторская задолженность"
+          },
+          "research_and_development": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1120 — Результаты исследований и разработок"
+          },
+          "reserve_capital": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1360 — Резервный капитал"
+          },
+          "retained_earnings": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1370 — Нераспределённая прибыль / непокрытый убыток"
+          },
+          "revaluation_reserve": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1340 — Переоценка внеоборотных активов"
+          },
+          "short_term_borrowings": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1510 — Краткосрочные заёмные средства"
+          },
+          "short_term_financial_investments": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1240 — Краткосрочные финансовые вложения"
+          },
+          "short_term_provisions": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1540 — Краткосрочные оценочные обязательства"
+          },
+          "tangible_exploration_assets": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1140 — Материальные поисковые активы"
+          },
+          "total_assets": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1600 — Баланс: актив"
+          },
+          "total_equity_and_liabilities": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1700 — Баланс: пассив"
+          },
+          "treasury_shares": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1320 — Собственные выкупленные акции: вычитаемая величина"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatementUnit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "vat_on_acquired_assets": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1220 — НДС по приобретённым ценностям"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "BankCheckRequest": {
+        "properties": {
+          "application_id": {
+            "type": "string"
+          },
+          "borrower": {
+            "$ref": "#/components/schemas/Borrower"
+          },
+          "policy_id": {
+            "type": "string"
+          },
+          "requested_terms": {
+            "$ref": "#/components/schemas/CreditRequest"
+          },
+          "score": {
+            "$ref": "#/components/schemas/ScoreResult"
+          },
+          "selection": {
+            "$ref": "#/components/schemas/SelectionAudit"
+          },
+          "terms": {
+            "$ref": "#/components/schemas/LoanTerms"
+          }
+        },
+        "required": [
+          "policy_id",
+          "application_id",
+          "borrower",
+          "requested_terms",
+          "terms",
+          "score",
+          "selection"
+        ],
+        "type": "object"
+      },
+      "BankCheckResponse": {
+        "properties": {
+          "application_id": {
+            "type": "string"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/CheckResult"
+            },
+            "type": "array"
+          },
           "event_id": {
             "type": "string"
           },
-          "accepted": {
-            "type": "boolean"
+          "loan_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "notification_status": {
+            "$ref": "#/components/schemas/NotificationStatus"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/BankVerdict"
           }
         },
         "required": [
+          "application_id",
+          "verdict",
+          "loan_id",
+          "checks",
           "event_id",
-          "accepted"
-        ]
-      },
-      "Problem": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "code": {
-            "type": "string"
-          },
-          "detail": {
-            "type": "string"
-          },
-          "fields": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "type",
-          "title",
-          "status",
-          "code",
-          "detail",
-          "fields"
-        ]
+          "notification_status"
+        ],
+        "type": "object"
       },
       "BankState": {
-        "type": "object",
         "properties": {
-          "K1": {
-            "type": "number",
-            "format": "double"
-          },
-          "Ka": {
-            "type": "number",
-            "format": "double"
-          },
-          "K0": {
-            "type": "number",
-            "format": "double"
-          },
-          "RWA11": {
-            "type": "number",
-            "format": "double"
-          },
-          "RWA12": {
-            "type": "number",
-            "format": "double"
-          },
-          "RWA10": {
-            "type": "number",
-            "format": "double"
-          },
-          "Lam": {
-            "type": "number",
-            "format": "double"
-          },
-          "Lat": {
-            "type": "number",
-            "format": "double"
-          },
-          "D2": {
-            "type": "number",
-            "format": "double"
-          },
-          "D3": {
-            "type": "number",
-            "format": "double"
-          },
-          "Krd": {
-            "type": "number",
-            "format": "double"
-          },
-          "Funding4": {
-            "type": "number",
-            "format": "double"
-          },
-          "Invest": {
-            "type": "number",
-            "format": "double"
-          },
           "Cash": {
-            "type": "number",
-            "format": "double"
+            "format": "double",
+            "type": "number"
           },
           "CashMin": {
-            "type": "number",
-            "format": "double"
+            "format": "double",
+            "type": "number"
+          },
+          "D2": {
+            "format": "double",
+            "type": "number"
+          },
+          "D3": {
+            "format": "double",
+            "type": "number"
+          },
+          "Funding4": {
+            "format": "double",
+            "type": "number"
+          },
+          "Invest": {
+            "format": "double",
+            "type": "number"
+          },
+          "K0": {
+            "format": "double",
+            "type": "number"
+          },
+          "K1": {
+            "format": "double",
+            "type": "number"
+          },
+          "Ka": {
+            "format": "double",
+            "type": "number"
+          },
+          "Krd": {
+            "format": "double",
+            "type": "number"
+          },
+          "Lam": {
+            "format": "double",
+            "type": "number"
+          },
+          "Lat": {
+            "format": "double",
+            "type": "number"
+          },
+          "RWA10": {
+            "format": "double",
+            "type": "number"
+          },
+          "RWA11": {
+            "format": "double",
+            "type": "number"
+          },
+          "RWA12": {
+            "format": "double",
+            "type": "number"
           },
           "Reserves": {
-            "type": "number",
-            "format": "double"
-          },
-          "groups": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "number",
-              "format": "double"
-            }
-          },
-          "related_groups": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "format": "double",
+            "type": "number"
           },
           "borrower_groups": {
-            "type": "object",
             "additionalProperties": {
               "type": "string"
-            }
+            },
+            "type": "object"
           },
-          "issued_application_ids": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+          "groups": {
+            "additionalProperties": {
+              "format": "double",
+              "type": "number"
+            },
+            "type": "object"
           },
           "issuance_enabled": {
             "type": "boolean"
+          },
+          "issued_application_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "related_groups": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           }
         },
         "required": [
@@ -1803,33 +792,685 @@
           "borrower_groups",
           "issued_application_ids",
           "issuance_enabled"
-        ]
+        ],
+        "type": "object"
       },
       "BankStateResponse": {
-        "type": "object",
         "properties": {
+          "norms": {
+            "additionalProperties": {
+              "format": "double",
+              "type": "number"
+            },
+            "type": "object"
+          },
           "policy_id": {
             "type": "string"
           },
           "state": {
             "$ref": "#/components/schemas/BankState"
-          },
-          "norms": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "number",
-              "format": "double"
-            }
           }
         },
         "required": [
           "policy_id",
           "state",
           "norms"
-        ]
+        ],
+        "type": "object"
+      },
+      "BankVerdict": {
+        "enum": [
+          "ISSUED",
+          "BANK_REVIEW"
+        ],
+        "type": "string"
+      },
+      "Borrower": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "inn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": {
+            "$ref": "#/components/schemas/BorrowerType"
+          }
+        },
+        "required": [
+          "id",
+          "type"
+        ],
+        "type": "object"
+      },
+      "BorrowerType": {
+        "enum": [
+          "SOLE_PROPRIETOR",
+          "LEGAL_ENTITY"
+        ],
+        "type": "string"
+      },
+      "BusinessLocation": {
+        "enum": [
+          "VERIFIED_PHYSICAL",
+          "VERIFIED_ONLINE_OR_MOBILE",
+          "UNVERIFIED"
+        ],
+        "type": "string"
+      },
+      "BuyerContracts": {
+        "enum": [
+          "ACTIVE_AND_PERFORMED",
+          "REPEAT_ORDERS",
+          "PLANS_ONLY"
+        ],
+        "type": "string"
+      },
+      "CarClass": {
+        "enum": [
+          "NONE",
+          "ECONOMY",
+          "COMFORT",
+          "PREMIUM"
+        ],
+        "type": "string"
+      },
+      "Cash": {
+        "properties": {
+          "free_after_own_contribution_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "minimum_required_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "CheckResult": {
+        "properties": {
+          "after": {
+            "anyOf": [
+              {
+                "format": "double",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "before": {
+            "anyOf": [
+              {
+                "format": "double",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "code": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "format": "double",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "operator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "passed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "before",
+          "after",
+          "operator",
+          "limit",
+          "passed",
+          "detail"
+        ],
+        "type": "object"
+      },
+      "CreditRequest": {
+        "properties": {
+          "amount_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "max_acceptable_term_months": {
+            "anyOf": [
+              {
+                "format": "int32",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "max_annual_rate": {
+            "anyOf": [
+              {
+                "format": "double",
+                "maximum": 100,
+                "minimum": 0,
+                "multipleOf": 0.01,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Maximum annual loan rate in percent: 23.75 means 23.75%. Values outside 0..100 or more precise than 0.01 percentage point return 422."
+          },
+          "min_acceptable_amount_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "purpose": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "term_months": {
+            "anyOf": [
+              {
+                "format": "int32",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "DebtPayment": {
+        "properties": {
+          "month": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "payment_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "DecisionRequest": {
+        "properties": {
+          "application_id": {
+            "type": "string"
+          },
+          "borrower": {
+            "$ref": "#/components/schemas/Borrower"
+          },
+          "cash": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Cash"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "credit_request": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CreditRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Evidence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "facts_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "financial_debt_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "future_debt_payments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DebtPayment"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ip_economic_data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IpEconomicData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "model_version": {
+            "description": "Optional exact compiled model version. Omission keeps ip-v2/legal-v2; null or a non-string is 400. Empty, unknown or wrong borrower version is 422 UNSUPPORTED_MODEL_VERSION. No latest-version fallback.",
+            "enum": [
+              "ip-v2",
+              "legal-v2"
+            ],
+            "type": "string"
+          },
+          "monthly_history": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/MonthCash"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "need": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Need"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scoring": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScoringInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "application_id",
+          "borrower"
+        ],
+        "type": "object"
+      },
+      "DecisionResponse": {
+        "properties": {
+          "application_id": {
+            "type": "string"
+          },
+          "borrower_id": {
+            "type": "string"
+          },
+          "loan_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "monthly_payment_rub": {
+            "anyOf": [
+              {
+                "format": "double",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "overpayment_rub": {
+            "anyOf": [
+              {
+                "format": "double",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/Reason"
+            },
+            "type": "array"
+          },
+          "review_reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "score": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScoreResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/DecisionStatus"
+          },
+          "terms": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LoanTerms"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "terms_confirmed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "application_id",
+          "borrower_id",
+          "status",
+          "message",
+          "score",
+          "terms",
+          "terms_confirmed",
+          "monthly_payment_rub",
+          "overpayment_rub",
+          "loan_id",
+          "review_reason",
+          "reasons"
+        ],
+        "type": "object"
+      },
+      "DecisionStatus": {
+        "enum": [
+          "APPROVED",
+          "NEED_INFO",
+          "UNDER_REVIEW",
+          "REJECTED"
+        ],
+        "type": "string"
+      },
+      "EconomicCriterion": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "max_points": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "points": {
+            "format": "double",
+            "type": "number"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "format": "double",
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "value",
+          "points",
+          "max_points"
+        ],
+        "type": "object"
+      },
+      "EconomicResult": {
+        "properties": {
+          "criteria": {
+            "items": {
+              "$ref": "#/components/schemas/EconomicCriterion"
+            },
+            "type": "array"
+          },
+          "max_points": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "points": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "points",
+          "max_points",
+          "criteria"
+        ],
+        "type": "object"
+      },
+      "EducationLevel": {
+        "enum": [
+          "BELOW_GENERAL",
+          "GENERAL",
+          "VOCATIONAL",
+          "HIGHER",
+          "ACADEMIC_DEGREE"
+        ],
+        "type": "string"
+      },
+      "EventAck": {
+        "properties": {
+          "accepted": {
+            "type": "boolean"
+          },
+          "event_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "accepted"
+        ],
+        "type": "object"
+      },
+      "EventType": {
+        "enum": [
+          "LOAN_ISSUED",
+          "BORROWER_REVIEW",
+          "BANK_REVIEW"
+        ],
+        "type": "string"
+      },
+      "Evidence": {
+        "properties": {
+          "confirmed_receipts_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "largest_buyer_group_receipts_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unexplained_difference_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "Grade": {
+        "enum": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "type": "string"
       },
       "Health": {
-        "type": "object",
         "properties": {
           "status": {
             "type": "string"
@@ -1837,21 +1478,274 @@
         },
         "required": [
           "status"
-        ]
+        ],
+        "type": "object"
       },
-      "IpScoring": {
-        "type": "object",
+      "IncomeEvidence": {
+        "enum": [
+          "VERIFIED",
+          "DOCUMENTS_PENDING_CROSSCHECK",
+          "NONE"
+        ],
+        "type": "string"
+      },
+      "IncomeSource": {
+        "enum": [
+          "BUSINESS",
+          "PUBLIC_EMPLOYMENT",
+          "PRIVATE_EMPLOYMENT",
+          "PENSION",
+          "SELF_EMPLOYED_OR_GPH",
+          "NONE"
+        ],
+        "type": "string"
+      },
+      "IpEconomicData": {
         "properties": {
-          "owner_age": {
+          "previous_comparable_receipts_rub": {
             "anyOf": [
               {
-                "type": "integer",
-                "format": "int32"
+                "format": "int64",
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "IpScoring": {
+        "properties": {
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "applications_90d": {
+            "anyOf": [
+              {
+                "format": "int32",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bank_relationship_months": {
+            "anyOf": [
+              {
+                "format": "int32",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bankrupt": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bureau_received": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "business_age_months": {
+            "anyOf": [
+              {
+                "format": "int32",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "business_location": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BusinessLocation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "buyer_contracts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BuyerContracts"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "car_class": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CarClass"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "consents_verified": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "credit_history_months": {
+            "anyOf": [
+              {
+                "format": "int32",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "credit_prohibited": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "current_dpd_days": {
+            "anyOf": [
+              {
+                "format": "int32",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "debts_complete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dependents": {
+            "anyOf": [
+              {
+                "format": "int32",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "documents_complete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "education_level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EducationLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "free_cash_source_verified": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "identity_and_authority_verified": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "income_evidence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IncomeEvidence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "key_buyer_loss": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "location_stability_months": {
+            "anyOf": [
+              {
+                "format": "int32",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required only for VERIFIED_PHYSICAL."
           },
           "marital_status": {
             "anyOf": [
@@ -1863,11 +1757,85 @@
               }
             ]
           },
-          "dependents": {
+          "material_account_restriction": {
             "anyOf": [
               {
-                "type": "integer",
-                "format": "int32"
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "material_dispute_or_enforcement": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "material_forgery": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "military_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MilitaryStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional reference field; no points or routing effect."
+          },
+          "net_monthly_income_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "overdue_taxes_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "owner_age": {
+            "anyOf": [
+              {
+                "format": "int32",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "owner_experience_years": {
+            "anyOf": [
+              {
+                "format": "int32",
+                "type": "integer"
               },
               {
                 "type": "null"
@@ -1894,59 +1862,6 @@
               }
             ]
           },
-          "total_experience_months": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int32"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "net_monthly_income_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "car_class": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/CarClass"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "bank_relationship_months": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int32"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "education_level": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/EducationLevel"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "real_estate_status": {
             "anyOf": [
               {
@@ -1957,11 +1872,21 @@
               }
             ]
           },
-          "credit_history_months": {
+          "structural_business_change": {
             "anyOf": [
               {
-                "type": "integer",
-                "format": "int32"
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "total_experience_months": {
+            "anyOf": [
+              {
+                "format": "int32",
+                "type": "integer"
               },
               {
                 "type": "null"
@@ -1971,19 +1896,24 @@
           "worst_repaid_dpd_days_24m": {
             "anyOf": [
               {
-                "type": "integer",
-                "format": "int32"
+                "format": "int32",
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ]
-          },
-          "current_dpd_days": {
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "LegalEntityScoring": {
+        "properties": {
+          "active": {
             "anyOf": [
               {
-                "type": "integer",
-                "format": "int32"
+                "type": "boolean"
               },
               {
                 "type": "null"
@@ -1993,104 +1923,29 @@
           "applications_90d": {
             "anyOf": [
               {
-                "type": "integer",
-                "format": "int32"
+                "format": "int32",
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ]
           },
-          "business_age_months": {
+          "auditor_opinion": {
             "anyOf": [
               {
-                "type": "integer",
-                "format": "int32"
+                "$ref": "#/components/schemas/AuditorOpinion"
               },
               {
                 "type": "null"
               }
             ]
           },
-          "owner_experience_years": {
+          "bank_relationship_months": {
             "anyOf": [
               {
-                "type": "integer",
-                "format": "int32"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "business_location": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/BusinessLocation"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "location_stability_months": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int32"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Required only for VERIFIED_PHYSICAL."
-          },
-          "overdue_taxes_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "income_evidence": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/IncomeEvidence"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "buyer_contracts": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/BuyerContracts"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "military_status": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/MilitaryStatus"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Optional reference field; no points or routing effect."
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
+                "format": "int32",
+                "type": "integer"
               },
               {
                 "type": "null"
@@ -2107,7 +1962,7 @@
               }
             ]
           },
-          "material_forgery": {
+          "bureau_received": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -2117,20 +1972,11 @@
               }
             ]
           },
-          "credit_prohibited": {
+          "business_age_months": {
             "anyOf": [
               {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "identity_and_authority_verified": {
-            "anyOf": [
-              {
-                "type": "boolean"
+                "format": "int32",
+                "type": "integer"
               },
               {
                 "type": "null"
@@ -2147,10 +1993,32 @@
               }
             ]
           },
-          "bureau_received": {
+          "credit_history_months": {
+            "anyOf": [
+              {
+                "format": "int32",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "credit_prohibited": {
             "anyOf": [
               {
                 "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "current_dpd_days": {
+            "anyOf": [
+              {
+                "format": "int32",
+                "type": "integer"
               },
               {
                 "type": "null"
@@ -2187,6 +2055,47 @@
               }
             ]
           },
+          "identity_and_authority_verified": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "key_buyer_loss": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "liquidated_or_excluded": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "manager_experience_years": {
+            "anyOf": [
+              {
+                "format": "int32",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "material_account_restriction": {
             "anyOf": [
               {
@@ -2207,133 +2116,7 @@
               }
             ]
           },
-          "key_buyer_loss": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "structural_business_change": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": []
-      },
-      "LegalEntityScoring": {
-        "type": "object",
-        "properties": {
-          "business_age_months": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int32"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "credit_history_months": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int32"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "worst_repaid_dpd_days_24m": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int32"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "current_dpd_days": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int32"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "applications_90d": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int32"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "manager_experience_years": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int32"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "overdue_taxes_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "report_verification_level": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int32"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "0 unverified; 1 client only; 2 official source; 3 official plus registers/bank."
-          },
-          "bank_relationship_months": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int32"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "organization_and_related_debts_complete": {
+          "material_forgery": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -2347,16 +2130,6 @@
             "anyOf": [
               {
                 "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "auditor_opinion": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AuditorOpinion"
               },
               {
                 "type": "null"
@@ -2383,7 +2156,7 @@
               }
             ]
           },
-          "liquidated_or_excluded": {
+          "organization_and_related_debts_complete": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -2393,135 +2166,28 @@
               }
             ]
           },
-          "active": {
+          "overdue_taxes_rub": {
             "anyOf": [
               {
-                "type": "boolean"
+                "format": "int64",
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ]
           },
-          "bankrupt": {
+          "report_verification_level": {
             "anyOf": [
               {
-                "type": "boolean"
+                "format": "int32",
+                "type": "integer"
               },
               {
                 "type": "null"
               }
-            ]
-          },
-          "material_forgery": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "credit_prohibited": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "identity_and_authority_verified": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "consents_verified": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "bureau_received": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "debts_complete": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "documents_complete": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "free_cash_source_verified": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "material_account_restriction": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "material_dispute_or_enforcement": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "key_buyer_loss": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            ],
+            "description": "0 unverified; 1 client only; 2 official source; 3 official plus registers/bank."
           },
           "structural_business_change": {
             "anyOf": [
@@ -2532,12 +2198,609 @@
                 "type": "null"
               }
             ]
+          },
+          "worst_repaid_dpd_days_24m": {
+            "anyOf": [
+              {
+                "format": "int32",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
-        "required": []
+        "required": [],
+        "type": "object"
+      },
+      "LoanTerms": {
+        "properties": {
+          "amount_rub": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "annual_rate": {
+            "description": "Annual loan rate in percent: 24 means 24%.",
+            "format": "double",
+            "maximum": 100,
+            "minimum": 0,
+            "multipleOf": 0.01,
+            "type": "number"
+          },
+          "term_months": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "amount_rub",
+          "term_months",
+          "annual_rate"
+        ],
+        "type": "object"
+      },
+      "ManualReviewRequest": {
+        "properties": {
+          "application_id": {
+            "type": "string"
+          },
+          "borrower": {
+            "$ref": "#/components/schemas/Borrower"
+          },
+          "policy_id": {
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/Reason"
+            },
+            "type": "array"
+          },
+          "requested_terms": {
+            "$ref": "#/components/schemas/CreditRequest"
+          },
+          "score": {
+            "$ref": "#/components/schemas/ScoreResult"
+          }
+        },
+        "required": [
+          "policy_id",
+          "application_id",
+          "borrower",
+          "requested_terms",
+          "score",
+          "reasons"
+        ],
+        "type": "object"
+      },
+      "ManualReviewResponse": {
+        "properties": {
+          "application_id": {
+            "type": "string"
+          },
+          "event_id": {
+            "type": "string"
+          },
+          "notification_status": {
+            "$ref": "#/components/schemas/NotificationStatus"
+          }
+        },
+        "required": [
+          "application_id",
+          "event_id",
+          "notification_status"
+        ],
+        "type": "object"
+      },
+      "MaritalStatus": {
+        "enum": [
+          "MARRIED",
+          "NEVER_MARRIED",
+          "DIVORCED_ONCE",
+          "DIVORCED_MULTIPLE",
+          "WIDOWED"
+        ],
+        "type": "string"
+      },
+      "MilitaryStatus": {
+        "enum": [
+          "SERVED",
+          "EXEMPT_OR_DEFERRED",
+          "NOT_LIABLE",
+          "OTHER_OR_UNKNOWN"
+        ],
+        "type": "string"
+      },
+      "MonthCash": {
+        "properties": {
+          "existing_debt_payment_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fixed_payments_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "maintenance_investment_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "month": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "operating_receipts_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "owner_required_payments_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "taxes_paid_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "variable_payments_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "Need": {
+        "properties": {
+          "confirmed_cost_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "own_contribution_rub": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "NeedEvidence": {
+        "enum": [
+          "CONTRACT_AND_COST",
+          "VERIFIED_ESTIMATE",
+          "ORAL_ONLY"
+        ],
+        "type": "string"
+      },
+      "NotificationStatus": {
+        "enum": [
+          "DELIVERED",
+          "PENDING"
+        ],
+        "type": "string"
+      },
+      "Problem": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "status": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code",
+          "detail",
+          "fields"
+        ],
+        "type": "object"
+      },
+      "ProfitAndLoss": {
+        "properties": {
+          "administrative_expenses": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "2220 — Управленческие расходы"
+          },
+          "cost_of_sales": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "2120 — Себестоимость продаж"
+          },
+          "gross_profit": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "2100 — Валовая прибыль / убыток"
+          },
+          "income_tax": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "2410 — Налог на прибыль: расход положительный, доход отрицательный"
+          },
+          "interest_payable": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "2330 — Проценты к уплате"
+          },
+          "interest_receivable": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "2320 — Проценты к получению"
+          },
+          "net_profit": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "2400 — Чистая прибыль / убыток"
+          },
+          "other_expenses": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "2350 — Прочие расходы"
+          },
+          "other_income": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "2340 — Прочие доходы"
+          },
+          "participation_income": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "2310 — Доходы от участия в других организациях"
+          },
+          "profit_before_tax": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "2300 — Прибыль / убыток до налогообложения"
+          },
+          "revenue": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "2110 — Выручка без НДС и акцизов"
+          },
+          "sales_profit": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "2200 — Прибыль / убыток от продаж"
+          },
+          "selling_expenses": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "2210 — Коммерческие расходы"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatementUnit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "Qualification": {
+        "enum": [
+          "NONE",
+          "SUPPORT",
+          "SPECIALIST",
+          "MANAGER_OR_HIGHLY_QUALIFIED"
+        ],
+        "type": "string"
+      },
+      "QuestionnaireCriterion": {
+        "properties": {
+          "answer": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "max_points": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "points": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "answer",
+          "points",
+          "max_points"
+        ],
+        "type": "object"
+      },
+      "QuestionnaireResult": {
+        "properties": {
+          "criteria": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionnaireCriterion"
+            },
+            "type": "array"
+          },
+          "max_points": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "points": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "points",
+          "max_points",
+          "criteria"
+        ],
+        "type": "object"
+      },
+      "RealEstateStatus": {
+        "enum": [
+          "UNENCUMBERED_WHOLE",
+          "UNENCUMBERED_SHARE",
+          "ENCUMBERED_ONLY",
+          "NONE"
+        ],
+        "type": "string"
+      },
+      "Reason": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "fields"
+        ],
+        "type": "object"
+      },
+      "ReviewReason": {
+        "enum": [
+          "BORROWER",
+          "BANK"
+        ],
+        "type": "string"
+      },
+      "ScoreResult": {
+        "properties": {
+          "economics": {
+            "$ref": "#/components/schemas/EconomicResult"
+          },
+          "grade": {
+            "$ref": "#/components/schemas/Grade"
+          },
+          "model": {
+            "enum": [
+              "ip-v2",
+              "legal-v2"
+            ],
+            "type": "string"
+          },
+          "questionnaire": {
+            "$ref": "#/components/schemas/QuestionnaireResult"
+          },
+          "raw_total": {
+            "format": "double",
+            "type": "number"
+          },
+          "total": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model",
+          "questionnaire",
+          "economics",
+          "raw_total",
+          "total",
+          "grade"
+        ],
+        "type": "object"
       },
       "ScoringInput": {
-        "type": "object",
         "properties": {
           "ip": {
             "anyOf": [
@@ -2560,775 +2823,609 @@
             ]
           }
         },
-        "required": []
+        "required": [],
+        "type": "object"
       },
-      "IpEconomicData": {
-        "type": "object",
+      "SelectionAudit": {
         "properties": {
-          "previous_comparable_receipts_rub": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": []
-      },
-      "BalanceShit": {
-        "type": "object",
-        "properties": {
-          "unit": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/StatementUnit"
-              },
-              {
-                "type": "null"
-              }
-            ]
+          "feasible_candidate_count": {
+            "format": "int32",
+            "type": "integer"
           },
-          "intangible_assets": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1110 — Нематериальные активы"
+          "max_npv_rub": {
+            "format": "double",
+            "type": "number"
           },
-          "research_and_development": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1120 — Результаты исследований и разработок"
+          "monthly_payment_rub": {
+            "format": "double",
+            "type": "number"
           },
-          "intangible_exploration_assets": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1130 — Нематериальные поисковые активы"
+          "overpayment_rub": {
+            "format": "double",
+            "type": "number"
           },
-          "tangible_exploration_assets": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1140 — Материальные поисковые активы"
+          "profit_retention": {
+            "format": "double",
+            "type": "number"
           },
-          "fixed_assets": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1150 — Основные средства"
+          "same_amount_candidate_count": {
+            "format": "int32",
+            "type": "integer"
           },
-          "income_bearing_tangible_investments": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1160 — Доходные вложения в материальные ценности"
-          },
-          "long_term_financial_investments": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1170 — Долгосрочные финансовые вложения"
-          },
-          "deferred_tax_assets": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1180 — Отложенные налоговые активы"
-          },
-          "other_non_current_assets": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1190 — Прочие внеоборотные активы"
-          },
-          "non_current_assets": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1100 — Итого внеоборотные активы"
-          },
-          "inventories": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1210 — Запасы"
-          },
-          "vat_on_acquired_assets": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1220 — НДС по приобретённым ценностям"
-          },
-          "receivables": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1230 — Дебиторская задолженность"
-          },
-          "short_term_financial_investments": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1240 — Краткосрочные финансовые вложения"
-          },
-          "cash_and_equivalents": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1250 — Деньги и денежные эквиваленты"
-          },
-          "other_current_assets": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1260 — Прочие оборотные активы"
-          },
-          "current_assets": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1200 — Итого оборотные активы"
-          },
-          "total_assets": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1600 — Баланс: актив"
-          },
-          "charter_capital": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1310 — Уставный капитал"
-          },
-          "treasury_shares": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1320 — Собственные выкупленные акции: вычитаемая величина"
-          },
-          "revaluation_reserve": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1340 — Переоценка внеоборотных активов"
-          },
-          "additional_capital": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1350 — Добавочный капитал"
-          },
-          "reserve_capital": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1360 — Резервный капитал"
-          },
-          "retained_earnings": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1370 — Нераспределённая прибыль / непокрытый убыток"
-          },
-          "equity": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1300 — Итого капитал и резервы"
-          },
-          "long_term_borrowings": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1410 — Долгосрочные заёмные средства"
-          },
-          "deferred_tax_liabilities": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1420 — Отложенные налоговые обязательства"
-          },
-          "long_term_provisions": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1430 — Долгосрочные оценочные обязательства"
-          },
-          "other_long_term_liabilities": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1450 — Прочие долгосрочные обязательства"
-          },
-          "long_term_liabilities": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1400 — Итого долгосрочные обязательства"
-          },
-          "short_term_borrowings": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1510 — Краткосрочные заёмные средства"
-          },
-          "payables": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1520 — Кредиторская задолженность"
-          },
-          "deferred_income": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1530 — Доходы будущих периодов"
-          },
-          "short_term_provisions": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1540 — Краткосрочные оценочные обязательства"
-          },
-          "other_short_term_liabilities": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1550 — Прочие краткосрочные обязательства"
-          },
-          "current_liabilities": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1500 — Итого краткосрочные обязательства"
-          },
-          "total_equity_and_liabilities": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "1700 — Баланс: пассив"
-          }
-        },
-        "required": []
-      },
-      "ProfitAndLoss": {
-        "type": "object",
-        "properties": {
-          "unit": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/StatementUnit"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "revenue": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "2110 — Выручка без НДС и акцизов"
-          },
-          "cost_of_sales": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "2120 — Себестоимость продаж"
-          },
-          "gross_profit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "2100 — Валовая прибыль / убыток"
-          },
-          "selling_expenses": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "2210 — Коммерческие расходы"
-          },
-          "administrative_expenses": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "2220 — Управленческие расходы"
-          },
-          "sales_profit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "2200 — Прибыль / убыток от продаж"
-          },
-          "participation_income": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "2310 — Доходы от участия в других организациях"
-          },
-          "interest_receivable": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "2320 — Проценты к получению"
-          },
-          "interest_payable": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "2330 — Проценты к уплате"
-          },
-          "other_income": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "2340 — Прочие доходы"
-          },
-          "other_expenses": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "2350 — Прочие расходы"
-          },
-          "profit_before_tax": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "2300 — Прибыль / убыток до налогообложения"
-          },
-          "income_tax": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "2410 — Налог на прибыль: расход положительный, доход отрицательный"
-          },
-          "net_profit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "int64"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "2400 — Чистая прибыль / убыток"
-          }
-        },
-        "required": []
-      },
-      "QuestionnaireCriterion": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "answer": {
-            "type": "string"
-          },
-          "points": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "max_points": {
-            "type": "integer",
-            "format": "int32"
+          "selected_npv_rub": {
+            "format": "double",
+            "type": "number"
           }
         },
         "required": [
-          "id",
-          "answer",
-          "points",
-          "max_points"
-        ]
+          "feasible_candidate_count",
+          "same_amount_candidate_count",
+          "max_npv_rub",
+          "selected_npv_rub",
+          "profit_retention",
+          "monthly_payment_rub",
+          "overpayment_rub"
+        ],
+        "type": "object"
       },
-      "EconomicCriterion": {
-        "type": "object",
+      "StatementUnit": {
+        "enum": [
+          "RUB",
+          "THOUSAND_RUB"
+        ],
+        "type": "string"
+      },
+      "StatementsResponse": {
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "value": {
+          "annual_reports": {
             "anyOf": [
               {
-                "type": "number",
-                "format": "double"
+                "items": {
+                  "$ref": "#/components/schemas/AnnualReport"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ]
           },
-          "points": {
-            "type": "number",
-            "format": "double"
-          },
-          "max_points": {
-            "type": "integer",
-            "format": "int32"
+          "borrower_id": {
+            "type": "string"
           }
         },
         "required": [
-          "id",
-          "value",
-          "points",
-          "max_points"
+          "borrower_id"
+        ],
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "REST contracts for scoring, bank operations and administrative events. Models and supplier schemas are generated from checked definitions. Loan rates are percentages: 1 = 1%, 100 = 100%; money input is integer RUB.",
+    "title": "Credit MVP internal contracts",
+    "version": "2.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/bank/check-and-issue": {
+      "post": {
+        "description": "Atomic bank projection and educational issuance on success. Only one selected deal. MS3 delivery errors are represented by notification_status=PENDING; they do not undo the recorded result.",
+        "operationId": "checkAndIssue",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BankCheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BankCheckResponse"
+                }
+              }
+            },
+            "description": "Business result / accepted notification"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Technical error; not a credit status"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Technical error; not a credit status"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Technical error; not a credit status"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unexpected internal technical error"
+          }
+        },
+        "servers": [
+          {
+            "url": "http://localhost:8083"
+          }
+        ],
+        "tags": [
+          "MS2"
         ]
-      },
-      "QuestionnaireResult": {
-        "type": "object",
-        "properties": {
-          "points": {
-            "type": "integer",
-            "format": "int32"
+      }
+    },
+    "/api/v1/bank/manual-reviews": {
+      "post": {
+        "description": "Forward to MS3; do not project or change bank financial state. MS3 delivery errors are represented by notification_status=PENDING; they do not undo the recorded result.",
+        "operationId": "forwardManualReview",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualReviewRequest"
+              }
+            }
           },
-          "max_points": {
-            "type": "integer",
-            "format": "int32"
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManualReviewResponse"
+                }
+              }
+            },
+            "description": "Business result / accepted notification"
           },
-          "criteria": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/QuestionnaireCriterion"
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Technical error; not a credit status"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Technical error; not a credit status"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Technical error; not a credit status"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unexpected internal technical error"
+          }
+        },
+        "servers": [
+          {
+            "url": "http://localhost:8083"
+          }
+        ],
+        "tags": [
+          "MS2"
+        ]
+      }
+    },
+    "/api/v1/bank/state": {
+      "get": {
+        "description": "Read-only teaching endpoint; not a reset or a source for MS1 optimization.",
+        "operationId": "getBankState",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BankStateResponse"
+                }
+              }
+            },
+            "description": "Business result / accepted notification"
+          }
+        },
+        "servers": [
+          {
+            "url": "http://localhost:8083"
+          }
+        ],
+        "tags": [
+          "MS2"
+        ]
+      }
+    },
+    "/api/v1/borrowers/{borrower_id}/statements": {
+      "get": {
+        "description": "Expected external B contract. Do not implement B in our module.",
+        "operationId": "getStatements",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "borrower_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "example": "2024,2025",
+            "in": "query",
+            "name": "years",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatementsResponse"
+                }
+              }
+            },
+            "description": "Business result / accepted notification"
+          },
+          "404": {
+            "description": "Reports not found: MS1 returns NEED_INFO"
+          }
+        },
+        "tags": [
+          "EXTERNAL-B"
+        ]
+      }
+    },
+    "/api/v1/credit-events": {
+      "post": {
+        "description": "Expected external MS3 receiver. Our module implements only its HTTP client. event_id deduplicates retries.",
+        "operationId": "acceptCreditEvent",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventAck"
+                }
+              }
+            },
+            "description": "Business result / accepted notification"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Technical error; not a credit status"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Technical error; not a credit status"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Technical error; not a credit status"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unexpected internal technical error"
+          },
+          "502": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Technical error; not a credit status"
+          },
+          "504": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Technical error; not a credit status"
+          }
+        },
+        "tags": [
+          "EXTERNAL-MS3"
+        ]
+      }
+    },
+    "/api/v1/decisions": {
+      "post": {
+        "description": "A calls MS1. An absent model_version selects the fixed legacy v2 for the borrower type; an explicit version must exist in the compiled catalog. MS1 checks early stops, obtains one aggregate supplier block when needed, checks supplier stops, then obtains legal-entity reports from B, scores and selects one deal. X-Scoring-Model-Version identifies the selected version after successful selection, including null scores and dependency errors.",
+        "operationId": "evaluateDecision",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionResponse"
+                }
+              }
+            },
+            "description": "Business result / accepted notification",
+            "headers": {
+              "X-Scoring-Model-Version": {
+                "description": "Exact selected model, including score=null and dependency errors; absent if selection failed.",
+                "schema": {
+                  "enum": [
+                    "ip-v2",
+                    "legal-v2"
+                  ],
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Technical error; not a credit status"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Technical error; not a credit status",
+            "headers": {
+              "X-Scoring-Model-Version": {
+                "description": "Exact selected model, including score=null and dependency errors; absent if selection failed.",
+                "schema": {
+                  "enum": [
+                    "ip-v2",
+                    "legal-v2"
+                  ],
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Technical error; not a credit status"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unexpected internal technical error",
+            "headers": {
+              "X-Scoring-Model-Version": {
+                "description": "Exact selected model, including score=null and dependency errors; absent if selection failed.",
+                "schema": {
+                  "enum": [
+                    "ip-v2",
+                    "legal-v2"
+                  ],
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Technical error; not a credit status",
+            "headers": {
+              "X-Scoring-Model-Version": {
+                "description": "Exact selected model, including score=null and dependency errors; absent if selection failed.",
+                "schema": {
+                  "enum": [
+                    "ip-v2",
+                    "legal-v2"
+                  ],
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "504": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Technical error; not a credit status",
+            "headers": {
+              "X-Scoring-Model-Version": {
+                "description": "Exact selected model, including score=null and dependency errors; absent if selection failed.",
+                "schema": {
+                  "enum": [
+                    "ip-v2",
+                    "legal-v2"
+                  ],
+                  "type": "string"
+                }
+              }
             }
           }
         },
-        "required": [
-          "points",
-          "max_points",
-          "criteria"
+        "servers": [
+          {
+            "url": "http://localhost:8082"
+          }
+        ],
+        "tags": [
+          "MS1"
         ]
-      },
-      "EconomicResult": {
-        "type": "object",
-        "properties": {
-          "points": {
-            "type": "number",
-            "format": "double"
-          },
-          "max_points": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "criteria": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/EconomicCriterion"
-            }
+      }
+    },
+    "/healthz": {
+      "get": {
+        "description": "",
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "description": "Business result / accepted notification"
           }
         },
-        "required": [
-          "points",
-          "max_points",
-          "criteria"
+        "servers": [
+          {
+            "url": "http://localhost:8082"
+          },
+          {
+            "url": "http://localhost:8083"
+          }
+        ],
+        "tags": [
+          "MS1-MS2"
         ]
       }
     }
-  }
+  },
+  "x-modelgen-documents-version": "1",
+  "x-scoring-models": [
+    {
+      "borrower_type": "SOLE_PROPRIETOR",
+      "definition_sha256": "afe124a79494069c965750900105923b8c9ef8098ebbbc92a3f7743097caee8e",
+      "facts_schema_sha256": "",
+      "facts_schema_version": "",
+      "id": "ip",
+      "uses_facts": false,
+      "version": "ip-v2"
+    },
+    {
+      "borrower_type": "LEGAL_ENTITY",
+      "definition_sha256": "7c15147cf700c3586d658af2d680dba13207e25bd49d08a6d5738f776ef3748c",
+      "facts_schema_sha256": "",
+      "facts_schema_version": "",
+      "id": "legal",
+      "uses_facts": false,
+      "version": "legal-v2"
+    }
+  ],
+  "x-scoring-release": "2.0.0"
 }

@@ -14,6 +14,9 @@ import (
 type Decisions interface {
 	Decide(context.Context, contracts.DecisionRequest) (contracts.DecisionResponse, error)
 }
+type ModelResolver interface {
+	ModelVersion(contracts.DecisionRequest) (string, error)
+}
 type BankOperations interface {
 	Check(context.Context, contracts.BankCheckRequest) (contracts.BankCheckResponse, error)
 	ManualReview(context.Context, contracts.ManualReviewRequest) (contracts.ManualReviewResponse, error)
@@ -27,6 +30,14 @@ func NewScoringRouter(service Decisions) *gin.Engine {
 		if err != nil {
 			writeError(c, err)
 			return
+		}
+		if resolver, ok := service.(ModelResolver); ok {
+			version, err := resolver.ModelVersion(request)
+			if err != nil {
+				writeError(c, err)
+				return
+			}
+			c.Header("X-Scoring-Model-Version", version)
 		}
 		result, err := service.Decide(c.Request.Context(), request)
 		if err != nil {
