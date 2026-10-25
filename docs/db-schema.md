@@ -296,7 +296,7 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 | `info_request_id` | text | ✔ | FK → `info_requests` |
 | `signed_document_id` | text | ✔ | FK → `documents`. Для открепленной подписи `.sig` — какой документ подписан |
 | `recognition` | jsonb | ✔ | `Document.recognition`: состояние, распознанный тип, извлечённые поля, уверенность |
-| `signature_state` | text | | `NOT_SIGNED`, `PENDING`, `DONE`, `FAILED` — состояние проверки ЭП (`Document.signatures.state`) |
+| `signature_state` | text | | `NOT_SIGNED`, `PENDING`, `DONE`, `FAILED` — состояние проверки ЭП (`Document.signatures.state`). Worker подписи ставит `DONE` (или `FAILED`, если файла нет) документу и файлу его подписи вместе с отчётом |
 | `signature_verdict` | text | ✔ | вердикт последнего отчёта ЭП, для списков. Остальная сводка (`policy`, `policy_satisfied`, число подписей) берётся из последнего `signature_reports` |
 | `uploaded_at` | timestamptz | | |
 | `deleted_at` | timestamptz | ✔ | soft delete |
@@ -313,11 +313,19 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 | `policy` | text | | `GENERIC`, `POWER_OF_ATTORNEY`, `FINANCIAL_STATEMENTS`, `LOAN_CONTRACT` |
 | `policy_satisfied` | boolean | | |
 | `trust_mode` | text | | `MOCK`, `LIVE` |
-| `report` | jsonb | | `SignatureReport` целиком: каждая подпись, сертификат, отзыв, полномочия и МЧД, результаты всех 14 проверок |
+| `report` | jsonb | | `SignatureReport` целиком: каждая подпись, сертификат, отзыв, полномочия и МЧД, результаты всех 14 проверок. У worker'а подписи — ещё этапы с их проверками, профиль и его ограничения |
 | `requested_by` | text | ✔ | FK → `users` |
 | `verified_at` | timestamptz | | |
+| `signature_document_id` | text | ✔ | FK → `documents`: файл открепленной подписи. `NULL` — подпись внутри документа |
+| `document_sha256` | text | ✔ | sha256 проверенных байтов документа, посчитан до проверки, — версия документа |
+| `signature_sha256` | text | ✔ | sha256 файла подписи |
+| `profile` | text | ✔ | профиль проверки: `TEST` (тестовые корни и моки реестров, не УКЭП). `NULL` — отчёт не от worker'а подписи |
+| `integrity_status`, `format_status`, `certificate_status`, `identity_status`, `authority_status` | text | ✔ | статус этапа: `VERIFIED`, `INVALID`, `INDETERMINATE`, `NOT_REQUIRED` — целостность, формат и охват, сертификат, личность подписанта, полномочия |
+| `decision` | text | ✔ | итог по правилам банка, те же значения |
+| `failure_reason` | text | ✔ | почему не `VERIFIED`: причина первого непройденного этапа |
+| `idempotency_key` | text | ✔ | UK. Один автоматический отчёт на версию документа и подписи; `NULL` — ручная проверка |
 
-Индекс: `(document_id, verified_at desc)`.
+Индекс: `(document_id, verified_at desc)`. У отчёта с `profile` заполнены `document_sha256`, все статусы этапов и `decision` (CHECK).
 
 ### signings
 

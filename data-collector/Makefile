@@ -1,4 +1,4 @@
-.PHONY: run run-publisher run-worker test test-integration lint swagger
+.PHONY: run run-publisher run-worker run-signature-worker sigdemo test test-integration lint swagger
 
 # API; нужен DATABASE_URL (задачи на сбор и outbox — в Postgres)
 run:
@@ -11,6 +11,15 @@ run-publisher:
 # Kafka → сбор со всех моков → raw_collections; нужны DATABASE_URL, KAFKA_BROKERS, MOCK_API_URL
 run-worker:
 	go run ./cmd/worker
+
+# Kafka (data-collector.documents) → проверка ЭП → signature_reports; нужны DATABASE_URL, KAFKA_BROKERS,
+# DOCUMENTS_DIR с файлами API; профиль TEST с тестовыми корнями из testdata
+run-signature-worker:
+	SIGNATURE_TRUST_DIR=$${SIGNATURE_TRUST_DIR:-testdata/signature/trust} go run ./cmd/signature-worker
+
+# заново выпустить тестовый УЦ профиля TEST и подписать демо-файлы (examples/files): меняет корень и CRL
+sigdemo:
+	go run ./tools/sigdemo -trust testdata/signature/trust -examples examples/files
 
 test:
 	go test ./...
