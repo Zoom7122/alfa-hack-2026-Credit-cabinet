@@ -40,3 +40,10 @@
     margin: 0;
     padding-left: var(--gap-20);
 }
+
+.review-step__scopes {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-12);
+    padding-left: var(--gap-32);
+}

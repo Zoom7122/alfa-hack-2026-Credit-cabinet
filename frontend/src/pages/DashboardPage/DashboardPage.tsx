@@ -7,10 +7,13 @@ import { Typography } from '@alfalab/core-components/typography';
 import { PlusMIcon } from '@alfalab/icons-glyph/PlusMIcon';
 import { Link } from 'react-router-dom';
 
+import { useCollectionsOf, useCollectorApplications } from '../../api/collector/queries';
 import { useApplicants, useApplications, useApplicationStatuses, useProducts } from '../../api/queries';
 import type { ApplicationStatusView, ApplicationSummary, CompanyAccess, Me } from '../../api/types';
+import { COLLECTION_FAILED, COLLECTOR_STATUS, collectorSummary } from '../../shared/lib/collector';
 import { ACTIVE_STAGES, STAGES_WITH_TASKS } from '../../shared/lib/dictionaries';
 import { formatDay, pluralize, splitName } from '../../shared/lib/format';
+import { readDraft } from '../WizardPage/draft';
 import { ApplicationRow } from './components/ApplicationRow';
 import { CompanyCard } from './components/CompanyCard';
 import { TaskCard, type Task } from './components/TaskCard';
@@ -56,9 +59,16 @@ export function DashboardPage({ me, company }: Props) {
     const applicants = useApplicants();
     const applications = useApplications({ applicantId: company?.applicant_id });
 
-    const all = applications.data ?? [];
+    const collector = useCollectorApplications(me.id);
+    const collections = useCollectionsOf(collector.items);
+
+    // черновики анкеты теперь в data-collector — демо-черновики моков не показываем
+    const all = (applications.data ?? []).filter((a) => a.client_stage !== 'FILLING');
+    const fromCollector = collector.items.map((app) => ({ app, summary: collectorSummary(app, app.id ? readDraft(me.id, app.id) : undefined) }));
     const active = all.filter((a) => ACTIVE_STAGES.includes(a.client_stage));
     const closed = all.filter((a) => !ACTIVE_STAGES.includes(a.client_stage));
+    // у data-collector все заявки пока активные: дальше VERIFYING он статусы не ведёт
+    const shownCollector = filter === 'active' ? fromCollector : [];
     const shown = filter === 'active' ? active : closed;
 
     const statuses = useApplicationStatuses(all.filter((a) => STAGES_WITH_TASKS.includes(a.client_stage)));
@@ -68,7 +78,7 @@ export function DashboardPage({ me, company }: Props) {
     const { first, middle } = splitName(me.full_name);
 
     const filters: { id: Filter; label: string }[] = [
-        { id: 'active', label: `Активные · ${active.length}` },
+        { id: 'active', label: `Активные · ${active.length + fromCollector.length}` },
         { id: 'closed', label: `Завершённые · ${closed.length}` },
     ];
 
@@ -139,7 +149,13 @@ export function DashboardPage({ me, company }: Props) {
                         </Plate>
                     )}
 
-                    {applications.isSuccess && shown.length === 0 && (
+                    {collector.isError && (
+                        <Plate view='attention' title='Не все заявки удалось загрузить'>
+                            Сервис сбора данных не ответил — часть заявок появится позже.
+                        </Plate>
+                    )}
+
+                    {applications.isSuccess && !collector.isPending && shown.length + shownCollector.length === 0 && (
                         <div className='dashboard__empty'>
                             <Typography.Text view='primary-medium' color='secondary'>
                                 {filter === 'active' ? 'Активных заявок нет' : 'Завершённых заявок пока нет'}
@@ -147,10 +163,25 @@ export function DashboardPage({ me, company }: Props) {
                         </div>
                     )}
 
-                    {shown.length > 0 && (
+                    {shown.length + shownCollector.length > 0 && (
                         <ul className='dashboard__list'>
+                            {shownCollector.map(({ app, summary }, i) => {
+                                const failed = collections.get(app.collection_task_id ?? '')?.status === 'FAILED';
+                                const view = failed ? COLLECTION_FAILED : COLLECTOR_STATUS[app.status ?? 'DRAFT'];
+                                return (
+                                    <li key={summary.id} className={`dashboard__list-item${i > 0 ? ' dashboard__list-item_divided' : ''}`}>
+                                        <ApplicationRow
+                                            application={summary}
+                                            productName={productName(summary.product_code)}
+                                            badge={view}
+                                            hint={{ text: view.hint, link: app.status === 'DRAFT' }}
+                                            company={summary.applicant.inn === company?.inn ? undefined : summary.applicant.short_name}
+                                        />
+                                    </li>
+                                );
+                            })}
                             {shown.map((app, i) => (
-                                <li key={app.id} className={`dashboard__list-item${i > 0 ? ' dashboard__list-item_divided' : ''}`}>
+                                <li key={app.id} className={`dashboard__list-item${i + shownCollector.length > 0 ? ' dashboard__list-item_divided' : ''}`}>
                                     <ApplicationRow
                                         application={app}
                                         productName={productName(app.product_code)}

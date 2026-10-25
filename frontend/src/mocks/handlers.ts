@@ -102,7 +102,7 @@ const FAIL_KEY = 'credit-cabinet:mock-fail';
 /** Сбой по флагу из localStorage — для e2e: { method, path (regexp), status, code?, field?, times? }[]. */
 type MockFailure = { method: string; path: string; status: number; code?: Problem['code']; field?: string; times?: number };
 
-function mockFailure(request: Request) {
+export function mockFailure(request: Request) {
     let rules: MockFailure[];
     try {
         rules = JSON.parse(localStorage.getItem(FAIL_KEY) ?? '[]') as MockFailure[];

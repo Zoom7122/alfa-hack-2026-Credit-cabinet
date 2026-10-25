@@ -4,14 +4,21 @@ import { createRoot } from 'react-dom/client';
 import { App } from './app/App';
 import './styles/base.css';
 
-/** Пока бэкенда нет, ответы API отдаёт MSW по контракту api/openapi.yaml. VITE_API_MOCK=false — ходить в настоящий API. */
+/**
+ * Моки MSW: VITE_API_MOCK — экраны без своего бэкенда (по api/openapi.yaml), VITE_COLLECTOR_MOCK — ответы data-collector.
+ * 'false' — ходить в настоящий сервис через прокси.
+ */
 async function enableMocks() {
-    if (import.meta.env.VITE_API_MOCK === 'false') return;
-    const { worker } = await import('./mocks/browser');
-    await worker.start({ onUnhandledRequest: 'bypass', quiet: true });
+    const api = import.meta.env.VITE_API_MOCK !== 'false';
+    const collector = import.meta.env.VITE_COLLECTOR_MOCK !== 'false';
+    if (!api && !collector) return;
+    const { createWorker } = await import('./mocks/browser');
+    await createWorker({ api, collector }).start({ onUnhandledRequest: 'bypass', quiet: true });
 }
 
 function render() {
+    // файлы анкет, на которые не ссылается ни один черновик (отправленные, брошенные), — из IndexedDB
+    void import('./pages/WizardPage/draft').then((m) => m.collectOrphanFiles());
     createRoot(document.getElementById('root')!).render(
         <StrictMode>
             <App />

@@ -1,38 +1,34 @@
 import { useEffect, useState } from 'react';
+import { Button } from '@alfalab/core-components/button';
 import { Plate } from '@alfalab/core-components/plate';
 import { Select } from '@alfalab/core-components/select';
-import { Skeleton } from '@alfalab/core-components/skeleton';
 import { Textarea } from '@alfalab/core-components/textarea';
+import { Link } from 'react-router-dom';
 
+import type { CollectorPurpose } from '../../../api/collector/types';
 import { useCalculation } from '../../../api/queries';
-import type { PurposeCode } from '../../../api/types';
 import { PURPOSE_LABELS, PURPOSES } from '../../../shared/lib/dictionaries';
-import { formatMoney } from '../../../shared/lib/format';
-import { useSessionState } from '../../../shared/lib/sessionState';
 import { fitTerms, type TermsValue, validTerms } from '../../../shared/lib/terms';
 import { FormCard } from '../../../shared/ui/FormCard/FormCard';
 import { PaymentEstimate } from '../../../shared/ui/PaymentEstimate/PaymentEstimate';
 import { TermsFields } from '../../../shared/ui/TermsFields/TermsFields';
 import { StepLayout } from '../components/StepLayout';
-import type { StepProps } from '../stepProps';
-import './TermsStep.css';
+import { type StepProps, useStepGate } from '../stepProps';
 
-export function TermsStep({ app, product, draft, hrefFor }: StepProps) {
-    const [terms, setTerms] = useState<TermsValue>(() =>
-        product
-            ? fitTerms(product, { amount: app.requested?.amount ?? '', term: app.requested?.term_months ?? '' })
-            : { amount: app.requested?.amount ?? '', term: app.requested?.term_months ?? '' },
-    );
-    // описание без выбранной цели контракт не примет — до выбора цели держим его во вкладке
-    const [description, setDescription] = useSessionState(`credit-cabinet:wizard:${app.id}:purpose-description`, () => app.purpose?.description ?? '');
+export function TermsStep({ product, draft, hrefFor, errors, serverErrors }: StepProps) {
+    const d = draft.value;
+    const [terms, setTerms] = useState<TermsValue>(() => {
+        const stored: TermsValue = { amount: d.requested?.amount ?? '', term: d.requested?.term_months ?? '' };
+        return product ? fitTerms(product, stored) : stored;
+    });
     const valid = validTerms(product, terms);
     const calculation = useCalculation(product?.code, valid);
+    const gate = useStepGate(errors, serverErrors, hrefFor('borrower'));
 
-    // сумму и срок без значения или вне диапазона продукта слайдеры показывают подогнанными — их и сохраняем (один раз при открытии)
+    // слайдеры показывают сумму и срок подогнанными под продукт — их и сохраняем (один раз при открытии)
     const [fitOnOpen] = useState(() => {
         const fitted = validTerms(product, terms);
-        const stored = app.requested;
-        return fitted && (stored?.amount !== fitted.amount || stored?.term_months !== fitted.term_months) ? fitted : undefined;
+        return fitted && (fitted.amount !== d.requested?.amount || fitted.term_months !== d.requested?.term_months) ? fitted : undefined;
     });
     const { update } = draft;
     useEffect(() => {
@@ -41,32 +37,36 @@ export function TermsStep({ app, product, draft, hrefFor }: StepProps) {
 
     const changeTerms = (next: TermsValue) => {
         setTerms(next);
-        // в черновик — только то, что в пределах продукта
-        const ok = validTerms(product, next);
-        if (ok) draft.update({ requested: ok });
+        draft.update({ requested: validTerms(product, next) });
     };
 
-    const purposes = product?.purposes?.length ? product.purposes : PURPOSES;
-    const threshold = product?.collateral?.required_above_amount;
-    const needsCollateral = valid && threshold !== null && threshold !== undefined && threshold > 0 && valid.amount > threshold;
+    // каталог продуктов — пока из моков; цели data-collector совпадают со справочником кабинета
+    const purposes = (product?.purposes?.length ? product.purposes : PURPOSES) as CollectorPurpose[];
 
-    if (!product) return <Skeleton visible={true} className='terms-step__skeleton' />;
+    // каталог не загрузился или такого продукта больше нет — без диапазонов суммы и срока шаг не заполнить
+    if (!product) {
+        return (
+            <StepLayout title='Сумма, срок и цель' backHref={hrefFor('company')}>
+                <Plate view='negative' title='Не нашли продукт этой заявки'>
+                    <Button Component={Link} href='/products' view='secondary' size={40}>
+                        Выбрать продукт
+                    </Button>
+                </Plate>
+            </StepLayout>
+        );
+    }
 
     return (
         <StepLayout
             title='Сумма, срок и цель'
-            subtitle='Можно поменять позже — до отправки заявки'
+            subtitle='Можно поменять до отправки заявки'
             backHref={hrefFor('company')}
-            nextHref={hrefFor('finance')}
+            onNext={gate.onNext}
+            hint={gate.hint}
         >
             <FormCard>
                 <TermsFields product={product} value={terms} onChange={changeTerms} />
                 <PaymentEstimate payment={valid && calculation.data?.monthly_payment_from} rate={product.rate_annual_from} loading={calculation.isFetching} />
-                {needsCollateral && (
-                    <Plate view='attention' title={`Для суммы больше ${formatMoney(threshold)} нужен залог`}>
-                        Укажете его на шаге «Залог и поручители».
-                    </Plate>
-                )}
             </FormCard>
 
             <FormCard title='На что нужны деньги'>
@@ -75,11 +75,9 @@ export function TermsStep({ app, product, draft, hrefFor }: StepProps) {
                     size={56}
                     block={true}
                     options={purposes.map((code) => ({ key: code, content: PURPOSE_LABELS[code] }))}
-                    selected={app.purpose?.code ?? null}
-                    onChange={({ selected }) =>
-                        selected && draft.update({ purpose: { code: selected.key as PurposeCode, description: description || null } })
-                    }
-                    error={!app.purpose?.code && valid ? 'Выберите цель — от неё зависят условия' : undefined}
+                    selected={d.purpose?.code ?? null}
+                    onChange={({ selected }) => selected && draft.update((prev) => ({ purpose: { ...prev.purpose, code: selected.key as CollectorPurpose } }))}
+                    error={gate.errorOf('purpose.code')}
                 />
                 <Textarea
                     label='Расскажите подробнее'
@@ -90,12 +88,11 @@ export function TermsStep({ app, product, draft, hrefFor }: StepProps) {
                     block={true}
                     minRows={2}
                     maxLength={2000}
-                    value={description}
+                    value={d.purpose?.description ?? ''}
+                    error={gate.errorOf('purpose.description')}
                     onChange={(e) => {
-                        setDescription(e.target.value);
-                        // Purpose без code контракт не примет — описание уйдёт вместе с выбранной целью
-                        const code = app.purpose?.code;
-                        if (code) draft.update({ purpose: { code, description: e.target.value || null } });
+                        const description = e.target.value;
+                        draft.update((prev) => ({ purpose: { ...prev.purpose, description } }));
                     }}
                 />
             </FormCard>

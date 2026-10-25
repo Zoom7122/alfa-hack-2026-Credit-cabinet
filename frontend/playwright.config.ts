@@ -5,7 +5,8 @@ import { defineConfig, devices } from '@playwright/test';
  * E2E_BASE_URL — прогнать против уже запущенного стенда, например контейнера: E2E_BASE_URL=http://localhost:3000
  */
 const externalBaseURL = process.env.E2E_BASE_URL;
-const port = 5173;
+// свой порт, а не 5173: иначе reuseExistingServer подхватит обычный `npm run dev` — возможно, с живым data-collector
+const port = 5179;
 
 export default defineConfig({
     testDir: './e2e',
@@ -26,7 +27,8 @@ export default defineConfig({
         : {
               command: `npm run dev -- --port ${port} --strictPort`,
               url: `http://localhost:${port}/login`,
-              env: { VITE_API_MOCK: 'true' },
+              // тесты — всегда на моках MSW; против живого сервиса — через E2E_BASE_URL
+              env: { VITE_API_MOCK: 'true', VITE_COLLECTOR_MOCK: 'true' },
               reuseExistingServer: !process.env.CI,
               timeout: 60_000,
           },

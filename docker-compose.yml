@@ -176,8 +176,11 @@ services:
       context: ./frontend
       args:
         VITE_API_MOCK: ${FRONTEND_API_MOCK:-true}
+        # false — анкета и статус сбора идут в живой data-collector
+        VITE_COLLECTOR_MOCK: ${FRONTEND_COLLECTOR_MOCK:-true}
     environment:
       API_UPSTREAM: ${FRONTEND_API_UPSTREAM:-http://api:8080}
+      COLLECTOR_UPSTREAM: ${FRONTEND_COLLECTOR_UPSTREAM:-http://data-collector:8081}
     ports:
       - "${FRONTEND_PORT:-3000}:80"
     restart: unless-stopped

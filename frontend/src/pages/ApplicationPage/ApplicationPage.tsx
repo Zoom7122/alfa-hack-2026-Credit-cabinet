@@ -6,7 +6,7 @@ import { Skeleton } from '@alfalab/core-components/skeleton';
 import { Status } from '@alfalab/core-components/status';
 import { Tab, Tabs } from '@alfalab/core-components/tabs';
 import { Typography } from '@alfalab/core-components/typography';
-import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import { ApiError } from '../../api/client';
 import { useApplication, useApplicationStatus, useProducts, useTimeline } from '../../api/queries';
@@ -154,8 +154,18 @@ export function ApplicationPage({ me }: { me: Me }) {
         );
     }
 
-    // черновик редактируют в анкете
-    if (view.client_stage === 'FILLING') return <Navigate to={`/applications/${app.id}/edit`} replace={true} />;
+    // анкета теперь на data-collector: черновики прежнего формата (демо-моки) в ней не открыть
+    if (view.client_stage === 'FILLING') {
+        return (
+            <div className='application-page'>
+                <Plate view='attention' title='Этот черновик из прежней анкеты'>
+                    <Button Component={Link} href='/products' view='secondary' size={40}>
+                        Начать новую заявку
+                    </Button>
+                </Plate>
+            </div>
+        );
+    }
 
     const productName = products.data?.find((p) => p.code === app.product_code)?.name ?? 'Кредит';
     const badge = STAGE_BADGES[view.client_stage];

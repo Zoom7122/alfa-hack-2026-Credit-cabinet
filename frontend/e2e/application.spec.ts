@@ -18,14 +18,31 @@ const POA = [
     { name: 'doverennost_ivanova.xml.sig', mimeType: 'application/pkcs7-signature' },
 ];
 
+/**
+ * Отправить демо-черновик A-2026-000140 через мок-API (экраны 07+ пока на моках по openapi.yaml).
+ * Анкета кабинета теперь работает на data-collector, поэтому черновик дозаполняем запросами, а не через UI.
+ */
 async function submitDraft(page: Page) {
-    await page.goto('/applications/app_000140/edit/finance');
-    await page.getByLabel('Регулярные расходы в месяц').pressSequentially('900000');
-    await expect(page.getByRole('banner').getByRole('status')).toHaveText(/^✓ Черновик сохранён/);
-    await page.getByRole('link', { name: /Проверка и отправка/ }).click();
-    await page.getByText('Согласен на обработку персональных данных').click();
-    await page.getByText('Согласен на запрос кредитной истории в бюро кредитных историй').click();
-    await page.getByRole('button', { name: 'Отправить заявку' }).click();
+    await page.goto('/');
+    // моки MSW стартуют до отрисовки: главная на экране — запросы уже перехватываются
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await page.evaluate(async () => {
+        const headers = { Authorization: `Bearer ${localStorage.getItem('credit-cabinet:token')}`, 'Content-Type': 'application/merge-patch+json' };
+        const base = '/api/v1/applications/app_000140';
+        const app = (await (await fetch(base, { headers })).json()) as { version: number };
+        const patched = await fetch(base, {
+            method: 'PATCH',
+            headers: { ...headers, 'If-Match': String(app.version) },
+            body: JSON.stringify({ financials: { avg_monthly_expenses: 900000 }, consents: { personal_data: true, credit_bureau: true } }),
+        });
+        const { version } = (await patched.json()) as { version: number };
+        const submitted = await fetch(`${base}/submit`, {
+            method: 'POST',
+            headers: { ...headers, 'Content-Type': 'application/json', 'If-Match': String(version), 'Idempotency-Key': crypto.randomUUID() },
+        });
+        if (!submitted.ok) throw new Error(`submit: ${submitted.status} ${await submitted.text()}`);
+    });
+    await page.goto('/applications/app_000140');
     await expectPath(page, '/applications/app_000140');
 }
 

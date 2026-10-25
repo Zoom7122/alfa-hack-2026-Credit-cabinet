@@ -17,14 +17,21 @@ const PRODUCT_ICONS: Record<string, typeof BriefcaseMIcon> = {
     EQUIPMENT: ToolsMIcon,
 };
 
+type Hint = { text: string; link?: boolean };
+
 type Props = {
     application: ApplicationSummary;
     productName: string;
     status?: ApplicationStatusView;
+    /** Своя подсказка под статусом и бейдж — для заявок data-collector, у которых нет /status. */
+    hint?: Hint;
+    badge?: { label: string; color: 'green' | 'orange' | 'red' | 'blue' | 'grey' };
+    /** Компания — когда заявка не по текущей компании кабинета. */
+    company?: string;
 };
 
 /** Подсказка под статусом. Где есть /status — берём текст из него (subtitle по контракту). */
-function hintFor(app: ApplicationSummary, status?: ApplicationStatusView): { text: string; link?: boolean } | undefined {
+function hintFor(app: ApplicationSummary, status?: ApplicationStatusView): Hint | undefined {
     switch (app.client_stage) {
         case 'FILLING':
             return { text: 'Продолжить заполнение', link: true };
@@ -44,11 +51,12 @@ function hintFor(app: ApplicationSummary, status?: ApplicationStatusView): { tex
     }
 }
 
-export function ApplicationRow({ application: app, productName, status }: Props) {
+export function ApplicationRow({ application: app, productName, status, hint: ownHint, badge: ownBadge, company }: Props) {
     const Icon = PRODUCT_ICONS[app.product_code] ?? BriefcaseMIcon;
-    const badge = STAGE_BADGES[app.client_stage];
-    const hint = hintFor(app, status);
+    const badge = ownBadge ?? STAGE_BADGES[app.client_stage];
+    const hint = ownHint ?? hintFor(app, status);
     const meta = [
+        company,
         app.number,
         app.requested && formatMonths(app.requested.term_months),
         app.client_stage === 'FILLING' ? `черновик от ${formatUpdated(app.updated_at)}` : `обновлено ${formatUpdated(app.updated_at)}`,
@@ -71,7 +79,7 @@ export function ApplicationRow({ application: app, productName, status }: Props)
                 </Typography.Text>
             </span>
             <span className='application-row__state'>
-                <Status view={badge.contrast ? 'contrast' : 'muted-alt'} color={badge.color} size={24} uppercase={false}>
+                <Status view={'contrast' in badge && badge.contrast ? 'contrast' : 'muted-alt'} color={badge.color} size={24} uppercase={false}>
                     {badge.label}
                 </Status>
                 {hint && (

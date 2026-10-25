@@ -11,7 +11,7 @@ const DEFAULT_STEP_MS = 2500;
 const MAX_EVENTS = 300;
 
 /** Длительность шага конвейера; e2e ускоряют его флагом в localStorage. */
-function stepMs() {
+export function stepMs() {
     try {
         const value = Number(localStorage.getItem(PIPELINE_KEY));
         return value > 0 ? value : DEFAULT_STEP_MS;

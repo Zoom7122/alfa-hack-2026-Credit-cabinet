@@ -10,12 +10,17 @@ COPY . .
 # true — ответы API отдаёт MSW в браузере (бэкенда пока нет); false — ходить в настоящий /api
 ARG VITE_API_MOCK=true
 ENV VITE_API_MOCK=$VITE_API_MOCK
+# true — ответы data-collector тоже отдаёт MSW; false — ходить в живой сервис через /collector
+ARG VITE_COLLECTOR_MOCK=true
+ENV VITE_COLLECTOR_MOCK=$VITE_COLLECTOR_MOCK
 RUN npm run build
 
 # ---------- раздача ----------
 FROM nginx:1.28-alpine
 # куда nginx проксирует /api: схема, хост и порт без пути
 ENV API_UPSTREAM=http://api:8080
+# куда nginx проксирует /collector (префикс срезается)
+ENV COLLECTOR_UPSTREAM=http://data-collector:8081
 # DNS для резолва upstream; 127.0.0.11 — встроенный DNS Docker
 ENV NGINX_RESOLVER=127.0.0.11
 

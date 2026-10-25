@@ -12,6 +12,7 @@ import { LoginPage } from '../pages/LoginPage/LoginPage';
 import { NotReadyPage } from '../pages/NotReadyPage/NotReadyPage';
 import { AppHeader } from '../shared/ui/AppHeader/AppHeader';
 import { BackofficeHeader } from '../shared/ui/BackofficeHeader/BackofficeHeader';
+import { isCollectorId } from '../shared/lib/collector';
 import { RequireAuth } from './RequireAuth';
 import { type AuthContext, homeFor, useLogout, useToken } from './useAuth';
 import './App.css';
@@ -30,6 +31,9 @@ const ProductsPage = lazy(() => import('../pages/ProductsPage/ProductsPage').the
 const NewApplicationPage = lazy(() => import('../pages/WizardPage/WizardPage').then((m) => ({ default: m.NewApplicationPage })));
 const ApplicationPage = lazy(() =>
     import('../pages/ApplicationPage/ApplicationPage').then((m) => ({ default: m.ApplicationPage })),
+);
+const CollectorApplicationPage = lazy(() =>
+    import('../pages/CollectorApplicationPage/CollectorApplicationPage').then((m) => ({ default: m.CollectorApplicationPage })),
 );
 const WizardPage = lazy(() => import('../pages/WizardPage/WizardPage').then((m) => ({ default: m.WizardPage })));
 const QueuePage = lazy(() => import('../pages/QueuePage/QueuePage').then((m) => ({ default: m.QueuePage })));
@@ -81,13 +85,11 @@ function ProductsRoute() {
     );
 }
 
+/** Заявки data-collector (анкета и сбор данных) и демо-заявки моков (экраны 07–15) — разные страницы. */
 function ApplicationRoute() {
     const { me } = useOutletContext<AuthContext>();
-    return (
-        <Lazy>
-            <ApplicationPage me={me} />
-        </Lazy>
-    );
+    const { applicationId } = useParams();
+    return <Lazy>{isCollectorId(applicationId) ? <CollectorApplicationPage /> : <ApplicationPage me={me} />}</Lazy>;
 }
 
 function NewApplicationRoute() {

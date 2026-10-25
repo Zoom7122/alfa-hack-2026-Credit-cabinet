@@ -31,8 +31,9 @@ test.describe('Главная клиента', () => {
         await seedToken(page, 'director');
         await page.goto('/');
         const list = page.getByRole('region', { name: 'Мои заявки' }).getByRole('listitem');
-        await expect(list).toHaveCount(3);
-        await expect(page.getByRole('button', { name: 'Активные · 3' })).toHaveAttribute('aria-pressed', 'true');
+        // демо-черновик моков не показываем: черновики анкеты живут в data-collector
+        await expect(list).toHaveCount(2);
+        await expect(page.getByRole('button', { name: 'Активные · 2' })).toHaveAttribute('aria-pressed', 'true');
 
         await page.getByRole('button', { name: 'Завершённые · 2' }).click();
         await expect(list).toHaveCount(2);
@@ -43,7 +44,7 @@ test.describe('Главная клиента', () => {
     test('статусы и подсказки строк соответствуют этапам FSM', async ({ page }) => {
         await seedToken(page, 'director');
         await page.goto('/');
-        await expect(page.getByRole('link', { name: /Кредит на оборудование/ })).toContainText('Продолжить заполнение');
+        await expect(page.getByRole('link', { name: /Кредит на оборудование/ })).toHaveCount(0);
         await expect(page.getByRole('link', { name: /Кредит на транспорт/ })).toContainText('Нужно уточнить');
         await expect(page.getByRole('link', { name: /Кредит на транспорт/ })).toContainText('2 вопроса от банка');
         await expect(page.getByRole('link', { name: /Оборотный кредит · 5 000 000/ })).toContainText('Ждёт вашей подписи');
@@ -61,7 +62,7 @@ test.describe('Главная клиента', () => {
     test('нет вложенных интерактивных элементов, у каждого — один Tab', async ({ page }) => {
         await seedToken(page, 'director');
         await page.goto('/');
-        await expect(page.getByRole('region', { name: 'Мои заявки' }).getByRole('listitem')).toHaveCount(3);
+        await expect(page.getByRole('region', { name: 'Мои заявки' }).getByRole('listitem')).toHaveCount(2);
         await expect(page.locator('a button, button a, a a, button button')).toHaveCount(0);
     });
 
@@ -93,11 +94,9 @@ test.describe('Главная клиента', () => {
         await expectPath(page, '/login');
     });
 
-    test('черновик открывается в анкете, «Новая заявка» ведёт в подбор', async ({ page }) => {
+    // черновики анкеты теперь в data-collector — их список на главной появится во второй части переделки
+    test('«Новая заявка» ведёт в подбор', async ({ page }) => {
         await seedToken(page, 'director');
-        await page.goto('/');
-        await page.getByRole('link', { name: /Кредит на оборудование/ }).click();
-        await expectPath(page, '/applications/app_000140/edit/finance');
         await page.goto('/');
         await page.getByRole('link', { name: 'Новая заявка' }).click();
         await expectPath(page, '/products');

@@ -278,6 +278,40 @@ export const registry: CounterpartyPrefill[] = [
         registry_status: 'LIQUIDATING',
         already_known: false,
     },
+    // субъекты сценариев A–E mock-api: по ним data-collector соберёт данные из всех систем
+    ...[
+        { inn: '7799000012', name: 'Северный ветер', ogrn: '1217700412345', date: '2021-03-15', okved: ['46.39', 'Неспециализированная оптовая торговля пищевыми продуктами'], director: 'Ковалёв Игорь Сергеевич' },
+        { inn: '7799000020', name: 'Стройресурс', ogrn: '1197700230011', date: '2019-06-04', okved: ['41.20', 'Строительство жилых и нежилых зданий'], director: 'Орлов Денис Павлович' },
+        { inn: '7799000037', name: 'Альтаир', ogrn: '1207700370022', date: '2020-10-21', okved: ['46.90', 'Неспециализированная оптовая торговля'], director: 'Белов Артём Николаевич' },
+        { inn: '7799000044', name: 'Техно-Сервис', ogrn: '1187700440033', date: '2018-02-12', okved: ['33.12', 'Ремонт машин и оборудования'], director: 'Зайцева Ольга Михайловна' },
+    ].map(
+        (c): CounterpartyPrefill => ({
+            inn: c.inn,
+            applicant_type: 'LEGAL_ENTITY',
+            ogrn: c.ogrn,
+            full_name: `Общество с ограниченной ответственностью «${c.name}»`,
+            short_name: `ООО «${c.name}»`,
+            registration_date: c.date,
+            legal_address: { full: 'г. Москва', region_code: '77' },
+            okved_main: { code: c.okved[0], title: c.okved[1] },
+            director_name: c.director,
+            registry_status: 'ACTIVE',
+            already_known: false,
+        }),
+    ),
+    {
+        inn: '779900010202',
+        applicant_type: 'SOLE_PROPRIETOR',
+        ogrn: '321774600123456',
+        full_name: 'Индивидуальный предприниматель Смирнова Анна Викторовна',
+        short_name: 'ИП Смирнова А. В.',
+        registration_date: '2021-08-30',
+        legal_address: { full: 'г. Москва', region_code: '77' },
+        okved_main: { code: '47.91', title: 'Торговля через интернет' },
+        director_name: 'Смирнова Анна Викторовна',
+        registry_status: 'ACTIVE',
+        already_known: false,
+    },
 ];
 
 export const REGISTRY_TIMEOUT_INN = '7700000000';
