@@ -1,0 +1,59 @@
+.retention-offer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-20);
+}
+
+.retention-offer__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    border-radius: var(--border-radius-circle);
+    background: var(--color-light-accent-primary);
+    color: var(--color-light-text-primary-inverted);
+}
+
+.retention-offer__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-4);
+}
+
+.retention-offer__panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-12);
+    padding: var(--gap-24);
+    border-radius: var(--border-radius-24);
+    background: var(--color-light-neutral-100);
+}
+
+.retention-offer__rate {
+    display: flex;
+    align-items: baseline;
+    gap: var(--gap-12);
+}
+
+.retention-offer__rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-12);
+    margin: 0;
+}
+
+.retention-offer__row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--gap-16);
+}
+
+.retention-offer__label,
+.retention-offer__value {
+    margin: 0;
+}
+
+.retention-offer__value {
+    text-align: right;
+}

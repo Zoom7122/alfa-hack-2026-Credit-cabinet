@@ -1,0 +1,32 @@
+/* Токены UI-кита: цвета (bluetint), отступы, радиусы, шрифты */
+@import '@alfalab/core-components-vars/colors-bluetint.css';
+@import '@alfalab/core-components-vars/colors-addons.css';
+@import '@alfalab/core-components-vars/gaps.css';
+@import '@alfalab/core-components-vars/border-radius.css';
+@import '@alfalab/core-components-vars/typography-vars.css';
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-width: 1280px;
+    background: var(--color-light-base-bg-secondary);
+    color: var(--color-light-text-primary);
+    font-family: var(--font-family-system);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Ссылки-кнопки и строки-ссылки оформляют компоненты; текстовые ссылки — через Link/Typography кита */
+a {
+    color: inherit;
+    text-decoration: none;
+}

@@ -1,0 +1,51 @@
+{
+  "name": "credit-cabinet-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint --deny-warnings src e2e",
+    "preview": "vite preview",
+    "gen:api": "openapi-typescript ../api/openapi.yaml -o src/api/schema.d.ts",
+    "typecheck": "tsc -b",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "gen:collector": "mkdir -p node_modules/.cache && swagger2openapi ../data-collector/docs/swagger.yaml -y -o node_modules/.cache/collector.openapi.yaml && openapi-typescript node_modules/.cache/collector.openapi.yaml -o src/api/collector/schema.d.ts"
+  },
+  "dependencies": {
+    "@alfalab/core-components": "50.38.0",
+    "@alfalab/core-components-config": "1.1.0",
+    "@alfalab/core-components-stack-context": "1.0.1",
+    "@alfalab/core-components-vars": "11.4.1",
+    "@alfalab/icons-glyph": "2.293.3",
+    "@alfalab/icons-logotype": "2.37.3",
+    "@tanstack/react-query": "5.104.5",
+    "openapi-fetch": "0.17.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-router-dom": "7.18.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "msw": "2.14.4",
+    "openapi-typescript": "7.13.0",
+    "oxlint": "1.89.0",
+    "swagger2openapi": "7.0.8",
+    "typescript": "5.9.3",
+    "vite": "8.3.5"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
+  },
+  "engines": {
+    "node": ">=24.22 <25"
+  }
+}

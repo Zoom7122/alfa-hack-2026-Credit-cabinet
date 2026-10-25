@@ -1,0 +1,82 @@
+.queue {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-24);
+    padding: var(--gap-32) var(--gap-40) var(--gap-56);
+}
+
+.queue__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-24);
+}
+
+.queue__stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--gap-16);
+}
+
+.queue__stat {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-12);
+    padding: var(--gap-24) var(--gap-20);
+    border-radius: var(--border-radius-24);
+    background: var(--color-light-base-bg-primary);
+}
+
+.queue__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-16);
+    padding: var(--gap-24);
+    border-radius: var(--border-radius-24);
+    background: var(--color-light-base-bg-primary);
+}
+
+.queue__filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-16);
+}
+
+.queue__groups,
+.queue__search {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-8);
+}
+
+.queue__assignee {
+    width: 220px;
+}
+
+.queue__query {
+    width: 260px;
+}
+
+.queue__skeleton {
+    height: 240px;
+    border-radius: var(--border-radius-16);
+}
+
+.queue__cell {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-2);
+}
+
+.queue__cell_nowrap,
+.queue__sla {
+    white-space: nowrap;
+}
+
+.queue__action {
+    display: flex;
+    justify-content: flex-end;
+    white-space: nowrap;
+}

@@ -1,0 +1,31 @@
+.collection-card__skeleton {
+    height: 240px;
+    border-radius: var(--border-radius-16);
+}
+
+.collection-card__list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.collection-card__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-16);
+    padding: var(--gap-12) 0;
+}
+
+.collection-card__item_divided {
+    border-top: 1px solid var(--color-light-neutral-300);
+}
+
+.collection-card__name {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-2);
+    min-width: 0;
+}

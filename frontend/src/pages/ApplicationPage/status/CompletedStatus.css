@@ -1,0 +1,4 @@
+.completed-status__skeleton {
+    height: 480px;
+    border-radius: var(--border-radius-24);
+}

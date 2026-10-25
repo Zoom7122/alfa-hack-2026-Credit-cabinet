@@ -1,0 +1,6 @@
+.company-tab {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-16);
+    max-width: 960px;
+}

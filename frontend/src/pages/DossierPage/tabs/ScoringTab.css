@@ -1,0 +1,5 @@
+.scoring-tab {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-16);
+}

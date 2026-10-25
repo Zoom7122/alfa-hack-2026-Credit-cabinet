@@ -1,0 +1,49 @@
+.review-step__section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-16);
+}
+
+.review-step__section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-12);
+}
+
+.review-step__rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-12);
+    margin: 0;
+}
+
+.review-step__row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--gap-24);
+}
+
+.review-step__label,
+.review-step__value {
+    margin: 0;
+}
+
+.review-step__value {
+    text-align: right;
+}
+
+.review-step__missing {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-4);
+    margin: 0;
+    padding-left: var(--gap-20);
+}
+
+.review-step__scopes {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-12);
+    padding-left: var(--gap-32);
+}

@@ -1,0 +1,103 @@
+.overview {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--gap-24);
+}
+
+.overview__main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--gap-16);
+    min-width: 0;
+}
+
+.overview__aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-16);
+    width: 400px;
+    flex: none;
+}
+
+.overview__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-16);
+    padding: var(--gap-24);
+    border-radius: var(--border-radius-24);
+    background: var(--color-light-base-bg-primary);
+}
+
+.overview__offers,
+.overview__sources,
+.overview__others {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-12);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.overview__offer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-8);
+    padding: var(--gap-16) var(--gap-20);
+    border-radius: var(--border-radius-16);
+    background: var(--color-light-neutral-100);
+}
+
+.overview__offer-head,
+.overview__other {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-8);
+}
+
+.overview__source {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-8);
+    min-height: 32px;
+}
+
+.overview__source-name {
+    flex: 1;
+}
+
+.overview__dot {
+    width: 8px;
+    height: 8px;
+    flex: none;
+    border-radius: var(--border-radius-circle);
+    background: var(--color-light-neutral-300);
+}
+
+.overview__dot_state_done {
+    background: var(--color-light-status-positive);
+}
+
+.overview__dot_state_failed {
+    background: var(--color-light-status-attention);
+}
+
+.overview__dot_state_running {
+    background: var(--color-light-status-info);
+}
+
+.overview__other-link {
+    border-radius: var(--border-radius-4);
+    color: var(--color-light-text-secondary);
+}
+
+.overview__other-link:hover {
+    color: var(--color-light-text-primary);
+}
+
+.overview__other-link:focus-visible {
+    outline: 2px solid var(--color-light-accent-secondary);
+    outline-offset: var(--gap-2);
+}

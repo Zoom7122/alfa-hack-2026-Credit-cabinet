@@ -1,0 +1,12 @@
+.info-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-12);
+    padding: var(--gap-20);
+    border-radius: var(--border-radius-20);
+    background: var(--color-light-base-bg-primary);
+}
+
+.info-card__title {
+    margin: 0;
+}

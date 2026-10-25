@@ -1,0 +1,17 @@
+.auth-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: var(--gap-40);
+}
+
+.auth-state__plate {
+    width: 480px;
+}
+
+.auth-state__actions {
+    display: flex;
+    gap: var(--gap-12);
+    margin-top: var(--gap-12);
+}

@@ -1,0 +1,69 @@
+.signer-status {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-24);
+}
+
+.signer-status__columns {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--gap-24);
+}
+
+.signer-status__main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--gap-16);
+    min-width: 0;
+}
+
+.signer-status__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-16);
+    padding: var(--gap-24);
+    border-radius: var(--border-radius-24);
+    background: var(--color-light-base-bg-primary);
+}
+
+.signer-status__aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-16);
+    width: 360px;
+    flex: none;
+}
+
+.signer-status__person {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-12);
+}
+
+.signer-status__avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex: none;
+    border-radius: var(--border-radius-circle);
+    background: var(--color-light-neutral-300);
+}
+
+.signer-status__person-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.signer-status__skeleton {
+    height: 480px;
+    border-radius: var(--border-radius-24);
+}
+
+.signer-status__demo {
+    padding: var(--gap-12) var(--gap-16);
+    border-radius: var(--border-radius-12);
+    background: var(--color-light-status-muted-info);
+}

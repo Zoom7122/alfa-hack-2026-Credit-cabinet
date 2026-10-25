@@ -168,6 +168,23 @@ services:
       - "${MOCK_API_PORT:-8090}:8090"
     restart: unless-stopped
 
+  # Кабинет клиента и рабочее место банка: http://localhost:${FRONTEND_PORT:-3000}
+  # Пока API нет, данные отдают моки MSW в браузере (FRONTEND_API_MOCK=true).
+  # Когда появится сервис API, поставить FRONTEND_API_MOCK=false и указать его адрес в FRONTEND_API_UPSTREAM.
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_MOCK: ${FRONTEND_API_MOCK:-true}
+        # false — анкета и статус сбора идут в живой data-collector
+        VITE_COLLECTOR_MOCK: ${FRONTEND_COLLECTOR_MOCK:-true}
+    environment:
+      API_UPSTREAM: ${FRONTEND_API_UPSTREAM:-http://api:8080}
+      COLLECTOR_UPSTREAM: ${FRONTEND_COLLECTOR_UPSTREAM:-http://data-collector:8081}
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    restart: unless-stopped
+
   # Логи всех контейнеров в браузере: http://localhost:${DOZZLE_PORT:-8888}
   dozzle:
     image: amir20/dozzle:latest

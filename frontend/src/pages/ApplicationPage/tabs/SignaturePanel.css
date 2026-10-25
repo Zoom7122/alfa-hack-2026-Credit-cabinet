@@ -1,0 +1,75 @@
+.signature-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-16);
+    padding: var(--gap-24);
+    border-radius: var(--border-radius-24);
+    background: var(--color-light-base-bg-primary);
+}
+
+.signature-panel__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-12);
+}
+
+.signature-panel__skeleton {
+    height: 200px;
+    border-radius: var(--border-radius-16);
+}
+
+.signature-panel__checks {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-8);
+    margin: 0;
+    padding: var(--gap-16) 0 0;
+    border-top: 1px solid var(--color-light-neutral-300);
+    list-style: none;
+}
+
+.signature-panel__check {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--gap-8);
+}
+
+.signature-panel__mark {
+    display: flex;
+    flex: none;
+}
+
+.signature-panel__check_status_passed .signature-panel__mark {
+    color: var(--color-light-status-positive);
+}
+
+.signature-panel__check_status_warning .signature-panel__mark {
+    color: var(--color-light-status-attention);
+}
+
+.signature-panel__check_status_failed .signature-panel__mark {
+    color: var(--color-light-status-negative);
+}
+
+.signature-panel__signature {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-12);
+}
+
+.signature-panel__signature-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-8);
+}
+
+.signature-panel__required {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-8);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}

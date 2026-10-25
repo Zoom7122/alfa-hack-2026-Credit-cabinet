@@ -1,0 +1,21 @@
+.form-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-20);
+    padding: var(--gap-24);
+    border-radius: var(--border-radius-24);
+    background: var(--color-light-base-bg-primary);
+}
+
+.form-card__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--gap-16);
+}
+
+.form-card__titles {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-4);
+}

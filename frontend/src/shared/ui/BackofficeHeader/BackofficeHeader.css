@@ -1,0 +1,63 @@
+.backoffice-header {
+    background: var(--color-light-base-bg-primary-inverted);
+}
+
+.backoffice-header__inner {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-32);
+    height: 72px;
+    padding: 0 var(--gap-40);
+}
+
+.backoffice-header__logo {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-12);
+    border-radius: var(--border-radius-8);
+}
+
+.backoffice-header__nav {
+    display: flex;
+    gap: var(--gap-24);
+}
+
+.backoffice-header__link {
+    border-radius: var(--border-radius-4);
+    color: var(--color-light-text-secondary-inverted);
+    transition: color 0.15s;
+}
+
+.backoffice-header__link:hover,
+.backoffice-header__link_active {
+    color: var(--color-light-text-primary-inverted);
+}
+
+.backoffice-header__logo:focus-visible,
+.backoffice-header__link:focus-visible {
+    outline: 2px solid var(--color-light-text-primary-inverted);
+    outline-offset: var(--gap-4);
+}
+
+.backoffice-header__user {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-12);
+    margin-left: auto;
+}
+
+.backoffice-header__user-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.backoffice-header__avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--border-radius-circle);
+    background: var(--color-light-neutral-translucent-300-inverted);
+}
