@@ -17,10 +17,15 @@ type Upload = { key: string; name: string; size: number; error?: string };
 
 const isSignatureFile = (file: File) => /\.(sig|p7s)$/i.test(file.name);
 
-/** К чему относится подпись: «doverennost.xml.sig» → «doverennost.xml», иначе — к последнему загруженному документу. */
-function signedTarget(file: File, candidates: Document[]) {
+/**
+ * К чему относится подпись: «doverennost.xml.sig» → «doverennost.xml». Без совпадения по имени — к файлу из той же загрузки,
+ * а среди ранее загруженных — только если он единственный, чтобы не прикрепить подпись к чужому документу.
+ */
+function signedTarget(file: File, batch: Document[], existing: Document[]) {
     const base = file.name.replace(/\.(sig|p7s)$/i, '');
-    return candidates.find((d) => d.file_name === base) ?? candidates[0];
+    return (
+        [...batch, ...existing].find((d) => d.file_name === base) ?? batch[0] ?? (existing.length === 1 ? existing[0] : undefined)
+    );
 }
 
 type Props = {
@@ -39,6 +44,8 @@ type Props = {
     editable?: boolean;
     /** Можно удалять: по контракту — только в DRAFT или до ответа на уточнение. */
     deletable?: boolean;
+    /** К каким уже загруженным документам можно прикрепить .sig (если список рисуется не здесь). */
+    signTargets?: Document[];
 };
 
 function signatureText(doc: Document) {
@@ -76,6 +83,7 @@ export function DocumentUploader({
     accept = ACCEPT,
     editable = true,
     deletable = editable,
+    signTargets = [],
 }: Props) {
     const upload = useUploadDocument(applicationId);
     const remove = useDeleteDocument(applicationId);
@@ -113,12 +121,20 @@ export function DocumentUploader({
             }),
         );
         // откреплённая подпись — документ SIGNATURE со ссылкой на подписанный файл (контракт uploadDocument)
-        const candidates = [...uploaded.filter((d): d is Document => Boolean(d)), ...documents].filter((d) => d.type !== 'SIGNATURE');
+        const notSignature = (d: Document) => d.type !== 'SIGNATURE';
+        const batch = uploaded.filter((d): d is Document => Boolean(d)).filter(notSignature);
+        const existing = [...documents, ...signTargets].filter(notSignature);
         for (const file of signatures) {
             const t = track(file);
-            const target = signedTarget(file, candidates);
+            const target = signedTarget(file, batch, existing);
             if (!target) {
-                t.fail(new Error('Сначала загрузите документ, к которому относится подпись'));
+                t.fail(
+                    new Error(
+                        existing.length
+                            ? 'Не поняли, к какому документу подпись: назовите файл как документ, например «Устав.pdf.sig»'
+                            : 'Сначала загрузите документ, к которому относится подпись',
+                    ),
+                );
                 continue;
             }
             upload

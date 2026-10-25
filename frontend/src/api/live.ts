@@ -59,8 +59,13 @@ export function useLiveUpdates(token: string | null) {
                     if (id) void queryClient.invalidateQueries({ queryKey: queryKeys.application(id) });
                     break;
                 case 'document.recognized':
-                case 'document.signatures_verified':
                     if (id) void queryClient.invalidateQueries({ queryKey: queryKeys.documents(id) });
+                    break;
+                case 'document.signatures_verified':
+                    if (id) {
+                        void queryClient.invalidateQueries({ queryKey: queryKeys.documents(id) });
+                        void queryClient.invalidateQueries({ queryKey: ['applications', 'signature-report', id] });
+                    }
                     break;
                 default:
                     break;

@@ -58,6 +58,12 @@ export function formatDay(iso: string) {
 
 export const formatTime = (iso: string) => timeFmt.format(new Date(iso));
 
+/** «2027-01-22» → «22 января 2027» без сдвига часового пояса (дата без времени). */
+export function formatCalendarDate(date: string) {
+    const [y, m, d] = date.slice(0, 10).split('-').map(Number);
+    return y && m && d ? `${dayFmt.format(new Date(y, m - 1, d))} ${y}` : date;
+}
+
 const dateFmt = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
 /** Момент времени → «12.05.2026» в часовом поясе пользователя. */

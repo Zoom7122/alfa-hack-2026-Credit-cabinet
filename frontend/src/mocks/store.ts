@@ -11,6 +11,7 @@ import type {
 } from '../api/types';
 import { applicantSeeds, products, REGISTRY_TIMEOUT_INN, registry, seedApplications, type StoredApplication, testUsers } from './data';
 import { ACTIONS } from './fsm';
+import { signatureSummary } from './signatures';
 import {
     seedWorkflow,
     type StoredDocument,
@@ -24,7 +25,7 @@ import {
  * Изменяемая «база» мока. Живёт в localStorage, чтобы черновики переживали перезагрузку.
  * Номер версии в ключе — сменить, если поменялись сиды.
  */
-const DB_KEY = 'credit-cabinet:mock-db:v6';
+const DB_KEY = 'credit-cabinet:mock-db:v8';
 
 /** Документ + время, когда мок «распознает» его (в контракт не попадает). */
 export type { StoredDocument } from './seedWorkflow';
@@ -236,30 +237,14 @@ export function prefillFor(applicantId: string): Partial<StoredApplication> {
 
 const RECOGNIZABLE = new Set(['FINANCIAL_STATEMENTS', 'TAX_RETURN', 'BANK_STATEMENT']);
 
-/** Проверка ЭП: у подписанного документа — по его откреплённой подписи (SIGNATURE со ссылкой), у самой подписи — её результат. */
-function signaturesOf(doc: StoredDocument, now: number): Document['signatures'] {
-    const signature = doc.type === 'SIGNATURE' ? doc : db.documents.find((d) => d.type === 'SIGNATURE' && d.signed_document_id === doc.id);
-    if (!signature) return { state: 'NOT_SIGNED' };
-    // политика по подписанному документу (docs/e-signature.md): договор — LOAN_CONTRACT, доверенность — POWER_OF_ATTORNEY
-    const signed = doc.type === 'SIGNATURE' ? db.documents.find((d) => d.id === doc.signed_document_id) : doc;
-    const policy =
-        signed?.type === 'LOAN_AGREEMENT_DRAFT' ? 'LOAN_CONTRACT' : signed?.type === 'POWER_OF_ATTORNEY' ? 'POWER_OF_ATTORNEY' : 'GENERIC';
-    if (signature.verify_at && now < signature.verify_at) return { state: 'PENDING', policy };
-    return {
-        state: 'DONE',
-        verdict: 'VALID',
-        signatures_count: 1,
-        policy,
-        policy_satisfied: true,
-        verified_at: new Date(signature.verify_at ?? now).toISOString(),
-    };
-}
-
 /** Распознавание и проверка подписи «завершаются» через пару секунд после загрузки. */
 export function toDocument(doc: StoredDocument): Document {
-    const { application_id: _app, recognize_at, verify_at: _verify, ...rest } = doc;
+    const { application_id: _app, recognize_at, verify_at: _verify, mock_signature: _sig, mock_recognition, ...rest } = doc;
     const now = Date.now();
-    const signatures = signaturesOf(doc, now);
+    const app = db.applications.find((x) => x.id === doc.application_id);
+    const applicant = app && db.applicants.find((x) => x.id === app.applicant.id);
+    const signatures = signatureSummary(doc, app, { documents: db.documents, applicant }, now);
+    if (mock_recognition === 'FAILED') return { ...rest, signatures, recognition: { state: 'FAILED' } };
     if (!RECOGNIZABLE.has(doc.type)) return { ...rest, signatures, recognition: { state: 'NOT_APPLICABLE' } };
     if (recognize_at && now < recognize_at) return { ...rest, signatures, recognition: { state: 'PROCESSING' } };
     return {

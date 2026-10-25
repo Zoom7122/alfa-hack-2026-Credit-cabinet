@@ -508,8 +508,9 @@ export const handlers = [
         if (app.status !== 'DRAFT' && app.status !== 'WAITING_FOR_INFO') return invalidTransition(app);
         const exists = read().documents.some((d) => d.id === params.documentId && d.application_id === app.id);
         if (!exists) return problem(404, 'NOT_FOUND', 'Документ не найден');
+        // вместе с документом удаляем и откреплённые подписи к нему — без него они ничего не подтверждают
         mutate((d) => {
-            d.documents = d.documents.filter((doc) => doc.id !== params.documentId);
+            d.documents = d.documents.filter((doc) => doc.id !== params.documentId && doc.signed_document_id !== params.documentId);
         });
         return new HttpResponse(null, { status: 204 });
     }),

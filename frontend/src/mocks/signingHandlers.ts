@@ -1,6 +1,7 @@
 import { delay, http, HttpResponse } from 'msw';
 
 import type { Me, SignatureReport, SigningMethod, SigningSession } from '../api/types';
+import { buildReport, signatureSourceOf } from './signatures';
 import type { StoredApplication } from './data';
 import { currentUser, idempotent, invalidTransition, notFound, ownApplication, problem, unauthorized, url } from './http';
 import { accountMasked, buildSigning, SIGNING_ATTEMPTS, type StoredOffer, type StoredSigning } from './seedWorkflow';
@@ -10,6 +11,11 @@ import { addTimeline, emit, signerOf, transition } from './workflow';
 /* Подписание договора и выдача (экраны 11–13): signing, signing/start, signing/confirm, скачивание документов. */
 
 const userRef = (me: Me) => ({ id: me.id, full_name: me.full_name });
+
+const reportContext = (app: StoredApplication) => ({
+    documents: read().documents,
+    applicant: read().applicants.find((a) => a.id === app.applicant.id),
+});
 
 /** Сформировать договор и график при выборе предложения — сессия ждёт подписи директора. */
 export function createSigning(app: StoredApplication, offer: StoredOffer, withdrawnOfferIds: string[] = []) {
@@ -56,44 +62,6 @@ function updateSession(appId: string, patch: Partial<StoredSigning>) {
         d.signing[appId] = next;
         return next;
     });
-}
-
-/** Отчёт проверки КЭП по политике LOAN_CONTRACT — в моке подпись директора всегда валидна. */
-function mockReport(app: StoredApplication, signatureDocId: string, contractId: string): SignatureReport {
-    const signer = signerOf(app);
-    const applicant = read().applicants.find((a) => a.id === app.applicant.id);
-    const now = new Date().toISOString();
-    return {
-        id: `sigr_${signatureDocId}`,
-        document_id: contractId,
-        file_name: read().documents.find((d) => d.id === contractId)?.file_name,
-        document_sha256: 'mock-sha256',
-        verdict: 'VALID',
-        policy: 'LOAN_CONTRACT',
-        policy_result: { satisfied: true, required_signers: [{ role: 'APPLICANT_HEAD', satisfied: true, signature_index: 0 }] },
-        trust_mode: 'MOCK',
-        verified_at: now,
-        signatures: [
-            {
-                index: 0,
-                format: 'CADES_BES',
-                container: 'DETACHED',
-                kind: 'QUALIFIED',
-                verdict: 'VALID',
-                signer: {
-                    kind: 'LEGAL_ENTITY_HEAD',
-                    full_name: signer.full_name,
-                    organization: { name: app.applicant.short_name, inn: app.applicant.inn, ogrn: applicant?.ogrn },
-                },
-                authority: { basis: 'REGISTRY_HEAD', matches_applicant: true },
-                checks: [
-                    { code: 'INTEGRITY', status: 'PASSED' },
-                    { code: 'SIGNATURE_VALUE', status: 'PASSED' },
-                    { code: 'SIGNER_AUTHORITY', status: 'PASSED' },
-                ],
-            },
-        ],
-    } as SignatureReport;
 }
 
 /** Подписано: выдача имитируется сразу (SIGNING → COMPLETED). */
@@ -203,11 +171,26 @@ export const signingHandlers = [
                     errors: [{ field: 'signature_document_id', message: 'Загрузите подпись (.sig) к сгенерированному договору' }],
                 });
             }
-            const done = complete(app, me, 'QUALIFIED_SIGNATURE', mockReport(app, signature.id, contractId));
+            const done = complete(app, me, 'QUALIFIED_SIGNATURE', buildReport(app, signature, reportContext(app)));
             remember(app.id);
             return HttpResponse.json(signingView(done, read().signing[app.id] as StoredSigning, me.id));
         }
         return problem(422, 'VALIDATION_FAILED', 'Выберите способ подписи', { errors: [{ field: 'method', message: 'Выберите способ подписи' }] });
+    }),
+
+    http.get(url('/applications/:applicationId/documents/:documentId/signature-report'), async ({ request, params }) => {
+        await delay(200);
+        const me = currentUser(request);
+        if (!me) return unauthorized();
+        const app = ownApplication(me, params.applicationId);
+        const doc = app && read().documents.find((d) => d.id === params.documentId && d.application_id === app.id);
+        if (!app || !doc) return problem(404, 'NOT_FOUND', 'Документ не найден');
+        // отчёт строим по самой подписи: откреплённой (.sig) или встроенной в файл
+        const signature = signatureSourceOf(doc, read().documents);
+        if (!signature || toDocument(doc).signatures?.state !== 'DONE') {
+            return problem(404, 'NOT_FOUND', 'Документ не подписан или проверка ещё идёт');
+        }
+        return HttpResponse.json(buildReport(app, signature, reportContext(app)));
     }),
 
     http.get(url('/applications/:applicationId/documents/:documentId/content'), async ({ request, params }) => {

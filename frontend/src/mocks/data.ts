@@ -356,7 +356,7 @@ export function directorOf(applicantId: string): UserRef | undefined {
     return user && { id: user.id, full_name: user.full_name };
 }
 
-const userRef = (id: string): UserRef | undefined => {
+export const userRef = (id: string): UserRef | undefined => {
     const user = testUsers.find((u) => u.id === id);
     return user && { id: user.id, full_name: user.full_name };
 };

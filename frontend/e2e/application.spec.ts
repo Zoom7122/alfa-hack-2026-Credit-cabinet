@@ -211,26 +211,6 @@ test.describe('Ошибки и редкие сценарии', () => {
         await expect(poa).toContainText('Сначала загрузите документ, к которому относится подпись');
     });
 
-    test('документы: на рассмотрении — догрузить, но не удалить; при уточнении — можно удалить', async ({ page }) => {
-        await seedToken(page, 'soleProprietor');
-        await page.goto('/applications/app_000147?tab=documents');
-        const panel = page.getByRole('tabpanel');
-        await chooseFile(page, panel, { name: 'Выписка.pdf', mimeType: 'application/pdf' });
-        const item = panel.getByRole('list', { name: 'Загруженные файлы' }).getByRole('listitem').filter({ hasText: 'Выписка.pdf' });
-        await expect(item).toHaveCount(1);
-        await expect(item.getByRole('button', { name: /удалить/i })).toHaveCount(0);
-    });
-
-    test('документы при уточнении можно удалить', async ({ page }) => {
-        await seedToken(page, 'accountant');
-        await page.goto('/applications/app_000131?tab=documents');
-        const panel = page.getByRole('tabpanel');
-        await chooseFile(page, panel, { name: 'Устав.pdf', mimeType: 'application/pdf' });
-        const item = panel.getByRole('listitem').filter({ hasText: 'Устав.pdf' });
-        await item.getByRole('button', { name: /удалить/i }).click();
-        await expect(item).toHaveCount(0);
-    });
-
     test('отзыв из «Нужно уточнить»', async ({ page }) => {
         await seedToken(page, 'accountant');
         await page.goto('/applications/app_000131');

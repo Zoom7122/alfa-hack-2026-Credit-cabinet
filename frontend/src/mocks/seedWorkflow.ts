@@ -1,5 +1,5 @@
 import type { ClientDecision, Document, InfoRequest, Offer, Product, SigningSession, TimelineEvent } from '../api/types';
-import { products, type StoredApplication } from './data';
+import { products, type StoredApplication, userRef } from './data';
 
 /* Стартовые история, вопросы, предложения и решения для сидов. Без доступа к хранилищу — чистые функции. */
 
@@ -7,7 +7,15 @@ export type StoredTimelineEvent = TimelineEvent & { application_id: string };
 export type StoredInfoRequest = InfoRequest & { application_id: string };
 export type StoredOffer = Offer & { application_id: string };
 /** Документ + когда мок «распознает» его и проверит подпись (в контракт не попадает). */
-export type StoredDocument = Document & { application_id: string; recognize_at?: number; verify_at?: number };
+export type StoredDocument = Document & {
+    application_id: string;
+    recognize_at?: number;
+    verify_at?: number;
+    /** Для демо: подпись внутри файла (PAdES) и её вердикт. */
+    mock_signature?: { verdict: 'VALID' | 'VALID_WITH_WARNINGS' };
+    /** Для демо: распознавание не удалось. */
+    mock_recognition?: 'FAILED';
+};
 /** Сессия подписания без вычисляемых полей (подписант, awaiting_me, документы целиком). */
 export type StoredSigning = Omit<SigningSession, 'required_signer' | 'awaiting_me' | 'documents'> & {
     document_ids: string[];
@@ -205,6 +213,33 @@ export function powerOfAttorneyRequest(app: StoredApplication, now: number, inde
     };
 }
 
+const PETROV = userRef('usr_director_romashka');
+const IVANOVA = userRef('usr_accountant_romashka');
+
+/** Документы «Ромашки» на вкладке «Документы» (макет 15): распознанные, подписанные КЭП, с замечаниями. */
+function demoDocuments(app: StoredApplication): StoredDocument[] {
+    const base = { application_id: app.id, origin: 'CLIENT_UPLOAD' as const, info_request_id: null, signed_document_id: null };
+    const time = (minutes: number) => at(app.created_at, minutes);
+    return [
+        { ...base, id: `doc_${app.id}_fin`, type: 'FINANCIAL_STATEMENTS', file_name: 'Отчётность_2025.pdf', mime_type: 'application/pdf', size_bytes: 1_258_291, uploaded_by: PETROV, uploaded_at: time(10) },
+        { ...base, id: `doc_${app.id}_bank`, type: 'BANK_STATEMENT', file_name: 'Выписка_по_счёту_6мес.xlsx', mime_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', size_bytes: 348_160, uploaded_by: PETROV, uploaded_at: time(12) },
+        { ...base, id: `doc_${app.id}_charter`, type: 'CHARTER', file_name: 'Устав_Ромашка.pdf', mime_type: 'application/pdf', size_bytes: 2_100_000, uploaded_by: PETROV, uploaded_at: time(14) },
+        { ...base, id: `doc_${app.id}_charter_sig`, type: 'SIGNATURE', file_name: 'Устав_Ромашка.pdf.sig', mime_type: 'application/pkcs7-signature', size_bytes: 8_192, uploaded_by: PETROV, uploaded_at: time(14), signed_document_id: `doc_${app.id}_charter` },
+        {
+            ...base,
+            id: `doc_${app.id}_contract_metro`,
+            type: 'CONTRACT_WITH_CUSTOMER',
+            file_name: 'Договор_поставки_Метро.pdf',
+            mime_type: 'application/pdf',
+            size_bytes: 2_516_582,
+            uploaded_by: IVANOVA,
+            uploaded_at: time(20),
+            mock_signature: { verdict: 'VALID_WITH_WARNINGS' },
+            mock_recognition: 'FAILED',
+        },
+    ];
+}
+
 const at = (iso: string, minutes: number) => new Date(new Date(iso).getTime() + minutes * 60_000).toISOString();
 
 type Seeded = {
@@ -268,6 +303,18 @@ export function seedWorkflow(apps: StoredApplication[], now = Date.now()): Seede
                     },
                     { ...powerOfAttorneyRequest(app, created, 2), due_at: due },
                 );
+                for (const doc of demoDocuments(app)) {
+                    documents.push(doc);
+                    timeline.push({
+                        id: `tle_seed_doc_${doc.id}`,
+                        application_id: app.id,
+                        at: doc.uploaded_at,
+                        type: 'DOCUMENT_UPLOADED',
+                        actor_kind: 'CLIENT',
+                        actor: doc.uploaded_by,
+                        message: `Загружен документ: ${doc.file_name}`,
+                    });
+                }
                 break;
             }
             case 'MANUAL_REVIEW':
@@ -284,10 +331,18 @@ export function seedWorkflow(apps: StoredApplication[], now = Date.now()): Seede
                     decided_at: app.updated_at,
                     decided_by: 'AUTO',
                     reasons: [
-                        { code: 'HIGH_DEBT_LOAD', title: 'Высокая текущая долговая нагрузка' },
-                        { code: 'AMOUNT_ABOVE_LIMIT', title: 'Запрошенная сумма больше, чем позволяют обороты' },
+                        {
+                            code: 'HIGH_DEBT_LOAD',
+                            title: 'Высокая текущая долговая нагрузка',
+                            description: 'Платежи по действующим кредитам и лизингу занимают больше половины поступлений на счета',
+                        },
+                        {
+                            code: 'AMOUNT_ABOVE_LIMIT',
+                            title: 'Запрошенная сумма больше, чем позволяет выручка',
+                            description: 'Сумма кредита превышает годовую выручку компании',
+                        },
                     ],
-                    recommendations: ['Попробуйте запросить меньшую сумму или добавить залог'],
+                    recommendations: ['Попробуйте запросить меньшую сумму или добавить залог', 'Погасите часть действующих кредитов'],
                     reapply_after: new Date(now + 30 * DAY).toISOString().slice(0, 10),
                 };
                 break;

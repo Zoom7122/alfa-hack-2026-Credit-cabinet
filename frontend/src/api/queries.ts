@@ -43,6 +43,8 @@ export const queryKeys = {
     offers: (id: string) => ['applications', 'offers', id] as const,
     decision: (id: string) => ['applications', 'decision', id] as const,
     signing: (id: string) => ['applications', 'signing', id] as const,
+    signatureReport: (id: string, documentId: string, verifiedAt?: string | null) =>
+        ['applications', 'signature-report', id, documentId, verifiedAt ?? null] as const,
     /** Всё по одной заявке — для инвалидации по WS-событию. */
     anyOf: (id: string) => (query: { queryKey: readonly unknown[] }) => query.queryKey[0] === 'applications' && query.queryKey[2] === id,
 };
@@ -512,4 +514,31 @@ export async function downloadDocument(applicationId: string, doc: Document) {
     link.download = doc.file_name;
     link.click();
     setTimeout(() => URL.revokeObjectURL(href), 1000);
+}
+
+/** Решение банка с объяснением: причины без баллов и источников, рекомендации, когда можно подать снова. */
+export function useDecision(id: string | undefined) {
+    return useQuery({
+        queryKey: queryKeys.decision(id ?? ''),
+        queryFn: async () => unwrap(await api.GET('/applications/{applicationId}/decision', path(id ?? ''))),
+        enabled: Boolean(id),
+    });
+}
+
+/**
+ * Полный отчёт проверки ЭП документа (404 — не подписан или проверка ещё идёт).
+ * Время проверки — часть ключа: после перепроверки отчёт перечитается, а не возьмётся из кэша.
+ */
+export function useSignatureReport(applicationId: string, documentId: string | undefined, verifiedAt?: string | null) {
+    return useQuery({
+        queryKey: queryKeys.signatureReport(applicationId, documentId ?? '', verifiedAt),
+        queryFn: async () =>
+            unwrap(
+                await api.GET('/applications/{applicationId}/documents/{documentId}/signature-report', {
+                    params: { path: { applicationId, documentId: documentId ?? '' } },
+                }),
+            ),
+        enabled: Boolean(documentId),
+        staleTime: 60_000,
+    });
 }

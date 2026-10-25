@@ -22,6 +22,7 @@ import { ParamsCard } from './components/ParamsCard';
 import { InfoRequestsStatus } from './status/InfoRequestsStatus';
 import { OffersStatus } from './status/OffersStatus';
 import { CompletedStatus } from './status/CompletedStatus';
+import { RejectedStatus } from './status/RejectedStatus';
 import { ReviewStatus } from './status/ReviewStatus';
 import { SignerStatus } from './status/SignerStatus';
 import { StageStatus } from './status/StageStatus';
@@ -100,6 +101,8 @@ function StageContent({ app, me, status, onCancel }: StageProps) {
         );
     }
     if (status.client_stage === 'DONE') return <CompletedStatus app={app} status={status} />;
+    // отказ банка — с объяснением (экран 14); остальные закрытые (отказ клиента, отзыв, истёк срок) — общий вид
+    if (status.status === 'REJECTED') return <RejectedStatus app={app} />;
     const main =
         status.client_stage === 'REVIEW' ? (
             <ReviewStatus status={status} />
