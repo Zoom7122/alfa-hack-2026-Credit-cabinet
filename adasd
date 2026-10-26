@@ -1,0 +1,127 @@
+* [33mbeebf5c[m[33m ([m[1;32mcodex/test-pdf-documents[m[33m)[m Add test PDF attachments excluded from scoring
+[31m|[m *   [33mc5c1813[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m Merge JSON scoring constructor into master
+[31m|[m [32m|[m[33m\[m  
+[31m|[m [32m|[m * [33m8bf9e6b[m[33m ([m[1;32mcodex/json-scoring-constructor[m[33m)[m Implement live JSON scoring models and React constructor
+[31m|[m * [33m|[m [33m920c263[m Подстановка тестовых данных на фронт + асинхронный ворке рскоринга
+[31m|[m[31m/[m [33m/[m  
+* [33m|[m   [33mf3bb210[m[33m ([m[1;32mcodex/scoring-dispatch[m[33m)[m Merge master into scoring dispatch and reconcile document inputs
+[34m|[m[35m\[m [33m\[m  
+* [35m|[m [33m|[m [33m69d880e[m Add durable scalable scoring dispatch and bank runtime
+[33m|[m [35m|[m[33m/[m  
+[33m|[m[33m/[m[35m|[m   
+[33m|[m [35m|[m *   [33m5910881[m[33m ([m[1;35mrefs/stash[m[33m)[m On master: Preserve main checkout before scoring dispatch transfer
+[33m|[m [35m|[m[35m/[m[1;31m|[m[1;32m\[m  
+[33m|[m [35m|[m [1;31m|[m * [33m24f0301[m untracked files on master: e8ae13e Merge mock online signing into master
+[33m|[m [35m|[m * [33m722a515[m index on master: e8ae13e Merge mock online signing into master
+[33m|[m [35m|[m[35m/[m  
+[33m|[m *   [33me8ae13e[m Merge mock online signing into master
+[33m|[m [1;33m|[m[1;34m\[m  
+[33m|[m [1;33m|[m * [33m266d466[m[33m ([m[1;32mcodex/mock-online-signing[m[33m)[m Implement backend mock signing with confirmation codes
+[33m|[m [1;33m|[m[33m/[m  
+[33m|[m[33m/[m[1;33m|[m   
+[33m|[m * [33mbddde91[m Fix test data setup
+[33m|[m * [33mca10e3c[m Persist complete application drafts in backend
+[33m|[m[33m/[m  
+* [33m9fc0837[m Restore backend draft terms in application wizard
+* [33m74ed6c1[m Seed demo credit applications when backend starts
+* [33me15f1d3[m Fix setup
+* [33m52c736a[m Fix collector startup and migration integration
+* [33m5c24b46[m Fix scoring release document line endings
+*   [33md3c6fc2[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m Merge pull request #13 from Zoom7122/feature/frontend-integration
+[1;35m|[m[1;36m\[m  
+[1;35m|[m *   [33m9bafd1e[m[33m ([m[1;31morigin/feature/frontend-integration[m[33m)[m Merge branch 'master' into feature/frontend-integration
+[1;35m|[m [31m|[m[1;35m\[m  
+[1;35m|[m [31m|[m[1;35m/[m  
+[1;35m|[m[1;35m/[m[31m|[m   
+* [31m|[m   [33m92f1819[m Merge pull request #7 from Zoom7122/feature/financial-documents
+[33m|[m[34m\[m [31m\[m  
+[33m|[m * [31m\[m   [33me241933[m[33m ([m[1;31morigin/feature/financial-documents[m[33m)[m Merge branch 'master' into feature/financial-documents
+[33m|[m [35m|[m[33m\[m [31m\[m  
+[33m|[m [35m|[m[33m/[m [31m/[m  
+[33m|[m[33m/[m[35m|[m [31m|[m   
+* [35m|[m [31m|[m   [33m1e540bd[m Merge pull request #12 from Zoom7122/feat/scoring
+[1;31m|[m[1;32m\[m [35m\[m [31m\[m  
+[1;31m|[m * [35m|[m [31m|[m [33mda8dfcb[m[33m ([m[1;31morigin/feat/scoring[m[33m)[m feat: scoring-adminka
+[1;31m|[m * [35m|[m [31m|[m [33m3245aae[m docs(credit-engine): add admin spec
+* [1;32m|[m [35m|[m [31m|[m   [33m4ae4b7d[m Merge pull request #11 from Zoom7122/feature/mock-frontend
+[1;33m|[m[1;34m\[m [1;32m\[m [35m\[m [31m\[m  
+[1;33m|[m [1;34m|[m [1;32m|[m * [31m|[m [33m4f8a37d[m fix: use Jet models and a resilient Kafka worker for financial documents
+[1;33m|[m [1;34m|[m [1;32m|[m * [31m|[m [33m3fe05ca[m feat: process financial documents with signature verification gates
+[1;33m|[m [1;34m|[m [1;32m|[m [1;34m|[m * [33m4f3b8b0[m Добавлен адаптив
+[1;33m|[m [1;34m|[m [1;32m|[m [1;34m|[m * [33me9ec94a[m Каталог продуктов и калькулятор платежа без моков
+[1;33m|[m [1;34m|[m [1;32m|[m [1;34m|[m * [33m3a8ced8[m Рабочее место менеджера банка не на моках
+[1;33m|[m [1;34m|[m [1;32m|[m [1;34m|[m * [33m952eee3[m подсказки по ИНН, вкладки Документы и История работают без моков
+[1;33m|[m [1;34m|[m [1;32m|[m [1;34m|[m * [33m452d45f[m Авторизация не мокается на frontend
+[1;33m|[m [1;34m|[m [1;32m|[m[1;34m_[m[1;34m|[m[1;34m/[m  
+[1;33m|[m [1;34m|[m[1;34m/[m[1;32m|[m [1;34m|[m   
+[1;33m|[m * [1;32m|[m [1;34m|[m [33ma1781e8[m[33m ([m[1;31morigin/feature/mock-frontend[m[33m)[m Расширен readme
+[1;33m|[m * [1;32m|[m [1;34m|[m [33me46b6d8[m Отправка анкеты теперь работает через data-collector
+[1;33m|[m * [1;32m|[m [1;34m|[m   [33mbced52d[m Merge branch 'master' into feature/mock-frontend
+[1;33m|[m [1;35m|[m[1;33m\[m [1;32m\[m [1;34m\[m  
+[1;33m|[m [1;35m|[m[1;33m/[m [1;32m/[m [1;34m/[m  
+[1;33m|[m[1;33m/[m[1;35m|[m [1;32m|[m [1;34m|[m   
+* [1;35m|[m [1;32m|[m [1;34m|[m   [33m56f315b[m Merge pull request #10 from Zoom7122/feat/electronic-signature
+[1;32m|[m[32m\[m [1;35m\[m [1;32m\[m [1;34m\[m  
+[1;32m|[m [32m|[m[1;32m_[m[1;35m|[m[1;32m/[m [1;34m/[m  
+[1;32m|[m[1;32m/[m[32m|[m [1;35m|[m [1;34m|[m   
+[1;32m|[m * [1;35m|[m [1;34m|[m [33m557b878[m[33m ([m[1;31morigin/feat/electronic-signature[m[33m, [m[1;32mfeat/electronic-signature[m[33m)[m feat(data-collector): verify signatures embedded in PDF (PAdES)
+[1;32m|[m * [1;35m|[m [1;34m|[m [33m8ae39f0[m feat(data-collector): signature verification worker (CMS/CAdES, TEST profile)
+[1;32m|[m [32m|[m * [1;34m|[m   [33me50fda3[m Merge branch 'master' into feature/mock-frontend
+[1;32m|[m [32m|[m [33m|[m[1;32m\[m [1;34m\[m  
+[1;32m|[m [32m|[m[1;32m_[m[33m|[m[1;32m/[m [1;34m/[m  
+[1;32m|[m[1;32m/[m[32m|[m [33m|[m [1;34m|[m   
+* [32m|[m [33m|[m [1;34m|[m   [33mf0db59a[m Merge pull request #9 from yyaarr/feat/scoring
+[35m|[m[36m\[m [32m\[m [33m\[m [1;34m\[m  
+[35m|[m * [32m|[m [33m|[m [1;34m|[m [33m96765dc[m build(credit-engine): add dockerfile
+[35m|[m * [32m|[m [33m|[m [1;34m|[m   [33mbaef2a2[m Merge branch 'master' into feat/scoring
+[35m|[m [1;31m|[m[1;34m\[m [32m\[m [33m\[m [1;34m\[m  
+[35m|[m [1;31m|[m [1;34m|[m [32m|[m[1;34m_[m[33m|[m[1;34m/[m  
+[35m|[m [1;31m|[m [1;34m|[m[1;34m/[m[32m|[m [33m|[m   
+[35m|[m * [1;34m|[m [32m|[m [33m|[m [33m98e02c8[m docs(credit-engine): refactor docs and readme
+[35m|[m * [1;34m|[m [32m|[m [33m|[m [33mc0e8d93[m feat(credit-engine): add httpapi
+[35m|[m * [1;34m|[m [32m|[m [33m|[m [33m13f5f10[m feat(credit-engine): add rest clients
+[35m|[m * [1;34m|[m [32m|[m [33m|[m [33madd6349[m feat(credit-engine): add internal/bank
+[35m|[m * [1;34m|[m [32m|[m [33m|[m [33md1a9fc9[m feat(credit-engine): add credit optimizer
+[35m|[m * [1;34m|[m [32m|[m [33m|[m [33m1711843[m feat(credit-engine): add internal/scoring
+[35m|[m * [1;34m|[m [32m|[m [33m|[m [33m3ae7d8b[m feat(credit-engine): add financial maths
+[35m|[m * [1;34m|[m [32m|[m [33m|[m [33mc3c07d3[m feat(credit-engine): add module foundation
+* [1;32m|[m [1;34m|[m [32m|[m [33m|[m   [33m54f8199[m Merge pull request #8 from Zoom7122/feat/mock-API
+[1;34m|[m[32m\[m [1;32m\[m [1;34m\[m [32m\[m [33m\[m  
+[1;34m|[m [32m|[m[1;34m_[m[1;32m|[m[1;34m/[m [32m/[m [33m/[m  
+[1;34m|[m[1;34m/[m[32m|[m [1;32m|[m [32m/[m [33m/[m   
+[1;34m|[m [32m|[m [1;32m|[m[32m/[m [33m/[m    
+[1;34m|[m [32m|[m[32m/[m[1;32m|[m [33m|[m     
+[1;34m|[m * [1;32m|[m [33m|[m [33mbf1e90e[m[33m ([m[1;31morigin/feat/mock-API[m[33m, [m[1;32mfeat/mock-API[m[33m)[m Sabe files and company/user
+* [1;34m|[m [1;32m|[m [33m|[m [33mb9acf15[m Merge pull request #6 from Zoom7122/feat/mock-API
+[1;32m|[m[1;34m\[m[1;34m|[m [1;32m|[m [33m|[m 
+[1;32m|[m [1;34m|[m[1;32m/[m [33m/[m  
+[1;32m|[m[1;32m/[m[1;34m|[m [33m|[m   
+[1;32m|[m * [33m|[m [33m5c76ceb[m asynch data-collector
+[1;32m|[m * [33m|[m [33mc83e095[m collect data mock
+[1;32m|[m * [33m|[m [33m5d7ef8a[m add mocks for 7 external sources
+[1;32m|[m * [33m|[m [33me2de2c7[m MockApi
+[1;32m|[m[1;32m/[m [33m/[m  
+[1;32m|[m * [33mf0dce02[m Добавлен экран заявок в админке
+[1;32m|[m * [33m443d1fb[m Добавлен раздел документов и страница отказа
+[1;32m|[m * [33md32ed4e[m Добавлен экран подписания, выдачи
+[1;32m|[m * [33md6c837a[m Добавлена страница статуса заявки
+[1;32m|[m * [33m94603b1[m Добавлено создание заявки с анкетой
+[1;32m|[m * [33meeae53f[m Добавлены страницы входа и главной
+[1;32m|[m[1;32m/[m  
+*   [33m2663d1a[m Merge pull request #5 from Zoom7122/feature/collector-data
+[31m|[m[32m\[m  
+[31m|[m * [33macafc54[m[33m ([m[1;31morigin/feature/collector-data[m[33m)[m docker compose, dozzle, make
+[31m|[m * [33mf8f457f[m Scheme by db-schema.dbml
+[31m|[m * [33m564d691[m feat(data-collector): skeleton module with POST /questionnaires
+[31m|[m[31m/[m  
+*   [33m43f1e63[m Merge pull request #3 from Zoom7122/docs/api-contract
+[33m|[m[34m\[m  
+[33m|[m * [33m3381462[m[33m ([m[1;31morigin/docs/api-contract[m[33m)[m docs: compress DB schema to 13 tables, move wide data to jsonb
+* [34m|[m [33m15d03a5[m Merge pull request #2 from Zoom7122/docs/api-contract
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33mcced119[m docs: DB schema with ERD in DBML and full table reference
+* [36m|[m [33m45314eb[m Merge pull request #1 from Zoom7122/docs/api-contract
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33mb398ec3[m docs: FSM and API specification with some researchs
+[1;31m|[m[1;31m/[m  
+* [33m82b35c7[m Initial commit
