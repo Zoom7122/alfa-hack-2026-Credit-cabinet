@@ -292,3 +292,894 @@ ScoreResult содержит отдельно questionnaire (points, max_points=
 Чистые функции проверки, вычисления показателей, switch/if по анкетным значениям и диапазонам; суммирование и определение класса. Значения весов/порогов этой версии закрепить в коде модели с табличными тестами. Не загружать скоринг из Excel/JSON во время работы; config/policy.json сохраняет общую банковскую экономику, а не таблицу ответов. Не принимать готовые коэффициенты/баллы из А или Б.
 
 Проверки должны покрыть каждый вариант ответа, обе стороны каждой границы, 750/250/1000, нули/null, единичные стопы на иначе сильной анкете, каждый особый знаменатель, фактическую полноту Б и отсутствие побочных действий у отказа/нехватки данных. Начисление по отражённому в ответе answer не заменяет switch по типизированному исходному полю.
+
+<!-- modelgen:models:start -->
+## 9. Модели комплекта релиза
+
+Релиз: 2.0.0. Формат генератора документов: 1.
+
+Таблицы этого раздела получены из определений моделей. Разделы 1–8 сохраняют исходную методику v2. Новые модели действуют после генерации, сборки и развёртывания. Максимумы активных критериев каждой модели: 750 + 250 = 1000. Порядок: подтверждённые стопы → полнота → D → ручные основания → подбор и банк.
+
+### ip-v2 — Скоринг ИП v2
+
+| Свойство | Значение |
+|---|---|
+| ID | ip |
+| Тип заёмщика | SOLE&#95;PROPRIETOR |
+| Версия модели | ip-v2 |
+| Версия схемы поставщика |  |
+| SHA256 определения | afe124a79494069c965750900105923b8c9ef8098ebbbc92a3f7743097caee8e |
+| SHA256 схемы поставщика |  |
+| Описание | Перенос утверждённой модели 750 + 250. Новых весов, порогов и финансовых формул нет. |
+
+#### Параметры и обязательность
+
+| ID / название | Активен | Источник / JSON | Тип / единица / область | Обязателен / условие | Зависимости |
+|---|---|---|---|---|---|
+| owner&#95;age / Сколько полных лет владельцу ИП? | true | APPLICATION:scoring.ip.owner&#95;age / owner&#95;age | NUMBER / YEARS / integer/int64 &#91;0, +∞) | true |  |
+| marital&#95;status / Каково текущее семейное положение владельца? | true | APPLICATION:scoring.ip.marital&#95;status / marital&#95;status | STRING / CATEGORY / MARRIED, NEVER&#95;MARRIED, DIVORCED&#95;ONCE, DIVORCED&#95;MULTIPLE, WIDOWED | true |  |
+| dependents / Сколько детей и других иждивенцев содержатся за счёт владельца? | true | APPLICATION:scoring.ip.dependents / dependents | NUMBER / COUNT / integer/int64 &#91;0, +∞) | true |  |
+| primary&#95;income&#95;source / Какой основной источник личного дохода владельца ИП? | true | APPLICATION:scoring.ip.primary&#95;income&#95;source / primary&#95;income&#95;source | STRING / CATEGORY / BUSINESS, PUBLIC&#95;EMPLOYMENT, PRIVATE&#95;EMPLOYMENT, PENSION, SELF&#95;EMPLOYED&#95;OR&#95;GPH, NONE | true |  |
+| qualification / Какова профессиональная квалификация владельца? | true | APPLICATION:scoring.ip.qualification / qualification | STRING / CATEGORY / NONE, SUPPORT, SPECIALIST, MANAGER&#95;OR&#95;HIGHLY&#95;QUALIFIED | true |  |
+| total&#95;experience&#95;months / Каков общий трудовой и предпринимательский стаж, полных месяцев? | true | APPLICATION:scoring.ip.total&#95;experience&#95;months / total&#95;experience&#95;months | NUMBER / MONTHS / integer/int64 &#91;0, +∞) | true |  |
+| net&#95;monthly&#95;income&#95;rub / Каков подтверждённый среднемесячный личный доход за 12 месяцев после налогов, руб.? | true | APPLICATION:scoring.ip.net&#95;monthly&#95;income&#95;rub / net&#95;monthly&#95;income&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| car&#95;class / Какой автомобиль находится в собственности? При нескольких выбрать один наиболее высокий класс. | true | APPLICATION:scoring.ip.car&#95;class / car&#95;class | STRING / CATEGORY / NONE, ECONOMY, COMFORT, PREMIUM | true |  |
+| bank&#95;relationship&#95;months / Сколько месяцев ИП обслуживается в банке, рассматривающем заявку? | true | APPLICATION:scoring.ip.bank&#95;relationship&#95;months / bank&#95;relationship&#95;months | NUMBER / MONTHS / integer/int64 &#91;0, +∞) | true |  |
+| education&#95;level / Каков максимальный завершённый уровень образования владельца? | true | APPLICATION:scoring.ip.education&#95;level / education&#95;level | STRING / CATEGORY / BELOW&#95;GENERAL, GENERAL, VOCATIONAL, HIGHER, ACADEMIC&#95;DEGREE | true |  |
+| real&#95;estate&#95;status / Есть ли недвижимость в собственности владельца? При нескольких объектах выбрать один наиболее благоприятный ответ. | true | APPLICATION:scoring.ip.real&#95;estate&#95;status / real&#95;estate&#95;status | STRING / CATEGORY / UNENCUMBERED&#95;WHOLE, UNENCUMBERED&#95;SHARE, ENCUMBERED&#95;ONLY, NONE | true |  |
+| credit&#95;history&#95;months / Какова длительность подтверждённой кредитной истории, месяцев? | true | APPLICATION:scoring.ip.credit&#95;history&#95;months / credit&#95;history&#95;months | NUMBER / MONTHS / integer/int64 &#91;0, +∞) | true |  |
+| worst&#95;repaid&#95;dpd&#95;days&#95;24m / Какова худшая погашенная просрочка за последние 24 месяца, дней? | true | APPLICATION:scoring.ip.worst&#95;repaid&#95;dpd&#95;days&#95;24m / worst&#95;repaid&#95;dpd&#95;days&#95;24m | NUMBER / DAYS / integer/int64 &#91;0, +∞) | true |  |
+| current&#95;dpd&#95;days / Какова текущая просрочка по обязательствам, дней? | true | APPLICATION:scoring.ip.current&#95;dpd&#95;days / current&#95;dpd&#95;days | NUMBER / DAYS / integer/int64 &#91;0, +∞) | true |  |
+| applications&#95;90d / Сколько фактических кредитных обращений было за 90 дней? Технические дубли исключить. | true | APPLICATION:scoring.ip.applications&#95;90d / applications&#95;90d | NUMBER / COUNT / integer/int64 &#91;0, +∞) | true |  |
+| business&#95;age&#95;months / Сколько месяцев действует бизнес ИП? | true | APPLICATION:scoring.ip.business&#95;age&#95;months / business&#95;age&#95;months | NUMBER / MONTHS / integer/int64 &#91;0, +∞) | true |  |
+| owner&#95;experience&#95;years / Каков профильный опыт владельца в текущем направлении бизнеса, полных лет? | true | APPLICATION:scoring.ip.owner&#95;experience&#95;years / owner&#95;experience&#95;years | NUMBER / YEARS / integer/int64 &#91;0, +∞) | true |  |
+| business&#95;location / Насколько устойчиво место ведения бизнеса? | true | APPLICATION:scoring.ip.business&#95;location / business&#95;location | STRING / CATEGORY / VERIFIED&#95;PHYSICAL, VERIFIED&#95;ONLINE&#95;OR&#95;MOBILE, UNVERIFIED | true |  |
+| location&#95;stability&#95;months / location&#95;stability&#95;months | true | APPLICATION:scoring.ip.location&#95;stability&#95;months / location&#95;stability&#95;months | NUMBER / MONTHS / integer/int64 &#91;0, +∞) | true; business&#95;location EQ &#34;VERIFIED&#95;PHYSICAL&#34; |  |
+| overdue&#95;taxes&#95;rub / Какова подтверждённая просроченная налоговая задолженность, руб.? Начисления до срока уплаты и действующие отсрочки не включаются. | true | APPLICATION:scoring.ip.overdue&#95;taxes&#95;rub / overdue&#95;taxes&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| income&#95;evidence / Чем подтверждён личный доход владельца? | true | APPLICATION:scoring.ip.income&#95;evidence / income&#95;evidence | STRING / CATEGORY / VERIFIED, DOCUMENTS&#95;PENDING&#95;CROSSCHECK, NONE | true |  |
+| buyer&#95;contracts / Как оформлены отношения с основными покупателями? | true | APPLICATION:scoring.ip.buyer&#95;contracts / buyer&#95;contracts | STRING / CATEGORY / ACTIVE&#95;AND&#95;PERFORMED, REPEAT&#95;ORDERS, PLANS&#95;ONLY | true |  |
+| military&#95;status / Каков заявленный статус воинской обязанности? Справочное поле из образца, баллы не начисляются. | true | APPLICATION:scoring.ip.military&#95;status / military&#95;status | STRING / CATEGORY / SERVED, EXEMPT&#95;OR&#95;DEFERRED, NOT&#95;LIABLE, OTHER&#95;OR&#95;UNKNOWN | false |  |
+| active / active | true | APPLICATION:scoring.ip.active / active | BOOLEAN / BOOLEAN / true / false | true |  |
+| bankrupt / bankrupt | true | APPLICATION:scoring.ip.bankrupt / bankrupt | BOOLEAN / BOOLEAN / true / false | true |  |
+| material&#95;forgery / material&#95;forgery | true | APPLICATION:scoring.ip.material&#95;forgery / material&#95;forgery | BOOLEAN / BOOLEAN / true / false | true |  |
+| credit&#95;prohibited / credit&#95;prohibited | true | APPLICATION:scoring.ip.credit&#95;prohibited / credit&#95;prohibited | BOOLEAN / BOOLEAN / true / false | true |  |
+| identity&#95;and&#95;authority&#95;verified / identity&#95;and&#95;authority&#95;verified | true | APPLICATION:scoring.ip.identity&#95;and&#95;authority&#95;verified / identity&#95;and&#95;authority&#95;verified | BOOLEAN / BOOLEAN / true / false | true |  |
+| consents&#95;verified / consents&#95;verified | true | APPLICATION:scoring.ip.consents&#95;verified / consents&#95;verified | BOOLEAN / BOOLEAN / true / false | true |  |
+| bureau&#95;received / bureau&#95;received | true | APPLICATION:scoring.ip.bureau&#95;received / bureau&#95;received | BOOLEAN / BOOLEAN / true / false | true |  |
+| debts&#95;complete / debts&#95;complete | true | APPLICATION:scoring.ip.debts&#95;complete / debts&#95;complete | BOOLEAN / BOOLEAN / true / false | true |  |
+| documents&#95;complete / documents&#95;complete | true | APPLICATION:scoring.ip.documents&#95;complete / documents&#95;complete | BOOLEAN / BOOLEAN / true / false | true |  |
+| free&#95;cash&#95;source&#95;verified / free&#95;cash&#95;source&#95;verified | true | APPLICATION:scoring.ip.free&#95;cash&#95;source&#95;verified / free&#95;cash&#95;source&#95;verified | BOOLEAN / BOOLEAN / true / false | true |  |
+| material&#95;account&#95;restriction / material&#95;account&#95;restriction | true | APPLICATION:scoring.ip.material&#95;account&#95;restriction / material&#95;account&#95;restriction | BOOLEAN / BOOLEAN / true / false | true |  |
+| material&#95;dispute&#95;or&#95;enforcement / material&#95;dispute&#95;or&#95;enforcement | true | APPLICATION:scoring.ip.material&#95;dispute&#95;or&#95;enforcement / material&#95;dispute&#95;or&#95;enforcement | BOOLEAN / BOOLEAN / true / false | true |  |
+| key&#95;buyer&#95;loss / key&#95;buyer&#95;loss | true | APPLICATION:scoring.ip.key&#95;buyer&#95;loss / key&#95;buyer&#95;loss | BOOLEAN / BOOLEAN / true / false | true |  |
+| structural&#95;business&#95;change / structural&#95;business&#95;change | true | APPLICATION:scoring.ip.structural&#95;business&#95;change / structural&#95;business&#95;change | BOOLEAN / BOOLEAN / true / false | true |  |
+| amount&#95;rub / amount&#95;rub | true | APPLICATION:credit&#95;request.amount&#95;rub / amount&#95;rub | NUMBER / RUB / integer/int64 (0, +∞) | true |  |
+| term&#95;months / term&#95;months | true | APPLICATION:credit&#95;request.term&#95;months / term&#95;months | NUMBER / MONTHS / integer/int64 (0, +∞) | true |  |
+| max&#95;annual&#95;rate / max&#95;annual&#95;rate | true | APPLICATION:credit&#95;request.max&#95;annual&#95;rate / max&#95;annual&#95;rate | NUMBER / PERCENT / number &#91;0, 100&#93; | true |  |
+| min&#95;acceptable&#95;amount&#95;rub / min&#95;acceptable&#95;amount&#95;rub | true | APPLICATION:credit&#95;request.min&#95;acceptable&#95;amount&#95;rub / min&#95;acceptable&#95;amount&#95;rub | NUMBER / RUB / integer/int64 (0, +∞) | true |  |
+| max&#95;acceptable&#95;term&#95;months / max&#95;acceptable&#95;term&#95;months | true | APPLICATION:credit&#95;request.max&#95;acceptable&#95;term&#95;months / max&#95;acceptable&#95;term&#95;months | NUMBER / MONTHS / integer/int64 (0, +∞) | true |  |
+| confirmed&#95;cost&#95;rub / confirmed&#95;cost&#95;rub | true | APPLICATION:need.confirmed&#95;cost&#95;rub / confirmed&#95;cost&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| own&#95;contribution&#95;rub / own&#95;contribution&#95;rub | true | APPLICATION:need.own&#95;contribution&#95;rub / own&#95;contribution&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| free&#95;after&#95;own&#95;contribution&#95;rub / free&#95;after&#95;own&#95;contribution&#95;rub | true | APPLICATION:cash.free&#95;after&#95;own&#95;contribution&#95;rub / free&#95;after&#95;own&#95;contribution&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| minimum&#95;required&#95;rub / minimum&#95;required&#95;rub | true | APPLICATION:cash.minimum&#95;required&#95;rub / minimum&#95;required&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| confirmed&#95;receipts&#95;rub / confirmed&#95;receipts&#95;rub | true | APPLICATION:evidence.confirmed&#95;receipts&#95;rub / confirmed&#95;receipts&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| unexplained&#95;difference&#95;rub / unexplained&#95;difference&#95;rub | true | APPLICATION:evidence.unexplained&#95;difference&#95;rub / unexplained&#95;difference&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| largest&#95;buyer&#95;group&#95;receipts&#95;rub / largest&#95;buyer&#95;group&#95;receipts&#95;rub | true | APPLICATION:evidence.largest&#95;buyer&#95;group&#95;receipts&#95;rub / largest&#95;buyer&#95;group&#95;receipts&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| financial&#95;debt&#95;rub / financial&#95;debt&#95;rub | true | APPLICATION:financial&#95;debt&#95;rub / financial&#95;debt&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| previous&#95;comparable&#95;receipts&#95;rub / previous&#95;comparable&#95;receipts&#95;rub | true | APPLICATION:ip&#95;economic&#95;data.previous&#95;comparable&#95;receipts&#95;rub / previous&#95;comparable&#95;receipts&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| borrower&#95;name&#95;present / borrower&#95;name&#95;present | true | COMPUTED:prepared.borrower&#95;name&#95;present / borrower&#95;name&#95;present | BOOLEAN / BOOLEAN / true / false | false |  |
+| borrower&#95;inn&#95;present / borrower&#95;inn&#95;present | true | COMPUTED:prepared.borrower&#95;inn&#95;present / borrower&#95;inn&#95;present | BOOLEAN / BOOLEAN / true / false | false |  |
+| purpose&#95;present / purpose&#95;present | true | COMPUTED:prepared.purpose&#95;present / purpose&#95;present | BOOLEAN / BOOLEAN / true / false | false |  |
+| purpose&#95;is&#95;business&#95;development / purpose&#95;is&#95;business&#95;development | true | COMPUTED:prepared.purpose&#95;is&#95;business&#95;development / purpose&#95;is&#95;business&#95;development | BOOLEAN / BOOLEAN / true / false | false |  |
+| history&#95;complete / history&#95;complete | true | COMPUTED:prepared.history&#95;complete / history&#95;complete | BOOLEAN / BOOLEAN / true / false | false |  |
+| future&#95;complete / future&#95;complete | true | COMPUTED:prepared.future&#95;complete / future&#95;complete | BOOLEAN / BOOLEAN / true / false | false |  |
+| debt&#95;schedule&#95;consistent / debt&#95;schedule&#95;consistent | true | COMPUTED:prepared.debt&#95;schedule&#95;consistent / debt&#95;schedule&#95;consistent | BOOLEAN / BOOLEAN / true / false | false |  |
+| facts&#95;age&#95;days / facts&#95;age&#95;days | true | COMPUTED:prepared.facts&#95;age&#95;days / facts&#95;age&#95;days | NUMBER / DAYS / number (−∞, +∞) | false |  |
+| receipts&#95;rub / receipts&#95;rub | true | COMPUTED:prepared.receipts&#95;rub / receipts&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | false |  |
+| cfads&#95;rub / cfads&#95;rub | true | COMPUTED:prepared.cfads&#95;rub / cfads&#95;rub | NUMBER / RUB / integer/int64 (−∞, +∞) | false |  |
+| variable&#95;rub / variable&#95;rub | true | COMPUTED:prepared.variable&#95;rub / variable&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | false |  |
+| fixed&#95;rub / fixed&#95;rub | true | COMPUTED:prepared.fixed&#95;rub / fixed&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | false |  |
+| historical&#95;debt&#95;rub / historical&#95;debt&#95;rub | true | COMPUTED:prepared.historical&#95;debt&#95;rub / historical&#95;debt&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | false |  |
+| annual&#95;required&#95;rub / annual&#95;required&#95;rub | true | COMPUTED:prepared.annual&#95;required&#95;rub / annual&#95;required&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | false |  |
+| previous&#95;quarter&#95;receipts&#95;rub / previous&#95;quarter&#95;receipts&#95;rub | true | COMPUTED:prepared.previous&#95;quarter&#95;receipts&#95;rub / previous&#95;quarter&#95;receipts&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | false |  |
+| recent&#95;quarter&#95;receipts&#95;rub / recent&#95;quarter&#95;receipts&#95;rub | true | COMPUTED:prepared.recent&#95;quarter&#95;receipts&#95;rub / recent&#95;quarter&#95;receipts&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | false |  |
+| monthly&#95;required&#95;rub / monthly&#95;required&#95;rub | true | COMPUTED:prepared.monthly&#95;required&#95;rub / monthly&#95;required&#95;rub | NUMBER / RUB / number &#91;0, +∞) | false | annual&#95;required&#95;rub |
+| receipts&#95;minus&#95;variable&#95;rub / receipts&#95;minus&#95;variable&#95;rub | true | COMPUTED:prepared.receipts&#95;minus&#95;variable&#95;rub / receipts&#95;minus&#95;variable&#95;rub | NUMBER / RUB / number (−∞, +∞) | false | receipts&#95;rub, variable&#95;rub |
+| positive&#95;cfads&#95;months / positive&#95;cfads&#95;months | true | COMPUTED:prepared.positive&#95;cfads&#95;months / positive&#95;cfads&#95;months | NUMBER / MONTHS / integer/int64 &#91;0, +∞) | false |  |
+| confirmed&#95;receipts&#95;ratio / confirmed&#95;receipts&#95;ratio | true | COMPUTED:prepared.confirmed&#95;receipts&#95;ratio / confirmed&#95;receipts&#95;ratio | NUMBER / RATIO / number &#91;0, +∞) | false | receipts&#95;rub, confirmed&#95;receipts&#95;rub |
+| unexplained&#95;difference&#95;ratio / unexplained&#95;difference&#95;ratio | true | COMPUTED:prepared.unexplained&#95;difference&#95;ratio / unexplained&#95;difference&#95;ratio | NUMBER / RATIO / number &#91;0, +∞) | false | receipts&#95;rub, unexplained&#95;difference&#95;rub |
+| taxes&#95;cfads&#95;ratio / taxes&#95;cfads&#95;ratio | true | COMPUTED:prepared.taxes&#95;cfads&#95;ratio / taxes&#95;cfads&#95;ratio | NUMBER / RATIO / number &#91;0, +∞) | false | cfads&#95;rub, overdue&#95;taxes&#95;rub |
+| ip&#95;e01 / Маржа CFADS | true | COMPUTED:prepared.ip&#95;e01 / ip&#95;e01 | NUMBER / RATIO / number (−∞, +∞) | false | cfads&#95;rub, receipts&#95;rub |
+| ip&#95;e02 / Действующие долговые платежи / CFADS | true | COMPUTED:prepared.ip&#95;e02 / ip&#95;e02 | NUMBER / RATIO / number (−∞, +∞) | false | historical&#95;debt&#95;rub, cfads&#95;rub |
+| ip&#95;e03 / Финансовый долг / годовой CFADS | true | COMPUTED:prepared.ip&#95;e03 / ip&#95;e03 | NUMBER / RATIO / number (−∞, +∞) | false | financial&#95;debt&#95;rub, cfads&#95;rub |
+| ip&#95;e04 / Запас свободных денег | true | COMPUTED:prepared.ip&#95;e04 / ip&#95;e04 | NUMBER / RATIO / number (−∞, +∞) | false | free&#95;after&#95;own&#95;contribution&#95;rub, monthly&#95;required&#95;rub |
+| ip&#95;e05 / Положительные месяцы CFADS | true | COMPUTED:prepared.ip&#95;e05 / ip&#95;e05 | NUMBER / MONTHS / number (−∞, +∞) | false | positive&#95;cfads&#95;months |
+| ip&#95;e06 / Волатильность поступлений, CV | true | COMPUTED:prepared.ip&#95;e06 / ip&#95;e06 | NUMBER / RATIO / number (−∞, +∞) | false | history&#95;complete, receipts&#95;rub |
+| ip&#95;e07 / Рост поступлений за год | true | COMPUTED:prepared.ip&#95;e07 / ip&#95;e07 | NUMBER / RATIO / number (−∞, +∞) | false | receipts&#95;rub, previous&#95;comparable&#95;receipts&#95;rub |
+| ip&#95;e08 / Динамика последних трёх месяцев | true | COMPUTED:prepared.ip&#95;e08 / ip&#95;e08 | NUMBER / RATIO / number (−∞, +∞) | false | recent&#95;quarter&#95;receipts&#95;rub, previous&#95;quarter&#95;receipts&#95;rub |
+| ip&#95;e09 / Доля крупнейшей группы покупателей | true | COMPUTED:prepared.ip&#95;e09 / ip&#95;e09 | NUMBER / RATIO / number (−∞, +∞) | false | largest&#95;buyer&#95;group&#95;receipts&#95;rub, receipts&#95;rub |
+| ip&#95;e10 / Подтверждение поступлений | true | COMPUTED:prepared.ip&#95;e10 / ip&#95;e10 | NUMBER / RATIO / number (−∞, +∞) | false | confirmed&#95;receipts&#95;rub, receipts&#95;rub |
+| ip&#95;e11 / Необъяснённое расхождение источников | true | COMPUTED:prepared.ip&#95;e11 / ip&#95;e11 | NUMBER / RATIO / number (−∞, +∞) | false | unexplained&#95;difference&#95;rub, receipts&#95;rub |
+| ip&#95;e12 / Доля собственного участия в потребности | true | COMPUTED:prepared.ip&#95;e12 / ip&#95;e12 | NUMBER / RATIO / number (−∞, +∞) | false | own&#95;contribution&#95;rub, confirmed&#95;cost&#95;rub |
+| ip&#95;e13 / Денежный запас финансовой прочности | true | COMPUTED:prepared.ip&#95;e13 / ip&#95;e13 | NUMBER / RATIO / number (−∞, +∞) | false | receipts&#95;rub, variable&#95;rub, fixed&#95;rub |
+
+#### Именованные дополнительные факты поставщика
+
+Эта модель не использует дополнительные факты поставщика; запрос не выполняется.
+
+| JSON / Go-поле | Тип | Единица / область | Бизнес-обязательность | Описание |
+|---|---|---|---|---|
+
+#### Классическая анкета — 750
+
+| Критерий / вопрос | Активен | Параметр значения | Макс. | Применимость / unknown | Представление ответа |
+|---|---|---|---|---|---|
+| IP&#95;Q01 / Сколько полных лет владельцу ИП? | true | owner&#95;age | 30 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;owner&#95;age=${owner&#95;age}&#34;} |
+| IP&#95;Q02 / Каково текущее семейное положение владельца? | true | marital&#95;status | 25 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;marital&#95;status=${marital&#95;status}&#34;} |
+| IP&#95;Q03 / Сколько детей и других иждивенцев содержатся за счёт владельца? | true | dependents | 25 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;dependents=${dependents}&#34;} |
+| IP&#95;Q04 / Какой основной источник личного дохода владельца ИП? | true | primary&#95;income&#95;source | 25 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;primary&#95;income&#95;source=${primary&#95;income&#95;source}&#34;} |
+| IP&#95;Q05 / Какова профессиональная квалификация владельца? | true | qualification | 25 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;qualification=${qualification}&#34;} |
+| IP&#95;Q06 / Каков общий трудовой и предпринимательский стаж, полных месяцев? | true | total&#95;experience&#95;months | 35 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;total&#95;experience&#95;months=${total&#95;experience&#95;months}&#34;} |
+| IP&#95;Q07 / Каков подтверждённый среднемесячный личный доход за 12 месяцев после налогов, руб.? | true | net&#95;monthly&#95;income&#95;rub | 50 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;net&#95;monthly&#95;income&#95;rub=${net&#95;monthly&#95;income&#95;rub}&#34;} |
+| IP&#95;Q08 / Какой автомобиль находится в собственности? При нескольких выбрать один наиболее высокий класс. | true | car&#95;class | 25 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;car&#95;class=${car&#95;class}&#34;} |
+| IP&#95;Q09 / Сколько месяцев ИП обслуживается в банке, рассматривающем заявку? | true | bank&#95;relationship&#95;months | 30 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;bank&#95;relationship&#95;months=${bank&#95;relationship&#95;months}&#34;} |
+| IP&#95;Q10 / Каков максимальный завершённый уровень образования владельца? | true | education&#95;level | 25 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;education&#95;level=${education&#95;level}&#34;} |
+| IP&#95;Q11 / Есть ли недвижимость в собственности владельца? При нескольких объектах выбрать один наиболее благоприятный ответ. | true | real&#95;estate&#95;status | 25 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;real&#95;estate&#95;status=${real&#95;estate&#95;status}&#34;} |
+| IP&#95;Q12 / Какова длительность подтверждённой кредитной истории, месяцев? | true | credit&#95;history&#95;months | 50 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;credit&#95;history&#95;months=${credit&#95;history&#95;months}&#34;} |
+| IP&#95;Q13 / Какова худшая погашенная просрочка за последние 24 месяца, дней? | true | worst&#95;repaid&#95;dpd&#95;days&#95;24m | 100 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;worst&#95;repaid&#95;dpd&#95;days&#95;24m=${worst&#95;repaid&#95;dpd&#95;days&#95;24m}&#34;} |
+| IP&#95;Q14 / Какова текущая просрочка по обязательствам, дней? | true | current&#95;dpd&#95;days | 25 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;current&#95;dpd&#95;days=${current&#95;dpd&#95;days}&#34;} |
+| IP&#95;Q15 / Сколько фактических кредитных обращений было за 90 дней? Технические дубли исключить. | true | applications&#95;90d | 30 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;applications&#95;90d=${applications&#95;90d}&#34;} |
+| IP&#95;Q16 / Сколько месяцев действует бизнес ИП? | true | business&#95;age&#95;months | 60 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;business&#95;age&#95;months=${business&#95;age&#95;months}&#34;} |
+| IP&#95;Q17 / Каков профильный опыт владельца в текущем направлении бизнеса, полных лет? | true | owner&#95;experience&#95;years | 50 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;owner&#95;experience&#95;years=${owner&#95;experience&#95;years}&#34;} |
+| IP&#95;Q18 / Насколько устойчиво место ведения бизнеса? | true | business&#95;location | 20 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;business&#95;location=${business&#95;location}&#34;,&#34;cases&#34;:&#91;{&#34;when&#34;:{&#34;op&#34;:&#34;EQ&#34;,&#34;parameter&#34;:&#34;business&#95;location&#34;,&#34;value&#34;:{&#34;string&#34;:&#34;VERIFIED&#95;PHYSICAL&#34;}},&#34;template&#34;:&#34;business&#95;location=${business&#95;location}; location&#95;stability&#95;months=${location&#95;stability&#95;months}&#34;}&#93;} |
+| IP&#95;Q19 / Какова подтверждённая просроченная налоговая задолженность, руб.? Начисления до срока уплаты и действующие отсрочки не включаются. | true | overdue&#95;taxes&#95;rub | 45 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;overdue&#95;taxes&#95;rub=${overdue&#95;taxes&#95;rub}&#34;} |
+| IP&#95;Q20 / Чем подтверждён личный доход владельца? | true | income&#95;evidence | 30 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;income&#95;evidence=${income&#95;evidence}&#34;} |
+| IP&#95;Q21 / Как оформлены отношения с основными покупателями? | true | buyer&#95;contracts | 20 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;buyer&#95;contracts=${buyer&#95;contracts}&#34;} |
+| IP&#95;Q22 / Указаны ли ФИО, ИНН ИП и идентификатор заявки? | true |  | 0 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;CONFIRMED&#34;} |
+| IP&#95;Q23 / ИП действует и деятельность не прекращена? | true |  | 0 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;CONFIRMED&#34;} |
+| IP&#95;Q24 / Подтверждены ли банкротство, существенная подделка или запрет кредитования? | true |  | 0 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;CONFIRMED&#34;} |
+| IP&#95;Q25 / Проверены ли личность, полномочия и необходимые согласия? | true |  | 0 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;CONFIRMED&#34;} |
+| IP&#95;Q26 / Получены ли БКИ и полный перечень обязательств? | true |  | 0 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;CONFIRMED&#34;} |
+| IP&#95;Q27 / Есть ли существенное ограничение счёта, спор или взыскание? | true |  | 0 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;CONFIRMED&#34;} |
+| IP&#95;Q28 / Потерян ли ключевой покупатель или существенно изменился бизнес? | true |  | 0 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;CONFIRMED&#34;} |
+| IP&#95;Q29 / Указаны ли цель, сумма, срок и максимальная ставка клиента? | true |  | 0 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;CONFIRMED&#34;} |
+| IP&#95;Q30 / Подтверждены ли документы, источник свободных денег и актуальность сведений? | true |  | 0 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;CONFIRMED&#34;} |
+| IP&#95;Q31 / Каков заявленный статус воинской обязанности? Справочное поле из образца, баллы не начисляются. | true | military&#95;status | 0 | ALWAYS / ZERO | {&#34;template&#34;:&#34;${military&#95;status}&#34;,&#34;unknown&#95;text&#34;:&#34;OTHER&#95;OR&#95;UNKNOWN&#34;} |
+
+| Критерий / случай | Порядок / вид | Условие | Баллы | Значение результата | Ручное основание / описание |
+|---|---|---|---|---|---|
+| IP&#95;Q01 / band&#95;1 | 1 / ORDINARY | owner&#95;age LT 20 | 5 | Исходное значение |  |
+| IP&#95;Q01 / band&#95;2 | 2 / ORDINARY | ALL(owner&#95;age LE 25, NOT(ANY(owner&#95;age LT 20))) | 10 | Исходное значение |  |
+| IP&#95;Q01 / band&#95;3 | 3 / ORDINARY | ALL(owner&#95;age LE 30, NOT(ANY(owner&#95;age LT 20, owner&#95;age LE 25))) | 15 | Исходное значение |  |
+| IP&#95;Q01 / band&#95;4 | 4 / ORDINARY | ALL(owner&#95;age LE 35, NOT(ANY(owner&#95;age LT 20, owner&#95;age LE 25, owner&#95;age LE 30))) | 30 | Исходное значение |  |
+| IP&#95;Q01 / band&#95;5 | 5 / ORDINARY | ALL(owner&#95;age LE 49, NOT(ANY(owner&#95;age LT 20, owner&#95;age LE 25, owner&#95;age LE 30, owner&#95;age LE 35))) | 25 | Исходное значение |  |
+| IP&#95;Q01 / band&#95;6 | 6 / ORDINARY | ALL(owner&#95;age LE 65, NOT(ANY(owner&#95;age LT 20, owner&#95;age LE 25, owner&#95;age LE 30, owner&#95;age LE 35, owner&#95;age LE 49))) | 20 | Исходное значение |  |
+| IP&#95;Q01 / band&#95;7 | 7 / ORDINARY | NOT(ANY(owner&#95;age LT 20, owner&#95;age LE 25, owner&#95;age LE 30, owner&#95;age LE 35, owner&#95;age LE 49, owner&#95;age LE 65)) | 5 | Исходное значение |  |
+| IP&#95;Q02 / band&#95;1 | 1 / ORDINARY | marital&#95;status EQ &#34;MARRIED&#34; | 25 | Исходное значение |  |
+| IP&#95;Q02 / band&#95;2 | 2 / ORDINARY | marital&#95;status EQ &#34;NEVER&#95;MARRIED&#34; | 20 | Исходное значение |  |
+| IP&#95;Q02 / band&#95;3 | 3 / ORDINARY | marital&#95;status EQ &#34;DIVORCED&#95;ONCE&#34; | 15 | Исходное значение |  |
+| IP&#95;Q02 / band&#95;4 | 4 / ORDINARY | marital&#95;status EQ &#34;DIVORCED&#95;MULTIPLE&#34; | 5 | Исходное значение |  |
+| IP&#95;Q02 / band&#95;5 | 5 / ORDINARY | marital&#95;status EQ &#34;WIDOWED&#34; | 20 | Исходное значение |  |
+| IP&#95;Q03 / band&#95;1 | 1 / ORDINARY | dependents EQ 0 | 25 | Исходное значение |  |
+| IP&#95;Q03 / band&#95;2 | 2 / ORDINARY | ALL(dependents EQ 1, NOT(ANY(dependents EQ 0))) | 20 | Исходное значение |  |
+| IP&#95;Q03 / band&#95;3 | 3 / ORDINARY | ALL(dependents EQ 2, NOT(ANY(dependents EQ 0, dependents EQ 1))) | 15 | Исходное значение |  |
+| IP&#95;Q03 / band&#95;4 | 4 / ORDINARY | ALL(dependents EQ 3, NOT(ANY(dependents EQ 0, dependents EQ 1, dependents EQ 2))) | 10 | Исходное значение |  |
+| IP&#95;Q03 / band&#95;5 | 5 / ORDINARY | NOT(ANY(dependents EQ 0, dependents EQ 1, dependents EQ 2, dependents EQ 3)) | 5 | Исходное значение |  |
+| IP&#95;Q04 / band&#95;1 | 1 / ORDINARY | primary&#95;income&#95;source EQ &#34;BUSINESS&#34; | 25 | Исходное значение |  |
+| IP&#95;Q04 / band&#95;2 | 2 / ORDINARY | primary&#95;income&#95;source EQ &#34;PUBLIC&#95;EMPLOYMENT&#34; | 25 | Исходное значение |  |
+| IP&#95;Q04 / band&#95;3 | 3 / ORDINARY | primary&#95;income&#95;source EQ &#34;PRIVATE&#95;EMPLOYMENT&#34; | 20 | Исходное значение |  |
+| IP&#95;Q04 / band&#95;4 | 4 / ORDINARY | primary&#95;income&#95;source EQ &#34;PENSION&#34; | 15 | Исходное значение |  |
+| IP&#95;Q04 / band&#95;5 | 5 / ORDINARY | primary&#95;income&#95;source EQ &#34;SELF&#95;EMPLOYED&#95;OR&#95;GPH&#34; | 15 | Исходное значение |  |
+| IP&#95;Q04 / band&#95;6 | 6 / ORDINARY | primary&#95;income&#95;source EQ &#34;NONE&#34; | 0 | Исходное значение |  |
+| IP&#95;Q05 / band&#95;1 | 1 / ORDINARY | qualification EQ &#34;NONE&#34; | 0 | Исходное значение |  |
+| IP&#95;Q05 / band&#95;2 | 2 / ORDINARY | qualification EQ &#34;SUPPORT&#34; | 5 | Исходное значение |  |
+| IP&#95;Q05 / band&#95;3 | 3 / ORDINARY | qualification EQ &#34;SPECIALIST&#34; | 15 | Исходное значение |  |
+| IP&#95;Q05 / band&#95;4 | 4 / ORDINARY | qualification EQ &#34;MANAGER&#95;OR&#95;HIGHLY&#95;QUALIFIED&#34; | 25 | Исходное значение |  |
+| IP&#95;Q06 / band&#95;1 | 1 / ORDINARY | total&#95;experience&#95;months EQ 0 | 0 | Исходное значение |  |
+| IP&#95;Q06 / band&#95;2 | 2 / ORDINARY | ALL(total&#95;experience&#95;months LT 36, NOT(ANY(total&#95;experience&#95;months EQ 0))) | 10 | Исходное значение |  |
+| IP&#95;Q06 / band&#95;3 | 3 / ORDINARY | ALL(total&#95;experience&#95;months LT 72, NOT(ANY(total&#95;experience&#95;months EQ 0, total&#95;experience&#95;months LT 36))) | 25 | Исходное значение |  |
+| IP&#95;Q06 / band&#95;4 | 4 / ORDINARY | NOT(ANY(total&#95;experience&#95;months EQ 0, total&#95;experience&#95;months LT 36, total&#95;experience&#95;months LT 72)) | 35 | Исходное значение |  |
+| IP&#95;Q07 / band&#95;1 | 1 / ORDINARY | net&#95;monthly&#95;income&#95;rub LE 15000 | 0 | Исходное значение |  |
+| IP&#95;Q07 / band&#95;2 | 2 / ORDINARY | ALL(net&#95;monthly&#95;income&#95;rub LE 30000, NOT(ANY(net&#95;monthly&#95;income&#95;rub LE 15000))) | 15 | Исходное значение |  |
+| IP&#95;Q07 / band&#95;3 | 3 / ORDINARY | ALL(net&#95;monthly&#95;income&#95;rub LE 60000, NOT(ANY(net&#95;monthly&#95;income&#95;rub LE 15000, net&#95;monthly&#95;income&#95;rub LE 30000))) | 30 | Исходное значение |  |
+| IP&#95;Q07 / band&#95;4 | 4 / ORDINARY | ALL(net&#95;monthly&#95;income&#95;rub LE 90000, NOT(ANY(net&#95;monthly&#95;income&#95;rub LE 15000, net&#95;monthly&#95;income&#95;rub LE 30000, net&#95;monthly&#95;income&#95;rub LE 60000))) | 40 | Исходное значение |  |
+| IP&#95;Q07 / band&#95;5 | 5 / ORDINARY | NOT(ANY(net&#95;monthly&#95;income&#95;rub LE 15000, net&#95;monthly&#95;income&#95;rub LE 30000, net&#95;monthly&#95;income&#95;rub LE 60000, net&#95;monthly&#95;income&#95;rub LE 90000)) | 50 | Исходное значение |  |
+| IP&#95;Q08 / band&#95;1 | 1 / ORDINARY | car&#95;class EQ &#34;NONE&#34; | 10 | Исходное значение |  |
+| IP&#95;Q08 / band&#95;2 | 2 / ORDINARY | car&#95;class EQ &#34;ECONOMY&#34; | 10 | Исходное значение |  |
+| IP&#95;Q08 / band&#95;3 | 3 / ORDINARY | car&#95;class EQ &#34;COMFORT&#34; | 15 | Исходное значение |  |
+| IP&#95;Q08 / band&#95;4 | 4 / ORDINARY | car&#95;class EQ &#34;PREMIUM&#34; | 25 | Исходное значение |  |
+| IP&#95;Q09 / band&#95;1 | 1 / ORDINARY | bank&#95;relationship&#95;months EQ 0 | 0 | Исходное значение |  |
+| IP&#95;Q09 / band&#95;2 | 2 / ORDINARY | ALL(bank&#95;relationship&#95;months LT 12, NOT(ANY(bank&#95;relationship&#95;months EQ 0))) | 10 | Исходное значение |  |
+| IP&#95;Q09 / band&#95;3 | 3 / ORDINARY | ALL(bank&#95;relationship&#95;months LT 24, NOT(ANY(bank&#95;relationship&#95;months EQ 0, bank&#95;relationship&#95;months LT 12))) | 20 | Исходное значение |  |
+| IP&#95;Q09 / band&#95;4 | 4 / ORDINARY | NOT(ANY(bank&#95;relationship&#95;months EQ 0, bank&#95;relationship&#95;months LT 12, bank&#95;relationship&#95;months LT 24)) | 30 | Исходное значение |  |
+| IP&#95;Q10 / band&#95;1 | 1 / ORDINARY | education&#95;level EQ &#34;BELOW&#95;GENERAL&#34; | 0 | Исходное значение |  |
+| IP&#95;Q10 / band&#95;2 | 2 / ORDINARY | education&#95;level EQ &#34;GENERAL&#34; | 5 | Исходное значение |  |
+| IP&#95;Q10 / band&#95;3 | 3 / ORDINARY | education&#95;level EQ &#34;VOCATIONAL&#34; | 10 | Исходное значение |  |
+| IP&#95;Q10 / band&#95;4 | 4 / ORDINARY | education&#95;level EQ &#34;HIGHER&#34; | 20 | Исходное значение |  |
+| IP&#95;Q10 / band&#95;5 | 5 / ORDINARY | education&#95;level EQ &#34;ACADEMIC&#95;DEGREE&#34; | 25 | Исходное значение |  |
+| IP&#95;Q11 / band&#95;1 | 1 / ORDINARY | real&#95;estate&#95;status EQ &#34;UNENCUMBERED&#95;WHOLE&#34; | 25 | Исходное значение |  |
+| IP&#95;Q11 / band&#95;2 | 2 / ORDINARY | real&#95;estate&#95;status EQ &#34;UNENCUMBERED&#95;SHARE&#34; | 15 | Исходное значение |  |
+| IP&#95;Q11 / band&#95;3 | 3 / ORDINARY | real&#95;estate&#95;status EQ &#34;ENCUMBERED&#95;ONLY&#34; | 10 | Исходное значение |  |
+| IP&#95;Q11 / band&#95;4 | 4 / ORDINARY | real&#95;estate&#95;status EQ &#34;NONE&#34; | 0 | Исходное значение |  |
+| IP&#95;Q12 / band&#95;1 | 1 / ORDINARY | credit&#95;history&#95;months EQ 0 | 0 | Исходное значение |  |
+| IP&#95;Q12 / band&#95;2 | 2 / ORDINARY | ALL(credit&#95;history&#95;months LT 6, NOT(ANY(credit&#95;history&#95;months EQ 0))) | 10 | Исходное значение |  |
+| IP&#95;Q12 / band&#95;3 | 3 / ORDINARY | ALL(credit&#95;history&#95;months LT 18, NOT(ANY(credit&#95;history&#95;months EQ 0, credit&#95;history&#95;months LT 6))) | 25 | Исходное значение |  |
+| IP&#95;Q12 / band&#95;4 | 4 / ORDINARY | ALL(credit&#95;history&#95;months LT 36, NOT(ANY(credit&#95;history&#95;months EQ 0, credit&#95;history&#95;months LT 6, credit&#95;history&#95;months LT 18))) | 40 | Исходное значение |  |
+| IP&#95;Q12 / band&#95;5 | 5 / ORDINARY | NOT(ANY(credit&#95;history&#95;months EQ 0, credit&#95;history&#95;months LT 6, credit&#95;history&#95;months LT 18, credit&#95;history&#95;months LT 36)) | 50 | Исходное значение |  |
+| IP&#95;Q13 / band&#95;1 | 1 / ORDINARY | worst&#95;repaid&#95;dpd&#95;days&#95;24m EQ 0 | 100 | Исходное значение |  |
+| IP&#95;Q13 / band&#95;2 | 2 / ORDINARY | ALL(worst&#95;repaid&#95;dpd&#95;days&#95;24m LT 8, NOT(ANY(worst&#95;repaid&#95;dpd&#95;days&#95;24m EQ 0))) | 75 | Исходное значение |  |
+| IP&#95;Q13 / band&#95;3 | 3 / ORDINARY | ALL(worst&#95;repaid&#95;dpd&#95;days&#95;24m LT 30, NOT(ANY(worst&#95;repaid&#95;dpd&#95;days&#95;24m EQ 0, worst&#95;repaid&#95;dpd&#95;days&#95;24m LT 8))) | 50 | Исходное значение |  |
+| IP&#95;Q13 / band&#95;4 | 4 / ORDINARY | ALL(worst&#95;repaid&#95;dpd&#95;days&#95;24m LT 60, NOT(ANY(worst&#95;repaid&#95;dpd&#95;days&#95;24m EQ 0, worst&#95;repaid&#95;dpd&#95;days&#95;24m LT 8, worst&#95;repaid&#95;dpd&#95;days&#95;24m LT 30))) | 25 | Исходное значение |  |
+| IP&#95;Q13 / band&#95;5 | 5 / ORDINARY | NOT(ANY(worst&#95;repaid&#95;dpd&#95;days&#95;24m EQ 0, worst&#95;repaid&#95;dpd&#95;days&#95;24m LT 8, worst&#95;repaid&#95;dpd&#95;days&#95;24m LT 30, worst&#95;repaid&#95;dpd&#95;days&#95;24m LT 60)) | 0 | Исходное значение |  |
+| IP&#95;Q14 / band&#95;1 | 1 / ORDINARY | current&#95;dpd&#95;days EQ 0 | 25 | Исходное значение |  |
+| IP&#95;Q14 / band&#95;2 | 2 / ORDINARY | ALL(current&#95;dpd&#95;days LT 8, NOT(ANY(current&#95;dpd&#95;days EQ 0))) | 15 | Исходное значение |  |
+| IP&#95;Q14 / band&#95;3 | 3 / ORDINARY | ALL(current&#95;dpd&#95;days LT 30, NOT(ANY(current&#95;dpd&#95;days EQ 0, current&#95;dpd&#95;days LT 8))) | 5 | Исходное значение |  |
+| IP&#95;Q14 / band&#95;4 | 4 / ORDINARY | NOT(ANY(current&#95;dpd&#95;days EQ 0, current&#95;dpd&#95;days LT 8, current&#95;dpd&#95;days LT 30)) | 0 | Исходное значение |  |
+| IP&#95;Q15 / band&#95;1 | 1 / ORDINARY | applications&#95;90d EQ 0 | 30 | Исходное значение |  |
+| IP&#95;Q15 / band&#95;2 | 2 / ORDINARY | ALL(applications&#95;90d LT 3, NOT(ANY(applications&#95;90d EQ 0))) | 20 | Исходное значение |  |
+| IP&#95;Q15 / band&#95;3 | 3 / ORDINARY | ALL(applications&#95;90d LT 5, NOT(ANY(applications&#95;90d EQ 0, applications&#95;90d LT 3))) | 15 | Исходное значение |  |
+| IP&#95;Q15 / band&#95;4 | 4 / ORDINARY | ALL(applications&#95;90d LT 8, NOT(ANY(applications&#95;90d EQ 0, applications&#95;90d LT 3, applications&#95;90d LT 5))) | 5 | Исходное значение |  |
+| IP&#95;Q15 / band&#95;5 | 5 / ORDINARY | NOT(ANY(applications&#95;90d EQ 0, applications&#95;90d LT 3, applications&#95;90d LT 5, applications&#95;90d LT 8)) | 0 | Исходное значение |  |
+| IP&#95;Q16 / band&#95;1 | 1 / ORDINARY | business&#95;age&#95;months LT 12 | 0 | Исходное значение |  |
+| IP&#95;Q16 / band&#95;2 | 2 / ORDINARY | ALL(business&#95;age&#95;months LT 24, NOT(ANY(business&#95;age&#95;months LT 12))) | 15 | Исходное значение |  |
+| IP&#95;Q16 / band&#95;3 | 3 / ORDINARY | ALL(business&#95;age&#95;months LT 36, NOT(ANY(business&#95;age&#95;months LT 12, business&#95;age&#95;months LT 24))) | 30 | Исходное значение |  |
+| IP&#95;Q16 / band&#95;4 | 4 / ORDINARY | ALL(business&#95;age&#95;months LT 60, NOT(ANY(business&#95;age&#95;months LT 12, business&#95;age&#95;months LT 24, business&#95;age&#95;months LT 36))) | 45 | Исходное значение |  |
+| IP&#95;Q16 / band&#95;5 | 5 / ORDINARY | NOT(ANY(business&#95;age&#95;months LT 12, business&#95;age&#95;months LT 24, business&#95;age&#95;months LT 36, business&#95;age&#95;months LT 60)) | 60 | Исходное значение |  |
+| IP&#95;Q17 / band&#95;1 | 1 / ORDINARY | owner&#95;experience&#95;years LT 1 | 0 | Исходное значение |  |
+| IP&#95;Q17 / band&#95;2 | 2 / ORDINARY | ALL(owner&#95;experience&#95;years LT 3, NOT(ANY(owner&#95;experience&#95;years LT 1))) | 15 | Исходное значение |  |
+| IP&#95;Q17 / band&#95;3 | 3 / ORDINARY | ALL(owner&#95;experience&#95;years LT 5, NOT(ANY(owner&#95;experience&#95;years LT 1, owner&#95;experience&#95;years LT 3))) | 25 | Исходное значение |  |
+| IP&#95;Q17 / band&#95;4 | 4 / ORDINARY | ALL(owner&#95;experience&#95;years LT 8, NOT(ANY(owner&#95;experience&#95;years LT 1, owner&#95;experience&#95;years LT 3, owner&#95;experience&#95;years LT 5))) | 40 | Исходное значение |  |
+| IP&#95;Q17 / band&#95;5 | 5 / ORDINARY | NOT(ANY(owner&#95;experience&#95;years LT 1, owner&#95;experience&#95;years LT 3, owner&#95;experience&#95;years LT 5, owner&#95;experience&#95;years LT 8)) | 50 | Исходное значение |  |
+| IP&#95;Q18 / band&#95;1 | 1 / ORDINARY | ALL(business&#95;location EQ &#34;VERIFIED&#95;PHYSICAL&#34;, location&#95;stability&#95;months LT 12) | 5 | Исходное значение |  |
+| IP&#95;Q18 / band&#95;2 | 2 / ORDINARY | ALL(business&#95;location EQ &#34;VERIFIED&#95;PHYSICAL&#34;, location&#95;stability&#95;months GE 12, location&#95;stability&#95;months LT 24) | 15 | Исходное значение |  |
+| IP&#95;Q18 / band&#95;3 | 3 / ORDINARY | ALL(business&#95;location EQ &#34;VERIFIED&#95;PHYSICAL&#34;, location&#95;stability&#95;months GE 24) | 20 | Исходное значение |  |
+| IP&#95;Q18 / band&#95;4 | 4 / ORDINARY | business&#95;location EQ &#34;VERIFIED&#95;ONLINE&#95;OR&#95;MOBILE&#34; | 20 | Исходное значение |  |
+| IP&#95;Q18 / band&#95;5 | 5 / ORDINARY | business&#95;location EQ &#34;UNVERIFIED&#34; | 0 | Исходное значение |  |
+| IP&#95;Q19 / band&#95;1 | 1 / ORDINARY | overdue&#95;taxes&#95;rub EQ 0 | 45 | Исходное значение |  |
+| IP&#95;Q19 / band&#95;2 | 2 / ORDINARY | ALL(overdue&#95;taxes&#95;rub LE 50000, NOT(ANY(overdue&#95;taxes&#95;rub EQ 0))) | 30 | Исходное значение |  |
+| IP&#95;Q19 / band&#95;3 | 3 / ORDINARY | ALL(overdue&#95;taxes&#95;rub LE 200000, NOT(ANY(overdue&#95;taxes&#95;rub EQ 0, overdue&#95;taxes&#95;rub LE 50000))) | 15 | Исходное значение |  |
+| IP&#95;Q19 / band&#95;4 | 4 / ORDINARY | NOT(ANY(overdue&#95;taxes&#95;rub EQ 0, overdue&#95;taxes&#95;rub LE 50000, overdue&#95;taxes&#95;rub LE 200000)) | 0 | Исходное значение |  |
+| IP&#95;Q20 / band&#95;1 | 1 / ORDINARY | income&#95;evidence EQ &#34;VERIFIED&#34; | 30 | Исходное значение |  |
+| IP&#95;Q20 / band&#95;2 | 2 / ORDINARY | income&#95;evidence EQ &#34;DOCUMENTS&#95;PENDING&#95;CROSSCHECK&#34; | 15 | Исходное значение |  |
+| IP&#95;Q20 / band&#95;3 | 3 / ORDINARY | income&#95;evidence EQ &#34;NONE&#34; | 0 | Исходное значение |  |
+| IP&#95;Q21 / band&#95;1 | 1 / ORDINARY | buyer&#95;contracts EQ &#34;ACTIVE&#95;AND&#95;PERFORMED&#34; | 20 | Исходное значение |  |
+| IP&#95;Q21 / band&#95;2 | 2 / ORDINARY | buyer&#95;contracts EQ &#34;REPEAT&#95;ORDERS&#34; | 10 | Исходное значение |  |
+| IP&#95;Q21 / band&#95;3 | 3 / ORDINARY | buyer&#95;contracts EQ &#34;PLANS&#95;ONLY&#34; | 0 | Исходное значение |  |
+| IP&#95;Q22 / band&#95;1 | 1 / ORDINARY | ALWAYS | 0 | Исходное значение |  |
+| IP&#95;Q23 / band&#95;1 | 1 / ORDINARY | ALWAYS | 0 | Исходное значение |  |
+| IP&#95;Q24 / band&#95;1 | 1 / ORDINARY | ALWAYS | 0 | Исходное значение |  |
+| IP&#95;Q25 / band&#95;1 | 1 / ORDINARY | ALWAYS | 0 | Исходное значение |  |
+| IP&#95;Q26 / band&#95;1 | 1 / ORDINARY | ALWAYS | 0 | Исходное значение |  |
+| IP&#95;Q27 / band&#95;1 | 1 / ORDINARY | ALWAYS | 0 | Исходное значение |  |
+| IP&#95;Q28 / band&#95;1 | 1 / ORDINARY | ALWAYS | 0 | Исходное значение |  |
+| IP&#95;Q29 / band&#95;1 | 1 / ORDINARY | ALWAYS | 0 | Исходное значение |  |
+| IP&#95;Q30 / band&#95;1 | 1 / ORDINARY | ALWAYS | 0 | Исходное значение |  |
+| IP&#95;Q31 / band&#95;1 | 1 / ORDINARY | ALWAYS | 0 | Исходное значение |  |
+
+#### Дополнительные показатели — 250
+
+| Критерий / вопрос | Активен | Параметр значения | Макс. | Применимость / unknown | Представление ответа |
+|---|---|---|---|---|---|
+| IP&#95;E01 / Маржа CFADS | true | ip&#95;e01 | 25 | ALWAYS / NEED&#95;INFO |  |
+| IP&#95;E02 / Действующие долговые платежи / CFADS | true | ip&#95;e02 | 30 | ALWAYS / NEED&#95;INFO |  |
+| IP&#95;E03 / Финансовый долг / годовой CFADS | true | ip&#95;e03 | 25 | ALWAYS / NEED&#95;INFO |  |
+| IP&#95;E04 / Запас свободных денег | true | ip&#95;e04 | 25 | ALWAYS / NEED&#95;INFO |  |
+| IP&#95;E05 / Положительные месяцы CFADS | true | ip&#95;e05 | 20 | ALWAYS / NEED&#95;INFO |  |
+| IP&#95;E06 / Волатильность поступлений, CV | true | ip&#95;e06 | 15 | ALWAYS / NEED&#95;INFO |  |
+| IP&#95;E07 / Рост поступлений за год | true | ip&#95;e07 | 15 | ALWAYS / NEED&#95;INFO |  |
+| IP&#95;E08 / Динамика последних трёх месяцев | true | ip&#95;e08 | 10 | ALWAYS / NEED&#95;INFO |  |
+| IP&#95;E09 / Доля крупнейшей группы покупателей | true | ip&#95;e09 | 15 | ALWAYS / NEED&#95;INFO |  |
+| IP&#95;E10 / Подтверждение поступлений | true | ip&#95;e10 | 20 | ALWAYS / NEED&#95;INFO |  |
+| IP&#95;E11 / Необъяснённое расхождение источников | true | ip&#95;e11 | 15 | ALWAYS / NEED&#95;INFO |  |
+| IP&#95;E12 / Доля собственного участия в потребности | true | ip&#95;e12 | 15 | ALWAYS / NEED&#95;INFO |  |
+| IP&#95;E13 / Денежный запас финансовой прочности | true | ip&#95;e13 | 20 | ALWAYS / NEED&#95;INFO |  |
+
+| Критерий / случай | Порядок / вид | Условие | Баллы | Значение результата | Ручное основание / описание |
+|---|---|---|---|---|---|
+| IP&#95;E01 / special&#95;1 | 1 / SPECIAL | receipts&#95;rub EQ 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} |  |
+| IP&#95;E01 / band&#95;1 | 1 / ORDINARY | ip&#95;e01 LE 0 | 0 | Исходное значение |  |
+| IP&#95;E01 / band&#95;2 | 2 / ORDINARY | ALL(ip&#95;e01 LT 0.05, NOT(ANY(ip&#95;e01 LE 0))) | 6.25 | Исходное значение |  |
+| IP&#95;E01 / band&#95;3 | 3 / ORDINARY | ALL(ip&#95;e01 LT 0.1, NOT(ANY(ip&#95;e01 LE 0, ip&#95;e01 LT 0.05))) | 12.5 | Исходное значение |  |
+| IP&#95;E01 / band&#95;4 | 4 / ORDINARY | ALL(ip&#95;e01 LT 0.15, NOT(ANY(ip&#95;e01 LE 0, ip&#95;e01 LT 0.05, ip&#95;e01 LT 0.1))) | 18.75 | Исходное значение |  |
+| IP&#95;E01 / band&#95;5 | 5 / ORDINARY | NOT(ANY(ip&#95;e01 LE 0, ip&#95;e01 LT 0.05, ip&#95;e01 LT 0.1, ip&#95;e01 LT 0.15)) | 25 | Исходное значение |  |
+| IP&#95;E02 / special&#95;1 | 1 / SPECIAL | cfads&#95;rub LE 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} |  |
+| IP&#95;E02 / band&#95;1 | 1 / ORDINARY | ip&#95;e02 LE 0.15 | 30 | Исходное значение |  |
+| IP&#95;E02 / band&#95;2 | 2 / ORDINARY | ALL(ip&#95;e02 LE 0.3, NOT(ANY(ip&#95;e02 LE 0.15))) | 22.5 | Исходное значение |  |
+| IP&#95;E02 / band&#95;3 | 3 / ORDINARY | ALL(ip&#95;e02 LE 0.5, NOT(ANY(ip&#95;e02 LE 0.15, ip&#95;e02 LE 0.3))) | 15 | Исходное значение |  |
+| IP&#95;E02 / band&#95;4 | 4 / ORDINARY | ALL(ip&#95;e02 LE 0.75, NOT(ANY(ip&#95;e02 LE 0.15, ip&#95;e02 LE 0.3, ip&#95;e02 LE 0.5))) | 7.5 | Исходное значение |  |
+| IP&#95;E02 / band&#95;5 | 5 / ORDINARY | NOT(ANY(ip&#95;e02 LE 0.15, ip&#95;e02 LE 0.3, ip&#95;e02 LE 0.5, ip&#95;e02 LE 0.75)) | 0 | Исходное значение |  |
+| IP&#95;E03 / special&#95;1 | 1 / SPECIAL | cfads&#95;rub LE 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} |  |
+| IP&#95;E03 / band&#95;1 | 1 / ORDINARY | ip&#95;e03 LE 0.5 | 25 | Исходное значение |  |
+| IP&#95;E03 / band&#95;2 | 2 / ORDINARY | ALL(ip&#95;e03 LE 1, NOT(ANY(ip&#95;e03 LE 0.5))) | 18.75 | Исходное значение |  |
+| IP&#95;E03 / band&#95;3 | 3 / ORDINARY | ALL(ip&#95;e03 LE 2, NOT(ANY(ip&#95;e03 LE 0.5, ip&#95;e03 LE 1))) | 12.5 | Исходное значение |  |
+| IP&#95;E03 / band&#95;4 | 4 / ORDINARY | ALL(ip&#95;e03 LE 3, NOT(ANY(ip&#95;e03 LE 0.5, ip&#95;e03 LE 1, ip&#95;e03 LE 2))) | 6.25 | Исходное значение |  |
+| IP&#95;E03 / band&#95;5 | 5 / ORDINARY | NOT(ANY(ip&#95;e03 LE 0.5, ip&#95;e03 LE 1, ip&#95;e03 LE 2, ip&#95;e03 LE 3)) | 0 | Исходное значение |  |
+| IP&#95;E04 / special&#95;1 | 1 / SPECIAL | monthly&#95;required&#95;rub EQ 0 | 25 | {&#34;mode&#34;:&#34;NULL&#34;} |  |
+| IP&#95;E04 / band&#95;1 | 1 / ORDINARY | ip&#95;e04 LT 0.25 | 0 | Исходное значение |  |
+| IP&#95;E04 / band&#95;2 | 2 / ORDINARY | ALL(ip&#95;e04 LT 0.5, NOT(ANY(ip&#95;e04 LT 0.25))) | 6.25 | Исходное значение |  |
+| IP&#95;E04 / band&#95;3 | 3 / ORDINARY | ALL(ip&#95;e04 LT 1, NOT(ANY(ip&#95;e04 LT 0.25, ip&#95;e04 LT 0.5))) | 12.5 | Исходное значение |  |
+| IP&#95;E04 / band&#95;4 | 4 / ORDINARY | ALL(ip&#95;e04 LT 2, NOT(ANY(ip&#95;e04 LT 0.25, ip&#95;e04 LT 0.5, ip&#95;e04 LT 1))) | 18.75 | Исходное значение |  |
+| IP&#95;E04 / band&#95;5 | 5 / ORDINARY | NOT(ANY(ip&#95;e04 LT 0.25, ip&#95;e04 LT 0.5, ip&#95;e04 LT 1, ip&#95;e04 LT 2)) | 25 | Исходное значение |  |
+| IP&#95;E05 / band&#95;1 | 1 / ORDINARY | ip&#95;e05 LT 6 | 0 | Исходное значение |  |
+| IP&#95;E05 / band&#95;2 | 2 / ORDINARY | ALL(ip&#95;e05 LT 8, NOT(ANY(ip&#95;e05 LT 6))) | 5 | Исходное значение |  |
+| IP&#95;E05 / band&#95;3 | 3 / ORDINARY | ALL(ip&#95;e05 LT 10, NOT(ANY(ip&#95;e05 LT 6, ip&#95;e05 LT 8))) | 10 | Исходное значение |  |
+| IP&#95;E05 / band&#95;4 | 4 / ORDINARY | ALL(ip&#95;e05 LT 12, NOT(ANY(ip&#95;e05 LT 6, ip&#95;e05 LT 8, ip&#95;e05 LT 10))) | 15 | Исходное значение |  |
+| IP&#95;E05 / band&#95;5 | 5 / ORDINARY | NOT(ANY(ip&#95;e05 LT 6, ip&#95;e05 LT 8, ip&#95;e05 LT 10, ip&#95;e05 LT 12)) | 20 | Исходное значение |  |
+| IP&#95;E06 / special&#95;1 | 1 / SPECIAL | receipts&#95;rub EQ 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} |  |
+| IP&#95;E06 / band&#95;1 | 1 / ORDINARY | ip&#95;e06 LE 0.1 | 15 | Исходное значение |  |
+| IP&#95;E06 / band&#95;2 | 2 / ORDINARY | ALL(ip&#95;e06 LE 0.2, NOT(ANY(ip&#95;e06 LE 0.1))) | 11.25 | Исходное значение |  |
+| IP&#95;E06 / band&#95;3 | 3 / ORDINARY | ALL(ip&#95;e06 LE 0.35, NOT(ANY(ip&#95;e06 LE 0.1, ip&#95;e06 LE 0.2))) | 7.5 | Исходное значение |  |
+| IP&#95;E06 / band&#95;4 | 4 / ORDINARY | ALL(ip&#95;e06 LE 0.5, NOT(ANY(ip&#95;e06 LE 0.1, ip&#95;e06 LE 0.2, ip&#95;e06 LE 0.35))) | 3.75 | Исходное значение |  |
+| IP&#95;E06 / band&#95;5 | 5 / ORDINARY | NOT(ANY(ip&#95;e06 LE 0.1, ip&#95;e06 LE 0.2, ip&#95;e06 LE 0.35, ip&#95;e06 LE 0.5)) | 0 | Исходное значение |  |
+| IP&#95;E07 / special&#95;1 | 1 / SPECIAL | previous&#95;comparable&#95;receipts&#95;rub EQ 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} | ; {&#34;code&#34;:&#34;SPECIAL&#95;IP&#95;E07&#34;,&#34;message&#34;:&#34;Подтверждённая база сравнения поступлений или выручки равна нулю.&#34;,&#34;fields&#34;:&#91;&#34;IP&#95;E07&#34;&#93;} |
+| IP&#95;E07 / band&#95;1 | 1 / ORDINARY | ip&#95;e07 LT -0.2 | 0 | Исходное значение |  |
+| IP&#95;E07 / band&#95;2 | 2 / ORDINARY | ALL(ip&#95;e07 LT -0.05, NOT(ANY(ip&#95;e07 LT -0.2))) | 3.75 | Исходное значение |  |
+| IP&#95;E07 / band&#95;3 | 3 / ORDINARY | ALL(ip&#95;e07 LT 0.05, NOT(ANY(ip&#95;e07 LT -0.2, ip&#95;e07 LT -0.05))) | 7.5 | Исходное значение |  |
+| IP&#95;E07 / band&#95;4 | 4 / ORDINARY | ALL(ip&#95;e07 LT 0.15, NOT(ANY(ip&#95;e07 LT -0.2, ip&#95;e07 LT -0.05, ip&#95;e07 LT 0.05))) | 11.25 | Исходное значение |  |
+| IP&#95;E07 / band&#95;5 | 5 / ORDINARY | NOT(ANY(ip&#95;e07 LT -0.2, ip&#95;e07 LT -0.05, ip&#95;e07 LT 0.05, ip&#95;e07 LT 0.15)) | 15 | Исходное значение |  |
+| IP&#95;E08 / special&#95;1 | 1 / SPECIAL | previous&#95;quarter&#95;receipts&#95;rub EQ 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} | ; {&#34;code&#34;:&#34;SPECIAL&#95;IP&#95;E08&#34;,&#34;message&#34;:&#34;Подтверждённая база сравнения поступлений или выручки равна нулю.&#34;,&#34;fields&#34;:&#91;&#34;IP&#95;E08&#34;&#93;} |
+| IP&#95;E08 / band&#95;1 | 1 / ORDINARY | ip&#95;e08 LT -0.15 | 0 | Исходное значение |  |
+| IP&#95;E08 / band&#95;2 | 2 / ORDINARY | ALL(ip&#95;e08 LT -0.05, NOT(ANY(ip&#95;e08 LT -0.15))) | 2.5 | Исходное значение |  |
+| IP&#95;E08 / band&#95;3 | 3 / ORDINARY | ALL(ip&#95;e08 LT 0.05, NOT(ANY(ip&#95;e08 LT -0.15, ip&#95;e08 LT -0.05))) | 5 | Исходное значение |  |
+| IP&#95;E08 / band&#95;4 | 4 / ORDINARY | ALL(ip&#95;e08 LT 0.15, NOT(ANY(ip&#95;e08 LT -0.15, ip&#95;e08 LT -0.05, ip&#95;e08 LT 0.05))) | 7.5 | Исходное значение |  |
+| IP&#95;E08 / band&#95;5 | 5 / ORDINARY | NOT(ANY(ip&#95;e08 LT -0.15, ip&#95;e08 LT -0.05, ip&#95;e08 LT 0.05, ip&#95;e08 LT 0.15)) | 10 | Исходное значение |  |
+| IP&#95;E09 / special&#95;1 | 1 / SPECIAL | receipts&#95;rub EQ 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} |  |
+| IP&#95;E09 / band&#95;1 | 1 / ORDINARY | ip&#95;e09 LE 0.15 | 15 | Исходное значение |  |
+| IP&#95;E09 / band&#95;2 | 2 / ORDINARY | ALL(ip&#95;e09 LE 0.3, NOT(ANY(ip&#95;e09 LE 0.15))) | 11.25 | Исходное значение |  |
+| IP&#95;E09 / band&#95;3 | 3 / ORDINARY | ALL(ip&#95;e09 LE 0.5, NOT(ANY(ip&#95;e09 LE 0.15, ip&#95;e09 LE 0.3))) | 7.5 | Исходное значение |  |
+| IP&#95;E09 / band&#95;4 | 4 / ORDINARY | ALL(ip&#95;e09 LE 0.7, NOT(ANY(ip&#95;e09 LE 0.15, ip&#95;e09 LE 0.3, ip&#95;e09 LE 0.5))) | 3.75 | Исходное значение |  |
+| IP&#95;E09 / band&#95;5 | 5 / ORDINARY | NOT(ANY(ip&#95;e09 LE 0.15, ip&#95;e09 LE 0.3, ip&#95;e09 LE 0.5, ip&#95;e09 LE 0.7)) | 0 | Исходное значение |  |
+| IP&#95;E10 / special&#95;1 | 1 / SPECIAL | receipts&#95;rub EQ 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} |  |
+| IP&#95;E10 / band&#95;1 | 1 / ORDINARY | ip&#95;e10 LT 0.8 | 0 | Исходное значение |  |
+| IP&#95;E10 / band&#95;2 | 2 / ORDINARY | ALL(ip&#95;e10 LT 0.9, NOT(ANY(ip&#95;e10 LT 0.8))) | 5 | Исходное значение |  |
+| IP&#95;E10 / band&#95;3 | 3 / ORDINARY | ALL(ip&#95;e10 LT 0.95, NOT(ANY(ip&#95;e10 LT 0.8, ip&#95;e10 LT 0.9))) | 10 | Исходное значение |  |
+| IP&#95;E10 / band&#95;4 | 4 / ORDINARY | ALL(ip&#95;e10 LT 0.99, NOT(ANY(ip&#95;e10 LT 0.8, ip&#95;e10 LT 0.9, ip&#95;e10 LT 0.95))) | 15 | Исходное значение |  |
+| IP&#95;E10 / band&#95;5 | 5 / ORDINARY | NOT(ANY(ip&#95;e10 LT 0.8, ip&#95;e10 LT 0.9, ip&#95;e10 LT 0.95, ip&#95;e10 LT 0.99)) | 20 | Исходное значение |  |
+| IP&#95;E11 / special&#95;1 | 1 / SPECIAL | receipts&#95;rub EQ 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} |  |
+| IP&#95;E11 / band&#95;1 | 1 / ORDINARY | ip&#95;e11 LE 0.01 | 15 | Исходное значение |  |
+| IP&#95;E11 / band&#95;2 | 2 / ORDINARY | ALL(ip&#95;e11 LE 0.03, NOT(ANY(ip&#95;e11 LE 0.01))) | 11.25 | Исходное значение |  |
+| IP&#95;E11 / band&#95;3 | 3 / ORDINARY | ALL(ip&#95;e11 LE 0.05, NOT(ANY(ip&#95;e11 LE 0.01, ip&#95;e11 LE 0.03))) | 7.5 | Исходное значение |  |
+| IP&#95;E11 / band&#95;4 | 4 / ORDINARY | ALL(ip&#95;e11 LE 0.1, NOT(ANY(ip&#95;e11 LE 0.01, ip&#95;e11 LE 0.03, ip&#95;e11 LE 0.05))) | 3.75 | Исходное значение |  |
+| IP&#95;E11 / band&#95;5 | 5 / ORDINARY | NOT(ANY(ip&#95;e11 LE 0.01, ip&#95;e11 LE 0.03, ip&#95;e11 LE 0.05, ip&#95;e11 LE 0.1)) | 0 | Исходное значение |  |
+| IP&#95;E12 / special&#95;1 | 1 / SPECIAL | confirmed&#95;cost&#95;rub EQ 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} | ; {&#34;code&#34;:&#34;SPECIAL&#95;IP&#95;E12&#34;,&#34;message&#34;:&#34;Подтверждённая стоимость потребности равна нулю.&#34;,&#34;fields&#34;:&#91;&#34;IP&#95;E12&#34;&#93;} |
+| IP&#95;E12 / band&#95;1 | 1 / ORDINARY | ip&#95;e12 LT 0.05 | 0 | Исходное значение |  |
+| IP&#95;E12 / band&#95;2 | 2 / ORDINARY | ALL(ip&#95;e12 LT 0.1, NOT(ANY(ip&#95;e12 LT 0.05))) | 3.75 | Исходное значение |  |
+| IP&#95;E12 / band&#95;3 | 3 / ORDINARY | ALL(ip&#95;e12 LT 0.2, NOT(ANY(ip&#95;e12 LT 0.05, ip&#95;e12 LT 0.1))) | 7.5 | Исходное значение |  |
+| IP&#95;E12 / band&#95;4 | 4 / ORDINARY | ALL(ip&#95;e12 LT 0.3, NOT(ANY(ip&#95;e12 LT 0.05, ip&#95;e12 LT 0.1, ip&#95;e12 LT 0.2))) | 11.25 | Исходное значение |  |
+| IP&#95;E12 / band&#95;5 | 5 / ORDINARY | NOT(ANY(ip&#95;e12 LT 0.05, ip&#95;e12 LT 0.1, ip&#95;e12 LT 0.2, ip&#95;e12 LT 0.3)) | 15 | Исходное значение |  |
+| IP&#95;E13 / special&#95;1 | 1 / SPECIAL | receipts&#95;minus&#95;variable&#95;rub LE 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} | ; {&#34;code&#34;:&#34;SPECIAL&#95;IP&#95;E13&#34;,&#34;message&#34;:&#34;Поступления не превышают переменные выплаты; запас прочности не рассчитывается.&#34;,&#34;fields&#34;:&#91;&#34;IP&#95;E13&#34;&#93;} |
+| IP&#95;E13 / band&#95;1 | 1 / ORDINARY | ip&#95;e13 LE 0 | 0 | Исходное значение |  |
+| IP&#95;E13 / band&#95;2 | 2 / ORDINARY | ALL(ip&#95;e13 LT 0.1, NOT(ANY(ip&#95;e13 LE 0))) | 5 | Исходное значение |  |
+| IP&#95;E13 / band&#95;3 | 3 / ORDINARY | ALL(ip&#95;e13 LT 0.2, NOT(ANY(ip&#95;e13 LE 0, ip&#95;e13 LT 0.1))) | 10 | Исходное значение |  |
+| IP&#95;E13 / band&#95;4 | 4 / ORDINARY | ALL(ip&#95;e13 LT 0.3, NOT(ANY(ip&#95;e13 LE 0, ip&#95;e13 LT 0.1, ip&#95;e13 LT 0.2))) | 15 | Исходное значение |  |
+| IP&#95;E13 / band&#95;5 | 5 / ORDINARY | NOT(ANY(ip&#95;e13 LE 0, ip&#95;e13 LT 0.1, ip&#95;e13 LT 0.2, ip&#95;e13 LT 0.3)) | 20 | Исходное значение |  |
+
+#### Проверки полноты и допустимости
+
+| ID / название | Активна | Применимость | Условие достаточности | Поля / сообщение |
+|---|---|---|---|---|
+| borrower&#95;name / borrower&#95;name | true | ALWAYS | borrower&#95;name&#95;present EQ true | borrower.name / Нужны полные и достоверные сведения. |
+| borrower&#95;inn / borrower&#95;inn | true | ALWAYS | borrower&#95;inn&#95;present EQ true | borrower.inn / Нужны полные и достоверные сведения. |
+| purpose / purpose | true | ALWAYS | purpose&#95;present EQ true | credit&#95;request.purpose / Нужны полные и достоверные сведения. |
+| facts&#95;fresh / facts&#95;fresh | true | ALWAYS | ALL(facts&#95;age&#95;days GE 0, facts&#95;age&#95;days LE 45) | facts&#95;date / Нужны полные и достоверные сведения. |
+| identity&#95;and&#95;authority&#95;verified / identity&#95;and&#95;authority&#95;verified | true | ALWAYS | identity&#95;and&#95;authority&#95;verified EQ true | scoring.ip.identity&#95;and&#95;authority&#95;verified / Нужны полные и достоверные сведения. |
+| consents&#95;verified / consents&#95;verified | true | ALWAYS | consents&#95;verified EQ true | scoring.ip.consents&#95;verified / Нужны полные и достоверные сведения. |
+| bureau&#95;received / bureau&#95;received | true | ALWAYS | bureau&#95;received EQ true | scoring.ip.bureau&#95;received / Нужны полные и достоверные сведения. |
+| debts&#95;complete / debts&#95;complete | true | ALWAYS | debts&#95;complete EQ true | scoring.ip.debts&#95;complete / Нужны полные и достоверные сведения. |
+| documents&#95;complete / documents&#95;complete | true | ALWAYS | documents&#95;complete EQ true | scoring.ip.documents&#95;complete / Нужны полные и достоверные сведения. |
+| free&#95;cash&#95;source&#95;verified / free&#95;cash&#95;source&#95;verified | true | ALWAYS | free&#95;cash&#95;source&#95;verified EQ true | scoring.ip.free&#95;cash&#95;source&#95;verified / Нужны полные и достоверные сведения. |
+| history&#95;complete / history&#95;complete | true | ALWAYS | history&#95;complete EQ true | monthly&#95;history / Нужны полные и достоверные сведения. |
+| future&#95;complete / future&#95;complete | true | ALWAYS | future&#95;complete EQ true | future&#95;debt&#95;payments / Нужны полные и достоверные сведения. |
+| debt&#95;schedule&#95;consistent / debt&#95;schedule&#95;consistent | true | ALWAYS | debt&#95;schedule&#95;consistent EQ true | financial&#95;debt&#95;rub, future&#95;debt&#95;payments / Нужны полные и достоверные сведения. |
+| confirmed&#95;receipts / confirmed&#95;receipts | true | history&#95;complete EQ true | ALL(confirmed&#95;receipts&#95;rub LE receipts&#95;rub, ANY(receipts&#95;rub EQ 0, confirmed&#95;receipts&#95;ratio GE 0.8)) | evidence.confirmed&#95;receipts&#95;rub / Нужны полные и достоверные сведения. |
+| unexplained&#95;difference / unexplained&#95;difference | true | history&#95;complete EQ true | ANY(ALL(receipts&#95;rub GT 0, unexplained&#95;difference&#95;ratio LE 0.1), ALL(receipts&#95;rub EQ 0, unexplained&#95;difference&#95;rub EQ 0)) | evidence.unexplained&#95;difference&#95;rub / Нужны полные и достоверные сведения. |
+| largest&#95;buyer / largest&#95;buyer | true | history&#95;complete EQ true | largest&#95;buyer&#95;group&#95;receipts&#95;rub LE receipts&#95;rub | evidence.largest&#95;buyer&#95;group&#95;receipts&#95;rub / Нужны полные и достоверные сведения. |
+| minimum&#95;amount / minimum&#95;amount | true | ALWAYS | min&#95;acceptable&#95;amount&#95;rub LE amount&#95;rub | credit&#95;request.min&#95;acceptable&#95;amount&#95;rub / Нужны полные и достоверные сведения. |
+| maximum&#95;term / maximum&#95;term | true | ALWAYS | max&#95;acceptable&#95;term&#95;months GE term&#95;months | credit&#95;request.max&#95;acceptable&#95;term&#95;months / Нужны полные и достоверные сведения. |
+| business&#95;location / business&#95;location | true | ALWAYS | business&#95;location NE &#34;UNVERIFIED&#34; | scoring.ip.business&#95;location / Нужны полные и достоверные сведения. |
+| income&#95;evidence / income&#95;evidence | true | ALWAYS | income&#95;evidence NE &#34;NONE&#34; | scoring.ip.income&#95;evidence / Нужны полные и достоверные сведения. |
+
+#### Подтверждённые стопы
+
+| Порядок / ID / название | Активно | Условие | Проверки / после критерия | Код / сообщение / поля |
+|---|---|---|---|---|
+| 1 / INACTIVE&#95;BORROWER / Подтверждено прекращение деятельности заёмщика. | true | active EQ false |  /  | INACTIVE&#95;BORROWER / Подтверждено прекращение деятельности заёмщика. / scoring.ip.active |
+| 2 / BANKRUPT / Подтверждено банкротство заёмщика. | true | bankrupt EQ true |  /  | BANKRUPT / Подтверждено банкротство заёмщика. / scoring.ip.bankrupt |
+| 3 / MATERIAL&#95;FORGERY / Подтверждена существенная подделка документов. | true | material&#95;forgery EQ true |  /  | MATERIAL&#95;FORGERY / Подтверждена существенная подделка документов. / scoring.ip.material&#95;forgery |
+| 4 / CREDIT&#95;PROHIBITED / Подтверждён запрет кредитования. | true | credit&#95;prohibited EQ true |  /  | CREDIT&#95;PROHIBITED / Подтверждён запрет кредитования. / scoring.ip.credit&#95;prohibited |
+| 5 / CURRENT&#95;DPD&#95;30&#95;PLUS / Текущая просрочка составляет не менее 30 дней. | true | current&#95;dpd&#95;days GE 30 |  /  | CURRENT&#95;DPD&#95;30&#95;PLUS / Текущая просрочка составляет не менее 30 дней. / scoring.ip.current&#95;dpd&#95;days |
+| 6 / WORST&#95;REPAID&#95;DPD&#95;90&#95;PLUS / Погашенная просрочка за последние 24 месяца достигала 90 дней. | true | worst&#95;repaid&#95;dpd&#95;days&#95;24m GE 90 |  /  | WORST&#95;REPAID&#95;DPD&#95;90&#95;PLUS / Погашенная просрочка за последние 24 месяца достигала 90 дней. / scoring.ip.worst&#95;repaid&#95;dpd&#95;days&#95;24m |
+| 7 / NONPOSITIVE&#95;VERIFIED&#95;CFADS / Подтверждённый годовой CFADS неположителен. | true | cfads&#95;rub LE 0 | history&#95;complete, facts&#95;fresh, confirmed&#95;receipts, unexplained&#95;difference, largest&#95;buyer, documents&#95;complete, free&#95;cash&#95;source&#95;verified, debts&#95;complete /  | NONPOSITIVE&#95;VERIFIED&#95;CFADS / Подтверждённый годовой CFADS неположителен. / monthly&#95;history |
+
+#### Основания ручного рассмотрения
+
+| Порядок / ID / название | Активно | Условие | Проверки / после критерия | Код / сообщение / поля |
+|---|---|---|---|---|
+| 1 / UNEXPLAINED&#95;DIFFERENCE / Необъяснённое расхождение источников превышает 5% поступлений. | true | ALL(receipts&#95;rub GT 0, unexplained&#95;difference&#95;ratio GT 0.05, unexplained&#95;difference&#95;ratio LE 0.1) |  /  | UNEXPLAINED&#95;DIFFERENCE / Необъяснённое расхождение источников превышает 5% поступлений. / evidence.unexplained&#95;difference&#95;rub |
+| 2 / NONSTANDARD&#95;PURPOSE / Заявлена цель, отличная от развития бизнеса. | true | purpose&#95;is&#95;business&#95;development EQ false |  /  | NONSTANDARD&#95;PURPOSE / Заявлена цель, отличная от развития бизнеса. / credit&#95;request.purpose |
+| 3 / NO&#95;UNCOVERED&#95;NEED / Подтверждённая потребность полностью покрыта собственным вкладом. | true | confirmed&#95;cost&#95;rub LE own&#95;contribution&#95;rub |  /  | NO&#95;UNCOVERED&#95;NEED / Подтверждённая потребность полностью покрыта собственным вкладом. / need |
+| 4 / INSUFFICIENT&#95;FREE&#95;CASH / Свободные деньги ниже необходимого минимального остатка. | true | free&#95;after&#95;own&#95;contribution&#95;rub LT minimum&#95;required&#95;rub |  /  | INSUFFICIENT&#95;FREE&#95;CASH / Свободные деньги ниже необходимого минимального остатка. / cash |
+| 5 / NO&#95;CREDIT&#95;HISTORY / Нет подтверждённой кредитной истории. | true | credit&#95;history&#95;months EQ 0 |  /  | NO&#95;CREDIT&#95;HISTORY / Нет подтверждённой кредитной истории. / scoring.ip.credit&#95;history&#95;months |
+| 6 / BUSINESS&#95;AGE&#95;UNDER&#95;12&#95;MONTHS / Бизнес действует менее 12 месяцев. | true | business&#95;age&#95;months LT 12 |  /  | BUSINESS&#95;AGE&#95;UNDER&#95;12&#95;MONTHS / Бизнес действует менее 12 месяцев. / scoring.ip.business&#95;age&#95;months |
+| 7 / CURRENT&#95;DPD&#95;1&#95;29 / Текущая просрочка составляет от 1 до 29 дней. | true | ALL(current&#95;dpd&#95;days GT 0, current&#95;dpd&#95;days LT 30) |  /  | CURRENT&#95;DPD&#95;1&#95;29 / Текущая просрочка составляет от 1 до 29 дней. / scoring.ip.current&#95;dpd&#95;days |
+| 8 / MANY&#95;CREDIT&#95;APPLICATIONS / За 90 дней было не менее восьми кредитных обращений. | true | applications&#95;90d GE 8 |  /  | MANY&#95;CREDIT&#95;APPLICATIONS / За 90 дней было не менее восьми кредитных обращений. / scoring.ip.applications&#95;90d |
+| 9 / MATERIAL&#95;ACCOUNT&#95;RESTRICTION / Подтверждено существенное ограничение банковского счёта. | true | material&#95;account&#95;restriction EQ true |  /  | MATERIAL&#95;ACCOUNT&#95;RESTRICTION / Подтверждено существенное ограничение банковского счёта. / scoring.ip.material&#95;account&#95;restriction |
+| 10 / MATERIAL&#95;DISPUTE&#95;OR&#95;ENFORCEMENT / Подтверждён существенный спор или исполнительное взыскание. | true | material&#95;dispute&#95;or&#95;enforcement EQ true |  /  | MATERIAL&#95;DISPUTE&#95;OR&#95;ENFORCEMENT / Подтверждён существенный спор или исполнительное взыскание. / scoring.ip.material&#95;dispute&#95;or&#95;enforcement |
+| 11 / KEY&#95;BUYER&#95;LOSS / Подтверждена потеря ключевого покупателя. | true | key&#95;buyer&#95;loss EQ true |  /  | KEY&#95;BUYER&#95;LOSS / Подтверждена потеря ключевого покупателя. / scoring.ip.key&#95;buyer&#95;loss |
+| 12 / STRUCTURAL&#95;BUSINESS&#95;CHANGE / Подтверждено существенное структурное изменение бизнеса. | true | structural&#95;business&#95;change EQ true |  /  | STRUCTURAL&#95;BUSINESS&#95;CHANGE / Подтверждено существенное структурное изменение бизнеса. / scoring.ip.structural&#95;business&#95;change |
+| 13 / OVERDUE&#95;TAXES&#95;OVER&#95;10&#95;PERCENT&#95;CFADS / Просроченные налоги превышают 10% годового CFADS. | true | taxes&#95;cfads&#95;ratio GT 0.1 |  /  | OVERDUE&#95;TAXES&#95;OVER&#95;10&#95;PERCENT&#95;CFADS / Просроченные налоги превышают 10% годового CFADS. / scoring.ip.overdue&#95;taxes&#95;rub |
+| 14 / FEWER&#95;THAN&#95;8&#95;POSITIVE&#95;CFADS&#95;MONTHS / Положительный CFADS получен менее чем в восьми месяцах. | true | positive&#95;cfads&#95;months LT 8 |  /  | FEWER&#95;THAN&#95;8&#95;POSITIVE&#95;CFADS&#95;MONTHS / Положительный CFADS получен менее чем в восьми месяцах. / monthly&#95;history |
+
+#### Классы после единственного half-up округления
+
+| Класс | От (включительно) | До (включительно) |
+|---|---|---|
+| D | 0 | 549 |
+| C | 550 | 649 |
+| B | 650 | 799 |
+| A | 800 | 1000 |
+
+### legal-v2 — Скоринг ЮЛ v2
+
+| Свойство | Значение |
+|---|---|
+| ID | legal |
+| Тип заёмщика | LEGAL&#95;ENTITY |
+| Версия модели | legal-v2 |
+| Версия схемы поставщика |  |
+| SHA256 определения | 7c15147cf700c3586d658af2d680dba13207e25bd49d08a6d5738f776ef3748c |
+| SHA256 схемы поставщика |  |
+| Описание | Перенос утверждённой модели 750 + 250. Новых весов, порогов и финансовых формул нет. |
+
+#### Параметры и обязательность
+
+| ID / название | Активен | Источник / JSON | Тип / единица / область | Обязателен / условие | Зависимости |
+|---|---|---|---|---|---|
+| business&#95;age&#95;months / Сколько месяцев работает действующий бизнес организации? | true | APPLICATION:scoring.legal&#95;entity.business&#95;age&#95;months / business&#95;age&#95;months | NUMBER / MONTHS / integer/int64 &#91;0, +∞) | true |  |
+| credit&#95;history&#95;months / Какова длительность подтверждённой кредитной истории организации, месяцев? | true | APPLICATION:scoring.legal&#95;entity.credit&#95;history&#95;months / credit&#95;history&#95;months | NUMBER / MONTHS / integer/int64 &#91;0, +∞) | true |  |
+| worst&#95;repaid&#95;dpd&#95;days&#95;24m / Какова худшая погашенная просрочка организации за 24 месяца, дней? | true | APPLICATION:scoring.legal&#95;entity.worst&#95;repaid&#95;dpd&#95;days&#95;24m / worst&#95;repaid&#95;dpd&#95;days&#95;24m | NUMBER / DAYS / integer/int64 &#91;0, +∞) | true |  |
+| current&#95;dpd&#95;days / Какова текущая просрочка организации, дней? | true | APPLICATION:scoring.legal&#95;entity.current&#95;dpd&#95;days / current&#95;dpd&#95;days | NUMBER / DAYS / integer/int64 &#91;0, +∞) | true |  |
+| applications&#95;90d / Сколько фактических кредитных обращений организации было за 90 дней? | true | APPLICATION:scoring.legal&#95;entity.applications&#95;90d / applications&#95;90d | NUMBER / COUNT / integer/int64 &#91;0, +∞) | true |  |
+| manager&#95;experience&#95;years / Каков профильный опыт руководителя в данном направлении, полных лет? | true | APPLICATION:scoring.legal&#95;entity.manager&#95;experience&#95;years / manager&#95;experience&#95;years | NUMBER / YEARS / integer/int64 &#91;0, +∞) | true |  |
+| overdue&#95;taxes&#95;rub / Какова подтверждённая просроченная налоговая задолженность, руб.? Начисления до срока уплаты и действующие отсрочки не включаются. | true | APPLICATION:scoring.legal&#95;entity.overdue&#95;taxes&#95;rub / overdue&#95;taxes&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| report&#95;verification&#95;level / Каков уровень подтверждения бухгалтерской отчётности? | true | APPLICATION:scoring.legal&#95;entity.report&#95;verification&#95;level / report&#95;verification&#95;level | NUMBER / COUNT / integer/int64 &#91;0, 3&#93; | true |  |
+| bank&#95;relationship&#95;months / Сколько месяцев организация обслуживается в банке, рассматривающем заявку? | true | APPLICATION:scoring.legal&#95;entity.bank&#95;relationship&#95;months / bank&#95;relationship&#95;months | NUMBER / MONTHS / integer/int64 &#91;0, +∞) | true |  |
+| organization&#95;and&#95;related&#95;debts&#95;complete / Проверены ли состав группы и все финансовые / связанные обязательства? | true | APPLICATION:scoring.legal&#95;entity.organization&#95;and&#95;related&#95;debts&#95;complete / organization&#95;and&#95;related&#95;debts&#95;complete | BOOLEAN / BOOLEAN / true / false | true |  |
+| material&#95;register&#95;inaccuracy / Подтверждена ли существенная недостоверность сведений ЕГРЮЛ? | true | APPLICATION:scoring.legal&#95;entity.material&#95;register&#95;inaccuracy / material&#95;register&#95;inaccuracy | BOOLEAN / BOOLEAN / true / false | true |  |
+| auditor&#95;opinion / Каково состояние аудиторского заключения? | true | APPLICATION:scoring.legal&#95;entity.auditor&#95;opinion / auditor&#95;opinion | STRING / CATEGORY / UNMODIFIED, NOT&#95;REQUIRED, MATERIAL&#95;MODIFICATION, REQUIRED&#95;MISSING | true |  |
+| need&#95;evidence / Чем подтверждена финансируемая потребность? | true | APPLICATION:scoring.legal&#95;entity.need&#95;evidence / need&#95;evidence | STRING / CATEGORY / CONTRACT&#95;AND&#95;COST, VERIFIED&#95;ESTIMATE, ORAL&#95;ONLY | true |  |
+| operating&#95;nonfinancial&#95;company / Организация — действующая нефинансовая операционная компания? | true | APPLICATION:scoring.legal&#95;entity.operating&#95;nonfinancial&#95;company / operating&#95;nonfinancial&#95;company | BOOLEAN / BOOLEAN / true / false | true |  |
+| liquidated&#95;or&#95;excluded / liquidated&#95;or&#95;excluded | true | APPLICATION:scoring.legal&#95;entity.liquidated&#95;or&#95;excluded / liquidated&#95;or&#95;excluded | BOOLEAN / BOOLEAN / true / false | true |  |
+| active / active | true | APPLICATION:scoring.legal&#95;entity.active / active | BOOLEAN / BOOLEAN / true / false | true |  |
+| bankrupt / bankrupt | true | APPLICATION:scoring.legal&#95;entity.bankrupt / bankrupt | BOOLEAN / BOOLEAN / true / false | true |  |
+| material&#95;forgery / material&#95;forgery | true | APPLICATION:scoring.legal&#95;entity.material&#95;forgery / material&#95;forgery | BOOLEAN / BOOLEAN / true / false | true |  |
+| credit&#95;prohibited / credit&#95;prohibited | true | APPLICATION:scoring.legal&#95;entity.credit&#95;prohibited / credit&#95;prohibited | BOOLEAN / BOOLEAN / true / false | true |  |
+| identity&#95;and&#95;authority&#95;verified / identity&#95;and&#95;authority&#95;verified | true | APPLICATION:scoring.legal&#95;entity.identity&#95;and&#95;authority&#95;verified / identity&#95;and&#95;authority&#95;verified | BOOLEAN / BOOLEAN / true / false | true |  |
+| consents&#95;verified / consents&#95;verified | true | APPLICATION:scoring.legal&#95;entity.consents&#95;verified / consents&#95;verified | BOOLEAN / BOOLEAN / true / false | true |  |
+| bureau&#95;received / bureau&#95;received | true | APPLICATION:scoring.legal&#95;entity.bureau&#95;received / bureau&#95;received | BOOLEAN / BOOLEAN / true / false | true |  |
+| debts&#95;complete / debts&#95;complete | true | APPLICATION:scoring.legal&#95;entity.debts&#95;complete / debts&#95;complete | BOOLEAN / BOOLEAN / true / false | true |  |
+| documents&#95;complete / Полон ли обязательный комплект финансовых документов? | true | APPLICATION:scoring.legal&#95;entity.documents&#95;complete / documents&#95;complete | BOOLEAN / BOOLEAN / true / false | true |  |
+| free&#95;cash&#95;source&#95;verified / Подтверждён ли источник свободных денег организации? | true | APPLICATION:scoring.legal&#95;entity.free&#95;cash&#95;source&#95;verified / free&#95;cash&#95;source&#95;verified | BOOLEAN / BOOLEAN / true / false | true |  |
+| material&#95;account&#95;restriction / Есть ли существенное ограничение банковского счёта? | true | APPLICATION:scoring.legal&#95;entity.material&#95;account&#95;restriction / material&#95;account&#95;restriction | BOOLEAN / BOOLEAN / true / false | true |  |
+| material&#95;dispute&#95;or&#95;enforcement / Есть ли существенный спор или исполнительное взыскание? | true | APPLICATION:scoring.legal&#95;entity.material&#95;dispute&#95;or&#95;enforcement / material&#95;dispute&#95;or&#95;enforcement | BOOLEAN / BOOLEAN / true / false | true |  |
+| key&#95;buyer&#95;loss / Потерян ли ключевой покупатель? | true | APPLICATION:scoring.legal&#95;entity.key&#95;buyer&#95;loss / key&#95;buyer&#95;loss | BOOLEAN / BOOLEAN / true / false | true |  |
+| structural&#95;business&#95;change / Есть ли существенное структурное изменение бизнеса? | true | APPLICATION:scoring.legal&#95;entity.structural&#95;business&#95;change / structural&#95;business&#95;change | BOOLEAN / BOOLEAN / true / false | true |  |
+| amount&#95;rub / amount&#95;rub | true | APPLICATION:credit&#95;request.amount&#95;rub / amount&#95;rub | NUMBER / RUB / integer/int64 (0, +∞) | true |  |
+| term&#95;months / term&#95;months | true | APPLICATION:credit&#95;request.term&#95;months / term&#95;months | NUMBER / MONTHS / integer/int64 (0, +∞) | true |  |
+| max&#95;annual&#95;rate / max&#95;annual&#95;rate | true | APPLICATION:credit&#95;request.max&#95;annual&#95;rate / max&#95;annual&#95;rate | NUMBER / PERCENT / number &#91;0, 100&#93; | true |  |
+| min&#95;acceptable&#95;amount&#95;rub / min&#95;acceptable&#95;amount&#95;rub | true | APPLICATION:credit&#95;request.min&#95;acceptable&#95;amount&#95;rub / min&#95;acceptable&#95;amount&#95;rub | NUMBER / RUB / integer/int64 (0, +∞) | true |  |
+| max&#95;acceptable&#95;term&#95;months / max&#95;acceptable&#95;term&#95;months | true | APPLICATION:credit&#95;request.max&#95;acceptable&#95;term&#95;months / max&#95;acceptable&#95;term&#95;months | NUMBER / MONTHS / integer/int64 (0, +∞) | true |  |
+| confirmed&#95;cost&#95;rub / confirmed&#95;cost&#95;rub | true | APPLICATION:need.confirmed&#95;cost&#95;rub / confirmed&#95;cost&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| own&#95;contribution&#95;rub / own&#95;contribution&#95;rub | true | APPLICATION:need.own&#95;contribution&#95;rub / own&#95;contribution&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| free&#95;after&#95;own&#95;contribution&#95;rub / free&#95;after&#95;own&#95;contribution&#95;rub | true | APPLICATION:cash.free&#95;after&#95;own&#95;contribution&#95;rub / free&#95;after&#95;own&#95;contribution&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| minimum&#95;required&#95;rub / minimum&#95;required&#95;rub | true | APPLICATION:cash.minimum&#95;required&#95;rub / minimum&#95;required&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| confirmed&#95;receipts&#95;rub / confirmed&#95;receipts&#95;rub | true | APPLICATION:evidence.confirmed&#95;receipts&#95;rub / confirmed&#95;receipts&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| unexplained&#95;difference&#95;rub / unexplained&#95;difference&#95;rub | true | APPLICATION:evidence.unexplained&#95;difference&#95;rub / unexplained&#95;difference&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| largest&#95;buyer&#95;group&#95;receipts&#95;rub / largest&#95;buyer&#95;group&#95;receipts&#95;rub | true | APPLICATION:evidence.largest&#95;buyer&#95;group&#95;receipts&#95;rub / largest&#95;buyer&#95;group&#95;receipts&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | false |  |
+| financial&#95;debt&#95;rub / financial&#95;debt&#95;rub | true | APPLICATION:financial&#95;debt&#95;rub / financial&#95;debt&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| borrower&#95;name&#95;present / borrower&#95;name&#95;present | true | COMPUTED:prepared.borrower&#95;name&#95;present / borrower&#95;name&#95;present | BOOLEAN / BOOLEAN / true / false | false |  |
+| borrower&#95;inn&#95;present / borrower&#95;inn&#95;present | true | COMPUTED:prepared.borrower&#95;inn&#95;present / borrower&#95;inn&#95;present | BOOLEAN / BOOLEAN / true / false | false |  |
+| purpose&#95;present / purpose&#95;present | true | COMPUTED:prepared.purpose&#95;present / purpose&#95;present | BOOLEAN / BOOLEAN / true / false | false |  |
+| purpose&#95;is&#95;business&#95;development / purpose&#95;is&#95;business&#95;development | true | COMPUTED:prepared.purpose&#95;is&#95;business&#95;development / purpose&#95;is&#95;business&#95;development | BOOLEAN / BOOLEAN / true / false | false |  |
+| history&#95;complete / history&#95;complete | true | COMPUTED:prepared.history&#95;complete / history&#95;complete | BOOLEAN / BOOLEAN / true / false | false |  |
+| future&#95;complete / future&#95;complete | true | COMPUTED:prepared.future&#95;complete / future&#95;complete | BOOLEAN / BOOLEAN / true / false | false |  |
+| debt&#95;schedule&#95;consistent / debt&#95;schedule&#95;consistent | true | COMPUTED:prepared.debt&#95;schedule&#95;consistent / debt&#95;schedule&#95;consistent | BOOLEAN / BOOLEAN / true / false | false |  |
+| facts&#95;age&#95;days / facts&#95;age&#95;days | true | COMPUTED:prepared.facts&#95;age&#95;days / facts&#95;age&#95;days | NUMBER / DAYS / number (−∞, +∞) | false |  |
+| receipts&#95;rub / receipts&#95;rub | true | COMPUTED:prepared.receipts&#95;rub / receipts&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | false |  |
+| cfads&#95;rub / cfads&#95;rub | true | COMPUTED:prepared.cfads&#95;rub / cfads&#95;rub | NUMBER / RUB / integer/int64 (−∞, +∞) | false |  |
+| variable&#95;rub / variable&#95;rub | true | COMPUTED:prepared.variable&#95;rub / variable&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | false |  |
+| fixed&#95;rub / fixed&#95;rub | true | COMPUTED:prepared.fixed&#95;rub / fixed&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | false |  |
+| historical&#95;debt&#95;rub / historical&#95;debt&#95;rub | true | COMPUTED:prepared.historical&#95;debt&#95;rub / historical&#95;debt&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | false |  |
+| annual&#95;required&#95;rub / annual&#95;required&#95;rub | true | COMPUTED:prepared.annual&#95;required&#95;rub / annual&#95;required&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | false |  |
+| previous&#95;quarter&#95;receipts&#95;rub / previous&#95;quarter&#95;receipts&#95;rub | true | COMPUTED:prepared.previous&#95;quarter&#95;receipts&#95;rub / previous&#95;quarter&#95;receipts&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | false |  |
+| recent&#95;quarter&#95;receipts&#95;rub / recent&#95;quarter&#95;receipts&#95;rub | true | COMPUTED:prepared.recent&#95;quarter&#95;receipts&#95;rub / recent&#95;quarter&#95;receipts&#95;rub | NUMBER / RUB / integer/int64 &#91;0, +∞) | false |  |
+| monthly&#95;required&#95;rub / monthly&#95;required&#95;rub | true | COMPUTED:prepared.monthly&#95;required&#95;rub / monthly&#95;required&#95;rub | NUMBER / RUB / number &#91;0, +∞) | false | annual&#95;required&#95;rub |
+| positive&#95;cfads&#95;months / positive&#95;cfads&#95;months | true | COMPUTED:prepared.positive&#95;cfads&#95;months / positive&#95;cfads&#95;months | NUMBER / MONTHS / integer/int64 &#91;0, +∞) | false |  |
+| confirmed&#95;receipts&#95;ratio / confirmed&#95;receipts&#95;ratio | true | COMPUTED:prepared.confirmed&#95;receipts&#95;ratio / confirmed&#95;receipts&#95;ratio | NUMBER / RATIO / number &#91;0, +∞) | false | receipts&#95;rub, confirmed&#95;receipts&#95;rub |
+| unexplained&#95;difference&#95;ratio / unexplained&#95;difference&#95;ratio | true | COMPUTED:prepared.unexplained&#95;difference&#95;ratio / unexplained&#95;difference&#95;ratio | NUMBER / RATIO / number &#91;0, +∞) | false | receipts&#95;rub, unexplained&#95;difference&#95;rub |
+| taxes&#95;cfads&#95;ratio / taxes&#95;cfads&#95;ratio | true | COMPUTED:prepared.taxes&#95;cfads&#95;ratio / taxes&#95;cfads&#95;ratio | NUMBER / RATIO / number &#91;0, +∞) | false | cfads&#95;rub, overdue&#95;taxes&#95;rub |
+| statements&#95;complete / statements&#95;complete | true | COMPUTED:prepared.statements&#95;complete / statements&#95;complete | BOOLEAN / BOOLEAN / true / false | false |  |
+| current&#95;non&#95;current&#95;assets / current&#95;non&#95;current&#95;assets | true | STATEMENTS:current.balance.non&#95;current&#95;assets / non&#95;current&#95;assets | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| current&#95;inventories / current&#95;inventories | true | STATEMENTS:current.balance.inventories / inventories | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| current&#95;receivables / current&#95;receivables | true | STATEMENTS:current.balance.receivables / receivables | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| current&#95;short&#95;term&#95;investments / current&#95;short&#95;term&#95;investments | true | STATEMENTS:current.balance.short&#95;term&#95;investments / short&#95;term&#95;investments | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| current&#95;cash / current&#95;cash | true | STATEMENTS:current.balance.cash / cash | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| current&#95;current&#95;assets / current&#95;current&#95;assets | true | STATEMENTS:current.balance.current&#95;assets / current&#95;assets | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| current&#95;total&#95;assets / current&#95;total&#95;assets | true | STATEMENTS:current.balance.total&#95;assets / total&#95;assets | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| current&#95;equity / current&#95;equity | true | STATEMENTS:current.balance.equity / equity | NUMBER / RUB / integer/int64 (−∞, +∞) | true |  |
+| current&#95;long&#95;term&#95;borrowings / current&#95;long&#95;term&#95;borrowings | true | STATEMENTS:current.balance.long&#95;term&#95;borrowings / long&#95;term&#95;borrowings | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| current&#95;long&#95;term&#95;liabilities / current&#95;long&#95;term&#95;liabilities | true | STATEMENTS:current.balance.long&#95;term&#95;liabilities / long&#95;term&#95;liabilities | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| current&#95;short&#95;term&#95;borrowings / current&#95;short&#95;term&#95;borrowings | true | STATEMENTS:current.balance.short&#95;term&#95;borrowings / short&#95;term&#95;borrowings | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| current&#95;current&#95;liabilities / current&#95;current&#95;liabilities | true | STATEMENTS:current.balance.current&#95;liabilities / current&#95;liabilities | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| current&#95;revenue / current&#95;revenue | true | STATEMENTS:current.profit&#95;and&#95;loss.revenue / revenue | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| current&#95;cost&#95;of&#95;sales / current&#95;cost&#95;of&#95;sales | true | STATEMENTS:current.profit&#95;and&#95;loss.cost&#95;of&#95;sales / cost&#95;of&#95;sales | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| current&#95;sales&#95;profit / current&#95;sales&#95;profit | true | STATEMENTS:current.profit&#95;and&#95;loss.sales&#95;profit / sales&#95;profit | NUMBER / RUB / integer/int64 (−∞, +∞) | true |  |
+| current&#95;interest&#95;payable / current&#95;interest&#95;payable | true | STATEMENTS:current.profit&#95;and&#95;loss.interest&#95;payable / interest&#95;payable | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| current&#95;net&#95;profit / current&#95;net&#95;profit | true | STATEMENTS:current.profit&#95;and&#95;loss.net&#95;profit / net&#95;profit | NUMBER / RUB / integer/int64 (−∞, +∞) | true |  |
+| previous&#95;non&#95;current&#95;assets / previous&#95;non&#95;current&#95;assets | true | STATEMENTS:previous.balance.non&#95;current&#95;assets / non&#95;current&#95;assets | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| previous&#95;inventories / previous&#95;inventories | true | STATEMENTS:previous.balance.inventories / inventories | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| previous&#95;receivables / previous&#95;receivables | true | STATEMENTS:previous.balance.receivables / receivables | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| previous&#95;short&#95;term&#95;investments / previous&#95;short&#95;term&#95;investments | true | STATEMENTS:previous.balance.short&#95;term&#95;investments / short&#95;term&#95;investments | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| previous&#95;cash / previous&#95;cash | true | STATEMENTS:previous.balance.cash / cash | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| previous&#95;current&#95;assets / previous&#95;current&#95;assets | true | STATEMENTS:previous.balance.current&#95;assets / current&#95;assets | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| previous&#95;total&#95;assets / previous&#95;total&#95;assets | true | STATEMENTS:previous.balance.total&#95;assets / total&#95;assets | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| previous&#95;equity / previous&#95;equity | true | STATEMENTS:previous.balance.equity / equity | NUMBER / RUB / integer/int64 (−∞, +∞) | true |  |
+| previous&#95;long&#95;term&#95;borrowings / previous&#95;long&#95;term&#95;borrowings | true | STATEMENTS:previous.balance.long&#95;term&#95;borrowings / long&#95;term&#95;borrowings | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| previous&#95;long&#95;term&#95;liabilities / previous&#95;long&#95;term&#95;liabilities | true | STATEMENTS:previous.balance.long&#95;term&#95;liabilities / long&#95;term&#95;liabilities | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| previous&#95;short&#95;term&#95;borrowings / previous&#95;short&#95;term&#95;borrowings | true | STATEMENTS:previous.balance.short&#95;term&#95;borrowings / short&#95;term&#95;borrowings | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| previous&#95;current&#95;liabilities / previous&#95;current&#95;liabilities | true | STATEMENTS:previous.balance.current&#95;liabilities / current&#95;liabilities | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| previous&#95;revenue / previous&#95;revenue | true | STATEMENTS:previous.profit&#95;and&#95;loss.revenue / revenue | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| previous&#95;cost&#95;of&#95;sales / previous&#95;cost&#95;of&#95;sales | true | STATEMENTS:previous.profit&#95;and&#95;loss.cost&#95;of&#95;sales / cost&#95;of&#95;sales | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| previous&#95;sales&#95;profit / previous&#95;sales&#95;profit | true | STATEMENTS:previous.profit&#95;and&#95;loss.sales&#95;profit / sales&#95;profit | NUMBER / RUB / integer/int64 (−∞, +∞) | true |  |
+| previous&#95;interest&#95;payable / previous&#95;interest&#95;payable | true | STATEMENTS:previous.profit&#95;and&#95;loss.interest&#95;payable / interest&#95;payable | NUMBER / RUB / integer/int64 &#91;0, +∞) | true |  |
+| previous&#95;net&#95;profit / previous&#95;net&#95;profit | true | STATEMENTS:previous.profit&#95;and&#95;loss.net&#95;profit / net&#95;profit | NUMBER / RUB / integer/int64 (−∞, +∞) | true |  |
+| average&#95;total&#95;assets / average&#95;total&#95;assets | true | COMPUTED:prepared.average&#95;total&#95;assets / average&#95;total&#95;assets | NUMBER / RUB / number &#91;0, +∞) | false | current&#95;total&#95;assets, previous&#95;total&#95;assets |
+| average&#95;equity / average&#95;equity | true | COMPUTED:prepared.average&#95;equity / average&#95;equity | NUMBER / RUB / number (−∞, +∞) | false | current&#95;equity, previous&#95;equity |
+| average&#95;receivables / average&#95;receivables | true | COMPUTED:prepared.average&#95;receivables / average&#95;receivables | NUMBER / RUB / number &#91;0, +∞) | false | current&#95;receivables, previous&#95;receivables |
+| average&#95;inventories / average&#95;inventories | true | COMPUTED:prepared.average&#95;inventories / average&#95;inventories | NUMBER / RUB / number &#91;0, +∞) | false | current&#95;inventories, previous&#95;inventories |
+| financial&#95;borrowings&#95;rub / financial&#95;borrowings&#95;rub | true | COMPUTED:prepared.financial&#95;borrowings&#95;rub / financial&#95;borrowings&#95;rub | NUMBER / RUB / number &#91;0, +∞) | false | current&#95;long&#95;term&#95;borrowings, current&#95;short&#95;term&#95;borrowings |
+| le&#95;e01 / Текущая ликвидность | true | COMPUTED:prepared.le&#95;e01 / le&#95;e01 | NUMBER / RATIO / number (−∞, +∞) | false | current&#95;current&#95;assets, current&#95;current&#95;liabilities |
+| le&#95;e02 / Быстрая ликвидность | true | COMPUTED:prepared.le&#95;e02 / le&#95;e02 | NUMBER / RATIO / number (−∞, +∞) | false | current&#95;receivables, current&#95;short&#95;term&#95;investments, current&#95;cash, current&#95;current&#95;liabilities |
+| le&#95;e03 / Абсолютная ликвидность | true | COMPUTED:prepared.le&#95;e03 / le&#95;e03 | NUMBER / RATIO / number (−∞, +∞) | false | current&#95;short&#95;term&#95;investments, current&#95;cash, current&#95;current&#95;liabilities |
+| le&#95;e04 / Автономия / финансовая независимость | true | COMPUTED:prepared.le&#95;e04 / le&#95;e04 | NUMBER / RATIO / number (−∞, +∞) | false | current&#95;equity, current&#95;total&#95;assets |
+| le&#95;e05 / Финансовая устойчивость | true | COMPUTED:prepared.le&#95;e05 / le&#95;e05 | NUMBER / RATIO / number (−∞, +∞) | false | current&#95;equity, current&#95;long&#95;term&#95;liabilities, current&#95;total&#95;assets |
+| le&#95;e06 / Обеспеченность собственными оборотными средствами | true | COMPUTED:prepared.le&#95;e06 / le&#95;e06 | NUMBER / RATIO / number (−∞, +∞) | false | current&#95;equity, current&#95;non&#95;current&#95;assets, current&#95;current&#95;assets |
+| le&#95;e07 / Чистый финансовый долг / прибыль от продаж | true | COMPUTED:prepared.le&#95;e07 / le&#95;e07 | NUMBER / RATIO / number (−∞, +∞) | false | current&#95;long&#95;term&#95;borrowings, current&#95;short&#95;term&#95;borrowings, current&#95;short&#95;term&#95;investments, current&#95;cash, current&#95;sales&#95;profit |
+| le&#95;e08 / Покрытие процентов | true | COMPUTED:prepared.le&#95;e08 / le&#95;e08 | NUMBER / RATIO / number (−∞, +∞) | false | current&#95;sales&#95;profit, current&#95;interest&#95;payable |
+| le&#95;e09 / Доля краткосрочного финансового долга | true | COMPUTED:prepared.le&#95;e09 / le&#95;e09 | NUMBER / RATIO / number (−∞, +∞) | false | current&#95;short&#95;term&#95;borrowings, financial&#95;borrowings&#95;rub |
+| le&#95;e10 / Валовая рентабельность | true | COMPUTED:prepared.le&#95;e10 / le&#95;e10 | NUMBER / RATIO / number (−∞, +∞) | false | current&#95;revenue, current&#95;cost&#95;of&#95;sales |
+| le&#95;e11 / Рентабельность продаж | true | COMPUTED:prepared.le&#95;e11 / le&#95;e11 | NUMBER / RATIO / number (−∞, +∞) | false | current&#95;sales&#95;profit, current&#95;revenue |
+| le&#95;e12 / Чистая рентабельность | true | COMPUTED:prepared.le&#95;e12 / le&#95;e12 | NUMBER / RATIO / number (−∞, +∞) | false | current&#95;net&#95;profit, current&#95;revenue |
+| le&#95;e13 / Рентабельность активов, ROA | true | COMPUTED:prepared.le&#95;e13 / le&#95;e13 | NUMBER / RATIO / number (−∞, +∞) | false | current&#95;net&#95;profit, average&#95;total&#95;assets |
+| le&#95;e14 / Рентабельность капитала, ROE | true | COMPUTED:prepared.le&#95;e14 / le&#95;e14 | NUMBER / RATIO / number (−∞, +∞) | false | current&#95;net&#95;profit, current&#95;equity, average&#95;equity |
+| le&#95;e15 / Рост годовой выручки | true | COMPUTED:prepared.le&#95;e15 / le&#95;e15 | NUMBER / RATIO / number (−∞, +∞) | false | current&#95;revenue, previous&#95;revenue |
+| le&#95;e16 / Оборачиваемость активов | true | COMPUTED:prepared.le&#95;e16 / le&#95;e16 | NUMBER / RATIO / number (−∞, +∞) | false | current&#95;revenue, average&#95;total&#95;assets |
+| le&#95;e17 / Период погашения дебиторки, DSO | true | COMPUTED:prepared.le&#95;e17 / le&#95;e17 | NUMBER / DAYS / number (−∞, +∞) | false | average&#95;receivables, current&#95;revenue |
+| le&#95;e18 / Период оборота запасов, DIO | true | COMPUTED:prepared.le&#95;e18 / le&#95;e18 | NUMBER / DAYS / number (−∞, +∞) | false | average&#95;inventories, current&#95;cost&#95;of&#95;sales |
+
+#### Именованные дополнительные факты поставщика
+
+Эта модель не использует дополнительные факты поставщика; запрос не выполняется.
+
+| JSON / Go-поле | Тип | Единица / область | Бизнес-обязательность | Описание |
+|---|---|---|---|---|
+
+#### Классическая анкета — 750
+
+| Критерий / вопрос | Активен | Параметр значения | Макс. | Применимость / unknown | Представление ответа |
+|---|---|---|---|---|---|
+| LE&#95;Q01 / Сколько месяцев работает действующий бизнес организации? | true | business&#95;age&#95;months | 60 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;business&#95;age&#95;months=${business&#95;age&#95;months}&#34;} |
+| LE&#95;Q02 / Какова длительность подтверждённой кредитной истории организации, месяцев? | true | credit&#95;history&#95;months | 50 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;credit&#95;history&#95;months=${credit&#95;history&#95;months}&#34;} |
+| LE&#95;Q03 / Какова худшая погашенная просрочка организации за 24 месяца, дней? | true | worst&#95;repaid&#95;dpd&#95;days&#95;24m | 100 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;worst&#95;repaid&#95;dpd&#95;days&#95;24m=${worst&#95;repaid&#95;dpd&#95;days&#95;24m}&#34;} |
+| LE&#95;Q04 / Какова текущая просрочка организации, дней? | true | current&#95;dpd&#95;days | 25 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;current&#95;dpd&#95;days=${current&#95;dpd&#95;days}&#34;} |
+| LE&#95;Q05 / Сколько фактических кредитных обращений организации было за 90 дней? | true | applications&#95;90d | 30 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;applications&#95;90d=${applications&#95;90d}&#34;} |
+| LE&#95;Q06 / Каков профильный опыт руководителя в данном направлении, полных лет? | true | manager&#95;experience&#95;years | 35 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;manager&#95;experience&#95;years=${manager&#95;experience&#95;years}&#34;} |
+| LE&#95;Q07 / Какова подтверждённая просроченная налоговая задолженность, руб.? Начисления до срока уплаты и действующие отсрочки не включаются. | true | overdue&#95;taxes&#95;rub | 50 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;overdue&#95;taxes&#95;rub=${overdue&#95;taxes&#95;rub}&#34;} |
+| LE&#95;Q08 / Каков уровень подтверждения бухгалтерской отчётности? | true | report&#95;verification&#95;level | 50 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;report&#95;verification&#95;level=${report&#95;verification&#95;level}&#34;} |
+| LE&#95;Q09 / Сколько месяцев организация обслуживается в банке, рассматривающем заявку? | true | bank&#95;relationship&#95;months | 30 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;bank&#95;relationship&#95;months=${bank&#95;relationship&#95;months}&#34;} |
+| LE&#95;Q10 / Проверены ли состав группы и все финансовые / связанные обязательства? | true | organization&#95;and&#95;related&#95;debts&#95;complete | 30 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;organization&#95;and&#95;related&#95;debts&#95;complete=${organization&#95;and&#95;related&#95;debts&#95;complete}&#34;} |
+| LE&#95;Q11 / Подтверждена ли существенная недостоверность сведений ЕГРЮЛ? | true | material&#95;register&#95;inaccuracy | 30 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;material&#95;register&#95;inaccuracy=${material&#95;register&#95;inaccuracy}&#34;} |
+| LE&#95;Q12 / Каково состояние аудиторского заключения? | true | auditor&#95;opinion | 35 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;auditor&#95;opinion=${auditor&#95;opinion}&#34;} |
+| LE&#95;Q13 / Есть ли существенное ограничение банковского счёта? | true | material&#95;account&#95;restriction | 35 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;material&#95;account&#95;restriction=${material&#95;account&#95;restriction}&#34;} |
+| LE&#95;Q14 / Есть ли существенный спор или исполнительное взыскание? | true | material&#95;dispute&#95;or&#95;enforcement | 35 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;material&#95;dispute&#95;or&#95;enforcement=${material&#95;dispute&#95;or&#95;enforcement}&#34;} |
+| LE&#95;Q15 / Потерян ли ключевой покупатель? | true | key&#95;buyer&#95;loss | 30 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;key&#95;buyer&#95;loss=${key&#95;buyer&#95;loss}&#34;} |
+| LE&#95;Q16 / Есть ли существенное структурное изменение бизнеса? | true | structural&#95;business&#95;change | 30 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;structural&#95;business&#95;change=${structural&#95;business&#95;change}&#34;} |
+| LE&#95;Q17 / Чем подтверждена финансируемая потребность? | true | need&#95;evidence | 30 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;need&#95;evidence=${need&#95;evidence}&#34;} |
+| LE&#95;Q18 / Полон ли обязательный комплект финансовых документов? | true | documents&#95;complete | 30 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;documents&#95;complete=${documents&#95;complete}&#34;} |
+| LE&#95;Q19 / Подтверждён ли источник свободных денег организации? | true | free&#95;cash&#95;source&#95;verified | 20 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;free&#95;cash&#95;source&#95;verified=${free&#95;cash&#95;source&#95;verified}&#34;} |
+| LE&#95;Q20 / Организация — действующая нефинансовая операционная компания? | true | operating&#95;nonfinancial&#95;company | 15 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;operating&#95;nonfinancial&#95;company=${operating&#95;nonfinancial&#95;company}&#34;} |
+| LE&#95;Q21 / Указаны ли наименование, ИНН и идентификатор заявки? | true |  | 0 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;CONFIRMED&#34;} |
+| LE&#95;Q22 / Организация действует и не ликвидируется / не исключается из реестра? | true |  | 0 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;CONFIRMED&#34;} |
+| LE&#95;Q23 / Подтверждены ли банкротство, существенная подделка или запрет кредитования? | true |  | 0 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;CONFIRMED&#34;} |
+| LE&#95;Q24 / Проверены ли личность представителя, полномочия и необходимые согласия? | true |  | 0 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;CONFIRMED&#34;} |
+| LE&#95;Q25 / Получены ли актуальные сведения БКИ? | true |  | 0 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;CONFIRMED&#34;} |
+| LE&#95;Q26 / Указаны ли цель, сумма, срок и максимальная ставка клиента? | true |  | 0 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;CONFIRMED&#34;} |
+| LE&#95;Q27 / Актуальны ли текущие факты и проверки? | true |  | 0 | ALWAYS / NEED&#95;INFO | {&#34;template&#34;:&#34;CONFIRMED&#34;} |
+
+| Критерий / случай | Порядок / вид | Условие | Баллы | Значение результата | Ручное основание / описание |
+|---|---|---|---|---|---|
+| LE&#95;Q01 / band&#95;1 | 1 / ORDINARY | business&#95;age&#95;months LT 12 | 0 | Исходное значение |  |
+| LE&#95;Q01 / band&#95;2 | 2 / ORDINARY | ALL(business&#95;age&#95;months LT 24, NOT(ANY(business&#95;age&#95;months LT 12))) | 15 | Исходное значение |  |
+| LE&#95;Q01 / band&#95;3 | 3 / ORDINARY | ALL(business&#95;age&#95;months LT 36, NOT(ANY(business&#95;age&#95;months LT 12, business&#95;age&#95;months LT 24))) | 30 | Исходное значение |  |
+| LE&#95;Q01 / band&#95;4 | 4 / ORDINARY | ALL(business&#95;age&#95;months LT 60, NOT(ANY(business&#95;age&#95;months LT 12, business&#95;age&#95;months LT 24, business&#95;age&#95;months LT 36))) | 45 | Исходное значение |  |
+| LE&#95;Q01 / band&#95;5 | 5 / ORDINARY | NOT(ANY(business&#95;age&#95;months LT 12, business&#95;age&#95;months LT 24, business&#95;age&#95;months LT 36, business&#95;age&#95;months LT 60)) | 60 | Исходное значение |  |
+| LE&#95;Q02 / band&#95;1 | 1 / ORDINARY | credit&#95;history&#95;months EQ 0 | 0 | Исходное значение |  |
+| LE&#95;Q02 / band&#95;2 | 2 / ORDINARY | ALL(credit&#95;history&#95;months LT 6, NOT(ANY(credit&#95;history&#95;months EQ 0))) | 10 | Исходное значение |  |
+| LE&#95;Q02 / band&#95;3 | 3 / ORDINARY | ALL(credit&#95;history&#95;months LT 18, NOT(ANY(credit&#95;history&#95;months EQ 0, credit&#95;history&#95;months LT 6))) | 25 | Исходное значение |  |
+| LE&#95;Q02 / band&#95;4 | 4 / ORDINARY | ALL(credit&#95;history&#95;months LT 36, NOT(ANY(credit&#95;history&#95;months EQ 0, credit&#95;history&#95;months LT 6, credit&#95;history&#95;months LT 18))) | 40 | Исходное значение |  |
+| LE&#95;Q02 / band&#95;5 | 5 / ORDINARY | NOT(ANY(credit&#95;history&#95;months EQ 0, credit&#95;history&#95;months LT 6, credit&#95;history&#95;months LT 18, credit&#95;history&#95;months LT 36)) | 50 | Исходное значение |  |
+| LE&#95;Q03 / band&#95;1 | 1 / ORDINARY | worst&#95;repaid&#95;dpd&#95;days&#95;24m EQ 0 | 100 | Исходное значение |  |
+| LE&#95;Q03 / band&#95;2 | 2 / ORDINARY | ALL(worst&#95;repaid&#95;dpd&#95;days&#95;24m LT 8, NOT(ANY(worst&#95;repaid&#95;dpd&#95;days&#95;24m EQ 0))) | 75 | Исходное значение |  |
+| LE&#95;Q03 / band&#95;3 | 3 / ORDINARY | ALL(worst&#95;repaid&#95;dpd&#95;days&#95;24m LT 30, NOT(ANY(worst&#95;repaid&#95;dpd&#95;days&#95;24m EQ 0, worst&#95;repaid&#95;dpd&#95;days&#95;24m LT 8))) | 50 | Исходное значение |  |
+| LE&#95;Q03 / band&#95;4 | 4 / ORDINARY | ALL(worst&#95;repaid&#95;dpd&#95;days&#95;24m LT 60, NOT(ANY(worst&#95;repaid&#95;dpd&#95;days&#95;24m EQ 0, worst&#95;repaid&#95;dpd&#95;days&#95;24m LT 8, worst&#95;repaid&#95;dpd&#95;days&#95;24m LT 30))) | 25 | Исходное значение |  |
+| LE&#95;Q03 / band&#95;5 | 5 / ORDINARY | NOT(ANY(worst&#95;repaid&#95;dpd&#95;days&#95;24m EQ 0, worst&#95;repaid&#95;dpd&#95;days&#95;24m LT 8, worst&#95;repaid&#95;dpd&#95;days&#95;24m LT 30, worst&#95;repaid&#95;dpd&#95;days&#95;24m LT 60)) | 0 | Исходное значение |  |
+| LE&#95;Q04 / band&#95;1 | 1 / ORDINARY | current&#95;dpd&#95;days EQ 0 | 25 | Исходное значение |  |
+| LE&#95;Q04 / band&#95;2 | 2 / ORDINARY | ALL(current&#95;dpd&#95;days LT 8, NOT(ANY(current&#95;dpd&#95;days EQ 0))) | 15 | Исходное значение |  |
+| LE&#95;Q04 / band&#95;3 | 3 / ORDINARY | ALL(current&#95;dpd&#95;days LT 30, NOT(ANY(current&#95;dpd&#95;days EQ 0, current&#95;dpd&#95;days LT 8))) | 5 | Исходное значение |  |
+| LE&#95;Q04 / band&#95;4 | 4 / ORDINARY | NOT(ANY(current&#95;dpd&#95;days EQ 0, current&#95;dpd&#95;days LT 8, current&#95;dpd&#95;days LT 30)) | 0 | Исходное значение |  |
+| LE&#95;Q05 / band&#95;1 | 1 / ORDINARY | applications&#95;90d EQ 0 | 30 | Исходное значение |  |
+| LE&#95;Q05 / band&#95;2 | 2 / ORDINARY | ALL(applications&#95;90d LT 3, NOT(ANY(applications&#95;90d EQ 0))) | 20 | Исходное значение |  |
+| LE&#95;Q05 / band&#95;3 | 3 / ORDINARY | ALL(applications&#95;90d LT 5, NOT(ANY(applications&#95;90d EQ 0, applications&#95;90d LT 3))) | 15 | Исходное значение |  |
+| LE&#95;Q05 / band&#95;4 | 4 / ORDINARY | ALL(applications&#95;90d LT 8, NOT(ANY(applications&#95;90d EQ 0, applications&#95;90d LT 3, applications&#95;90d LT 5))) | 5 | Исходное значение |  |
+| LE&#95;Q05 / band&#95;5 | 5 / ORDINARY | NOT(ANY(applications&#95;90d EQ 0, applications&#95;90d LT 3, applications&#95;90d LT 5, applications&#95;90d LT 8)) | 0 | Исходное значение |  |
+| LE&#95;Q06 / band&#95;1 | 1 / ORDINARY | manager&#95;experience&#95;years LT 1 | 0 | Исходное значение |  |
+| LE&#95;Q06 / band&#95;2 | 2 / ORDINARY | ALL(manager&#95;experience&#95;years LT 3, NOT(ANY(manager&#95;experience&#95;years LT 1))) | 10 | Исходное значение |  |
+| LE&#95;Q06 / band&#95;3 | 3 / ORDINARY | ALL(manager&#95;experience&#95;years LT 5, NOT(ANY(manager&#95;experience&#95;years LT 1, manager&#95;experience&#95;years LT 3))) | 20 | Исходное значение |  |
+| LE&#95;Q06 / band&#95;4 | 4 / ORDINARY | ALL(manager&#95;experience&#95;years LT 8, NOT(ANY(manager&#95;experience&#95;years LT 1, manager&#95;experience&#95;years LT 3, manager&#95;experience&#95;years LT 5))) | 30 | Исходное значение |  |
+| LE&#95;Q06 / band&#95;5 | 5 / ORDINARY | NOT(ANY(manager&#95;experience&#95;years LT 1, manager&#95;experience&#95;years LT 3, manager&#95;experience&#95;years LT 5, manager&#95;experience&#95;years LT 8)) | 35 | Исходное значение |  |
+| LE&#95;Q07 / band&#95;1 | 1 / ORDINARY | overdue&#95;taxes&#95;rub EQ 0 | 50 | Исходное значение |  |
+| LE&#95;Q07 / band&#95;2 | 2 / ORDINARY | ALL(overdue&#95;taxes&#95;rub LE 100000, NOT(ANY(overdue&#95;taxes&#95;rub EQ 0))) | 35 | Исходное значение |  |
+| LE&#95;Q07 / band&#95;3 | 3 / ORDINARY | ALL(overdue&#95;taxes&#95;rub LE 500000, NOT(ANY(overdue&#95;taxes&#95;rub EQ 0, overdue&#95;taxes&#95;rub LE 100000))) | 15 | Исходное значение |  |
+| LE&#95;Q07 / band&#95;4 | 4 / ORDINARY | NOT(ANY(overdue&#95;taxes&#95;rub EQ 0, overdue&#95;taxes&#95;rub LE 100000, overdue&#95;taxes&#95;rub LE 500000)) | 0 | Исходное значение |  |
+| LE&#95;Q08 / band&#95;1 | 1 / ORDINARY | report&#95;verification&#95;level EQ 0 | 0 | Исходное значение |  |
+| LE&#95;Q08 / band&#95;2 | 2 / ORDINARY | report&#95;verification&#95;level EQ 1 | 15 | Исходное значение |  |
+| LE&#95;Q08 / band&#95;3 | 3 / ORDINARY | report&#95;verification&#95;level EQ 2 | 35 | Исходное значение |  |
+| LE&#95;Q08 / band&#95;4 | 4 / ORDINARY | report&#95;verification&#95;level EQ 3 | 50 | Исходное значение |  |
+| LE&#95;Q09 / band&#95;1 | 1 / ORDINARY | bank&#95;relationship&#95;months EQ 0 | 0 | Исходное значение |  |
+| LE&#95;Q09 / band&#95;2 | 2 / ORDINARY | ALL(bank&#95;relationship&#95;months LT 12, NOT(ANY(bank&#95;relationship&#95;months EQ 0))) | 10 | Исходное значение |  |
+| LE&#95;Q09 / band&#95;3 | 3 / ORDINARY | ALL(bank&#95;relationship&#95;months LT 24, NOT(ANY(bank&#95;relationship&#95;months EQ 0, bank&#95;relationship&#95;months LT 12))) | 20 | Исходное значение |  |
+| LE&#95;Q09 / band&#95;4 | 4 / ORDINARY | NOT(ANY(bank&#95;relationship&#95;months EQ 0, bank&#95;relationship&#95;months LT 12, bank&#95;relationship&#95;months LT 24)) | 30 | Исходное значение |  |
+| LE&#95;Q10 / band&#95;1 | 1 / ORDINARY | organization&#95;and&#95;related&#95;debts&#95;complete EQ true | 30 | Исходное значение |  |
+| LE&#95;Q10 / band&#95;2 | 2 / ORDINARY | organization&#95;and&#95;related&#95;debts&#95;complete EQ false | 0 | Исходное значение |  |
+| LE&#95;Q11 / band&#95;1 | 1 / ORDINARY | material&#95;register&#95;inaccuracy EQ false | 30 | Исходное значение |  |
+| LE&#95;Q11 / band&#95;2 | 2 / ORDINARY | material&#95;register&#95;inaccuracy EQ true | 0 | Исходное значение |  |
+| LE&#95;Q12 / band&#95;1 | 1 / ORDINARY | auditor&#95;opinion EQ &#34;UNMODIFIED&#34; | 35 | Исходное значение |  |
+| LE&#95;Q12 / band&#95;2 | 2 / ORDINARY | auditor&#95;opinion EQ &#34;NOT&#95;REQUIRED&#34; | 35 | Исходное значение |  |
+| LE&#95;Q12 / band&#95;3 | 3 / ORDINARY | auditor&#95;opinion EQ &#34;MATERIAL&#95;MODIFICATION&#34; | 0 | Исходное значение |  |
+| LE&#95;Q12 / band&#95;4 | 4 / ORDINARY | auditor&#95;opinion EQ &#34;REQUIRED&#95;MISSING&#34; | 0 | Исходное значение |  |
+| LE&#95;Q13 / band&#95;1 | 1 / ORDINARY | material&#95;account&#95;restriction EQ false | 35 | Исходное значение |  |
+| LE&#95;Q13 / band&#95;2 | 2 / ORDINARY | material&#95;account&#95;restriction EQ true | 0 | Исходное значение |  |
+| LE&#95;Q14 / band&#95;1 | 1 / ORDINARY | material&#95;dispute&#95;or&#95;enforcement EQ false | 35 | Исходное значение |  |
+| LE&#95;Q14 / band&#95;2 | 2 / ORDINARY | material&#95;dispute&#95;or&#95;enforcement EQ true | 0 | Исходное значение |  |
+| LE&#95;Q15 / band&#95;1 | 1 / ORDINARY | key&#95;buyer&#95;loss EQ false | 30 | Исходное значение |  |
+| LE&#95;Q15 / band&#95;2 | 2 / ORDINARY | key&#95;buyer&#95;loss EQ true | 0 | Исходное значение |  |
+| LE&#95;Q16 / band&#95;1 | 1 / ORDINARY | structural&#95;business&#95;change EQ false | 30 | Исходное значение |  |
+| LE&#95;Q16 / band&#95;2 | 2 / ORDINARY | structural&#95;business&#95;change EQ true | 0 | Исходное значение |  |
+| LE&#95;Q17 / band&#95;1 | 1 / ORDINARY | need&#95;evidence EQ &#34;CONTRACT&#95;AND&#95;COST&#34; | 30 | Исходное значение |  |
+| LE&#95;Q17 / band&#95;2 | 2 / ORDINARY | need&#95;evidence EQ &#34;VERIFIED&#95;ESTIMATE&#34; | 20 | Исходное значение |  |
+| LE&#95;Q17 / band&#95;3 | 3 / ORDINARY | need&#95;evidence EQ &#34;ORAL&#95;ONLY&#34; | 0 | Исходное значение |  |
+| LE&#95;Q18 / band&#95;1 | 1 / ORDINARY | documents&#95;complete EQ true | 30 | Исходное значение |  |
+| LE&#95;Q18 / band&#95;2 | 2 / ORDINARY | documents&#95;complete EQ false | 0 | Исходное значение |  |
+| LE&#95;Q19 / band&#95;1 | 1 / ORDINARY | free&#95;cash&#95;source&#95;verified EQ true | 20 | Исходное значение |  |
+| LE&#95;Q19 / band&#95;2 | 2 / ORDINARY | free&#95;cash&#95;source&#95;verified EQ false | 0 | Исходное значение |  |
+| LE&#95;Q20 / band&#95;1 | 1 / ORDINARY | operating&#95;nonfinancial&#95;company EQ true | 15 | Исходное значение |  |
+| LE&#95;Q20 / band&#95;2 | 2 / ORDINARY | operating&#95;nonfinancial&#95;company EQ false | 0 | Исходное значение |  |
+| LE&#95;Q21 / band&#95;1 | 1 / ORDINARY | ALWAYS | 0 | Исходное значение |  |
+| LE&#95;Q22 / band&#95;1 | 1 / ORDINARY | ALWAYS | 0 | Исходное значение |  |
+| LE&#95;Q23 / band&#95;1 | 1 / ORDINARY | ALWAYS | 0 | Исходное значение |  |
+| LE&#95;Q24 / band&#95;1 | 1 / ORDINARY | ALWAYS | 0 | Исходное значение |  |
+| LE&#95;Q25 / band&#95;1 | 1 / ORDINARY | ALWAYS | 0 | Исходное значение |  |
+| LE&#95;Q26 / band&#95;1 | 1 / ORDINARY | ALWAYS | 0 | Исходное значение |  |
+| LE&#95;Q27 / band&#95;1 | 1 / ORDINARY | ALWAYS | 0 | Исходное значение |  |
+
+#### Дополнительные показатели — 250
+
+| Критерий / вопрос | Активен | Параметр значения | Макс. | Применимость / unknown | Представление ответа |
+|---|---|---|---|---|---|
+| LE&#95;E01 / Текущая ликвидность | true | le&#95;e01 | 20 | ALWAYS / NEED&#95;INFO |  |
+| LE&#95;E02 / Быстрая ликвидность | true | le&#95;e02 | 15 | ALWAYS / NEED&#95;INFO |  |
+| LE&#95;E03 / Абсолютная ликвидность | true | le&#95;e03 | 10 | ALWAYS / NEED&#95;INFO |  |
+| LE&#95;E04 / Автономия / финансовая независимость | true | le&#95;e04 | 25 | ALWAYS / NEED&#95;INFO |  |
+| LE&#95;E05 / Финансовая устойчивость | true | le&#95;e05 | 15 | ALWAYS / NEED&#95;INFO |  |
+| LE&#95;E06 / Обеспеченность собственными оборотными средствами | true | le&#95;e06 | 15 | ALWAYS / NEED&#95;INFO |  |
+| LE&#95;E07 / Чистый финансовый долг / прибыль от продаж | true | le&#95;e07 | 20 | ALWAYS / NEED&#95;INFO |  |
+| LE&#95;E08 / Покрытие процентов | true | le&#95;e08 | 20 | ALWAYS / NEED&#95;INFO |  |
+| LE&#95;E09 / Доля краткосрочного финансового долга | true | le&#95;e09 | 10 | ALWAYS / NEED&#95;INFO |  |
+| LE&#95;E10 / Валовая рентабельность | true | le&#95;e10 | 10 | ALWAYS / NEED&#95;INFO |  |
+| LE&#95;E11 / Рентабельность продаж | true | le&#95;e11 | 15 | ALWAYS / NEED&#95;INFO |  |
+| LE&#95;E12 / Чистая рентабельность | true | le&#95;e12 | 10 | ALWAYS / NEED&#95;INFO |  |
+| LE&#95;E13 / Рентабельность активов, ROA | true | le&#95;e13 | 15 | ALWAYS / NEED&#95;INFO |  |
+| LE&#95;E14 / Рентабельность капитала, ROE | true | le&#95;e14 | 10 | ALWAYS / NEED&#95;INFO |  |
+| LE&#95;E15 / Рост годовой выручки | true | le&#95;e15 | 10 | ALWAYS / NEED&#95;INFO |  |
+| LE&#95;E16 / Оборачиваемость активов | true | le&#95;e16 | 10 | ALWAYS / NEED&#95;INFO |  |
+| LE&#95;E17 / Период погашения дебиторки, DSO | true | le&#95;e17 | 10 | ALWAYS / NEED&#95;INFO |  |
+| LE&#95;E18 / Период оборота запасов, DIO | true | le&#95;e18 | 10 | ALWAYS / NEED&#95;INFO |  |
+
+| Критерий / случай | Порядок / вид | Условие | Баллы | Значение результата | Ручное основание / описание |
+|---|---|---|---|---|---|
+| LE&#95;E01 / special&#95;1 | 1 / SPECIAL | current&#95;current&#95;liabilities EQ 0 | 20 | {&#34;mode&#34;:&#34;NULL&#34;} |  |
+| LE&#95;E01 / band&#95;1 | 1 / ORDINARY | le&#95;e01 LT 0.7 | 0 | Исходное значение |  |
+| LE&#95;E01 / band&#95;2 | 2 / ORDINARY | ALL(le&#95;e01 LT 1, NOT(ANY(le&#95;e01 LT 0.7))) | 5 | Исходное значение |  |
+| LE&#95;E01 / band&#95;3 | 3 / ORDINARY | ALL(le&#95;e01 LT 1.3, NOT(ANY(le&#95;e01 LT 0.7, le&#95;e01 LT 1))) | 10 | Исходное значение |  |
+| LE&#95;E01 / band&#95;4 | 4 / ORDINARY | ALL(le&#95;e01 LT 1.8, NOT(ANY(le&#95;e01 LT 0.7, le&#95;e01 LT 1, le&#95;e01 LT 1.3))) | 15 | Исходное значение |  |
+| LE&#95;E01 / band&#95;5 | 5 / ORDINARY | NOT(ANY(le&#95;e01 LT 0.7, le&#95;e01 LT 1, le&#95;e01 LT 1.3, le&#95;e01 LT 1.8)) | 20 | Исходное значение |  |
+| LE&#95;E02 / special&#95;1 | 1 / SPECIAL | current&#95;current&#95;liabilities EQ 0 | 15 | {&#34;mode&#34;:&#34;NULL&#34;} |  |
+| LE&#95;E02 / band&#95;1 | 1 / ORDINARY | le&#95;e02 LT 0.3 | 0 | Исходное значение |  |
+| LE&#95;E02 / band&#95;2 | 2 / ORDINARY | ALL(le&#95;e02 LT 0.5, NOT(ANY(le&#95;e02 LT 0.3))) | 3.75 | Исходное значение |  |
+| LE&#95;E02 / band&#95;3 | 3 / ORDINARY | ALL(le&#95;e02 LT 0.8, NOT(ANY(le&#95;e02 LT 0.3, le&#95;e02 LT 0.5))) | 7.5 | Исходное значение |  |
+| LE&#95;E02 / band&#95;4 | 4 / ORDINARY | ALL(le&#95;e02 LT 1, NOT(ANY(le&#95;e02 LT 0.3, le&#95;e02 LT 0.5, le&#95;e02 LT 0.8))) | 11.25 | Исходное значение |  |
+| LE&#95;E02 / band&#95;5 | 5 / ORDINARY | NOT(ANY(le&#95;e02 LT 0.3, le&#95;e02 LT 0.5, le&#95;e02 LT 0.8, le&#95;e02 LT 1)) | 15 | Исходное значение |  |
+| LE&#95;E03 / special&#95;1 | 1 / SPECIAL | current&#95;current&#95;liabilities EQ 0 | 10 | {&#34;mode&#34;:&#34;NULL&#34;} |  |
+| LE&#95;E03 / band&#95;1 | 1 / ORDINARY | le&#95;e03 LT 0.05 | 0 | Исходное значение |  |
+| LE&#95;E03 / band&#95;2 | 2 / ORDINARY | ALL(le&#95;e03 LT 0.1, NOT(ANY(le&#95;e03 LT 0.05))) | 2.5 | Исходное значение |  |
+| LE&#95;E03 / band&#95;3 | 3 / ORDINARY | ALL(le&#95;e03 LT 0.2, NOT(ANY(le&#95;e03 LT 0.05, le&#95;e03 LT 0.1))) | 5 | Исходное значение |  |
+| LE&#95;E03 / band&#95;4 | 4 / ORDINARY | ALL(le&#95;e03 LT 0.3, NOT(ANY(le&#95;e03 LT 0.05, le&#95;e03 LT 0.1, le&#95;e03 LT 0.2))) | 7.5 | Исходное значение |  |
+| LE&#95;E03 / band&#95;5 | 5 / ORDINARY | NOT(ANY(le&#95;e03 LT 0.05, le&#95;e03 LT 0.1, le&#95;e03 LT 0.2, le&#95;e03 LT 0.3)) | 10 | Исходное значение |  |
+| LE&#95;E04 / special&#95;1 | 1 / SPECIAL | current&#95;total&#95;assets EQ 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} | ; {&#34;code&#34;:&#34;SPECIAL&#95;LE&#95;E04&#34;,&#34;message&#34;:&#34;Активы или средние активы равны нулю; показатель не рассчитывается.&#34;,&#34;fields&#34;:&#91;&#34;LE&#95;E04&#34;&#93;} |
+| LE&#95;E04 / band&#95;1 | 1 / ORDINARY | le&#95;e04 LE 0 | 0 | Исходное значение |  |
+| LE&#95;E04 / band&#95;2 | 2 / ORDINARY | ALL(le&#95;e04 LT 0.1, NOT(ANY(le&#95;e04 LE 0))) | 6.25 | Исходное значение |  |
+| LE&#95;E04 / band&#95;3 | 3 / ORDINARY | ALL(le&#95;e04 LT 0.25, NOT(ANY(le&#95;e04 LE 0, le&#95;e04 LT 0.1))) | 12.5 | Исходное значение |  |
+| LE&#95;E04 / band&#95;4 | 4 / ORDINARY | ALL(le&#95;e04 LT 0.4, NOT(ANY(le&#95;e04 LE 0, le&#95;e04 LT 0.1, le&#95;e04 LT 0.25))) | 18.75 | Исходное значение |  |
+| LE&#95;E04 / band&#95;5 | 5 / ORDINARY | NOT(ANY(le&#95;e04 LE 0, le&#95;e04 LT 0.1, le&#95;e04 LT 0.25, le&#95;e04 LT 0.4)) | 25 | Исходное значение |  |
+| LE&#95;E05 / special&#95;1 | 1 / SPECIAL | current&#95;total&#95;assets EQ 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} | ; {&#34;code&#34;:&#34;SPECIAL&#95;LE&#95;E05&#34;,&#34;message&#34;:&#34;Активы или средние активы равны нулю; показатель не рассчитывается.&#34;,&#34;fields&#34;:&#91;&#34;LE&#95;E05&#34;&#93;} |
+| LE&#95;E05 / band&#95;1 | 1 / ORDINARY | le&#95;e05 LT 0.4 | 0 | Исходное значение |  |
+| LE&#95;E05 / band&#95;2 | 2 / ORDINARY | ALL(le&#95;e05 LT 0.5, NOT(ANY(le&#95;e05 LT 0.4))) | 3.75 | Исходное значение |  |
+| LE&#95;E05 / band&#95;3 | 3 / ORDINARY | ALL(le&#95;e05 LT 0.6, NOT(ANY(le&#95;e05 LT 0.4, le&#95;e05 LT 0.5))) | 7.5 | Исходное значение |  |
+| LE&#95;E05 / band&#95;4 | 4 / ORDINARY | ALL(le&#95;e05 LT 0.8, NOT(ANY(le&#95;e05 LT 0.4, le&#95;e05 LT 0.5, le&#95;e05 LT 0.6))) | 11.25 | Исходное значение |  |
+| LE&#95;E05 / band&#95;5 | 5 / ORDINARY | NOT(ANY(le&#95;e05 LT 0.4, le&#95;e05 LT 0.5, le&#95;e05 LT 0.6, le&#95;e05 LT 0.8)) | 15 | Исходное значение |  |
+| LE&#95;E06 / special&#95;1 | 1 / SPECIAL | current&#95;current&#95;assets EQ 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} | ; {&#34;code&#34;:&#34;SPECIAL&#95;LE&#95;E06&#34;,&#34;message&#34;:&#34;Оборотные активы равны нулю; показатель не рассчитывается.&#34;,&#34;fields&#34;:&#91;&#34;LE&#95;E06&#34;&#93;} |
+| LE&#95;E06 / band&#95;1 | 1 / ORDINARY | le&#95;e06 LT -0.2 | 0 | Исходное значение |  |
+| LE&#95;E06 / band&#95;2 | 2 / ORDINARY | ALL(le&#95;e06 LT 0, NOT(ANY(le&#95;e06 LT -0.2))) | 3.75 | Исходное значение |  |
+| LE&#95;E06 / band&#95;3 | 3 / ORDINARY | ALL(le&#95;e06 LT 0.1, NOT(ANY(le&#95;e06 LT -0.2, le&#95;e06 LT 0))) | 7.5 | Исходное значение |  |
+| LE&#95;E06 / band&#95;4 | 4 / ORDINARY | ALL(le&#95;e06 LT 0.2, NOT(ANY(le&#95;e06 LT -0.2, le&#95;e06 LT 0, le&#95;e06 LT 0.1))) | 11.25 | Исходное значение |  |
+| LE&#95;E06 / band&#95;5 | 5 / ORDINARY | NOT(ANY(le&#95;e06 LT -0.2, le&#95;e06 LT 0, le&#95;e06 LT 0.1, le&#95;e06 LT 0.2)) | 15 | Исходное значение |  |
+| LE&#95;E07 / special&#95;1 | 1 / SPECIAL | current&#95;sales&#95;profit LE 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} | ; {&#34;code&#34;:&#34;SPECIAL&#95;LE&#95;E07&#34;,&#34;message&#34;:&#34;Прибыль от продаж неположительна; долговое покрытие не рассчитывается.&#34;,&#34;fields&#34;:&#91;&#34;LE&#95;E07&#34;&#93;} |
+| LE&#95;E07 / band&#95;1 | 1 / ORDINARY | le&#95;e07 LE 1 | 20 | Исходное значение |  |
+| LE&#95;E07 / band&#95;2 | 2 / ORDINARY | ALL(le&#95;e07 LE 2, NOT(ANY(le&#95;e07 LE 1))) | 15 | Исходное значение |  |
+| LE&#95;E07 / band&#95;3 | 3 / ORDINARY | ALL(le&#95;e07 LE 3, NOT(ANY(le&#95;e07 LE 1, le&#95;e07 LE 2))) | 10 | Исходное значение |  |
+| LE&#95;E07 / band&#95;4 | 4 / ORDINARY | ALL(le&#95;e07 LE 4, NOT(ANY(le&#95;e07 LE 1, le&#95;e07 LE 2, le&#95;e07 LE 3))) | 5 | Исходное значение |  |
+| LE&#95;E07 / band&#95;5 | 5 / ORDINARY | NOT(ANY(le&#95;e07 LE 1, le&#95;e07 LE 2, le&#95;e07 LE 3, le&#95;e07 LE 4)) | 0 | Исходное значение |  |
+| LE&#95;E08 / special&#95;1 | 1 / SPECIAL | current&#95;sales&#95;profit LE 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} | ; {&#34;code&#34;:&#34;SPECIAL&#95;LE&#95;E08&#34;,&#34;message&#34;:&#34;Прибыль от продаж неположительна; долговое покрытие не рассчитывается.&#34;,&#34;fields&#34;:&#91;&#34;LE&#95;E08&#34;&#93;} |
+| LE&#95;E08 / special&#95;2 | 2 / SPECIAL | ALL(current&#95;sales&#95;profit GT 0, current&#95;interest&#95;payable EQ 0) | 20 | {&#34;mode&#34;:&#34;NULL&#34;} |  |
+| LE&#95;E08 / band&#95;1 | 1 / ORDINARY | le&#95;e08 LT 1 | 0 | Исходное значение |  |
+| LE&#95;E08 / band&#95;2 | 2 / ORDINARY | ALL(le&#95;e08 LT 1.5, NOT(ANY(le&#95;e08 LT 1))) | 5 | Исходное значение |  |
+| LE&#95;E08 / band&#95;3 | 3 / ORDINARY | ALL(le&#95;e08 LT 2.5, NOT(ANY(le&#95;e08 LT 1, le&#95;e08 LT 1.5))) | 10 | Исходное значение |  |
+| LE&#95;E08 / band&#95;4 | 4 / ORDINARY | ALL(le&#95;e08 LT 4, NOT(ANY(le&#95;e08 LT 1, le&#95;e08 LT 1.5, le&#95;e08 LT 2.5))) | 15 | Исходное значение |  |
+| LE&#95;E08 / band&#95;5 | 5 / ORDINARY | NOT(ANY(le&#95;e08 LT 1, le&#95;e08 LT 1.5, le&#95;e08 LT 2.5, le&#95;e08 LT 4)) | 20 | Исходное значение |  |
+| LE&#95;E09 / special&#95;1 | 1 / SPECIAL | financial&#95;borrowings&#95;rub EQ 0 | 10 | {&#34;mode&#34;:&#34;NULL&#34;} |  |
+| LE&#95;E09 / band&#95;1 | 1 / ORDINARY | le&#95;e09 LE 0.2 | 10 | Исходное значение |  |
+| LE&#95;E09 / band&#95;2 | 2 / ORDINARY | ALL(le&#95;e09 LE 0.4, NOT(ANY(le&#95;e09 LE 0.2))) | 7.5 | Исходное значение |  |
+| LE&#95;E09 / band&#95;3 | 3 / ORDINARY | ALL(le&#95;e09 LE 0.6, NOT(ANY(le&#95;e09 LE 0.2, le&#95;e09 LE 0.4))) | 5 | Исходное значение |  |
+| LE&#95;E09 / band&#95;4 | 4 / ORDINARY | ALL(le&#95;e09 LE 0.8, NOT(ANY(le&#95;e09 LE 0.2, le&#95;e09 LE 0.4, le&#95;e09 LE 0.6))) | 2.5 | Исходное значение |  |
+| LE&#95;E09 / band&#95;5 | 5 / ORDINARY | NOT(ANY(le&#95;e09 LE 0.2, le&#95;e09 LE 0.4, le&#95;e09 LE 0.6, le&#95;e09 LE 0.8)) | 0 | Исходное значение |  |
+| LE&#95;E10 / special&#95;1 | 1 / SPECIAL | current&#95;revenue EQ 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} | ; {&#34;code&#34;:&#34;SPECIAL&#95;LE&#95;E10&#34;,&#34;message&#34;:&#34;Годовая выручка равна нулю; показатель не рассчитывается.&#34;,&#34;fields&#34;:&#91;&#34;LE&#95;E10&#34;&#93;} |
+| LE&#95;E10 / band&#95;1 | 1 / ORDINARY | le&#95;e10 LE 0 | 0 | Исходное значение |  |
+| LE&#95;E10 / band&#95;2 | 2 / ORDINARY | ALL(le&#95;e10 LT 0.1, NOT(ANY(le&#95;e10 LE 0))) | 2.5 | Исходное значение |  |
+| LE&#95;E10 / band&#95;3 | 3 / ORDINARY | ALL(le&#95;e10 LT 0.2, NOT(ANY(le&#95;e10 LE 0, le&#95;e10 LT 0.1))) | 5 | Исходное значение |  |
+| LE&#95;E10 / band&#95;4 | 4 / ORDINARY | ALL(le&#95;e10 LT 0.3, NOT(ANY(le&#95;e10 LE 0, le&#95;e10 LT 0.1, le&#95;e10 LT 0.2))) | 7.5 | Исходное значение |  |
+| LE&#95;E10 / band&#95;5 | 5 / ORDINARY | NOT(ANY(le&#95;e10 LE 0, le&#95;e10 LT 0.1, le&#95;e10 LT 0.2, le&#95;e10 LT 0.3)) | 10 | Исходное значение |  |
+| LE&#95;E11 / special&#95;1 | 1 / SPECIAL | current&#95;revenue EQ 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} | ; {&#34;code&#34;:&#34;SPECIAL&#95;LE&#95;E11&#34;,&#34;message&#34;:&#34;Годовая выручка равна нулю; показатель не рассчитывается.&#34;,&#34;fields&#34;:&#91;&#34;LE&#95;E11&#34;&#93;} |
+| LE&#95;E11 / band&#95;1 | 1 / ORDINARY | le&#95;e11 LE 0 | 0 | Исходное значение |  |
+| LE&#95;E11 / band&#95;2 | 2 / ORDINARY | ALL(le&#95;e11 LT 0.05, NOT(ANY(le&#95;e11 LE 0))) | 3.75 | Исходное значение |  |
+| LE&#95;E11 / band&#95;3 | 3 / ORDINARY | ALL(le&#95;e11 LT 0.1, NOT(ANY(le&#95;e11 LE 0, le&#95;e11 LT 0.05))) | 7.5 | Исходное значение |  |
+| LE&#95;E11 / band&#95;4 | 4 / ORDINARY | ALL(le&#95;e11 LT 0.2, NOT(ANY(le&#95;e11 LE 0, le&#95;e11 LT 0.05, le&#95;e11 LT 0.1))) | 11.25 | Исходное значение |  |
+| LE&#95;E11 / band&#95;5 | 5 / ORDINARY | NOT(ANY(le&#95;e11 LE 0, le&#95;e11 LT 0.05, le&#95;e11 LT 0.1, le&#95;e11 LT 0.2)) | 15 | Исходное значение |  |
+| LE&#95;E12 / special&#95;1 | 1 / SPECIAL | current&#95;revenue EQ 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} | ; {&#34;code&#34;:&#34;SPECIAL&#95;LE&#95;E12&#34;,&#34;message&#34;:&#34;Годовая выручка равна нулю; показатель не рассчитывается.&#34;,&#34;fields&#34;:&#91;&#34;LE&#95;E12&#34;&#93;} |
+| LE&#95;E12 / band&#95;1 | 1 / ORDINARY | le&#95;e12 LE 0 | 0 | Исходное значение |  |
+| LE&#95;E12 / band&#95;2 | 2 / ORDINARY | ALL(le&#95;e12 LT 0.02, NOT(ANY(le&#95;e12 LE 0))) | 2.5 | Исходное значение |  |
+| LE&#95;E12 / band&#95;3 | 3 / ORDINARY | ALL(le&#95;e12 LT 0.05, NOT(ANY(le&#95;e12 LE 0, le&#95;e12 LT 0.02))) | 5 | Исходное значение |  |
+| LE&#95;E12 / band&#95;4 | 4 / ORDINARY | ALL(le&#95;e12 LT 0.1, NOT(ANY(le&#95;e12 LE 0, le&#95;e12 LT 0.02, le&#95;e12 LT 0.05))) | 7.5 | Исходное значение |  |
+| LE&#95;E12 / band&#95;5 | 5 / ORDINARY | NOT(ANY(le&#95;e12 LE 0, le&#95;e12 LT 0.02, le&#95;e12 LT 0.05, le&#95;e12 LT 0.1)) | 10 | Исходное значение |  |
+| LE&#95;E13 / special&#95;1 | 1 / SPECIAL | average&#95;total&#95;assets LE 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} | ; {&#34;code&#34;:&#34;SPECIAL&#95;LE&#95;E13&#34;,&#34;message&#34;:&#34;Активы или средние активы равны нулю; показатель не рассчитывается.&#34;,&#34;fields&#34;:&#91;&#34;LE&#95;E13&#34;&#93;} |
+| LE&#95;E13 / band&#95;1 | 1 / ORDINARY | le&#95;e13 LE 0 | 0 | Исходное значение |  |
+| LE&#95;E13 / band&#95;2 | 2 / ORDINARY | ALL(le&#95;e13 LT 0.02, NOT(ANY(le&#95;e13 LE 0))) | 3.75 | Исходное значение |  |
+| LE&#95;E13 / band&#95;3 | 3 / ORDINARY | ALL(le&#95;e13 LT 0.05, NOT(ANY(le&#95;e13 LE 0, le&#95;e13 LT 0.02))) | 7.5 | Исходное значение |  |
+| LE&#95;E13 / band&#95;4 | 4 / ORDINARY | ALL(le&#95;e13 LT 0.1, NOT(ANY(le&#95;e13 LE 0, le&#95;e13 LT 0.02, le&#95;e13 LT 0.05))) | 11.25 | Исходное значение |  |
+| LE&#95;E13 / band&#95;5 | 5 / ORDINARY | NOT(ANY(le&#95;e13 LE 0, le&#95;e13 LT 0.02, le&#95;e13 LT 0.05, le&#95;e13 LT 0.1)) | 15 | Исходное значение |  |
+| LE&#95;E14 / special&#95;1 | 1 / SPECIAL | ANY(current&#95;equity LE 0, average&#95;equity LE 0) | 0 | {&#34;mode&#34;:&#34;NULL&#34;} | ; {&#34;code&#34;:&#34;SPECIAL&#95;LE&#95;E14&#34;,&#34;message&#34;:&#34;Текущий или средний капитал неположителен; ROE не интерпретируется.&#34;,&#34;fields&#34;:&#91;&#34;LE&#95;E14&#34;&#93;} |
+| LE&#95;E14 / band&#95;1 | 1 / ORDINARY | le&#95;e14 LE 0 | 0 | Исходное значение |  |
+| LE&#95;E14 / band&#95;2 | 2 / ORDINARY | ALL(le&#95;e14 LT 0.05, NOT(ANY(le&#95;e14 LE 0))) | 2.5 | Исходное значение |  |
+| LE&#95;E14 / band&#95;3 | 3 / ORDINARY | ALL(le&#95;e14 LT 0.1, NOT(ANY(le&#95;e14 LE 0, le&#95;e14 LT 0.05))) | 5 | Исходное значение |  |
+| LE&#95;E14 / band&#95;4 | 4 / ORDINARY | ALL(le&#95;e14 LT 0.2, NOT(ANY(le&#95;e14 LE 0, le&#95;e14 LT 0.05, le&#95;e14 LT 0.1))) | 7.5 | Исходное значение |  |
+| LE&#95;E14 / band&#95;5 | 5 / ORDINARY | NOT(ANY(le&#95;e14 LE 0, le&#95;e14 LT 0.05, le&#95;e14 LT 0.1, le&#95;e14 LT 0.2)) | 10 | Исходное значение |  |
+| LE&#95;E15 / special&#95;1 | 1 / SPECIAL | previous&#95;revenue EQ 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} | ; {&#34;code&#34;:&#34;SPECIAL&#95;LE&#95;E15&#34;,&#34;message&#34;:&#34;Подтверждённая база сравнения поступлений или выручки равна нулю.&#34;,&#34;fields&#34;:&#91;&#34;LE&#95;E15&#34;&#93;} |
+| LE&#95;E15 / band&#95;1 | 1 / ORDINARY | le&#95;e15 LT -0.2 | 0 | Исходное значение |  |
+| LE&#95;E15 / band&#95;2 | 2 / ORDINARY | ALL(le&#95;e15 LT -0.05, NOT(ANY(le&#95;e15 LT -0.2))) | 2.5 | Исходное значение |  |
+| LE&#95;E15 / band&#95;3 | 3 / ORDINARY | ALL(le&#95;e15 LT 0.05, NOT(ANY(le&#95;e15 LT -0.2, le&#95;e15 LT -0.05))) | 5 | Исходное значение |  |
+| LE&#95;E15 / band&#95;4 | 4 / ORDINARY | ALL(le&#95;e15 LT 0.15, NOT(ANY(le&#95;e15 LT -0.2, le&#95;e15 LT -0.05, le&#95;e15 LT 0.05))) | 7.5 | Исходное значение |  |
+| LE&#95;E15 / band&#95;5 | 5 / ORDINARY | NOT(ANY(le&#95;e15 LT -0.2, le&#95;e15 LT -0.05, le&#95;e15 LT 0.05, le&#95;e15 LT 0.15)) | 10 | Исходное значение |  |
+| LE&#95;E16 / special&#95;1 | 1 / SPECIAL | average&#95;total&#95;assets LE 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} | ; {&#34;code&#34;:&#34;SPECIAL&#95;LE&#95;E16&#34;,&#34;message&#34;:&#34;Активы или средние активы равны нулю; показатель не рассчитывается.&#34;,&#34;fields&#34;:&#91;&#34;LE&#95;E16&#34;&#93;} |
+| LE&#95;E16 / band&#95;1 | 1 / ORDINARY | le&#95;e16 LT 0.5 | 0 | Исходное значение |  |
+| LE&#95;E16 / band&#95;2 | 2 / ORDINARY | ALL(le&#95;e16 LT 1, NOT(ANY(le&#95;e16 LT 0.5))) | 2.5 | Исходное значение |  |
+| LE&#95;E16 / band&#95;3 | 3 / ORDINARY | ALL(le&#95;e16 LT 1.5, NOT(ANY(le&#95;e16 LT 0.5, le&#95;e16 LT 1))) | 5 | Исходное значение |  |
+| LE&#95;E16 / band&#95;4 | 4 / ORDINARY | ALL(le&#95;e16 LT 2, NOT(ANY(le&#95;e16 LT 0.5, le&#95;e16 LT 1, le&#95;e16 LT 1.5))) | 7.5 | Исходное значение |  |
+| LE&#95;E16 / band&#95;5 | 5 / ORDINARY | NOT(ANY(le&#95;e16 LT 0.5, le&#95;e16 LT 1, le&#95;e16 LT 1.5, le&#95;e16 LT 2)) | 10 | Исходное значение |  |
+| LE&#95;E17 / special&#95;1 | 1 / SPECIAL | current&#95;revenue EQ 0 | 0 | {&#34;mode&#34;:&#34;NULL&#34;} | ; {&#34;code&#34;:&#34;SPECIAL&#95;LE&#95;E17&#34;,&#34;message&#34;:&#34;Годовая выручка равна нулю; показатель не рассчитывается.&#34;,&#34;fields&#34;:&#91;&#34;LE&#95;E17&#34;&#93;} |
+| LE&#95;E17 / band&#95;1 | 1 / ORDINARY | le&#95;e17 LE 30 | 10 | Исходное значение |  |
+| LE&#95;E17 / band&#95;2 | 2 / ORDINARY | ALL(le&#95;e17 LE 60, NOT(ANY(le&#95;e17 LE 30))) | 7.5 | Исходное значение |  |
+| LE&#95;E17 / band&#95;3 | 3 / ORDINARY | ALL(le&#95;e17 LE 90, NOT(ANY(le&#95;e17 LE 30, le&#95;e17 LE 60))) | 5 | Исходное значение |  |
+| LE&#95;E17 / band&#95;4 | 4 / ORDINARY | ALL(le&#95;e17 LE 120, NOT(ANY(le&#95;e17 LE 30, le&#95;e17 LE 60, le&#95;e17 LE 90))) | 2.5 | Исходное значение |  |
+| LE&#95;E17 / band&#95;5 | 5 / ORDINARY | NOT(ANY(le&#95;e17 LE 30, le&#95;e17 LE 60, le&#95;e17 LE 90, le&#95;e17 LE 120)) | 0 | Исходное значение |  |
+| LE&#95;E18 / special&#95;1 | 1 / SPECIAL | ALL(current&#95;cost&#95;of&#95;sales EQ 0, average&#95;inventories EQ 0) | 10 | {&#34;mode&#34;:&#34;NULL&#34;} |  |
+| LE&#95;E18 / special&#95;2 | 2 / SPECIAL | ALL(current&#95;cost&#95;of&#95;sales EQ 0, average&#95;inventories GT 0) | 0 | {&#34;mode&#34;:&#34;NULL&#34;} | ; {&#34;code&#34;:&#34;SPECIAL&#95;LE&#95;E18&#34;,&#34;message&#34;:&#34;Себестоимость равна нулю при положительных средних запасах.&#34;,&#34;fields&#34;:&#91;&#34;LE&#95;E18&#34;&#93;} |
+| LE&#95;E18 / band&#95;1 | 1 / ORDINARY | le&#95;e18 LE 30 | 10 | Исходное значение |  |
+| LE&#95;E18 / band&#95;2 | 2 / ORDINARY | ALL(le&#95;e18 LE 60, NOT(ANY(le&#95;e18 LE 30))) | 7.5 | Исходное значение |  |
+| LE&#95;E18 / band&#95;3 | 3 / ORDINARY | ALL(le&#95;e18 LE 90, NOT(ANY(le&#95;e18 LE 30, le&#95;e18 LE 60))) | 5 | Исходное значение |  |
+| LE&#95;E18 / band&#95;4 | 4 / ORDINARY | ALL(le&#95;e18 LE 180, NOT(ANY(le&#95;e18 LE 30, le&#95;e18 LE 60, le&#95;e18 LE 90))) | 2.5 | Исходное значение |  |
+| LE&#95;E18 / band&#95;5 | 5 / ORDINARY | NOT(ANY(le&#95;e18 LE 30, le&#95;e18 LE 60, le&#95;e18 LE 90, le&#95;e18 LE 180)) | 0 | Исходное значение |  |
+
+#### Проверки полноты и допустимости
+
+| ID / название | Активна | Применимость | Условие достаточности | Поля / сообщение |
+|---|---|---|---|---|
+| borrower&#95;name / borrower&#95;name | true | ALWAYS | borrower&#95;name&#95;present EQ true | borrower.name / Нужны полные и достоверные сведения. |
+| borrower&#95;inn / borrower&#95;inn | true | ALWAYS | borrower&#95;inn&#95;present EQ true | borrower.inn / Нужны полные и достоверные сведения. |
+| purpose / purpose | true | ALWAYS | purpose&#95;present EQ true | credit&#95;request.purpose / Нужны полные и достоверные сведения. |
+| facts&#95;fresh / facts&#95;fresh | true | ALWAYS | ALL(facts&#95;age&#95;days GE 0, facts&#95;age&#95;days LE 45) | facts&#95;date / Нужны полные и достоверные сведения. |
+| identity&#95;and&#95;authority&#95;verified / identity&#95;and&#95;authority&#95;verified | true | ALWAYS | identity&#95;and&#95;authority&#95;verified EQ true | scoring.legal&#95;entity.identity&#95;and&#95;authority&#95;verified / Нужны полные и достоверные сведения. |
+| consents&#95;verified / consents&#95;verified | true | ALWAYS | consents&#95;verified EQ true | scoring.legal&#95;entity.consents&#95;verified / Нужны полные и достоверные сведения. |
+| bureau&#95;received / bureau&#95;received | true | ALWAYS | bureau&#95;received EQ true | scoring.legal&#95;entity.bureau&#95;received / Нужны полные и достоверные сведения. |
+| debts&#95;complete / debts&#95;complete | true | ALWAYS | debts&#95;complete EQ true | scoring.legal&#95;entity.debts&#95;complete / Нужны полные и достоверные сведения. |
+| documents&#95;complete / documents&#95;complete | true | ALWAYS | documents&#95;complete EQ true | scoring.legal&#95;entity.documents&#95;complete / Нужны полные и достоверные сведения. |
+| free&#95;cash&#95;source&#95;verified / free&#95;cash&#95;source&#95;verified | true | ALWAYS | free&#95;cash&#95;source&#95;verified EQ true | scoring.legal&#95;entity.free&#95;cash&#95;source&#95;verified / Нужны полные и достоверные сведения. |
+| history&#95;complete / history&#95;complete | true | ALWAYS | history&#95;complete EQ true | monthly&#95;history / Нужны полные и достоверные сведения. |
+| future&#95;complete / future&#95;complete | true | ALWAYS | future&#95;complete EQ true | future&#95;debt&#95;payments / Нужны полные и достоверные сведения. |
+| debt&#95;schedule&#95;consistent / debt&#95;schedule&#95;consistent | true | ALWAYS | debt&#95;schedule&#95;consistent EQ true | financial&#95;debt&#95;rub, future&#95;debt&#95;payments / Нужны полные и достоверные сведения. |
+| confirmed&#95;receipts / confirmed&#95;receipts | true | history&#95;complete EQ true | ALL(confirmed&#95;receipts&#95;rub LE receipts&#95;rub, ANY(receipts&#95;rub EQ 0, confirmed&#95;receipts&#95;ratio GE 0.8)) | evidence.confirmed&#95;receipts&#95;rub / Нужны полные и достоверные сведения. |
+| unexplained&#95;difference / unexplained&#95;difference | true | history&#95;complete EQ true | ANY(ALL(receipts&#95;rub GT 0, unexplained&#95;difference&#95;ratio LE 0.1), ALL(receipts&#95;rub EQ 0, unexplained&#95;difference&#95;rub EQ 0)) | evidence.unexplained&#95;difference&#95;rub / Нужны полные и достоверные сведения. |
+| largest&#95;buyer / largest&#95;buyer | true | ALL(history&#95;complete EQ true, KNOWN(largest&#95;buyer&#95;group&#95;receipts&#95;rub)) | largest&#95;buyer&#95;group&#95;receipts&#95;rub LE receipts&#95;rub | evidence.largest&#95;buyer&#95;group&#95;receipts&#95;rub / Нужны полные и достоверные сведения. |
+| minimum&#95;amount / minimum&#95;amount | true | ALWAYS | min&#95;acceptable&#95;amount&#95;rub LE amount&#95;rub | credit&#95;request.min&#95;acceptable&#95;amount&#95;rub / Нужны полные и достоверные сведения. |
+| maximum&#95;term / maximum&#95;term | true | ALWAYS | max&#95;acceptable&#95;term&#95;months GE term&#95;months | credit&#95;request.max&#95;acceptable&#95;term&#95;months / Нужны полные и достоверные сведения. |
+| report&#95;verification / report&#95;verification | true | ALWAYS | report&#95;verification&#95;level GE 2 | scoring.legal&#95;entity.report&#95;verification&#95;level / Нужны полные и достоверные сведения. |
+| organization&#95;debts / organization&#95;debts | true | ALWAYS | organization&#95;and&#95;related&#95;debts&#95;complete EQ true | scoring.legal&#95;entity.organization&#95;and&#95;related&#95;debts&#95;complete / Нужны полные и достоверные сведения. |
+| auditor&#95;opinion / auditor&#95;opinion | true | ALWAYS | auditor&#95;opinion NE &#34;REQUIRED&#95;MISSING&#34; | scoring.legal&#95;entity.auditor&#95;opinion / Нужны полные и достоверные сведения. |
+| need&#95;evidence / need&#95;evidence | true | ALWAYS | need&#95;evidence NE &#34;ORAL&#95;ONLY&#34; | scoring.legal&#95;entity.need&#95;evidence / Нужны полные и достоверные сведения. |
+| statements&#95;complete / statements&#95;complete | true | ALWAYS | statements&#95;complete EQ true | service&#95;b.annual&#95;reports / Нужны полные и достоверные сведения. |
+
+#### Подтверждённые стопы
+
+| Порядок / ID / название | Активно | Условие | Проверки / после критерия | Код / сообщение / поля |
+|---|---|---|---|---|
+| 1 / INACTIVE&#95;BORROWER / Подтверждено прекращение деятельности заёмщика. | true | active EQ false |  /  | INACTIVE&#95;BORROWER / Подтверждено прекращение деятельности заёмщика. / scoring.legal&#95;entity.active |
+| 2 / BANKRUPT / Подтверждено банкротство заёмщика. | true | bankrupt EQ true |  /  | BANKRUPT / Подтверждено банкротство заёмщика. / scoring.legal&#95;entity.bankrupt |
+| 3 / MATERIAL&#95;FORGERY / Подтверждена существенная подделка документов. | true | material&#95;forgery EQ true |  /  | MATERIAL&#95;FORGERY / Подтверждена существенная подделка документов. / scoring.legal&#95;entity.material&#95;forgery |
+| 4 / CREDIT&#95;PROHIBITED / Подтверждён запрет кредитования. | true | credit&#95;prohibited EQ true |  /  | CREDIT&#95;PROHIBITED / Подтверждён запрет кредитования. / scoring.legal&#95;entity.credit&#95;prohibited |
+| 5 / LIQUIDATED&#95;OR&#95;EXCLUDED / Подтверждена ликвидация или исключение организации из реестра. | true | liquidated&#95;or&#95;excluded EQ true |  /  | LIQUIDATED&#95;OR&#95;EXCLUDED / Подтверждена ликвидация или исключение организации из реестра. / scoring.legal&#95;entity.liquidated&#95;or&#95;excluded |
+| 6 / CURRENT&#95;DPD&#95;30&#95;PLUS / Текущая просрочка составляет не менее 30 дней. | true | current&#95;dpd&#95;days GE 30 |  /  | CURRENT&#95;DPD&#95;30&#95;PLUS / Текущая просрочка составляет не менее 30 дней. / scoring.legal&#95;entity.current&#95;dpd&#95;days |
+| 7 / WORST&#95;REPAID&#95;DPD&#95;90&#95;PLUS / Погашенная просрочка за последние 24 месяца достигала 90 дней. | true | worst&#95;repaid&#95;dpd&#95;days&#95;24m GE 90 |  /  | WORST&#95;REPAID&#95;DPD&#95;90&#95;PLUS / Погашенная просрочка за последние 24 месяца достигала 90 дней. / scoring.legal&#95;entity.worst&#95;repaid&#95;dpd&#95;days&#95;24m |
+| 8 / NONPOSITIVE&#95;VERIFIED&#95;CFADS / Подтверждённый годовой CFADS неположителен. | true | cfads&#95;rub LE 0 | history&#95;complete, facts&#95;fresh, confirmed&#95;receipts, unexplained&#95;difference, largest&#95;buyer, documents&#95;complete, free&#95;cash&#95;source&#95;verified, debts&#95;complete, organization&#95;debts /  | NONPOSITIVE&#95;VERIFIED&#95;CFADS / Подтверждённый годовой CFADS неположителен. / monthly&#95;history |
+
+#### Основания ручного рассмотрения
+
+| Порядок / ID / название | Активно | Условие | Проверки / после критерия | Код / сообщение / поля |
+|---|---|---|---|---|
+| 1 / UNEXPLAINED&#95;DIFFERENCE / Необъяснённое расхождение источников превышает 5% поступлений. | true | ALL(receipts&#95;rub GT 0, unexplained&#95;difference&#95;ratio GT 0.05, unexplained&#95;difference&#95;ratio LE 0.1) |  /  | UNEXPLAINED&#95;DIFFERENCE / Необъяснённое расхождение источников превышает 5% поступлений. / evidence.unexplained&#95;difference&#95;rub |
+| 2 / NONSTANDARD&#95;PURPOSE / Заявлена цель, отличная от развития бизнеса. | true | purpose&#95;is&#95;business&#95;development EQ false |  /  | NONSTANDARD&#95;PURPOSE / Заявлена цель, отличная от развития бизнеса. / credit&#95;request.purpose |
+| 3 / NO&#95;UNCOVERED&#95;NEED / Подтверждённая потребность полностью покрыта собственным вкладом. | true | confirmed&#95;cost&#95;rub LE own&#95;contribution&#95;rub |  /  | NO&#95;UNCOVERED&#95;NEED / Подтверждённая потребность полностью покрыта собственным вкладом. / need |
+| 4 / INSUFFICIENT&#95;FREE&#95;CASH / Свободные деньги ниже необходимого минимального остатка. | true | free&#95;after&#95;own&#95;contribution&#95;rub LT minimum&#95;required&#95;rub |  /  | INSUFFICIENT&#95;FREE&#95;CASH / Свободные деньги ниже необходимого минимального остатка. / cash |
+| 5 / NO&#95;CREDIT&#95;HISTORY / Нет подтверждённой кредитной истории. | true | credit&#95;history&#95;months EQ 0 |  /  | NO&#95;CREDIT&#95;HISTORY / Нет подтверждённой кредитной истории. / scoring.legal&#95;entity.credit&#95;history&#95;months |
+| 6 / BUSINESS&#95;AGE&#95;UNDER&#95;12&#95;MONTHS / Бизнес действует менее 12 месяцев. | true | business&#95;age&#95;months LT 12 |  /  | BUSINESS&#95;AGE&#95;UNDER&#95;12&#95;MONTHS / Бизнес действует менее 12 месяцев. / scoring.legal&#95;entity.business&#95;age&#95;months |
+| 7 / CURRENT&#95;DPD&#95;1&#95;29 / Текущая просрочка составляет от 1 до 29 дней. | true | ALL(current&#95;dpd&#95;days GT 0, current&#95;dpd&#95;days LT 30) |  /  | CURRENT&#95;DPD&#95;1&#95;29 / Текущая просрочка составляет от 1 до 29 дней. / scoring.legal&#95;entity.current&#95;dpd&#95;days |
+| 8 / MANY&#95;CREDIT&#95;APPLICATIONS / За 90 дней было не менее восьми кредитных обращений. | true | applications&#95;90d GE 8 |  /  | MANY&#95;CREDIT&#95;APPLICATIONS / За 90 дней было не менее восьми кредитных обращений. / scoring.legal&#95;entity.applications&#95;90d |
+| 9 / MATERIAL&#95;ACCOUNT&#95;RESTRICTION / Подтверждено существенное ограничение банковского счёта. | true | material&#95;account&#95;restriction EQ true |  /  | MATERIAL&#95;ACCOUNT&#95;RESTRICTION / Подтверждено существенное ограничение банковского счёта. / scoring.legal&#95;entity.material&#95;account&#95;restriction |
+| 10 / MATERIAL&#95;DISPUTE&#95;OR&#95;ENFORCEMENT / Подтверждён существенный спор или исполнительное взыскание. | true | material&#95;dispute&#95;or&#95;enforcement EQ true |  /  | MATERIAL&#95;DISPUTE&#95;OR&#95;ENFORCEMENT / Подтверждён существенный спор или исполнительное взыскание. / scoring.legal&#95;entity.material&#95;dispute&#95;or&#95;enforcement |
+| 11 / KEY&#95;BUYER&#95;LOSS / Подтверждена потеря ключевого покупателя. | true | key&#95;buyer&#95;loss EQ true |  /  | KEY&#95;BUYER&#95;LOSS / Подтверждена потеря ключевого покупателя. / scoring.legal&#95;entity.key&#95;buyer&#95;loss |
+| 12 / STRUCTURAL&#95;BUSINESS&#95;CHANGE / Подтверждено существенное структурное изменение бизнеса. | true | structural&#95;business&#95;change EQ true |  /  | STRUCTURAL&#95;BUSINESS&#95;CHANGE / Подтверждено существенное структурное изменение бизнеса. / scoring.legal&#95;entity.structural&#95;business&#95;change |
+| 13 / OVERDUE&#95;TAXES&#95;OVER&#95;10&#95;PERCENT&#95;CFADS / Просроченные налоги превышают 10% годового CFADS. | true | taxes&#95;cfads&#95;ratio GT 0.1 |  /  | OVERDUE&#95;TAXES&#95;OVER&#95;10&#95;PERCENT&#95;CFADS / Просроченные налоги превышают 10% годового CFADS. / scoring.legal&#95;entity.overdue&#95;taxes&#95;rub |
+| 14 / FEWER&#95;THAN&#95;8&#95;POSITIVE&#95;CFADS&#95;MONTHS / Положительный CFADS получен менее чем в восьми месяцах. | true | positive&#95;cfads&#95;months LT 8 |  /  | FEWER&#95;THAN&#95;8&#95;POSITIVE&#95;CFADS&#95;MONTHS / Положительный CFADS получен менее чем в восьми месяцах. / monthly&#95;history |
+| 15 / MATERIAL&#95;REGISTER&#95;INACCURACY / Подтверждена существенная недостоверность сведений ЕГРЮЛ. | true | material&#95;register&#95;inaccuracy EQ true |  /  | MATERIAL&#95;REGISTER&#95;INACCURACY / Подтверждена существенная недостоверность сведений ЕГРЮЛ. / scoring.legal&#95;entity.material&#95;register&#95;inaccuracy |
+| 16 / MATERIAL&#95;AUDITOR&#95;MODIFICATION / Аудиторское заключение содержит существенную модификацию. | true | auditor&#95;opinion EQ &#34;MATERIAL&#95;MODIFICATION&#34; |  /  | MATERIAL&#95;AUDITOR&#95;MODIFICATION / Аудиторское заключение содержит существенную модификацию. / scoring.legal&#95;entity.auditor&#95;opinion |
+| 17 / NON&#95;OPERATING&#95;NONFINANCIAL&#95;SEGMENT / Организация не относится к операционным нефинансовым компаниям. | true | operating&#95;nonfinancial&#95;company EQ false |  /  | NON&#95;OPERATING&#95;NONFINANCIAL&#95;SEGMENT / Организация не относится к операционным нефинансовым компаниям. / scoring.legal&#95;entity.operating&#95;nonfinancial&#95;company |
+| 18 / NONPOSITIVE&#95;EQUITY / Неположительный собственный капитал. | true | current&#95;equity LE 0 |  / LE&#95;E05 | NONPOSITIVE&#95;EQUITY / Неположительный собственный капитал. / LE&#95;E04 |
+| 19 / NONPOSITIVE&#95;SALES&#95;PROFIT / Неположительная прибыль от продаж. | true | ALL(current&#95;revenue GT 0, current&#95;sales&#95;profit LE 0) |  / LE&#95;E12 | NONPOSITIVE&#95;SALES&#95;PROFIT / Неположительная прибыль от продаж. / LE&#95;E11 |
+| 20 / TWO&#95;YEAR&#95;NET&#95;LOSS / Убыток в обоих годах. | true | ALL(previous&#95;net&#95;profit LT 0, current&#95;net&#95;profit LT 0) |  / LE&#95;E12 | TWO&#95;YEAR&#95;NET&#95;LOSS / Убыток в обоих годах. / LE&#95;E12 |
+
+#### Классы после единственного half-up округления
+
+| Класс | От (включительно) | До (включительно) |
+|---|---|---|
+| D | 0 | 549 |
+| C | 550 | 649 |
+| B | 650 | 799 |
+| A | 800 | 1000 |
+<!-- modelgen:models:end -->

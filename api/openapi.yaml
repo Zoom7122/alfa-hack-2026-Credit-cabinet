@@ -471,8 +471,9 @@ paths:
       tags: [documents]
       summary: Загрузить документ
       description: |
-        Распознавание (pdf/docx/изображения) идёт асинхронно. Готовность приходит WS-событием
-        `document.recognized`, результат лежит в `recognition`.
+        Финансовый MVP: TAX_RETURN для КУДиР ИП на УСН «Доходы», FINANCIAL_STATEMENTS для PDF ГИРБО ООО.
+        Проверка оригинала и извлечение выполняются асинхронно; результат — GET .../financial-result.
+        Другие виды документов этим backend пока не обрабатываются.
       operationId: uploadDocument
       parameters:
         - $ref: '#/components/parameters/ApplicationId'
@@ -485,7 +486,12 @@ paths:
               type: object
               required: [file, type]
               properties:
-                file: { type: string, format: binary, description: 'до 20 МБ; pdf, docx, xlsx, jpg, png, sig' }
+                file: { type: string, format: binary, description: 'до 20 МиБ; XLS/XLSX КУДиР, PDF ГИРБО или контейнер поддерживаемой подписи' }
+                signatures:
+                  type: array
+                  maxItems: 2
+                  description: Отделённые подписи к file; каждая до 20 МиБ
+                  items: { type: string, format: binary }
                 type: { $ref: '#/components/schemas/DocumentType' }
                 info_request_id: { type: string, description: Если документ загружается в ответ на уточнение }
                 signed_document_id:
@@ -540,6 +546,36 @@ paths:
           content:
             application/octet-stream:
               schema: { type: string, format: binary }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /applications/{applicationId}/documents/{documentId}/financial-result:
+    get:
+      tags: [documents]
+      operationId: getFinancialDocumentResult
+      summary: Результат обработки финансового документа
+      description: Возвращается только результат текущего поколения; при повторной проверке старый допуск не используется. Сбой задачи или исчерпание попыток возвращает 422 PROCESSING_FAILED; повторная проверка создаёт новое поколение.
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+        - $ref: '#/components/parameters/DocumentId'
+      responses:
+        '200':
+          description: Извлечение, проверки и допущенные показатели
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FinancialDocumentResult' }
+        '202':
+          description: Обработка текущего поколения ещё не завершена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  state: { type: string, const: PENDING }
+        '422':
+          description: PROCESSING_FAILED — обработка завершилась сбоем; можно запросить повторную проверку
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
         '404': { $ref: '#/components/responses/NotFound' }
 
   # ---------------------------------------------------------------- info requests
@@ -852,8 +888,16 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/SignatureReport' }
+        '202':
+          description: Проверка текущего поколения ещё идёт
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  state: { type: string, const: PENDING }
         '404':
-          description: Документ не подписан или проверка ещё идёт (см. `Document.signatures.state`)
+          description: Документ не найден
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problem' }
@@ -863,7 +907,8 @@ paths:
       summary: Перезапустить проверку ЭП документа
       description: |
         Проверка запускается автоматически при загрузке. Ручка нужна для повтора после INDETERMINATE
-        или чтобы применить другую политику. Результат придёт WS-событием `document.signatures_verified`.
+        Финансовая политика выбирается по контексту заявки; изменить её через запрос нельзя.
+        Результат финансового MVP доступен через polling GET .../financial-result.
       operationId: reverifyDocumentSignatures
       parameters:
         - $ref: '#/components/parameters/ApplicationId'
@@ -1123,7 +1168,7 @@ components:
           enum: [UNAUTHORIZED, FORBIDDEN, NOT_FOUND, CONFLICT, VALIDATION_FAILED, INVALID_TRANSITION,
                  VERSION_CONFLICT, DRAFT_INCOMPLETE, CONSENT_REQUIRED, ACTIVE_APPLICATION_EXISTS,
                  OFFER_EXPIRED, NOT_AUTHORIZED_SIGNER, SIGNATURE_INVALID, NO_SIGNATURE_FOUND,
-                 UPSTREAM_TIMEOUT, INTERNAL]
+                 UPSTREAM_TIMEOUT, INTERNAL, UNSUPPORTED, PROCESSING_FAILED]
         errors:
           type: array
           items:
@@ -1382,6 +1427,12 @@ components:
         product_code: { type: string }
         requested: { $ref: '#/components/schemas/RequestedTerms' }
         purpose: { $ref: '#/components/schemas/Purpose' }
+        financial_document_context:
+          type: object
+          description: Контекст заявки для выбора финансового сценария; тип и ИНН берутся из компании.
+          properties:
+            tax_regime: { type: string, description: 'Для ИП поддерживается только USN_INCOME' }
+            legal_form: { type: string, description: 'Для юридического лица поддерживается только OOO' }
         financials: { $ref: '#/components/schemas/DeclaredFinancials' }
         debts:
           type: array
@@ -1533,6 +1584,7 @@ components:
         uploaded_at: { type: string, format: date-time }
         info_request_id: { type: [string, 'null'] }
         signed_document_id: { type: [string, 'null'], description: 'Для SIGNATURE — какой документ подписан' }
+        generation: { type: integer, minimum: 0, description: Поколение финансовой обработки }
         signatures:
           type: object
           description: Сводка проверки ЭП. Полный отчёт — GET .../signature-report
@@ -1554,6 +1606,79 @@ components:
               additionalProperties: true
               description: 'Нормализованные поля, напр. {"revenue_2025": 48200000, "net_profit_2025": 3100000}'
             confidence: { type: number, minimum: 0, maximum: 1 }
+
+    FinancialSource:
+      type: object
+      description: Адрес исходного значения — лист/ячейка/объединённый диапазон либо страница и область PDF; raw сохраняет исходный текст.
+      properties:
+        sheet: { type: string }
+        cell: { type: string }
+        cells: { type: array, items: { type: string } }
+        range: { type: string }
+        page: { type: integer, minimum: 1 }
+        row_code: { type: string }
+        bbox: { type: array, minItems: 4, maxItems: 4, items: { type: number } }
+        raw: { type: string }
+      additionalProperties: true
+    FinancialIndicator:
+      type: object
+      required: [name, period, amount, basis, sources, data_eligible, eligible, reasons]
+      properties:
+        name:
+          type: string
+          enum: [usn_taxable_income, accounting_revenue, net_profit, total_assets, equity, long_term_liabilities, short_term_liabilities]
+        period: { type: string, example: '2025' }
+        period_kind: { type: string, enum: [YEAR, AS_OF] }
+        amount: { type: string, pattern: '^-?[0-9]+[.][0-9]{2}$', description: Точная сумма в рублях }
+        basis: { type: string, const: DECLARED }
+        sources: { type: array, items: { $ref: '#/components/schemas/FinancialSource' } }
+        data_eligible: { type: boolean, description: Пригодность данных без учёта подписи }
+        eligible: { type: boolean, description: Пригодность с учётом обязательной проверки подписи }
+        reasons: { type: array, items: { type: string } }
+    FinancialDocumentResult:
+      type: object
+      required: [id, document_id, generation, document_sha256, parser_version, signature_report_id, signature, extracted, validation, diagnostics, indicators, scoring_indicators, processed_at]
+      properties:
+        id: { type: string }
+        document_id: { type: string }
+        generation: { type: integer }
+        document_sha256: { type: string }
+        content_sha256: { type: string, description: Хеш содержимого присоединённого контейнера }
+        parser_version: { type: string }
+        signature_report_id: { type: string }
+        signature: { $ref: '#/components/schemas/SignatureReport' }
+        extracted:
+          type: object
+          description: 'KUDIR: title, operations, declared_totals, computed_totals, section_i_reference, detail_complete. GIRBO: taxpayer_inn, values с form/code/period/amount/source. Суммы — десятичные строки, отсутствующие значения — null или отсутствующее поле.'
+          additionalProperties: true
+        validation:
+          type: array
+          items:
+            type: object
+            required: [code, status]
+            properties:
+              code: { type: string }
+              status: { type: string, enum: [PASS, FAIL, NOT_CHECKABLE] }
+              sources: { type: array, items: { $ref: '#/components/schemas/FinancialSource' } }
+        diagnostics:
+          type: array
+          items:
+            type: object
+            required: [code, message, severity]
+            properties:
+              code: { type: string }
+              message: { type: string }
+              severity: { type: string, enum: [ERROR, WARNING] }
+              period: { type: [string, 'null'] }
+              indicators: { type: array, items: { type: string } }
+              sources: { type: array, items: { $ref: '#/components/schemas/FinancialSource' } }
+        data_eligible: { type: boolean }
+        indicators: { type: array, items: { $ref: '#/components/schemas/FinancialIndicator' } }
+        scoring_indicators:
+          type: array
+          description: Только показатели с eligible=true. Налоговый доход ИП не подменяет бухгалтерскую выручку или прибыль.
+          items: { $ref: '#/components/schemas/FinancialIndicator' }
+        processed_at: { type: string, format: date-time }
 
     # ------------------------------------------------------------ info requests
     InfoRequestState:
@@ -1724,12 +1849,12 @@ components:
     SignaturePolicy:
       type: string
       description: Набор обязательных подписей для типа документа (docs/e-signature.md)
-      enum: [GENERIC, POWER_OF_ATTORNEY, FINANCIAL_STATEMENTS, LOAN_CONTRACT]
+      enum: [GENERIC, POWER_OF_ATTORNEY, FINANCIAL_STATEMENTS, LOAN_CONTRACT, KUDIR_IP, GIRBO_FNS]
     SignatureCheckCode:
       type: string
       enum: [FORMAT_PARSED, INTEGRITY, SIGNATURE_VALUE, DOCUMENT_NOT_MODIFIED, CERT_VALID_AT_SIGNING_TIME,
              SIGNING_TIME_TRUSTED, CHAIN_TO_TRUSTED_ROOT, ISSUER_ACCREDITED, NOT_REVOKED,
-             QUALIFIED_ATTRIBUTES, KEY_USAGE, SIGNER_MATCHES_APPLICANT, SIGNER_AUTHORITY, POA_VALID]
+             QUALIFIED_ATTRIBUTES, KEY_USAGE, SIGNER_MATCHES_APPLICANT, SIGNER_AUTHORITY, SIGNER_IS_FNS, POA_VALID]
     SignatureCheck:
       type: object
       required: [code, status]
@@ -1745,7 +1870,7 @@ components:
         kind:
           type: string
           description: Чей сертификат
-          enum: [LEGAL_ENTITY_HEAD, LEGAL_ENTITY_EMPLOYEE, SOLE_PROPRIETOR, INDIVIDUAL]
+          enum: [LEGAL_ENTITY_HEAD, LEGAL_ENTITY_EMPLOYEE, SOLE_PROPRIETOR, INDIVIDUAL, TAX_AUTHORITY]
         full_name: { type: string }
         position: { type: [string, 'null'], example: Генеральный директор }
         inn_individual: { type: [string, 'null'], description: 'ИНН ФЛ, OID 1.2.643.3.131.1.1' }

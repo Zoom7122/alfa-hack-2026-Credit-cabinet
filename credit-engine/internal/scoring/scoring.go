@@ -1,4 +1,4 @@
-// Package scoring validates source facts and implements the fixed MVP v2 model.
+// Package scoring prepares source facts and executes compiled scoring models.
 // It has no bank, optimizer or notification side effects.
 package scoring
 
@@ -11,6 +11,7 @@ import (
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/contracts"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/clock"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/modelbindings"
 )
 
 // Error describes a transport/validation failure, never a credit decision.
@@ -58,86 +59,25 @@ type Assessment struct {
 }
 
 type Evaluator struct {
-	source StatementsSource
-	clock  clock.Clock
+	source  StatementsSource
+	clock   clock.Clock
+	catalog *modelbindings.Catalog
+	facts   FactsSource
 }
 
 func NewEvaluator(source StatementsSource, c clock.Clock) (*Evaluator, error) {
 	if c == nil {
 		return nil, errors.New("scoring: clock is required")
 	}
-	return &Evaluator{source: source, clock: c}, nil
+	catalog, err := modelbindings.Default()
+	if err != nil {
+		return nil, err
+	}
+	return NewEvaluatorWithCatalog(source, nil, c, catalog)
 }
 
 func (e *Evaluator) Evaluate(ctx context.Context, r contracts.DecisionRequest) (Assessment, error) {
-	if err := Validate(r); err != nil {
-		return Assessment{}, err
-	}
-	if reasons := knownStops(r); len(reasons) > 0 {
-		return Assessment{Route: RouteRejected, Reasons: reasons}, nil
-	}
-	now := dateOnly(e.clock.Now())
-	data := inspectInput(r, now)
-	if data.cashConfirmed && data.flow.CFADS <= 0 {
-		return Assessment{Route: RouteRejected, Reasons: []contracts.Reason{reason("NONPOSITIVE_VERIFIED_CFADS", "Подтверждённый годовой CFADS неположителен.", "monthly_history")}}, nil
-	}
-	var statements reports
-	if r.Borrower.Type == contracts.BorrowerTypeLegalEntity {
-		if e.source == nil {
-			return Assessment{}, &Error{Status: 502, Code: "STATEMENTS_UNAVAILABLE"}
-		}
-		years := []int{now.Year() - 2, now.Year() - 1}
-		response, err := e.source.Statements(ctx, r.Borrower.ID, years)
-		if errors.Is(err, ErrStatementsNotFound) {
-			data.missing = append(data.missing, "service_b.annual_reports")
-		} else if err != nil {
-			var failure *Error
-			if errors.As(err, &failure) {
-				return Assessment{}, failure
-			}
-			status := 502
-			var timeout interface{ Timeout() bool }
-			if errors.Is(err, context.DeadlineExceeded) || errors.As(err, &timeout) && timeout.Timeout() {
-				status = 504
-			}
-			return Assessment{}, &Error{Status: status, Code: "STATEMENTS_UNAVAILABLE"}
-		} else {
-			var missing []string
-			statements, missing, err = inspectStatements(response, r.Borrower.ID, now)
-			if err != nil {
-				return Assessment{}, err
-			}
-			data.missing = append(data.missing, missing...)
-		}
-	}
-	if len(data.missing) > 0 {
-		return Assessment{Route: RouteNeedInfo, Reasons: []contracts.Reason{reason("MISSING_DATA", "Нужны полные и достоверные сведения.", unique(data.missing)...)}}, nil
-	}
-	var q contracts.QuestionnaireResult
-	var econ contracts.EconomicResult
-	manual := data.manual
-	model := "ip-v2"
-	if r.Borrower.Type == contracts.BorrowerTypeSoleProprietor {
-		q = ipQuestionnaire(r)
-		econ, manual = ipEconomics(r, data.flow, manual)
-	} else {
-		model = "legal-v2"
-		q = legalQuestionnaire(r)
-		econ, manual = legalEconomics(statements, manual)
-	}
-	raw := float64(q.Points) + econ.Points
-	total, grade := totalAndGrade(raw)
-	score := &contracts.ScoreResult{Model: model, Questionnaire: q, Economics: econ, RawTotal: raw, Total: total, Grade: grade}
-	if grade == contracts.GradeD {
-		return Assessment{Route: RouteRejected, Score: score, Reasons: []contracts.Reason{reason("SCORE_CLASS_D", "Итоговый класс D.")}, CashFlow: data.flow}, nil
-	}
-	if grade == contracts.GradeC {
-		manual = append([]contracts.Reason{reason("SCORE_CLASS_C", "Итоговый класс C.")}, manual...)
-	}
-	if len(manual) > 0 {
-		return Assessment{Route: RouteManual, Score: score, Reasons: manual, CashFlow: data.flow}, nil
-	}
-	return Assessment{Route: RouteSelection, Score: score, Reasons: []contracts.Reason{}, CashFlow: data.flow}, nil
+	return e.evaluateCompiled(ctx, r)
 }
 
 func totalAndGrade(raw float64) (int, contracts.Grade) {

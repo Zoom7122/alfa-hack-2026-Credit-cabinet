@@ -1,0 +1,16 @@
+# Изменения релиза 2.0.0
+
+Первый комплект; исходные модели и артефакты перечислены ниже.
+
+## Состав изменений
+
+- ADDED contracts/openapi.json SHA256=c7f30732293afdd65bedc41caaffcc8df8658804ddea42578f6934042022dabf
+- ADDED contracts/scoring_facts.openapi.json SHA256=a2ec046663be8353a95310607c207996e2bedc3773ec27a7d07c8411094fb916
+- ADDED docs/02_inputs_and_scoring.md SHA256=cc44c19a11b6c9f20adf9700e2208e9e6a1be73dfe8b8b87b0f08967ecd2434a
+- ADDED internal/modelbindings/catalog_generated.go SHA256=5a9d218ba7b090e013552767865b156230232081d746500e25b01f7b40969049
+- ADDED internal/modelbindings/model_2fdb12ef951b1e3b_generated.go SHA256=1bf6325b9d1e191f595de5362d879af88751a0844e9fbaea5b37b9ad2ae86537
+- ADDED internal/modelbindings/model_d69b723115e24b07_generated.go SHA256=58d177d61603d7fb58d20b142260f33c6ff41cd54c5eec5e807a1e107f940eef
+- ADDED models/ip-v2.json SHA256=afe124a79494069c965750900105923b8c9ef8098ebbbc92a3f7743097caee8e
+- ADDED models/legal-v2.json SHA256=7c15147cf700c3586d658af2d680dba13207e25bd49d08a6d5738f776ef3748c
+
+Подготовка комплекта не подтверждает сборку, тестирование или развёртывание.

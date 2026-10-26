@@ -33,6 +33,8 @@ import (
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/client/mockapi"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/env"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/events"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/financial"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/repository/memory"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/repository/postgres"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/service"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/storage"
@@ -132,6 +134,8 @@ func run(log *slog.Logger) error {
 		httptransport.WithEngineHooks(httptransport.NewEngineHandler(
 			service.NewDecisionService(postgres.NewDecisionRepository(pool), nil, service.DecisionConfig{}), log)),
 	)
+
+	financial.Register(router, financial.Repository{Pool: pool, Topic: topic}, financial.Files{Root: env.String("DOCUMENT_STORAGE_PATH", "/data/documents")})
 
 	srv := &http.Server{
 		Addr:              addr,

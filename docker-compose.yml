@@ -84,6 +84,7 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
       BANK_API_URL: http://mock-api:8090/bank/v1
       BANK_API_TIMEOUT: 5s
+      DOCUMENT_STORAGE_PATH: /data/documents
       # подсказка реквизитов по ИНН (POST /counterparty/lookup) — синхронно в ЕГРЮЛ эмулятора
       MOCK_API_URL: http://mock-api:8090
       # файлы документов; этот же volume на чтение — у worker'а проверки подписи (и будущего OCR)
@@ -125,6 +126,12 @@ services:
       MOCK_API_TIMEOUT: 5s
       COLLECT_TIMEOUT: 8s
       WORKER_CONCURRENCY: 4
+      WORKER_MAX_ATTEMPTS: ${WORKER_MAX_ATTEMPTS:-3}
+      FINANCIAL_PROCESS_TIMEOUT: ${FINANCIAL_PROCESS_TIMEOUT:-90s}
+      DOCUMENT_STORAGE_PATH: /data/documents
+      SIGNATURE_VERIFIER_URL: ${SIGNATURE_VERIFIER_URL:-}
+    volumes:
+      - documents:/data/documents
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -234,6 +241,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  documents:
   pgdata:
   kafkadata:
   documents:
