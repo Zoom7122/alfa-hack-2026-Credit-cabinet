@@ -32,89 +32,104 @@ func New(policyID string, evaluator *scoring.Evaluator, selector *optimizer.Sele
 	return &Service{policyID: policyID, evaluator: evaluator, selector: selector, bank: bank}, nil
 }
 
+// Prepared is persisted before any bank call; retries never recalculate a committed operation.
+type Prepared struct {
+	Result contracts.DecisionResponse     `json:"result"`
+	Check  *contracts.BankCheckRequest    `json:"check,omitempty"`
+	Manual *contracts.ManualReviewRequest `json:"manual,omitempty"`
+}
+
 func (s *Service) Decide(ctx context.Context, r contracts.DecisionRequest) (contracts.DecisionResponse, error) {
-	if err := ctx.Err(); err != nil {
+	p, err := s.Prepare(ctx, r, nil)
+	if err != nil {
 		return contracts.DecisionResponse{}, err
+	}
+	return s.Finish(ctx, p)
+}
+func (s *Service) Prepare(ctx context.Context, r contracts.DecisionRequest, operationID *string) (Prepared, error) {
+	if err := ctx.Err(); err != nil {
+		return Prepared{}, err
 	}
 	a, err := s.evaluator.Evaluate(ctx, r)
 	if err != nil {
-		return contracts.DecisionResponse{}, err
+		return Prepared{}, err
 	}
-	result := contracts.DecisionResponse{ApplicationID: r.ApplicationID, BorrowerID: r.Borrower.ID, Score: a.Score, Reasons: a.Reasons}
-	if result.Reasons == nil {
-		result.Reasons = []contracts.Reason{}
+	p := Prepared{Result: contracts.DecisionResponse{ApplicationID: r.ApplicationID, BorrowerID: r.Borrower.ID, Score: a.Score, Reasons: a.Reasons}}
+	if p.Result.Reasons == nil {
+		p.Result.Reasons = []contracts.Reason{}
+	}
+	manual := func() (Prepared, error) {
+		if r.CreditRequest == nil || p.Result.Score == nil {
+			return Prepared{}, fmt.Errorf("decision: incomplete manual result")
+		}
+		p.Manual = &contracts.ManualReviewRequest{OperationID: operationID, PolicyID: s.policyID, ApplicationID: r.ApplicationID, Borrower: r.Borrower, RequestedTerms: *r.CreditRequest, Score: *p.Result.Score, Reasons: p.Result.Reasons}
+		p.Result.Status, p.Result.Message = contracts.DecisionStatusUnderReview, "Заявка на рассмотрении"
+		v := contracts.ReviewReasonBorrower
+		p.Result.ReviewReason = &v
+		return p, nil
 	}
 	switch a.Route {
 	case scoring.RouteNeedInfo:
-		result.Status, result.Message = contracts.DecisionStatusNeedInfo, "Требуется дополнительная информация"
-		return result, nil
+		p.Result.Status, p.Result.Message = contracts.DecisionStatusNeedInfo, "Требуется дополнительная информация"
+		return p, nil
 	case scoring.RouteRejected:
-		result.Status, result.Message = contracts.DecisionStatusRejected, "Отклонено"
-		return result, nil
+		p.Result.Status, p.Result.Message = contracts.DecisionStatusRejected, "Отклонено"
+		return p, nil
 	case scoring.RouteManual:
-		return s.manual(ctx, r, result)
+		return manual()
 	case scoring.RouteSelection:
 	default:
-		return contracts.DecisionResponse{}, fmt.Errorf("decision: unexpected scoring route")
+		return Prepared{}, fmt.Errorf("decision: unexpected scoring route")
 	}
 	selected, err := s.selector.Select(optimizer.Input{RequestedTerms: *r.CreditRequest, Need: *r.Need, AnnualCFADSRUB: a.CashFlow.CFADS, FutureDebtPaymentsRUB: a.CashFlow.FutureDebt})
 	if err != nil {
-		return contracts.DecisionResponse{}, err
+		return Prepared{}, err
 	}
 	if selected.Terms == nil {
-		result.Reasons = selected.Reasons
-		return s.manual(ctx, r, result)
+		p.Result.Reasons = selected.Reasons
+		return manual()
 	}
-	// Format borrower amounts before calling MS2: a local arithmetic error must
-	// not happen after MS2 has already committed the issue.
 	payment, err := economics.RoundToKopecks(selected.Audit.MonthlyPaymentRUB)
 	if err != nil {
-		return contracts.DecisionResponse{}, err
+		return Prepared{}, err
 	}
-	overpayment, err := economics.RoundToKopecks(selected.Audit.OverpaymentRUB)
+	extra, err := economics.RoundToKopecks(selected.Audit.OverpaymentRUB)
+	if err != nil {
+		return Prepared{}, err
+	}
+	monthly, over := float64(payment)/100, float64(extra)/100
+	p.Result.Terms, p.Result.MonthlyPaymentRUB, p.Result.OverpaymentRUB = selected.Terms, &monthly, &over
+	p.Check = &contracts.BankCheckRequest{OperationID: operationID, PolicyID: s.policyID, ApplicationID: r.ApplicationID, Borrower: r.Borrower, RequestedTerms: *r.CreditRequest, Terms: *selected.Terms, Score: *a.Score, Selection: selected.Audit}
+	return p, nil
+}
+func (s *Service) Finish(ctx context.Context, p Prepared) (contracts.DecisionResponse, error) {
+	if p.Manual != nil {
+		if _, err := s.bank.ManualReview(ctx, *p.Manual); err != nil {
+			return contracts.DecisionResponse{}, err
+		}
+	}
+	if p.Check == nil {
+		return p.Result, nil
+	}
+	checked, err := s.bank.Check(ctx, *p.Check)
 	if err != nil {
 		return contracts.DecisionResponse{}, err
 	}
-	if err := ctx.Err(); err != nil {
-		return contracts.DecisionResponse{}, err
-	}
-	checked, err := s.bank.Check(ctx, contracts.BankCheckRequest{PolicyID: s.policyID, ApplicationID: r.ApplicationID, Borrower: r.Borrower, RequestedTerms: *r.CreditRequest, Terms: *selected.Terms, Score: *a.Score, Selection: selected.Audit})
-	if err != nil {
-		return contracts.DecisionResponse{}, err
-	}
-	result.Terms = selected.Terms
-	monthly, extra := float64(payment)/100, float64(overpayment)/100
-	result.MonthlyPaymentRUB, result.OverpaymentRUB = &monthly, &extra
 	switch checked.Verdict {
 	case contracts.BankVerdictIssued:
-		result.Status, result.Message = contracts.DecisionStatusApproved, "Одобрено"
-		result.TermsConfirmed, result.LoanID = true, checked.LoanID
+		p.Result.Status, p.Result.Message = contracts.DecisionStatusApproved, "Одобрено"
+		p.Result.TermsConfirmed, p.Result.LoanID = true, checked.LoanID
 	case contracts.BankVerdictBankReview:
-		result.Status, result.Message = contracts.DecisionStatusUnderReview, "Заявка на рассмотрении"
+		p.Result.Status, p.Result.Message = contracts.DecisionStatusUnderReview, "Заявка на рассмотрении"
 		review := contracts.ReviewReasonBank
-		result.ReviewReason = &review
-		// Private checks and bank values belong only to MS2/MS3.
-		result.Reasons = []contracts.Reason{{Code: "BANK_CONSTRAINT", Message: "Выбранная сделка требует рассмотрения банком.", Fields: []string{}}}
+		p.Result.ReviewReason = &review
+		p.Result.Reasons = []contracts.Reason{{Code: "BANK_CONSTRAINT", Message: "Выбранная сделка требует рассмотрения банком.", Fields: []string{}}}
 	default:
 		return contracts.DecisionResponse{}, fmt.Errorf("decision: unexpected bank verdict")
 	}
-	return result, nil
+	return p.Result, nil
 }
 
 func (s *Service) ModelVersion(r contracts.DecisionRequest) (string, error) {
 	return s.evaluator.ModelVersion(r)
-}
-
-func (s *Service) manual(ctx context.Context, r contracts.DecisionRequest, result contracts.DecisionResponse) (contracts.DecisionResponse, error) {
-	if err := ctx.Err(); err != nil {
-		return contracts.DecisionResponse{}, err
-	}
-	_, err := s.bank.ManualReview(ctx, contracts.ManualReviewRequest{PolicyID: s.policyID, ApplicationID: r.ApplicationID, Borrower: r.Borrower, RequestedTerms: *r.CreditRequest, Score: *result.Score, Reasons: result.Reasons})
-	if err != nil {
-		return contracts.DecisionResponse{}, err
-	}
-	result.Status, result.Message = contracts.DecisionStatusUnderReview, "Заявка на рассмотрении"
-	review := contracts.ReviewReasonBorrower
-	result.ReviewReason = &review
-	return result, nil
 }

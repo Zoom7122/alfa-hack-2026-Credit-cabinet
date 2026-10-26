@@ -158,8 +158,7 @@ func (r *CollectionTaskRepository) Claim(ctx context.Context, id string, maxAtte
 			return nil
 		}
 		if task.Status == domain.TaskFailed {
-			return insertEvent(ctx, tx, appEvent{ApplicationID: task.ApplicationID, Type: "enrich.failed",
-				Payload: map[string]any{"task_id": task.ID, "error": task.Error}})
+			return moveApplication(ctx, tx, task.ApplicationID, domain.ApplicationEnriching, domain.ApplicationVerifying, "enrich.failed", map[string]any{"task_id": task.ID, "error": task.Error})
 		}
 		return moveApplication(ctx, tx, task.ApplicationID, domain.ApplicationSubmitted, domain.ApplicationEnriching,
 			"enrich.started", map[string]any{"task_id": task.ID})
@@ -208,7 +207,7 @@ func (r *CollectionTaskRepository) Complete(ctx context.Context, rc domain.RawCo
 }
 
 // Fail переводит выполняющуюся задачу в FAILED с причиной; токены стираются.
-// Заявка остаётся в ENRICHING, в журнал пишется enrich.failed.
+// После исчерпания попыток заявка переходит в VERIFYING с доступными данными.
 func (r *CollectionTaskRepository) Fail(ctx context.Context, id, reason string) error {
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
 		var appID *string
@@ -219,8 +218,7 @@ func (r *CollectionTaskRepository) Fail(ctx context.Context, id, reason string) 
 		if err != nil {
 			return err
 		}
-		return insertEvent(ctx, tx, appEvent{ApplicationID: *appID, Type: "enrich.failed",
-			Payload: map[string]any{"task_id": id, "error": reason}})
+		return moveApplication(ctx, tx, *appID, domain.ApplicationEnriching, domain.ApplicationVerifying, "enrich.failed", map[string]any{"task_id": id, "error": reason})
 	})
 	if err != nil {
 		return fmt.Errorf("fail collection task: %w", err)

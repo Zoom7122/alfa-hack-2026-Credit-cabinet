@@ -140,7 +140,7 @@ func run(log *slog.Logger) error {
 			service.NewBackofficeService(postgres.NewBackofficeRepository(pool)), log)),
 		// поставщик Б и МС3 для credit-engine
 		httptransport.WithEngineHooks(httptransport.NewEngineHandler(
-			service.NewDecisionService(postgres.NewDecisionRepository(pool), nil, service.DecisionConfig{}), log)),
+			service.NewDecisionService(postgres.NewDecisionRepository(pool)), log)),
 		func(_ *gin.Engine, api *gin.RouterGroup) {
 			financial.RegisterForCabinet(api, financial.Repository{Pool: pool, Topic: topic},
 				financial.Files{Root: env.String("DOCUMENT_STORAGE_PATH", "/data/documents")})

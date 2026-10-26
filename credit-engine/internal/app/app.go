@@ -3,8 +3,12 @@
 package app
 
 import (
+	"context"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
+	"time"
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/contracts"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/bank"
@@ -20,6 +24,7 @@ import (
 )
 
 type Scoring struct {
+	Database         *pgxpool.Pool
 	Settings         config.Scoring
 	Policy           config.Policy
 	Economics        *economics.Calculator
@@ -33,16 +38,17 @@ type Scoring struct {
 	FactsClient      *clients.FactsClient
 	Models           *modelbindings.Catalog
 	Evaluator        *scoring.Evaluator
-	Decisions        *decision.Service
+	Decisions        httpapi.Decisions
 	Server           *http.Server
 }
 
 type Bank struct {
+	Database     *pgxpool.Pool
 	Settings     config.Bank
 	Policy       config.Policy
 	Economics    *economics.Calculator
 	InitialState contracts.BankState
-	Operations   *bank.Service
+	Operations   bank.Operations
 	Clock        clock.Clock
 	AdminHTTP    *http.Client
 	AdminClient  *clients.AdminClient
@@ -111,13 +117,25 @@ func NewScoring(cfg config.Scoring, source clock.Clock) (*Scoring, error) {
 	if err != nil {
 		return nil, err
 	}
-	router := httpapi.NewScoringRouter(decisions)
+	var engine httpapi.Decisions = decisions
+	var pool *pgxpool.Pool
+	if cfg.DatabaseURL != "" {
+		pool, err = openRuntime(cfg.DatabaseURL)
+		if err != nil {
+			return nil, err
+		}
+		engine = &decision.Persistent{Core: decisions, Pool: pool}
+	}
+	router := httpapi.NewScoringRouter(engine)
+	if pool != nil {
+		registerReadiness(router, pool)
+	}
 	httpapi.RegisterScoringModels(router, catalog)
-	return &Scoring{
+	return &Scoring{Database: pool,
 		Settings: cfg, Policy: policy, Economics: calculator, Optimizer: selector, Clock: source,
 		BankHTTP: bankHTTP, StatementsHTTP: statementsHTTP, BankClient: bankClient, StatementsClient: statementsClient, Evaluator: evaluator,
 		FactsHTTP: factsHTTP, FactsClient: factsClient, Models: catalog,
-		Decisions: decisions,
+		Decisions: engine,
 		Server:    httpapi.NewServer(cfg.Addr, cfg.WriteTimeout, router),
 	}, nil
 }
@@ -149,13 +167,64 @@ func NewBank(cfg config.Bank, source clock.Clock) (*Bank, error) {
 	if err != nil {
 		return nil, err
 	}
-	operations, err := bank.NewService(policy, state, source, adminClient)
+	var operations bank.Operations
+	var pool *pgxpool.Pool
+	if cfg.DatabaseURL != "" {
+		pool, err = openRuntime(cfg.DatabaseURL)
+		if err != nil {
+			return nil, err
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		operations, err = bank.NewPersistent(ctx, pool, policy, state, source, adminClient)
+		cancel()
+		if err != nil {
+			pool.Close()
+		}
+	} else {
+		operations, err = bank.NewService(policy, state, source, adminClient)
+	}
 	if err != nil {
 		return nil, err
 	}
-	return &Bank{
+	router := httpapi.NewBankRouter(operations)
+	if pool != nil {
+		registerReadiness(router, pool)
+	}
+	return &Bank{Database: pool,
 		Settings: cfg, Policy: policy, Economics: calculator, InitialState: state, Operations: operations, Clock: source,
 		AdminHTTP: adminHTTP, AdminClient: adminClient,
-		Server: httpapi.NewServer(cfg.Addr, cfg.WriteTimeout, httpapi.NewBankRouter(operations)),
+		Server: httpapi.NewServer(cfg.Addr, cfg.WriteTimeout, router),
 	}, nil
+}
+
+func openRuntime(dsn string) (*pgxpool.Pool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	cfg, err := pgxpool.ParseConfig(dsn)
+	if err != nil {
+		return nil, fmt.Errorf("runtime database configuration invalid")
+	}
+	cfg.MaxConns = 10
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("runtime database connection failed")
+	}
+	var table *string
+	err = pool.QueryRow(ctx, "SELECT to_regclass('credit_engine_runtime.scoring_runs')::text").Scan(&table)
+	if err != nil || table == nil {
+		pool.Close()
+		return nil, fmt.Errorf("runtime database migrations are required")
+	}
+	return pool, nil
+}
+func registerReadiness(router *gin.Engine, pool *pgxpool.Pool) {
+	router.GET("/readyz", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
+		defer cancel()
+		if pool.Ping(ctx) != nil {
+			c.Status(503)
+		} else {
+			c.Status(200)
+		}
+	})
 }

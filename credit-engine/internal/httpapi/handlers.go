@@ -39,7 +39,28 @@ func NewScoringRouter(service Decisions) *gin.Engine {
 			}
 			c.Header("X-Scoring-Model-Version", version)
 		}
-		result, err := service.Decide(c.Request.Context(), request)
+		var result contracts.DecisionResponse
+		key := c.GetHeader("Idempotency-Key")
+		if request.InputSnapshot != nil && key == "" {
+			writeProblem(c, 400, "IDEMPOTENCY_KEY_REQUIRED", nil)
+			return
+		}
+		if key != "" {
+			if len(key) > 200 {
+				writeProblem(c, 400, "INVALID_IDEMPOTENCY_KEY", nil)
+				return
+			}
+			keyed, ok := service.(interface {
+				DecideWithKey(context.Context, contracts.DecisionRequest, string) (contracts.DecisionResponse, error)
+			})
+			if !ok {
+				writeProblem(c, 503, "PERSISTENCE_REQUIRED", nil)
+				return
+			}
+			result, err = keyed.DecideWithKey(c.Request.Context(), request, key)
+		} else {
+			result, err = service.Decide(c.Request.Context(), request)
+		}
 		if err != nil {
 			writeError(c, err)
 			return
@@ -77,7 +98,20 @@ func NewBankRouter(service BankOperations) *gin.Engine {
 		}
 		writeJSON(c, http.StatusAccepted, result)
 	})
-	r.GET("/api/v1/bank/state", func(c *gin.Context) { writeJSON(c, http.StatusOK, service.Snapshot()) })
+	r.GET("/api/v1/bank/state", func(c *gin.Context) {
+		if durable, ok := service.(interface {
+			SnapshotContext(context.Context) (contracts.BankStateResponse, error)
+		}); ok {
+			out, err := durable.SnapshotContext(c.Request.Context())
+			if err != nil {
+				writeError(c, err)
+				return
+			}
+			writeJSON(c, 200, out)
+			return
+		}
+		writeJSON(c, 200, service.Snapshot())
+	})
 	return r
 }
 

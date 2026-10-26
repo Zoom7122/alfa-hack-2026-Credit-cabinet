@@ -66,7 +66,7 @@ func (c *BankClient) Check(ctx context.Context, r contracts.BankCheckRequest) (c
 	default:
 		return contracts.BankCheckResponse{}, invalidResponse("INVALID_BANK_VERDICT")
 	}
-	if result.EventID != r.ApplicationID+":"+string(kind) {
+	if result.EventID != operationPrefix(r.ApplicationID, r.OperationID)+":"+string(kind) {
 		return contracts.BankCheckResponse{}, invalidResponse("BANK_EVENT_MISMATCH")
 	}
 	return result, nil
@@ -83,11 +83,18 @@ func (c *BankClient) ManualReview(ctx context.Context, r contracts.ManualReviewR
 	if err = decodeObject(data, &result, []string{"application_id", "event_id", "notification_status"}, nil); err != nil {
 		return contracts.ManualReviewResponse{}, err
 	}
-	if result.ApplicationID == "" || result.ApplicationID != r.ApplicationID || result.EventID != r.ApplicationID+":"+string(contracts.EventTypeBorrowerReview) || !validNotification(result.NotificationStatus) {
+	if result.ApplicationID == "" || result.ApplicationID != r.ApplicationID || result.EventID != operationPrefix(r.ApplicationID, r.OperationID)+":"+string(contracts.EventTypeBorrowerReview) || !validNotification(result.NotificationStatus) {
 		return contracts.ManualReviewResponse{}, invalidResponse("INVALID_MANUAL_REVIEW_RESPONSE")
 	}
 	return result, nil
 }
 func validNotification(status contracts.NotificationStatus) bool {
 	return status == contracts.NotificationStatusDelivered || status == contracts.NotificationStatusPending
+}
+
+func operationPrefix(app string, operation *string) string {
+	if operation != nil {
+		return *operation
+	}
+	return app
 }

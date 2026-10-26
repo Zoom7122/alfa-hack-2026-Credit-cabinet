@@ -13,6 +13,7 @@ import (
 
 // Input — всё, из чего собирается запрос на оценку.
 type Input struct {
+	Statements     *Statements
 	Application    domain.Application
 	Age            int
 	MaritalStatus  domain.MaritalStatus
@@ -221,6 +222,9 @@ func Build(in Input) (Request, Facts) {
 	risk.BureauReceived = ptr(report != nil)
 	risk.DebtsComplete = ptr(report != nil && (core.Loans != nil || !hasCore))
 	statements, _ := StatementsFromFNS(in.Systems[domain.SystemFNS], app.Company.ID, []int{lastYear - 1, lastYear})
+	if in.Statements != nil {
+		statements = *in.Statements
+	}
 	facts.StatementYears = len(statements.AnnualReports)
 	docsComplete := len(history) == 12 && (ip || facts.StatementYears == 2)
 	risk.DocumentsComplete = ptr(docsComplete)
@@ -306,7 +310,7 @@ func Build(in Input) (Request, Facts) {
 		// аудит обязателен при выручке больше 800 млн или активах больше 400 млн (тыс. руб. в БФО)
 		last := statements.AnnualReports[len(statements.AnnualReports)-1]
 		opinion := "NOT_REQUIRED"
-		if *last.ProfitAndLoss.Revenue > 800_000 || *last.Balance.TotalAssets > 400_000 {
+		if last.ProfitAndLoss != nil && last.ProfitAndLoss.Revenue != nil && last.ProfitAndLoss.Unit != nil && (*last.ProfitAndLoss.Revenue > 800_000 && *last.ProfitAndLoss.Unit == "THOUSAND_RUB" || *last.ProfitAndLoss.Revenue > 800_000_000 && *last.ProfitAndLoss.Unit == "RUB") || last.Balance != nil && last.Balance.TotalAssets != nil && last.Balance.Unit != nil && (*last.Balance.TotalAssets > 400_000 && *last.Balance.Unit == "THOUSAND_RUB" || *last.Balance.TotalAssets > 400_000_000 && *last.Balance.Unit == "RUB") {
 			opinion = "REQUIRED_MISSING"
 		}
 		le.AuditorOpinion = &opinion

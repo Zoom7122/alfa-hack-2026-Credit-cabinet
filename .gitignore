@@ -4,3 +4,6 @@ __pycache__/
 /data-collector/financial_parser/testdata/*
 !/data-collector/financial_parser/testdata/README.md
 .idea/
+
+# Isolated scoring acceptance artifacts and build outputs
+.work/

@@ -9,6 +9,8 @@ import "encoding/json"
 
 // Request — DecisionRequest credit-engine (POST /api/v1/decisions).
 type Request struct {
+	InputSnapshot      *InputSnapshot  `json:"input_snapshot,omitempty"`
+	ModelVersion       *string         `json:"model_version,omitempty"`
 	ApplicationID      string          `json:"application_id"`
 	Borrower           Borrower        `json:"borrower"`
 	FactsDate          *string         `json:"facts_date"`
@@ -110,6 +112,7 @@ type creditFacts struct {
 }
 
 type IPScoring struct {
+	MilitaryStatus          *string `json:"military_status"`
 	OwnerAge                *int    `json:"owner_age"`
 	MaritalStatus           *string `json:"marital_status"`
 	Dependents              *int    `json:"dependents"`
@@ -209,33 +212,114 @@ type AnnualReport struct {
 
 // Balance — строки баланса, нужные модели (единица — у формы).
 type Balance struct {
-	Unit                      *string `json:"unit"` // RUB, THOUSAND_RUB
-	NonCurrentAssets          *int64  `json:"non_current_assets"`
-	Inventories               *int64  `json:"inventories"`
-	Receivables               *int64  `json:"receivables"`
-	ShortTermFinancialInvest  *int64  `json:"short_term_financial_investments"`
-	CashAndEquivalents        *int64  `json:"cash_and_equivalents"`
-	CurrentAssets             *int64  `json:"current_assets"`
-	TotalAssets               *int64  `json:"total_assets"`
-	Equity                    *int64  `json:"equity"`
-	LongTermBorrowings        *int64  `json:"long_term_borrowings"`
-	LongTermLiabilities       *int64  `json:"long_term_liabilities"`
-	ShortTermBorrowings       *int64  `json:"short_term_borrowings"`
-	Payables                  *int64  `json:"payables"`
-	CurrentLiabilities        *int64  `json:"current_liabilities"`
-	TotalEquityAndLiabilities *int64  `json:"total_equity_and_liabilities"`
+	Unit *string `json:"unit"`
+	// 1110 — Нематериальные активы
+	IntangibleAssets *int64 `json:"intangible_assets"`
+	// 1120 — Результаты исследований и разработок
+	ResearchAndDevelopment *int64 `json:"research_and_development"`
+	// 1130 — Нематериальные поисковые активы
+	IntangibleExplorationAssets *int64 `json:"intangible_exploration_assets"`
+	// 1140 — Материальные поисковые активы
+	TangibleExplorationAssets *int64 `json:"tangible_exploration_assets"`
+	// 1150 — Основные средства
+	FixedAssets *int64 `json:"fixed_assets"`
+	// 1160 — Доходные вложения в материальные ценности
+	IncomeBearingTangibleInvestments *int64 `json:"income_bearing_tangible_investments"`
+	// 1170 — Долгосрочные финансовые вложения
+	LongTermFinancialInvestments *int64 `json:"long_term_financial_investments"`
+	// 1180 — Отложенные налоговые активы
+	DeferredTaxAssets *int64 `json:"deferred_tax_assets"`
+	// 1190 — Прочие внеоборотные активы
+	OtherNonCurrentAssets *int64 `json:"other_non_current_assets"`
+	// 1100 — Итого внеоборотные активы
+	NonCurrentAssets *int64 `json:"non_current_assets"`
+	// 1210 — Запасы
+	Inventories *int64 `json:"inventories"`
+	// 1220 — НДС по приобретённым ценностям
+	VATOnAcquiredAssets *int64 `json:"vat_on_acquired_assets"`
+	// 1230 — Дебиторская задолженность
+	Receivables *int64 `json:"receivables"`
+	// 1240 — Краткосрочные финансовые вложения
+	ShortTermFinancialInvest *int64 `json:"short_term_financial_investments"`
+	// 1250 — Деньги и денежные эквиваленты
+	CashAndEquivalents *int64 `json:"cash_and_equivalents"`
+	// 1260 — Прочие оборотные активы
+	OtherCurrentAssets *int64 `json:"other_current_assets"`
+	// 1200 — Итого оборотные активы
+	CurrentAssets *int64 `json:"current_assets"`
+	// 1600 — Баланс: актив
+	TotalAssets *int64 `json:"total_assets"`
+	// 1310 — Уставный капитал
+	CharterCapital *int64 `json:"charter_capital"`
+	// 1320 — Собственные выкупленные акции: вычитаемая величина
+	TreasuryShares *int64 `json:"treasury_shares"`
+	// 1340 — Переоценка внеоборотных активов
+	RevaluationReserve *int64 `json:"revaluation_reserve"`
+	// 1350 — Добавочный капитал
+	AdditionalCapital *int64 `json:"additional_capital"`
+	// 1360 — Резервный капитал
+	ReserveCapital *int64 `json:"reserve_capital"`
+	// 1370 — Нераспределённая прибыль / непокрытый убыток
+	RetainedEarnings *int64 `json:"retained_earnings"`
+	// 1300 — Итого капитал и резервы
+	Equity *int64 `json:"equity"`
+	// 1410 — Долгосрочные заёмные средства
+	LongTermBorrowings *int64 `json:"long_term_borrowings"`
+	// 1420 — Отложенные налоговые обязательства
+	DeferredTaxLiabilities *int64 `json:"deferred_tax_liabilities"`
+	// 1430 — Долгосрочные оценочные обязательства
+	LongTermProvisions *int64 `json:"long_term_provisions"`
+	// 1450 — Прочие долгосрочные обязательства
+	OtherLongTermLiabilities *int64 `json:"other_long_term_liabilities"`
+	// 1400 — Итого долгосрочные обязательства
+	LongTermLiabilities *int64 `json:"long_term_liabilities"`
+	// 1510 — Краткосрочные заёмные средства
+	ShortTermBorrowings *int64 `json:"short_term_borrowings"`
+	// 1520 — Кредиторская задолженность
+	Payables *int64 `json:"payables"`
+	// 1530 — Доходы будущих периодов
+	DeferredIncome *int64 `json:"deferred_income"`
+	// 1540 — Краткосрочные оценочные обязательства
+	ShortTermProvisions *int64 `json:"short_term_provisions"`
+	// 1550 — Прочие краткосрочные обязательства
+	OtherShortTermLiabilities *int64 `json:"other_short_term_liabilities"`
+	// 1500 — Итого краткосрочные обязательства
+	CurrentLiabilities *int64 `json:"current_liabilities"`
+	// 1700 — Баланс: пассив
+	TotalEquityAndLiabilities *int64 `json:"total_equity_and_liabilities"`
 }
 
 // ProfitAndLoss — строки ОФР, нужные модели.
 type ProfitAndLoss struct {
-	Unit                   *string `json:"unit"`
-	Revenue                *int64  `json:"revenue"`
-	CostOfSales            *int64  `json:"cost_of_sales"`
-	SellingExpenses        *int64  `json:"selling_expenses"`
-	AdministrativeExpenses *int64  `json:"administrative_expenses"`
-	SalesProfit            *int64  `json:"sales_profit"`
-	InterestPayable        *int64  `json:"interest_payable"`
-	NetProfit              *int64  `json:"net_profit"`
+	Unit *string `json:"unit"`
+	// 2110 — Выручка без НДС и акцизов
+	Revenue *int64 `json:"revenue"`
+	// 2120 — Себестоимость продаж
+	CostOfSales *int64 `json:"cost_of_sales"`
+	// 2100 — Валовая прибыль / убыток
+	GrossProfit *int64 `json:"gross_profit"`
+	// 2210 — Коммерческие расходы
+	SellingExpenses *int64 `json:"selling_expenses"`
+	// 2220 — Управленческие расходы
+	AdministrativeExpenses *int64 `json:"administrative_expenses"`
+	// 2200 — Прибыль / убыток от продаж
+	SalesProfit *int64 `json:"sales_profit"`
+	// 2310 — Доходы от участия в других организациях
+	ParticipationIncome *int64 `json:"participation_income"`
+	// 2320 — Проценты к получению
+	InterestReceivable *int64 `json:"interest_receivable"`
+	// 2330 — Проценты к уплате
+	InterestPayable *int64 `json:"interest_payable"`
+	// 2340 — Прочие доходы
+	OtherIncome *int64 `json:"other_income"`
+	// 2350 — Прочие расходы
+	OtherExpenses *int64 `json:"other_expenses"`
+	// 2300 — Прибыль / убыток до налогообложения
+	ProfitBeforeTax *int64 `json:"profit_before_tax"`
+	// 2410 — Налог на прибыль: расход положительный, доход отрицательный
+	IncomeTax *int64 `json:"income_tax"`
+	// 2400 — Чистая прибыль / убыток
+	NetProfit *int64 `json:"net_profit"`
 }
 
 // CreditEvent — событие МС2 → МС3 (POST /api/v1/credit-events); нужное кабинету.

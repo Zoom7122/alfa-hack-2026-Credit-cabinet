@@ -62,7 +62,14 @@ func (e *Evaluator) evaluateCompiled(ctx context.Context, r contracts.DecisionRe
 	if err != nil {
 		return Assessment{}, err
 	}
-	p, err := PrepareApplication(r, dateOnly(e.clock.Now()))
+	date := dateOnly(e.clock.Now())
+	if r.InputSnapshot != nil {
+		date, err = time.Parse(time.DateOnly, r.InputSnapshot.EvaluationDate)
+		if err != nil || date.After(dateOnly(e.clock.Now())) || r.InputSnapshot.ID == "" {
+			return Assessment{}, &Error{Status: 422, Code: "INVALID_INPUT_SNAPSHOT", Fields: []string{"input_snapshot"}}
+		}
+	}
+	p, err := PrepareApplication(r, date)
 	if err != nil {
 		return Assessment{}, err
 	}
@@ -80,7 +87,18 @@ func (e *Evaluator) evaluateCompiled(ctx context.Context, r contracts.DecisionRe
 	if len(stops) > 0 {
 		return finish()
 	}
+	if r.InputSnapshot != nil {
+		for _, issue := range r.InputSnapshot.Diagnostics {
+			if issue.Conflict {
+				return Assessment{Route: RouteNeedInfo, Reasons: []contracts.Reason{{Code: issue.Code, Message: issue.Message, Fields: issue.Fields}}}, nil
+			}
+		}
+	}
 	if entry.Metadata().UsesFacts {
+		// These models require their own frozen supplier facts contract, not live data in a snapshot round.
+		if r.InputSnapshot != nil {
+			return Assessment{}, &Error{Status: 422, Code: "SNAPSHOT_MODEL_UNSUPPORTED"}
+		}
 		if e.facts == nil {
 			return Assessment{}, &Error{Status: 502, Code: "FACTS_UNAVAILABLE"}
 		}
@@ -105,10 +123,20 @@ func (e *Evaluator) evaluateCompiled(ctx context.Context, r contracts.DecisionRe
 		}
 	}
 	if r.Borrower.Type == contracts.BorrowerTypeLegalEntity {
-		if e.source == nil {
+		if e.source == nil && r.InputSnapshot == nil {
 			return Assessment{}, &Error{Status: 502, Code: "STATEMENTS_UNAVAILABLE"}
 		}
-		response, sourceErr := e.source.Statements(ctx, r.Borrower.ID, []int{p.Date.Year() - 2, p.Date.Year() - 1})
+		var response contracts.StatementsResponse
+		var sourceErr error
+		if r.InputSnapshot != nil {
+			if r.InputSnapshot.Statements == nil {
+				sourceErr = ErrStatementsNotFound
+			} else {
+				response = *r.InputSnapshot.Statements
+			}
+		} else {
+			response, sourceErr = e.source.Statements(ctx, r.Borrower.ID, []int{p.Date.Year() - 2, p.Date.Year() - 1})
+		}
 		if errors.Is(sourceErr, ErrStatementsNotFound) {
 		} else if sourceErr != nil {
 			var failure *Error

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/oklog/ulid/v2"
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/domain"
@@ -54,7 +54,7 @@ SELECT a.id, a.number, a.status, coalesce(a.product_code, ''), a.amount, a.term_
        a.created_at, a.submitted_at, a.updated_at,
        c.id, c.inn, c.type, c.name, coalesce(c.ogrn, ''),
        u.id, u.full_name, coalesce(u.inn, ''), coalesce(m.role, ''), coalesce(m.can_sign, false), u.persona IS NOT NULL,
-       coalesce((SELECT t.id FROM collection_tasks t WHERE t.application_id = a.id ORDER BY t.created_at DESC LIMIT 1), '')
+       coalesce((SELECT t.id FROM collection_tasks t WHERE t.application_id = a.id ORDER BY t.created_at DESC,t.id DESC LIMIT 1), '')
 FROM applications a
 JOIN companies c ON c.id = a.company_id
 JOIN users u ON u.id = a.created_by
@@ -101,12 +101,12 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
 // ApplicationRepository — заявки и всё, что пишется вместе с ними: пользователи, компании,
 // их связь, документы, задачи на сбор и события в outbox.
 type ApplicationRepository struct {
-	pool           *pgxpool.Pool
+	pool           database
 	tasksTopic     string // куда publisher отправит событие о задаче на сбор
 	documentsTopic string // куда — событие о документах для worker'ов подписи и OCR
 }
 
-func NewApplicationRepository(pool *pgxpool.Pool, tasksTopic, documentsTopic string) *ApplicationRepository {
+func NewApplicationRepository(pool database, tasksTopic, documentsTopic string) *ApplicationRepository {
 	return &ApplicationRepository{pool: pool, tasksTopic: tasksTopic, documentsTopic: documentsTopic}
 }
 
@@ -261,7 +261,7 @@ func scanApplication(row pgx.Row) (domain.Application, error) {
 }
 
 // queryDocuments — документы заявки без удалённых, в порядке id.
-func queryDocuments(ctx context.Context, pool *pgxpool.Pool, applicationID string) ([]domain.Document, error) {
+func queryDocuments(ctx context.Context, pool database, applicationID string) ([]domain.Document, error) {
 	rows, err := pool.Query(ctx, selectDocuments, applicationID)
 	if err != nil {
 		return nil, fmt.Errorf("select documents: %w", err)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -21,6 +22,9 @@ func main() {
 }
 
 func run() error {
+	if os.Getenv("DATABASE_URL") == "" {
+		return fmt.Errorf("DATABASE_URL is required for durable runtime")
+	}
 	cfg, err := config.LoadScoring(os.LookupEnv)
 	if err != nil {
 		return err
@@ -29,6 +33,9 @@ func run() error {
 	service, err := app.NewScoring(cfg, nil)
 	if err != nil {
 		return err
+	}
+	if service.Database != nil {
+		defer service.Database.Close()
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

@@ -58,7 +58,8 @@ async function adminCookie(){
 }
 async function eventFor(id){return request(admin,"/api/admin/v1/events?application_id="+encodeURIComponent(id),undefined,{Cookie:await adminCookie()});}
 async function checkEvent(expected,id){
-  const rows=await eventFor(id);
+  let rows=await eventFor(id);
+  if(expected){const deadline=Date.now()+20000;while(rows.length===0&&Date.now()<deadline){await new Promise(resolve=>setTimeout(resolve,100));rows=await eventFor(id);}}
   assert.equal(rows.length,expected?1:0,"event count "+id);
   if(!expected)return;
   const stored=await request(admin,"/api/admin/v1/events/"+encodeURIComponent(rows[0].event_id),undefined,{Cookie:await adminCookie()});
@@ -81,7 +82,10 @@ else if(mode==="run"){
   let operations=0;
   if(id.startsWith("bank:")){
     const f=identity(await read("testdata/bank/"+id.slice(5)));
-    const result=await request(bank,"/api/v1/bank/check-and-issue",f.request);equal(result,f.expected.response,"response",true);
+    let result=await request(bank,"/api/v1/bank/check-and-issue",f.request);
+    const deadline=Date.now()+20000;
+    while(result.notification_status==="PENDING"&&f.expected.response.notification_status==="DELIVERED"&&Date.now()<deadline){await new Promise(resolve=>setTimeout(resolve,100));result=await request(bank,"/api/v1/bank/check-and-issue",f.request);}
+    equal(result,f.expected.response,"response",true);
     equal((await request(bank,"/api/v1/bank/state")).state,f.expected.bank_state_saved,"saved state",true);
     await checkEvent(f.expected.notification,f.request.application_id);
     equal(await request(bank,"/api/v1/bank/check-and-issue",f.request),result,"repeat");

@@ -13,9 +13,13 @@ import (
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/modelgen"
 )
 
-func documentArtifacts(t *testing.T, definitions []model.ModelDefinition, input []byte) map[string][]byte {
+func documentArtifacts(t *testing.T, definitions []model.ModelDefinition, input []byte, versions ...string) map[string][]byte {
 	t.Helper()
-	output, err := modelgen.GenerateDocuments(definitions, modelgen.DocumentOptions{ReleaseVersion: "2.0.0", InputsMarkdown: input})
+	version := "2.0.0"
+	if len(versions) > 0 {
+		version = versions[0]
+	}
+	output, err := modelgen.GenerateDocuments(definitions, modelgen.DocumentOptions{ReleaseVersion: version, InputsMarkdown: input})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -288,7 +292,17 @@ func TestGeneratedDocumentsMatchPublishedArtifacts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for path, generated := range documentArtifacts(t, baseModels(t), input) {
+	manifest, err := os.ReadFile("../../models/release.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var current struct {
+		Version string `json:"version"`
+	}
+	if err = json.Unmarshal(manifest, &current); err != nil {
+		t.Fatal(err)
+	}
+	for path, generated := range documentArtifacts(t, baseModels(t), input, current.Version) {
 		current, err := os.ReadFile("../../" + path)
 		if err != nil {
 			t.Fatal(err)

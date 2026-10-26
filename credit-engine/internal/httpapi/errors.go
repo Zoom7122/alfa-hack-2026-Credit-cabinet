@@ -32,6 +32,9 @@ func writeError(c *gin.Context, err error) {
 	if status != 400 && status != 409 && status != 422 && status != 502 && status != 504 {
 		status, code, fields = 500, "INTERNAL_ERROR", []string{}
 	}
+	if code == "OPERATION_IN_PROGRESS" {
+		c.Header("Retry-After", "2")
+	}
 	writeProblem(c, status, code, fields)
 }
 

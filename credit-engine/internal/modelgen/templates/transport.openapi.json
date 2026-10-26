@@ -99,6 +99,19 @@
           {
             "url": "http://localhost:8082"
           }
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": "Required with input_snapshot; one key per immutable scoring round. Same key with different input: 409 IDEMPOTENCY_CONFLICT; active lease: 409 OPERATION_IN_PROGRESS with Retry-After."
+          }
         ]
       }
     },
@@ -1059,6 +1072,17 @@
                 "type": "null"
               }
             ]
+          },
+          "input_snapshot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InputSnapshot"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Immutable inputs of one dispatch round; disables live supplier reads. Current v2 models only."
           }
         },
         "required": [
@@ -1385,6 +1409,15 @@
           },
           "selection": {
             "$ref": "#/components/schemas/SelectionAudit"
+          },
+          "operation_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Stable scoring round identifier. Omission preserves legacy application identity."
           }
         },
         "required": [
@@ -1527,6 +1560,15 @@
             "items": {
               "$ref": "#/components/schemas/Reason"
             }
+          },
+          "operation_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Stable scoring round identifier. Omission preserves legacy application identity."
           }
         },
         "required": [
@@ -3335,6 +3377,123 @@
           "max_points",
           "criteria"
         ]
+      },
+      "InputSnapshot": {
+        "type": "object",
+        "required": [
+          "id",
+          "evaluation_date"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "evaluation_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "collection_id": {
+            "type": "string"
+          },
+          "source_states": {},
+          "statements": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatementsResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "documents": {},
+          "indicators": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/FinancialIndicator"
+            }
+          },
+          "diagnostics": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/InputDiagnostic"
+            }
+          }
+        }
+      },
+      "FinancialIndicator": {
+        "type": "object",
+        "required": [
+          "name",
+          "period",
+          "period_kind",
+          "amount",
+          "basis",
+          "document_id",
+          "generation",
+          "sources"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string"
+          },
+          "period_kind": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Exact decimal RUB. Taxable income remains a distinct measure."
+          },
+          "basis": {
+            "type": "string"
+          },
+          "document_id": {
+            "type": "string"
+          },
+          "generation": {
+            "type": "integer"
+          },
+          "sources": {}
+        }
+      },
+      "InputDiagnostic": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "fields",
+          "conflict"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "fields": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "conflict": {
+            "type": "boolean"
+          },
+          "values": {}
+        }
       }
     }
   }

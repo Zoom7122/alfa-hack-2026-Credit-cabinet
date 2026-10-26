@@ -607,6 +607,15 @@
           "borrower": {
             "$ref": "#/components/schemas/Borrower"
           },
+          "operation_id": {
+            "description": "Stable scoring round identifier. Omission preserves legacy application identity.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "policy_id": {
             "type": "string"
           },
@@ -1160,6 +1169,17 @@
               }
             ]
           },
+          "input_snapshot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InputSnapshot"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Immutable inputs of one dispatch round; disables live supplier reads. Current v2 models only."
+          },
           "ip_economic_data": {
             "anyOf": [
               {
@@ -1461,6 +1481,44 @@
         "required": [],
         "type": "object"
       },
+      "FinancialIndicator": {
+        "properties": {
+          "amount": {
+            "description": "Exact decimal RUB. Taxable income remains a distinct measure.",
+            "type": "string"
+          },
+          "basis": {
+            "type": "string"
+          },
+          "document_id": {
+            "type": "string"
+          },
+          "generation": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string"
+          },
+          "period_kind": {
+            "type": "string"
+          },
+          "sources": {}
+        },
+        "required": [
+          "name",
+          "period",
+          "period_kind",
+          "amount",
+          "basis",
+          "document_id",
+          "generation",
+          "sources"
+        ],
+        "type": "object"
+      },
       "Grade": {
         "enum": [
           "A",
@@ -1499,6 +1557,85 @@
           "NONE"
         ],
         "type": "string"
+      },
+      "InputDiagnostic": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "conflict": {
+            "type": "boolean"
+          },
+          "fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "values": {}
+        },
+        "required": [
+          "code",
+          "message",
+          "fields",
+          "conflict"
+        ],
+        "type": "object"
+      },
+      "InputSnapshot": {
+        "properties": {
+          "collection_id": {
+            "type": "string"
+          },
+          "diagnostics": {
+            "items": {
+              "$ref": "#/components/schemas/InputDiagnostic"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "documents": {},
+          "evaluation_date": {
+            "format": "date",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "indicators": {
+            "items": {
+              "$ref": "#/components/schemas/FinancialIndicator"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "source_states": {},
+          "statements": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatementsResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "evaluation_date"
+        ],
+        "type": "object"
       },
       "IpEconomicData": {
         "properties": {
@@ -2248,6 +2385,15 @@
           "borrower": {
             "$ref": "#/components/schemas/Borrower"
           },
+          "operation_id": {
+            "description": "Stable scoring round identifier. Omission preserves legacy application identity.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "policy_id": {
             "type": "string"
           },
@@ -2904,7 +3050,7 @@
   "info": {
     "description": "REST contracts for scoring, bank operations and administrative events. Models and supplier schemas are generated from checked definitions. Loan rates are percentages: 1 = 1%, 100 = 100%; money input is integer RUB.",
     "title": "Credit MVP internal contracts",
-    "version": "2.0.0"
+    "version": "2.0.1"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -3224,6 +3370,19 @@
       "post": {
         "description": "A calls MS1. An absent model_version selects the fixed legacy v2 for the borrower type; an explicit version must exist in the compiled catalog. MS1 checks early stops, obtains one aggregate supplier block when needed, checks supplier stops, then obtains legal-entity reports from B, scores and selects one deal. X-Scoring-Model-Version identifies the selected version after successful selection, including null scores and dependency errors.",
         "operationId": "evaluateDecision",
+        "parameters": [
+          {
+            "description": "Required with input_snapshot; one key per immutable scoring round. Same key with different input: 409 IDEMPOTENCY_CONFLICT; active lease: 409 OPERATION_IN_PROGRESS with Retry-After.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3427,5 +3586,5 @@
       "version": "legal-v2"
     }
   ],
-  "x-scoring-release": "2.0.0"
+  "x-scoring-release": "2.0.1"
 }

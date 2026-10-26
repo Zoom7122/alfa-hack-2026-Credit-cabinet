@@ -220,6 +220,7 @@ type Evidence struct {
 }
 
 type DecisionRequest struct {
+	InputSnapshot      *InputSnapshot  `json:"input_snapshot,omitempty"`
 	ApplicationID      string          `json:"application_id"`
 	ModelVersion       *string         `json:"model_version,omitempty"`
 	Borrower           Borrower        `json:"borrower"`
@@ -295,6 +296,7 @@ type DecisionResponse struct {
 }
 
 type BankCheckRequest struct {
+	OperationID    *string        `json:"operation_id,omitempty"`
 	PolicyID       string         `json:"policy_id"`
 	ApplicationID  string         `json:"application_id"`
 	Borrower       Borrower       `json:"borrower"`
@@ -324,6 +326,7 @@ type BankCheckResponse struct {
 }
 
 type ManualReviewRequest struct {
+	OperationID    *string       `json:"operation_id,omitempty"`
 	PolicyID       string        `json:"policy_id"`
 	ApplicationID  string        `json:"application_id"`
 	Borrower       Borrower      `json:"borrower"`

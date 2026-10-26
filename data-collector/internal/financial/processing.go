@@ -317,6 +317,9 @@ func (p Processor) Process(ctx context.Context, j Job, d Document, signatures []
 		extracted.Diagnostics = append(extracted.Diagnostics, Diagnostic{Code: "PARSER_HASH_MISMATCH", Severity: "ERROR", Message: "Extraction is not bound to the original"})
 	}
 	result.Extraction = extracted
+	if !integrity {
+		result.Diagnostics = append(result.Diagnostics, Diagnostic{Code: "STORED_HASH_MISMATCH", Severity: "ERROR", Message: "Stored original or signature bytes do not match their recorded hash"})
+	}
 	// Top-level SHA always identifies uploaded bytes, not an extracted container payload.
 	result.DocumentSHA256 = d.SHA256
 	signed := integrity && signatureEligible(report, j.Applicant, d.SHA256, bytes.HasPrefix(payload, []byte("%PDF")))

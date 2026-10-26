@@ -25,6 +25,7 @@ docker build -t credit-engine:local .
 | Переменная | Назначение |
 |---|---|
 | CREDIT_ENGINE_NETWORK | Имя существующей Docker-сети |
+| CREDIT_RUNTIME_DATABASE_URL | PostgreSQL URL общей схемы runtime; применить runtime-migrate перед запуском |
 | ADMIN_DATABASE_URL | PostgreSQL URL для административной схемы |
 | ADMIN_USERNAME | Логин администратора |
 | ADMIN_PASSWORD_HASH | bcrypt-хеш пароля, cost 10–14 |
@@ -45,6 +46,7 @@ unset ADMIN_PASSWORD
 Хеш с символами $ в env-файле Compose заключайте в одинарные кавычки. Примените миграции и запустите сервисы:
 
 ```sh
+docker compose --env-file .env.admin -f compose.credit-engine.yaml run --rm runtime-migrate up
 docker compose --env-file .env.admin -f compose.credit-engine.yaml run --rm admin-migrate up
 docker compose --env-file .env.admin -f compose.credit-engine.yaml up -d
 curl http://localhost:8082/healthz
@@ -116,7 +118,7 @@ curl -H 'Content-Type: application/json' \
 
 Базовые URL не содержат учётных данных, query или fragment. В Docker localhost обозначает текущий контейнер; используйте сетевые имена зависимостей. HTTP_WRITE_TIMEOUT должен покрывать последовательные обращения; общий административный тайм-аут должен превышать тайм-аут получения метаданных.
 
-PostgreSQL сохраняет черновики, ревизии, версии, архивы, события и сессии админки. Состояние банка, результаты идемпотентных операций и PENDING находятся в памяти МС2: его перезапуск сбрасывает их к стартовому снимку. Недоставка уведомления не отменяет выдачу; идентичный повтор операции повторяет только недоставленное событие.
+PostgreSQL сохраняет черновики, ревизии, версии, архивы, события и сессии админки. Состояние банка, результаты операций и исходящие события сохраняются в PostgreSQL в схеме credit_engine_runtime. Перезапуск сохраняет лимиты и учтённые выдачи. Для runtime-сервисов требуется DATABASE_URL и миграции общей схемы из модуля db. Недоставка уведомления не отменяет выдачу; идентичный повтор операции повторяет только недоставленное событие.
 
 Для остановки:
 
@@ -135,3 +137,5 @@ sh scripts/verify.sh
 ```
 
 Команда собирает образ, запускает три сервиса с отдельной тестовой PostgreSQL и подменными внешними поставщиками, выполняет Go/race/integration, проверки браузера и все сценарии из testdata/. Тестовый стек удаляется при завершении. Подробности и параметры — в docs/37_reproducible_acceptance.md.
+
+Надёжная отправка с `Idempotency-Key`, контракт `input_snapshot` и масштабирование описаны в [скоринговом конвейере](../docs/scoring-dispatch.md).

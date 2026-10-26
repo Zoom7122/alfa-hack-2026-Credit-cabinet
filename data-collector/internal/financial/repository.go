@@ -205,7 +205,7 @@ func (r Repository) Upload(ctx context.Context, d Document, sigs []Document) err
 }
 func (r Repository) Retry(ctx context.Context, app, id string) error {
 	return pgx.BeginFunc(ctx, r.Pool, func(tx pgx.Tx) error {
-		a, err := applicant(ctx, tx, app, false)
+		a, err := applicant(ctx, tx, app, true)
 		if err != nil {
 			return err
 		}

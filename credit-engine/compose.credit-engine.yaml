@@ -22,7 +22,7 @@ services:
       ADMIN_EVENTS_TOKEN: ${ADMIN_EVENTS_TOKEN:?Set ADMIN_EVENTS_TOKEN}
       ADMIN_PUBLIC_ORIGIN: ${ADMIN_PUBLIC_ORIGIN:-http://localhost:8084}
       ADMIN_COOKIE_SECURE: ${ADMIN_COOKIE_SECURE:-false}
-      ADMIN_SCORING_URL: http://scoring-service:8082
+      ADMIN_SCORING_URL: http://runtime-gateway:8082
       ADMIN_SCORING_TIMEOUT: 2s
       ADMIN_REQUEST_TIMEOUT: 30s
       HTTP_WRITE_TIMEOUT: 45s
@@ -31,6 +31,7 @@ services:
     <<: *runtime
     entrypoint: ["/bank-state-service"]
     environment:
+      DATABASE_URL: ${CREDIT_RUNTIME_DATABASE_URL:?Set CREDIT_RUNTIME_DATABASE_URL}
       BANK_ADDR: ":8083"
       ADMIN_URL: http://admin-service:8084
       ADMIN_EVENTS_TOKEN: ${ADMIN_EVENTS_TOKEN:?Set ADMIN_EVENTS_TOKEN}
@@ -40,13 +41,31 @@ services:
   scoring-service:
     <<: *runtime
     entrypoint: ["/scoring-service"]
-    ports: ["127.0.0.1:${SCORING_PORT:-8082}:8082"]
     environment:
+      DATABASE_URL: ${CREDIT_RUNTIME_DATABASE_URL:?Set CREDIT_RUNTIME_DATABASE_URL}
       SCORING_ADDR: ":8082"
-      BANK_URL: http://bank-state-service:8083
+      BANK_URL: http://runtime-gateway:8082
       STATEMENTS_URL: ${STATEMENTS_URL:?Set STATEMENTS_URL}
       FACTS_URL: ${FACTS_URL:-}
     depends_on: [bank-state-service]
+
+  runtime-gateway:
+    image: nginx:1.28-alpine
+    networks: [stack]
+    restart: unless-stopped
+    ports: ["127.0.0.1:${SCORING_PORT:-8082}:8080"]
+    environment:
+      SCORING_UPSTREAM: scoring-service:8082
+      BANK_UPSTREAM: bank-state-service:8083
+    volumes: ["../deploy/scoring-gateway.conf.template:/etc/nginx/templates/default.conf.template:ro"]
+    depends_on: [scoring-service, bank-state-service]
+
+  runtime-migrate:
+    build: ../db
+    profiles: [tools]
+    networks: [stack]
+    environment:
+      DATABASE_URL: ${CREDIT_RUNTIME_DATABASE_URL:?Set CREDIT_RUNTIME_DATABASE_URL}
 
   admin-migrate:
     <<: *runtime

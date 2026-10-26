@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/oklog/ulid/v2"
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/decision"
@@ -17,27 +17,22 @@ import (
 )
 
 const (
-	// заявка на оценку: VERIFYING без подписей в проверке (или ждали подписи дольше $1),
-	// либо SCORING, брошенная упавшим worker'ом (дольше $2)
-	claimScoringSQL = `
-SELECT a.id, a.status FROM applications a
-WHERE (a.status = 'VERIFYING' AND (a.updated_at < now() - $1::interval OR NOT EXISTS (
-          SELECT 1 FROM documents d WHERE d.application_id = a.id AND d.deleted_at IS NULL AND d.signature_state = 'PENDING')))
-   OR (a.status = 'SCORING' AND a.updated_at < now() - $2::interval)
-ORDER BY a.updated_at
-LIMIT 1
-FOR UPDATE SKIP LOCKED`
+	// Compatibility helper for legacy repository callers; production dispatch uses scoring_jobs.
+	claimScoringSQL = `SELECT a.id,a.status FROM applications a WHERE a.status='VERIFYING'
+ AND NOT EXISTS(SELECT 1 FROM documents d WHERE d.application_id=a.id AND d.deleted_at IS NULL AND d.signature_state='PENDING')
+ AND NOT EXISTS(SELECT 1 FROM scoring_jobs j WHERE j.application_id=a.id AND j.status IN ('PENDING','RUNNING','RETRY_WAIT'))
+ ORDER BY a.updated_at LIMIT 1 FOR UPDATE OF a SKIP LOCKED`
 
 	touchScoringSQL = `UPDATE applications SET status = 'SCORING', version = version + 1, updated_at = now() WHERE id = $1`
 
 	selectDecisionInputSQL = `
 SELECT a.form, coalesce(t.raw_collection_id, ''), coalesce(t.finished_at, a.updated_at),
        EXISTS (SELECT 1 FROM signature_reports r JOIN documents d ON d.id = r.document_id
-               WHERE d.application_id = a.id AND r.integrity_status = 'INVALID')
+               WHERE d.application_id = a.id AND d.deleted_at IS NULL AND r.integrity_status = 'INVALID' AND r.document_sha256=d.sha256 AND r.verified_at=(SELECT max(r2.verified_at) FROM signature_reports r2 WHERE r2.document_id=d.id))
 FROM applications a
-LEFT JOIN LATERAL (SELECT rc.id AS raw_collection_id, rc.finished_at FROM collection_tasks ct
-                   JOIN raw_collections rc ON rc.task_id = ct.id
-                   WHERE ct.application_id = a.id ORDER BY ct.created_at DESC LIMIT 1) t ON true
+LEFT JOIN LATERAL (SELECT rc.id AS raw_collection_id, ct.finished_at FROM collection_tasks ct
+                   LEFT JOIN raw_collections rc ON rc.task_id = ct.id
+                   WHERE ct.application_id = a.id ORDER BY ct.created_at DESC,ct.id DESC LIMIT 1) t ON true
 WHERE a.id = $1`
 
 	// бухотчётность для поставщика Б: последний сбор по ИНН компании
@@ -73,11 +68,11 @@ WHERE id = $1 AND status = 'SCORING'`
 
 // DecisionRepository — оценка заявки credit-engine: взять заявку, собрать вход, записать итог.
 type DecisionRepository struct {
-	pool *pgxpool.Pool
+	pool database
 	apps *ApplicationRepository
 }
 
-func NewDecisionRepository(pool *pgxpool.Pool) *DecisionRepository {
+func NewDecisionRepository(pool database) *DecisionRepository {
 	return &DecisionRepository{pool: pool, apps: &ApplicationRepository{pool: pool}}
 }
 
@@ -88,7 +83,7 @@ func (r *DecisionRepository) ClaimNext(ctx context.Context, signatureWait, stale
 	var id string
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
 		var status string
-		err := tx.QueryRow(ctx, claimScoringSQL, signatureWait.String(), stale.String()).Scan(&id, &status)
+		err := tx.QueryRow(ctx, claimScoringSQL).Scan(&id, &status)
 		if err != nil {
 			return err
 		}
@@ -163,8 +158,10 @@ func (r *DecisionRepository) Input(ctx context.Context, appID string, now time.T
 // SaveOutcome одной транзакцией записывает итог оценки: решение, предложение (если одобрено),
 // вопросы клиенту, новый статус заявки (у ручного рассмотрения — срок) и событие в журнале.
 // details — ответ движка и находки для досье.
-func (r *DecisionRepository) SaveOutcome(ctx context.Context, appID string, o decision.Outcome, details any,
-	deadline *time.Time, offerValidUntil time.Time) error {
+func (r *DecisionRepository) SaveOutcome(ctx context.Context, appID string, o decision.Outcome, details any, deadline *time.Time, offerValidUntil time.Time) error {
+	return pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error { return saveOutcome(ctx, tx, appID, "", o, details, deadline, offerValidUntil) })
+}
+func saveOutcome(ctx context.Context, tx pgx.Tx, appID, jobID string, o decision.Outcome, details any, deadline *time.Time, offerValidUntil time.Time) error {
 	questionsDue := time.Now().AddDate(0, 0, 5) // срок ответа на вопросы — как у вопросов андеррайтера
 	detailsJSON, err := json.Marshal(details)
 	if err != nil {
@@ -178,46 +175,52 @@ func (r *DecisionRepository) SaveOutcome(ctx context.Context, appID string, o de
 		}
 		reasons = string(b)
 	}
-	return pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
-		var maxAmount any
-		if o.Offer != nil {
-			maxAmount = o.Offer.AmountRUB
+
+	var maxAmount any
+	if o.Offer != nil {
+		maxAmount = o.Offer.AmountRUB
+	}
+	decisionID := "dcs_" + ulid.Make().String()
+	if _, err := tx.Exec(ctx, insertDecisionSQL, decisionID, appID, nullString(o.Grade), o.Score,
+		maxAmount, o.AutoOutcome, string(detailsJSON), reasons); err != nil {
+		return fmt.Errorf("insert decision: %w", err)
+	}
+	if o.Offer != nil && o.Status == domain.ApplicationOffered {
+		terms, _ := json.Marshal(map[string]any{"confirmed": o.Offer.Confirmed, "source": "credit-engine"})
+		if _, err := tx.Exec(ctx, insertOfferSQL, "ofr_"+ulid.Make().String(), appID, o.Offer.AmountRUB, o.Offer.TermMonths,
+			o.Offer.AnnualRate, o.Offer.MonthlyPayment, string(terms), offerValidUntil); err != nil {
+			return fmt.Errorf("insert offer: %w", err)
 		}
-		if _, err := tx.Exec(ctx, insertDecisionSQL, "dcs_"+ulid.Make().String(), appID, nullString(o.Grade), o.Score,
-			maxAmount, o.AutoOutcome, string(detailsJSON), reasons); err != nil {
-			return fmt.Errorf("insert decision: %w", err)
+	}
+	if _, err := tx.Exec(ctx, cancelOpenQuestionsSQL, appID); err != nil {
+		return fmt.Errorf("cancel open questions: %w", err)
+	}
+	for _, q := range o.Questions {
+		question := map[string]any{"code": q.Code, "title": q.Title, "description": q.Description,
+			"fields": q.Fields, "source": "credit-engine", "input": q.Answer}
+		if len(q.Answer.DocTypes) > 0 {
+			question["documents"] = map[string]any{"required": true, "accepted_types": q.Answer.DocTypes}
 		}
-		if o.Offer != nil && o.Status == domain.ApplicationOffered {
-			terms, _ := json.Marshal(map[string]any{"confirmed": o.Offer.Confirmed, "source": "credit-engine"})
-			if _, err := tx.Exec(ctx, insertOfferSQL, "ofr_"+ulid.Make().String(), appID, o.Offer.AmountRUB, o.Offer.TermMonths,
-				o.Offer.AnnualRate, o.Offer.MonthlyPayment, string(terms), offerValidUntil); err != nil {
-				return fmt.Errorf("insert offer: %w", err)
-			}
+		b, _ := json.Marshal(question)
+		if _, err := tx.Exec(ctx, insertInfoRequestSQL, "ir_"+ulid.Make().String(), appID, q.Required, string(b), questionsDue); err != nil {
+			return fmt.Errorf("insert info request: %w", err)
 		}
-		if _, err := tx.Exec(ctx, cancelOpenQuestionsSQL, appID); err != nil {
-			return fmt.Errorf("cancel open questions: %w", err)
+	}
+	tag, err := tx.Exec(ctx, finishScoringSQL, appID, string(o.Status), deadline)
+	if err != nil {
+		return fmt.Errorf("finish scoring: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("application %s is not in SCORING", appID)
+	}
+	if jobID != "" {
+		if _, err := tx.Exec(ctx, `UPDATE decisions SET scoring_job_id=$2 WHERE id=$1`, decisionID, jobID); err != nil {
+			return err
 		}
-		for _, q := range o.Questions {
-			question := map[string]any{"code": q.Code, "title": q.Title, "description": q.Description,
-				"fields": q.Fields, "source": "credit-engine", "input": q.Answer}
-			if len(q.Answer.DocTypes) > 0 {
-				question["documents"] = map[string]any{"required": true, "accepted_types": q.Answer.DocTypes}
-			}
-			b, _ := json.Marshal(question)
-			if _, err := tx.Exec(ctx, insertInfoRequestSQL, "ir_"+ulid.Make().String(), appID, q.Required, string(b), questionsDue); err != nil {
-				return fmt.Errorf("insert info request: %w", err)
-			}
-		}
-		tag, err := tx.Exec(ctx, finishScoringSQL, appID, string(o.Status), deadline)
-		if err != nil {
-			return fmt.Errorf("finish scoring: %w", err)
-		}
-		if tag.RowsAffected() == 0 {
-			return fmt.Errorf("application %s is not in SCORING", appID)
-		}
-		return insertEvent(ctx, tx, appEvent{ApplicationID: appID, Type: "scoring.completed", From: domain.ApplicationScoring,
-			To: o.Status, Message: o.Message, Payload: map[string]any{"auto_outcome": o.AutoOutcome, "grade": o.Grade}})
-	})
+	}
+	return insertEvent(ctx, tx, appEvent{ApplicationID: appID, Type: "scoring.completed", From: domain.ApplicationScoring,
+		To: o.Status, Message: o.Message, Payload: map[string]any{"auto_outcome": o.AutoOutcome, "grade": o.Grade}})
+
 }
 
 // CompanyFNS — данные ФНС последнего сбора по компании; false — сборов нет.
@@ -238,14 +241,18 @@ func (r *DecisionRepository) CompanyFNS(ctx context.Context, companyID string) (
 func (r *DecisionRepository) SaveCreditEvent(ctx context.Context, ev decision.CreditEvent) (bool, error) {
 	saved := false
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
-		var exists, appExists bool
-		if err := tx.QueryRow(ctx, creditEventExistsSQL, ev.EventID).Scan(&exists); err != nil {
-			return err
-		}
+		var appExists bool
 		if err := tx.QueryRow(ctx, applicationExistsSQL, ev.ApplicationID).Scan(&appExists); err != nil {
 			return err
 		}
-		if exists || !appExists {
+		if !appExists {
+			return nil
+		}
+		tag, err := tx.Exec(ctx, `INSERT INTO credit_event_inbox(event_id,application_id) VALUES($1,$2) ON CONFLICT DO NOTHING`, ev.EventID, ev.ApplicationID)
+		if err != nil {
+			return err
+		}
+		if tag.RowsAffected() == 0 {
 			return nil
 		}
 		saved = true

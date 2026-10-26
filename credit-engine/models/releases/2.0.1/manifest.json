@@ -1,0 +1,75 @@
+{
+  "format_version": 1,
+  "generator_version": "1",
+  "version": "2.0.1",
+  "previous_version": "2.0.0",
+  "previous_sha256": "85cc3bffbad2dca094250e26986c8a692360bf3d6cbe52ef6adce4d3b1520570",
+  "notes": "Durable scoring snapshots and dispatch protocol; scoring models unchanged.",
+  "models": [
+    {
+      "id": "ip",
+      "version": "ip-v2",
+      "borrower_type": "SOLE_PROPRIETOR",
+      "definition_sha256": "afe124a79494069c965750900105923b8c9ef8098ebbbc92a3f7743097caee8e",
+      "facts_schema_version": "",
+      "facts_schema_sha256": "",
+      "uses_facts": false
+    },
+    {
+      "id": "legal",
+      "version": "legal-v2",
+      "borrower_type": "LEGAL_ENTITY",
+      "definition_sha256": "7c15147cf700c3586d658af2d680dba13207e25bd49d08a6d5738f776ef3748c",
+      "facts_schema_version": "",
+      "facts_schema_sha256": "",
+      "uses_facts": false
+    }
+  ],
+  "files": [
+    {
+      "path": "contracts/openapi.json",
+      "sha256": "3e803780fbb9e8938fb26762a8f45bb33bf13c15ec499ac8821f0ea6de7f81b7",
+      "size": 89145
+    },
+    {
+      "path": "contracts/scoring_facts.openapi.json",
+      "sha256": "02bf393816f0f0fcf04ce0d48fd374a07c1ff2e6fdbf27577f492377ba3a690a",
+      "size": 3568
+    },
+    {
+      "path": "docs/02_inputs_and_scoring.md",
+      "sha256": "e94b68e67a8f55da10d88f52e38bf6da03d789f5e933495b1d9931b07cd19b25",
+      "size": 230859
+    },
+    {
+      "path": "internal/modelbindings/catalog_generated.go",
+      "sha256": "5a9d218ba7b090e013552767865b156230232081d746500e25b01f7b40969049",
+      "size": 964
+    },
+    {
+      "path": "internal/modelbindings/model_2fdb12ef951b1e3b_generated.go",
+      "sha256": "1bf6325b9d1e191f595de5362d879af88751a0844e9fbaea5b37b9ad2ae86537",
+      "size": 165845
+    },
+    {
+      "path": "internal/modelbindings/model_d69b723115e24b07_generated.go",
+      "sha256": "58d177d61603d7fb58d20b142260f33c6ff41cd54c5eec5e807a1e107f940eef",
+      "size": 187174
+    },
+    {
+      "path": "models/changes.md",
+      "sha256": "217cff200f609ea89bc39ec30910b250dd9dbf7399143d1d0b9cdb9a8660976b",
+      "size": 878
+    },
+    {
+      "path": "models/ip-v2.json",
+      "sha256": "afe124a79494069c965750900105923b8c9ef8098ebbbc92a3f7743097caee8e",
+      "size": 216488
+    },
+    {
+      "path": "models/legal-v2.json",
+      "sha256": "7c15147cf700c3586d658af2d680dba13207e25bd49d08a6d5738f776ef3748c",
+      "size": 241271
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import (
 type LookupEnv func(string) (string, bool)
 
 type Scoring struct {
+	DatabaseURL       string `json:"-"`
 	Addr              string
 	BankURL           string
 	StatementsURL     string
@@ -26,6 +27,7 @@ type Scoring struct {
 }
 
 type Bank struct {
+	DatabaseURL      string `json:"-"`
 	Addr             string
 	AdminURL         string
 	AdminEventsToken string `json:"-"`
@@ -37,6 +39,7 @@ type Bank struct {
 
 func LoadScoring(env LookupEnv) (Scoring, error) {
 	cfg := Scoring{
+		DatabaseURL:   value(env, "DATABASE_URL", ""),
 		Addr:          value(env, "SCORING_ADDR", ":8082"),
 		BankURL:       value(env, "BANK_URL", "http://localhost:8083"),
 		StatementsURL: value(env, "STATEMENTS_URL", ""),
@@ -68,6 +71,7 @@ func LoadScoring(env LookupEnv) (Scoring, error) {
 
 func LoadBank(env LookupEnv) (Bank, error) {
 	cfg := Bank{
+		DatabaseURL:      value(env, "DATABASE_URL", ""),
 		Addr:             value(env, "BANK_ADDR", ":8083"),
 		AdminURL:         value(env, "ADMIN_URL", ""),
 		AdminEventsToken: value(env, "ADMIN_EVENTS_TOKEN", ""),

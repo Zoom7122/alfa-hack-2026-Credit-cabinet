@@ -1,0 +1,70 @@
+# Isolated, fictional data only. scripts/verify-scoring.py assigns a unique project.
+x-database: &database
+  DATABASE_URL: postgres://scoring_test:scoring_test@postgres:5432/scoring_test?sslmode=disable
+x-engine: &engine
+  image: credit-engine:scoring-test
+  build: ./credit-engine
+  depends_on:
+    migrate: {condition: service_completed_successfully}
+x-collector: &collector
+  image: data-collector:scoring-test
+  build: ./data-collector
+  depends_on:
+    migrate: {condition: service_completed_successfully}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: scoring_test
+      POSTGRES_PASSWORD: scoring_test
+      POSTGRES_DB: scoring_test
+    ports: ["127.0.0.1::5432"]
+    tmpfs: [/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U scoring_test -d scoring_test"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+  migrate:
+    image: credit-db:scoring-test
+    build: ./db
+    environment: *database
+    depends_on:
+      postgres: {condition: service_healthy}
+  data-collector:
+    <<: *collector
+    environment:
+      <<: *database
+      SEED_TEST_USERS: "false"
+      SEED_TEST_APPLICATIONS: "false"
+    ports: ["127.0.0.1::8081"]
+  data-collector-decision-worker:
+    <<: *collector
+    entrypoint: [/data-collector-decision-worker]
+    environment:
+      <<: *database
+      SCORING_URL: http://credit-engine-gateway:8082
+      DEMO_EVALUATION_DATE: "2026-10-23"
+    ports: ["127.0.0.1::9090"]
+  credit-engine-scoring:
+    <<: *engine
+    environment:
+      <<: *database
+      BANK_URL: http://credit-engine-gateway:8082
+      STATEMENTS_URL: http://data-collector:8081
+      DEMO_EVALUATION_DATE: "2026-10-23"
+  credit-engine-bank:
+    <<: *engine
+    entrypoint: [/bank-state-service]
+    environment:
+      <<: *database
+      ADMIN_URL: http://data-collector:8081
+  credit-engine-gateway:
+    image: nginx:1.28-alpine
+    environment:
+      SCORING_UPSTREAM: credit-engine-scoring:8082
+      BANK_UPSTREAM: credit-engine-bank:8083
+    volumes: ["./deploy/scoring-gateway.conf.template:/etc/nginx/templates/default.conf.template:ro"]
+    ports: ["127.0.0.1::8082"]
+    depends_on: [credit-engine-scoring, credit-engine-bank]

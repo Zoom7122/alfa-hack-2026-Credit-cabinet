@@ -1,0 +1,34 @@
+server {
+    listen 8082;
+    resolver 127.0.0.11 valid=5s ipv6=off;
+    resolver_timeout 2s;
+    client_max_body_size 20m;
+    proxy_connect_timeout 2s;
+    proxy_read_timeout 25s;
+    proxy_send_timeout 25s;
+    # Docker DNS supplies the replicas and is refreshed after scaling/recreation.
+    set $scoring http://${SCORING_UPSTREAM};
+    set $bank http://${BANK_UPSTREAM};
+    location /api/v1/bank/ {
+        proxy_pass $bank;
+        add_header X-Runtime-Upstream $upstream_addr always;
+    }
+    location / {
+        proxy_pass $scoring;
+        add_header X-Runtime-Upstream $upstream_addr always;
+    }
+}
+
+# Host-published listener preserves the scoring API surface.
+server {
+    listen 8080;
+    resolver 127.0.0.11 valid=5s ipv6=off;
+    resolver_timeout 2s;
+    client_max_body_size 20m;
+    proxy_connect_timeout 2s;
+    proxy_read_timeout 25s;
+    proxy_send_timeout 25s;
+    set $scoring http://${SCORING_UPSTREAM};
+    location /api/v1/bank/ { return 404; }
+    location / { proxy_pass $scoring; }
+}

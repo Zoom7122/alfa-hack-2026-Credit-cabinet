@@ -42,6 +42,13 @@ services:
       retries: 40
     labels: {credit.engine.task: "${CREDIT_ENGINE_TEST_LABEL}"}
 
+  runtime-migrate:
+    build: ../db
+    environment:
+      DATABASE_URL: postgres://credit_test:credit_test_password@postgres:5432/credit_engine_admin_test?sslmode=disable
+    depends_on:
+      postgres: {condition: service_healthy}
+
   admin-migrate:
     <<: *runtime
     entrypoint: ["/admin-migrate"]
@@ -76,25 +83,32 @@ services:
     entrypoint: ["/bank-state-service"]
     volumes: ["${CREDIT_ENGINE_TEST_WORK_HOST}:/test-work:ro"]
     environment:
+      DATABASE_URL: postgres://credit_test:credit_test_password@postgres:5432/credit_engine_admin_test?sslmode=disable
       BANK_STATE_FILE: /test-work/bank-state.json
       ADMIN_URL: http://admin-service:18084
       ADMIN_EVENTS_TOKEN: fictional-ms2-service-token-1234567890
     depends_on:
       admin-service: {condition: service_started}
+      runtime-migrate: {condition: service_completed_successfully}
 
   scoring-service:
     <<: *runtime
     environment:
+      DATABASE_URL: postgres://credit_test:credit_test_password@postgres:5432/credit_engine_admin_test?sslmode=disable
       BANK_URL: http://fixtures:18090/bank
       STATEMENTS_URL: http://fixtures:18090
       DEMO_EVALUATION_DATE: "2026-10-23"
-    depends_on: [bank-state-service, fixtures]
+    depends_on:
+      runtime-migrate: {condition: service_completed_successfully}
+      bank-state-service: {condition: service_started}
+      fixtures: {condition: service_started}
 
   bank-rebuilt:
     <<: *runtime
     profiles: [checks]
     entrypoint: ["/bank-state-service"]
     environment:
+      DATABASE_URL: postgres://credit_test:credit_test_password@postgres:5432/credit_engine_admin_test?sslmode=disable
       ADMIN_URL: http://admin-service:18084
       ADMIN_EVENTS_TOKEN: fictional-ms2-service-token-1234567890
 
@@ -104,6 +118,7 @@ services:
     entrypoint: ["/scoring-rebuilt"]
     volumes: ["${CREDIT_ENGINE_TEST_WORK_HOST}/scoring-rebuilt:/scoring-rebuilt:ro"]
     environment:
+      DATABASE_URL: postgres://credit_test:credit_test_password@postgres:5432/credit_engine_admin_test?sslmode=disable
       BANK_URL: http://bank-rebuilt:8083
       STATEMENTS_URL: http://fixtures:18090
       FACTS_URL: http://fixtures:18090
@@ -133,6 +148,7 @@ services:
     environment:
       CREDIT_ENGINE_TEST_ISOLATED: "1"
       CREDIT_ENGINE_TEST_DSN: postgres://credit_test:credit_test_password@postgres:5432/credit_engine_admin_test?sslmode=disable
+      SCORING_TEST_DATABASE_URL: postgres://credit_test:credit_test_password@postgres:5432/credit_engine_admin_test?sslmode=disable
       CREDIT_ENGINE_UI_OUTPUT: "${CREDIT_ENGINE_TEST_OUTPUT}"
       GOCACHE: /workspace/credit-engine/.work/linux-gocache
       GOMODCACHE: /workspace/credit-engine/.work/gomodcache

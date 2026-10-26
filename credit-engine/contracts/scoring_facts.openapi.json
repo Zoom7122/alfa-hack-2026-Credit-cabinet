@@ -108,7 +108,7 @@
   "info": {
     "description": "This release contains no models requiring supplier facts; MS1 does not call the supplier.",
     "title": "Scoring facts supplier contract",
-    "version": "2.0.0"
+    "version": "2.0.1"
   },
   "openapi": "3.1.0",
   "paths": {},
@@ -133,5 +133,5 @@
       "version": "legal-v2"
     }
   ],
-  "x-scoring-release": "2.0.0"
+  "x-scoring-release": "2.0.1"
 }

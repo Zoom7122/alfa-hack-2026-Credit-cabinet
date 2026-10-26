@@ -597,3 +597,7 @@ curl -si -X POST localhost:8081/api/v1/applications/app_…/questionnaire \
 docker compose exec postgres psql -U credit -d credit_cabinet -c \
   "SELECT decision, verdict, failure_reason FROM signature_reports ORDER BY verified_at DESC LIMIT 5"
 ```
+
+## Отправка в скоринг
+
+`cmd/decision-worker` использует постоянную очередь `scoring_jobs` и снимки, ожидает текущие поколения документов и отправляет раунд с `Idempotency-Key`. После ошибки API повторяется тот же запрос. Подробности и настройки — [скоринговый конвейер](../docs/scoring-dispatch.md).

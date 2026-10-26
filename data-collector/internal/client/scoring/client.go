@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -27,6 +28,10 @@ func New(baseURL string, timeout time.Duration) *Client {
 // Decide отправляет заявку на оценку. Бизнес-итоги (в том числе NEED_INFO и REJECTED) — 200;
 // остальное — ошибка с телом ответа.
 func (c *Client) Decide(ctx context.Context, req decision.Request) (decision.Response, error) {
+	return c.DecideWithKey(ctx, req, "")
+}
+
+func (c *Client) DecideWithKey(ctx context.Context, req decision.Request, key string) (decision.Response, error) {
 	body, err := json.Marshal(req)
 	if err != nil {
 		return decision.Response{}, fmt.Errorf("encode decision request: %w", err)
@@ -36,21 +41,66 @@ func (c *Client) Decide(ctx context.Context, req decision.Request) (decision.Res
 		return decision.Response{}, err
 	}
 	r.Header.Set("Content-Type", "application/json")
+	if key != "" {
+		r.Header.Set("Idempotency-Key", key)
+	}
 	resp, err := c.http.Do(r)
 	if err != nil {
-		return decision.Response{}, fmt.Errorf("call credit-engine: %w", err)
+		return decision.Response{}, &Error{Code: "NETWORK_ERROR", Cause: err}
 	}
 	defer resp.Body.Close()
-	data, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	data, err := io.ReadAll(io.LimitReader(resp.Body, (1<<20)+1))
 	if err != nil {
-		return decision.Response{}, fmt.Errorf("read credit-engine response: %w", err)
+		return decision.Response{}, &Error{Code: "RESPONSE_READ_FAILED", Cause: err}
 	}
 	if resp.StatusCode != http.StatusOK {
-		return decision.Response{}, fmt.Errorf("credit-engine: %d %s", resp.StatusCode, strings.TrimSpace(string(data)))
+		var problem struct {
+			Code string `json:"code"`
+		}
+		json.Unmarshal(data, &problem)
+		wait := time.Duration(0)
+		if n, e := strconv.Atoi(resp.Header.Get("Retry-After")); e == nil && n > 0 {
+			wait = time.Duration(min(n, 86400)) * time.Second
+		} else if date, e := http.ParseTime(resp.Header.Get("Retry-After")); e == nil && time.Until(date) > 0 {
+			wait = min(time.Until(date), 24*time.Hour)
+		}
+		return decision.Response{}, &Error{Status: resp.StatusCode, Code: problem.Code, Wait: wait}
+	}
+	if len(data) > 1<<20 {
+		return decision.Response{}, &Error{Status: 200, Code: "INVALID_RESPONSE"}
 	}
 	var out decision.Response
 	if err := json.Unmarshal(data, &out); err != nil {
-		return decision.Response{}, fmt.Errorf("decode credit-engine response: %w", err)
+		return decision.Response{}, &Error{Status: 200, Code: "INVALID_RESPONSE"}
+	}
+	if out.ApplicationID != req.ApplicationID || (out.Status != "APPROVED" && out.Status != "REJECTED" && out.Status != "UNDER_REVIEW" && out.Status != "NEED_INFO") {
+		return decision.Response{}, &Error{Status: 200, Code: "INVALID_RESPONSE"}
+	}
+	if out.Status == "APPROVED" && (out.Terms == nil || !out.TermsConfirmed || out.LoanID == nil || out.MonthlyPaymentRUB == nil) {
+		return decision.Response{}, &Error{Status: 200, Code: "INVALID_RESPONSE"}
 	}
 	return out, nil
+}
+
+// Error exposes retry classification without putting response bodies in logs.
+type Error struct {
+	Status int
+	Code   string
+	Wait   time.Duration
+	Cause  error
+}
+
+func (e *Error) Error() string {
+	return fmt.Sprintf("credit-engine status=%d code=%s", e.Status, e.Code)
+}
+func (e *Error) Unwrap() error { return e.Cause }
+func (e *Error) Retryable() bool {
+	return e.Status == 0 || e.Status == 429 || e.Status >= 500 || e.Status == 409 && e.Code == "OPERATION_IN_PROGRESS"
+}
+func (e *Error) RetryAfter() time.Duration { return e.Wait }
+func (e *Error) ErrorCode() string {
+	if e.Code != "" {
+		return e.Code
+	}
+	return fmt.Sprintf("HTTP_%d", e.Status)
 }
