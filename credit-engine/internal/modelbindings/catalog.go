@@ -19,6 +19,7 @@ import (
 )
 
 type Metadata struct {
+	Active             bool                   `json:"active,omitempty"`
 	ID                 string                 `json:"id"`
 	Version            string                 `json:"version"`
 	BorrowerType       contracts.BorrowerType `json:"borrower_type"`

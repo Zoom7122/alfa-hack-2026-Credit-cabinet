@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import {maxima, dependencies, replaceItem, classIssues, conditionReferences, rulePhase} from "../web/model-edit.js";
-import {parseJSON, stringifyJSON, ExactNumber} from "../web/numbers.js";
+import {maxima, dependencies, replaceItem, classIssues, conditionReferences, rulePhase} from "../../../admin-frontend/src/legacy/model-edit.js";
+import {parseJSON, stringifyJSON, ExactNumber} from "../../../admin-frontend/src/legacy/numbers.js";
 let passed = 0;
 function test(name, action) { action(); passed++; }
 const d = parseJSON('{"parameters":[{"id":"flag","enabled":true,"source":{"kind":"SUPPLIER","path":"flag"}},{"id":"derived","enabled":true,"source":{"kind":"COMPUTED","path":"derived"},"depends_on":["flag"]}],"criteria":[{"id":"q","enabled":true,"block":"QUESTIONNAIRE","max_points":750,"answer":{"template":"${flag}"}},{"id":"e","enabled":true,"block":"ADDITIONAL","max_points":250,"value_parameter":"flag"}],"data_checks":[],"stops":[{"id":"stop","enabled":true,"when":{"op":"EQ","parameter":"flag","value":{"boolean":false}}}],"manual_reviews":[]}');

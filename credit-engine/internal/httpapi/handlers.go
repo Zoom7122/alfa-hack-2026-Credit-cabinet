@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/contracts"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/modelbindings"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/scoring"
 	"github.com/gin-gonic/gin"
 )
@@ -16,6 +17,9 @@ type Decisions interface {
 }
 type ModelResolver interface {
 	ModelVersion(contracts.DecisionRequest) (string, error)
+}
+type ModelSnapshotResolver interface {
+	ModelSnapshot(context.Context, contracts.DecisionRequest) (context.Context, modelbindings.Metadata, error)
 }
 type BankOperations interface {
 	Check(context.Context, contracts.BankCheckRequest) (contracts.BankCheckResponse, error)
@@ -31,7 +35,17 @@ func NewScoringRouter(service Decisions) *gin.Engine {
 			writeError(c, err)
 			return
 		}
-		if resolver, ok := service.(ModelResolver); ok {
+		ctx := c.Request.Context()
+		if resolver, ok := service.(ModelSnapshotResolver); ok {
+			pinned, metadata, err := resolver.ModelSnapshot(ctx, request)
+			if err != nil {
+				writeError(c, err)
+				return
+			}
+			ctx = pinned
+			c.Header("X-Scoring-Model-Version", metadata.Version)
+			c.Header("X-Scoring-Model-SHA256", metadata.DefinitionSHA256)
+		} else if resolver, ok := service.(ModelResolver); ok {
 			version, err := resolver.ModelVersion(request)
 			if err != nil {
 				writeError(c, err)
@@ -39,7 +53,7 @@ func NewScoringRouter(service Decisions) *gin.Engine {
 			}
 			c.Header("X-Scoring-Model-Version", version)
 		}
-		result, err := service.Decide(c.Request.Context(), request)
+		result, err := service.Decide(ctx, request)
 		if err != nil {
 			writeError(c, err)
 			return

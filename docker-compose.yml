@@ -192,9 +192,13 @@ services:
     environment:
       BANK_URL: http://credit-engine-bank:8083
       STATEMENTS_URL: http://data-collector:8081
+      SCORING_MODELS_DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
       DEMO_EVALUATION_DATE: ${DEMO_EVALUATION_DATE:-2026-10-22}
     ports:
       - "${CREDIT_ENGINE_PORT:-8082}:8082"
+    depends_on:
+      credit-engine-admin:
+        condition: service_started
     restart: unless-stopped
 
   credit-engine-bank:
@@ -202,6 +206,44 @@ services:
     entrypoint: ["/bank-state-service"]
     environment:
       ADMIN_URL: http://data-collector:8081
+    restart: unless-stopped
+
+  credit-engine-admin-migrate:
+    build: ./credit-engine
+    entrypoint: ["/admin-migrate"]
+    command: ["up"]
+    environment:
+      ADMIN_DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: "no"
+
+  credit-engine-admin:
+    build: ./credit-engine
+    entrypoint: ["/admin-service"]
+    environment:
+      ADMIN_ADDR: ":8084"
+      ADMIN_DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?Set ADMIN_PASSWORD_HASH}
+      ADMIN_EVENTS_TOKEN: ${ADMIN_EVENTS_TOKEN:?Set ADMIN_EVENTS_TOKEN}
+      ADMIN_PUBLIC_ORIGIN: ${ADMIN_PUBLIC_ORIGIN:-http://localhost:${ADMIN_PORT:-8084}}
+      ADMIN_COOKIE_SECURE: ${ADMIN_COOKIE_SECURE:-false}
+      ADMIN_SCORING_URL: http://credit-engine-scoring:8082
+      ADMIN_SCORING_TIMEOUT: 2s
+      ADMIN_REQUEST_TIMEOUT: 30s
+      HTTP_WRITE_TIMEOUT: 45s
+    ports: ["127.0.0.1:${ADMIN_PORT:-8084}:8084"]
+    depends_on:
+      credit-engine-admin-migrate:
+        condition: service_completed_successfully
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
     restart: unless-stopped
 
   # Эмулятор внешних систем: свой префикс на каждую систему (список — mock-api/README.md)

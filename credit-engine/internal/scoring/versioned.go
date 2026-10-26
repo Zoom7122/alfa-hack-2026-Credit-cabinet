@@ -24,27 +24,46 @@ func NewEvaluatorWithCatalog(source StatementsSource, facts FactsSource, c clock
 			return nil, fmt.Errorf("scoring: facts source is required by compiled models")
 		}
 	}
-	return &Evaluator{source: source, clock: c, catalog: catalog, facts: facts}, nil
+	return &Evaluator{source: source, clock: c, catalog: catalog, models: catalog, facts: facts}, nil
 }
-func (e *Evaluator) resolve(r contracts.DecisionRequest) (*modelbindings.Entry, error) {
+func NewEvaluatorWithProvider(source StatementsSource, facts FactsSource, c clock.Clock, provider modelbindings.Provider) (*Evaluator, error) {
+	if c == nil || provider == nil {
+		return nil, fmt.Errorf("scoring: clock and model provider are required")
+	}
+	return &Evaluator{source: source, facts: facts, clock: c, models: provider}, nil
+}
+
+type snapshotKey struct{}
+
+func (e *Evaluator) ModelSnapshot(ctx context.Context, r contracts.DecisionRequest) (context.Context, modelbindings.Metadata, error) {
+	entry, err := e.resolve(ctx, r)
+	if err != nil {
+		return ctx, modelbindings.Metadata{}, err
+	}
+	return context.WithValue(ctx, snapshotKey{}, entry), entry.Metadata(), nil
+}
+func (e *Evaluator) resolve(ctx context.Context, r contracts.DecisionRequest) (*modelbindings.Entry, error) {
+	if pinned, ok := ctx.Value(snapshotKey{}).(*modelbindings.Entry); ok {
+		return pinned, nil
+	}
 	version := ""
-	if r.ModelVersion == nil {
-		var err error
-		version, err = modelbindings.LegacyVersion(r.Borrower.Type)
-		if err != nil {
+	if r.ModelVersion != nil {
+		version = *r.ModelVersion
+		if version == "" {
 			return nil, &Error{Status: 422, Code: "UNSUPPORTED_MODEL_VERSION", Fields: []string{"model_version"}}
 		}
-	} else {
-		version = *r.ModelVersion
 	}
-	entry, err := e.catalog.Lookup(version, r.Borrower.Type)
+	entry, err := e.models.Resolve(ctx, version, r.Borrower.Type)
 	if err != nil {
-		return nil, &Error{Status: 422, Code: "UNSUPPORTED_MODEL_VERSION", Fields: []string{"model_version"}}
+		if errors.Is(err, modelbindings.ErrUnknownVersion) || errors.Is(err, modelbindings.ErrBorrowerType) {
+			return nil, &Error{Status: 422, Code: "UNSUPPORTED_MODEL_VERSION", Fields: []string{"model_version"}}
+		}
+		return nil, &Error{Status: 503, Code: "SCORING_MODELS_UNAVAILABLE"}
 	}
 	return entry, nil
 }
 func (e *Evaluator) ModelVersion(r contracts.DecisionRequest) (string, error) {
-	entry, err := e.resolve(r)
+	entry, err := e.resolve(context.Background(), r)
 	if err != nil {
 		return "", err
 	}
@@ -58,7 +77,7 @@ func (e *Evaluator) evaluateCompiled(ctx context.Context, r contracts.DecisionRe
 	if err := Validate(r); err != nil {
 		return Assessment{}, err
 	}
-	entry, err := e.resolve(r)
+	entry, err := e.resolve(ctx, r)
 	if err != nil {
 		return Assessment{}, err
 	}

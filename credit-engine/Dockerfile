@@ -1,3 +1,10 @@
+FROM node:24.22.0-bookworm-slim AS admin-ui
+WORKDIR /ui
+COPY admin-frontend/package.json admin-frontend/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY admin-frontend/ ./
+RUN npm run build
+
 FROM golang:1.26.8-bookworm AS build
 WORKDIR /src/credit-engine
 
@@ -6,6 +13,7 @@ RUN go mod download
 
 COPY cmd/ ./cmd/
 COPY internal/ ./internal/
+COPY --from=admin-ui /internal/adminui/dist/ ./internal/adminui/dist/
 COPY contracts/ ./contracts/
 COPY models/ ./models/
 COPY migrations/ ./migrations/

@@ -3,10 +3,12 @@
 package app
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/contracts"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/adminstore"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/bank"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/clients"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/clock"
@@ -20,6 +22,7 @@ import (
 )
 
 type Scoring struct {
+	ModelsDatabase   *sql.DB
 	Settings         config.Scoring
 	Policy           config.Policy
 	Economics        *economics.Calculator
@@ -92,7 +95,7 @@ func NewScoring(cfg config.Scoring, source clock.Clock) (*Scoring, error) {
 	var factsHTTP *http.Client
 	var factsClient *clients.FactsClient
 	var factsSource scoring.FactsSource
-	if usesFacts {
+	if usesFacts || cfg.FactsURL != "" {
 		if cfg.FactsURL == "" {
 			return nil, fmt.Errorf("FACTS_URL is required by compiled models")
 		}
@@ -103,7 +106,17 @@ func NewScoring(cfg config.Scoring, source clock.Clock) (*Scoring, error) {
 		}
 		factsSource = factsClient
 	}
-	evaluator, err := scoring.NewEvaluatorWithCatalog(statementsClient, factsSource, source, catalog)
+	var provider modelbindings.Provider = catalog
+	var modelsDatabase *sql.DB
+	if cfg.ModelsDatabaseURL != "" {
+		modelsDatabase, err = adminstore.OpenDatabase(cfg.ModelsDatabaseURL)
+		if err != nil {
+			return nil, err
+		}
+		repo, _ := adminstore.NewRepository(modelsDatabase)
+		provider = adminstore.NewRuntimeModels(repo)
+	}
+	evaluator, err := scoring.NewEvaluatorWithProvider(statementsClient, factsSource, source, provider)
 	if err != nil {
 		return nil, err
 	}
@@ -112,9 +125,10 @@ func NewScoring(cfg config.Scoring, source clock.Clock) (*Scoring, error) {
 		return nil, err
 	}
 	router := httpapi.NewScoringRouter(decisions)
-	httpapi.RegisterScoringModels(router, catalog)
+	httpapi.RegisterScoringModelProvider(router, provider)
 	return &Scoring{
-		Settings: cfg, Policy: policy, Economics: calculator, Optimizer: selector, Clock: source,
+		ModelsDatabase: modelsDatabase,
+		Settings:       cfg, Policy: policy, Economics: calculator, Optimizer: selector, Clock: source,
 		BankHTTP: bankHTTP, StatementsHTTP: statementsHTTP, BankClient: bankClient, StatementsClient: statementsClient, Evaluator: evaluator,
 		FactsHTTP: factsHTTP, FactsClient: factsClient, Models: catalog,
 		Decisions: decisions,

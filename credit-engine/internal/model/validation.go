@@ -146,11 +146,9 @@ func (v *validator) rules() {
 				if group.name != "manual_reviews" {
 					v.issue(path+"/after_criterion", "INVALID_REASON_ORDER", "Only manual review reasons may be ordered after a criterion.")
 				}
-				criterion, ok := criteria[r.AfterCriterion]
+				_, ok := criteria[r.AfterCriterion]
 				if !ok {
 					v.issue(path+"/after_criterion", "UNKNOWN_CRITERION", "Reason ordering target does not exist.")
-				} else if r.Enabled && !criterion.Enabled {
-					v.issue(path+"/after_criterion", "DISABLED_CRITERION_DEPENDENCY", "Enabled reason depends on a disabled criterion.")
 				}
 			}
 		}

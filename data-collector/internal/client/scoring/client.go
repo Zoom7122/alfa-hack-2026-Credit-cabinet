@@ -52,5 +52,7 @@ func (c *Client) Decide(ctx context.Context, req decision.Request) (decision.Res
 	if err := json.Unmarshal(data, &out); err != nil {
 		return decision.Response{}, fmt.Errorf("decode credit-engine response: %w", err)
 	}
+	out.ModelVersion = resp.Header.Get("X-Scoring-Model-Version")
+	out.ModelSHA256 = resp.Header.Get("X-Scoring-Model-SHA256")
 	return out, nil
 }

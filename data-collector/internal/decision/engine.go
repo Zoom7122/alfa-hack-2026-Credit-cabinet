@@ -144,6 +144,8 @@ type LegalEntityScoring struct {
 
 // Response — DecisionResponse credit-engine.
 type Response struct {
+	ModelVersion      string     `json:"model_version,omitempty"`
+	ModelSHA256       string     `json:"model_sha256,omitempty"`
 	ApplicationID     string     `json:"application_id"`
 	Status            string     `json:"status"` // APPROVED, NEED_INFO, UNDER_REVIEW, REJECTED
 	Message           string     `json:"message"`

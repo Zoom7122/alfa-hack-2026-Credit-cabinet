@@ -92,6 +92,10 @@
           "format_version": {
             "type": "integer",
             "const": 1
+          },
+          "active": {
+            "type": "boolean",
+            "description": "True for the active default of this borrower type."
           }
         }
       }

@@ -60,6 +60,11 @@ func factsJSONError(err error) error {
 	return &ScoringFactsError{Code: "INVALID_FACTS_RESPONSE", Fields: fields, Cause: err}
 }
 
+// ValidateScoringFactsMetadata shares protocol checks with runtime JSON models.
+func ValidateScoringFactsMetadata(object map[string]json.RawMessage, expected ScoringFactsExpectation, version, schema string, borrower BorrowerType) (ScoringFactsMetadata, error) {
+	return decodeFactsMetadata(object, &expected, version, schema, borrower)
+}
+
 func decodeFactsMetadata(object map[string]json.RawMessage, expected *ScoringFactsExpectation, version, schema string, borrower BorrowerType) (ScoringFactsMetadata, error) {
 	var result ScoringFactsMetadata
 	for _, field := range []struct {

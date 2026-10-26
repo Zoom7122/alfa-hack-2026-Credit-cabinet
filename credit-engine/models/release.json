@@ -1,7 +1,10 @@
 {
   "format_version": 1,
   "generator_version": "1",
-  "version": "2.0.0",
+  "version": "2.1.0",
+  "previous_version": "2.0.0",
+  "previous_sha256": "85cc3bffbad2dca094250e26986c8a692360bf3d6cbe52ef6adce4d3b1520570",
+  "notes": "Active JSON scoring models and immutable response version/SHA metadata",
   "models": [
     {
       "id": "ip",
@@ -25,17 +28,17 @@
   "files": [
     {
       "path": "contracts/openapi.json",
-      "sha256": "c7f30732293afdd65bedc41caaffcc8df8658804ddea42578f6934042022dabf",
-      "size": 85073
+      "sha256": "2ca9f766b602e378c458e1bc2c524b464aff05b29a63fd985fcce06393e3bfa1",
+      "size": 87563
     },
     {
       "path": "contracts/scoring_facts.openapi.json",
-      "sha256": "a2ec046663be8353a95310607c207996e2bedc3773ec27a7d07c8411094fb916",
+      "sha256": "4b8f8bb767e518c541ae14946e7cb8d4cc86d0926fb20e5f303cbcf00cd9d63e",
       "size": 3568
     },
     {
       "path": "docs/02_inputs_and_scoring.md",
-      "sha256": "cc44c19a11b6c9f20adf9700e2208e9e6a1be73dfe8b8b87b0f08967ecd2434a",
+      "sha256": "f0b4bb11c3b453ac28aaf2ebb67fba7d1d6cad95195440897719e41578bb58c5",
       "size": 230859
     },
     {
@@ -55,8 +58,8 @@
     },
     {
       "path": "models/changes.md",
-      "sha256": "27859fbce3d1d0f873ac37ce1cf1298ce77a27b8fcc264ca8699ec6f56c19ce3",
-      "size": 1270
+      "sha256": "cf27d00d7599c0782165ea3baa9838b5e4f6ddcde53b7842b2f2f39dfb03645a",
+      "size": 874
     },
     {
       "path": "models/ip-v2.json",

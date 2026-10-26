@@ -8,6 +8,7 @@ import (
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/contracts"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/economics"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/modelbindings"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/optimizer"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/scoring"
 )
@@ -103,6 +104,10 @@ func (s *Service) Decide(ctx context.Context, r contracts.DecisionRequest) (cont
 
 func (s *Service) ModelVersion(r contracts.DecisionRequest) (string, error) {
 	return s.evaluator.ModelVersion(r)
+}
+
+func (s *Service) ModelSnapshot(ctx context.Context, r contracts.DecisionRequest) (context.Context, modelbindings.Metadata, error) {
+	return s.evaluator.ModelSnapshot(ctx, r)
 }
 
 func (s *Service) manual(ctx context.Context, r contracts.DecisionRequest, result contracts.DecisionResponse) (contracts.DecisionResponse, error) {

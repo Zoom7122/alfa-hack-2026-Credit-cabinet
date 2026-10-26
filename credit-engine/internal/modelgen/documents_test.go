@@ -288,7 +288,22 @@ func TestGeneratedDocumentsMatchPublishedArtifacts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for path, generated := range documentArtifacts(t, baseModels(t), input) {
+	manifest, err := os.ReadFile("../../models/release.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var current struct {
+		Version string `json:"version"`
+	}
+	if err := json.Unmarshal(manifest, &current); err != nil {
+		t.Fatal(err)
+	}
+	output, err := modelgen.GenerateDocuments(baseModels(t), modelgen.DocumentOptions{ReleaseVersion: current.Version, InputsMarkdown: input})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, artifact := range output.Artifacts {
+		path, generated := artifact.Path, artifact.Data
 		current, err := os.ReadFile("../../" + path)
 		if err != nil {
 			t.Fatal(err)

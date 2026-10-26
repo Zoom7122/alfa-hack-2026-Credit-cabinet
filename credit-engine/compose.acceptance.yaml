@@ -88,6 +88,7 @@ services:
       BANK_URL: http://fixtures:18090/bank
       STATEMENTS_URL: http://fixtures:18090
       DEMO_EVALUATION_DATE: "2026-10-23"
+      SCORING_MODELS_DATABASE_URL: postgres://credit_test:credit_test_password@postgres:5432/credit_engine_admin_test?sslmode=disable
     depends_on: [bank-state-service, fixtures]
 
   bank-rebuilt:

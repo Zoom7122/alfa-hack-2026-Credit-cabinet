@@ -177,6 +177,37 @@ func TestManualOrderSpecialsClassAndSingleRounding(t *testing.T) {
 	}
 }
 
+func TestDisabledScoresKeepManualStopsAndCompleteness(t *testing.T) {
+	d := definition()
+	replacement := d.Criteria[0]
+	replacement.ID = "Q_REPLACEMENT"
+	d.Criteria[0].Enabled = false
+	d.Criteria = append(d.Criteria, replacement)
+	d.ManualReviews = []m.Rule{{ID: "REVIEW", Enabled: true, Title: "Independent review", When: eq("flag", false), Reason: *reason("REVIEW"), AfterCriterion: "Q"}}
+	d.Stops = []m.Rule{{ID: "STOP", Enabled: true, Title: "Independent stop", When: eq("flag", true), Reason: *reason("STOP")}}
+	d.DataChecks = []m.DataCheck{{ID: "CHECK", Enabled: true, Title: "Independent data check", SatisfiedWhen: m.Condition{Op: m.GE, Parameter: "amount", Value: number("10")}, Fields: []string{"amount"}, Message: "Amount must be verified"}}
+	e := compile(t, d)
+	got, err := e.Evaluate(input(rules.Boolean(false), rules.Int64(12)))
+	if err != nil || got.Route != rules.Manual || len(got.Reasons) != 1 || got.Reasons[0].Code != "REVIEW" {
+		t.Fatal("disabled score disabled anchored manual rule", got, err)
+	}
+	for _, c := range got.Score.Criteria {
+		if c.ID == "Q" {
+			t.Fatal("disabled criterion awarded points", c)
+		}
+	}
+	got, err = e.Evaluate(input(rules.Boolean(true), rules.Int64(12)))
+	if err != nil || got.Route != rules.Rejected || got.Reasons[0].Code != "STOP" {
+		t.Fatal("stop disabled with score", got, err)
+	}
+	for _, value := range []rules.Value{rules.Unknown(), rules.Int64(9)} {
+		got, err = e.Evaluate(input(rules.Boolean(false), value))
+		if err != nil || got.Route != rules.NeedInfo {
+			t.Fatal("completeness/data check disabled with score", got, err)
+		}
+	}
+}
+
 func TestEngineOwnershipConcurrencyAndInvalidFacts(t *testing.T) {
 	d := definition()
 	e := compile(t, d)

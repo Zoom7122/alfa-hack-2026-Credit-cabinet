@@ -13,6 +13,7 @@ import (
 type LookupEnv func(string) (string, bool)
 
 type Scoring struct {
+	ModelsDatabaseURL string `json:"-"`
 	Addr              string
 	BankURL           string
 	StatementsURL     string
@@ -37,11 +38,12 @@ type Bank struct {
 
 func LoadScoring(env LookupEnv) (Scoring, error) {
 	cfg := Scoring{
-		Addr:          value(env, "SCORING_ADDR", ":8082"),
-		BankURL:       value(env, "BANK_URL", "http://localhost:8083"),
-		StatementsURL: value(env, "STATEMENTS_URL", ""),
-		FactsURL:      value(env, "FACTS_URL", ""),
-		PolicyFile:    value(env, "POLICY_FILE", "config/policy.json"),
+		ModelsDatabaseURL: value(env, "SCORING_MODELS_DATABASE_URL", ""),
+		Addr:              value(env, "SCORING_ADDR", ":8082"),
+		BankURL:           value(env, "BANK_URL", "http://localhost:8083"),
+		StatementsURL:     value(env, "STATEMENTS_URL", ""),
+		FactsURL:          value(env, "FACTS_URL", ""),
+		PolicyFile:        value(env, "POLICY_FILE", "config/policy.json"),
 	}
 	var err error
 	if cfg.BankTimeout, err = duration(env, "BANK_TIMEOUT", 4*time.Second); err != nil {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {readFile,writeFile} from "node:fs/promises";
-import {parseJSON,stringifyJSON} from "../web/numbers.js";
+import {parseJSON,stringifyJSON} from "../../../admin-frontend/src/legacy/numbers.js";
 if(process.env.CREDIT_ENGINE_UI_TEST!=="1")throw Error("Isolated Docker instance required");
 const scoring=process.env.CREDIT_ENGINE_SCORING_URL, bank=process.env.CREDIT_ENGINE_BANK_URL, admin="http://localhost:18084", output=process.env.CREDIT_ENGINE_UI_OUTPUT;
 async function call(base,path,body,headers={}) {

@@ -55,6 +55,9 @@ compose run --rm --no-deps browser internal/adminui/testdata/admin_acceptance.mj
 compose run --rm --no-deps node scripts/scenarios.mjs prepare default
 compose up -d --no-deps --force-recreate bank-state-service
 compose run --rm --no-deps browser internal/adminui/testdata/runtime_smoke.mjs
+compose run --rm --no-deps browser internal/adminui/testdata/live_activation.mjs
+compose restart scoring-service
+compose run --rm --no-deps browser internal/adminui/testdata/live_activation.mjs restart
 compose run --rm --no-deps --entrypoint sh go scripts/rebuild.sh
 compose --profile checks up -d --no-deps bank-rebuilt scoring-rebuilt
 compose run --rm --no-deps -e CREDIT_ENGINE_REBUILT=1 -e CREDIT_ENGINE_SCORING_URL=http://scoring-rebuilt:8082 -e CREDIT_ENGINE_BANK_URL=http://bank-rebuilt:8083 browser internal/adminui/testdata/runtime_smoke.mjs
