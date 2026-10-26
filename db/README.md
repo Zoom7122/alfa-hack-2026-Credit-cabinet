@@ -43,7 +43,8 @@ depends_on:
 
 Для финансовых документов: `cd ../data-collector && make generate-financial`
 с `DATABASE_URL` мигрированной БД. Генератор и список таблиц — `cmd/generate-financial`;
-результат — `internal/generated/financial`. Требуется миграция `00005_financial_worker.sql`.
+результат — `internal/generated/financial`. Требуются миграции `00007_financial_documents.sql`
+и `00008_financial_worker.sql`, следующие за основной цепочкой миграций кабинета.
 
 ## Правила миграций
 

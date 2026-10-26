@@ -17,7 +17,17 @@ import (
 // Register adds the document routes to the existing internal API. Identity/access
 // controls must be provided by the same authenticated gateway as other application APIs.
 func Register(r *gin.Engine, repo Repository, files Files) {
-	base := "/api/v1/applications/:applicationId/documents"
+	register(r.Group("/api/v1"), repo, files, true)
+}
+
+// RegisterForCabinet adds financial routes to the existing API group. The cabinet
+// already provides the document content and signature report routes.
+func RegisterForCabinet(api *gin.RouterGroup, repo Repository, files Files) {
+	register(api, repo, files, false)
+}
+
+func register(r *gin.RouterGroup, repo Repository, files Files, documentReads bool) {
+	base := "/applications/:id/documents"
 	fail := func(c *gin.Context, err error) {
 		status, code := 500, "INTERNAL"
 		switch {
@@ -89,7 +99,7 @@ func Register(r *gin.Engine, repo Repository, files Files) {
 			}
 			stored = append(stored, key)
 			name := filepath.Base(strings.ReplaceAll(fh.Filename, "\\", "/"))
-			return Document{ID: newID("doc_"), ApplicationID: c.Param("applicationId"), Type: kind, FileName: name, MIME: http.DetectContentType(raw), Size: int64(len(raw)), SHA256: hash(raw), StorageKey: key, SignedDocumentID: parent}, nil
+			return Document{ID: newID("doc_"), ApplicationID: c.Param("id"), Type: kind, FileName: name, MIME: http.DetectContentType(raw), Size: int64(len(raw)), SHA256: hash(raw), StorageKey: key, SignedDocumentID: parent}, nil
 		}
 		d, err := save(form.File["file"][0], typ, target)
 		if err != nil {
@@ -118,7 +128,7 @@ func Register(r *gin.Engine, repo Repository, files Files) {
 		c.JSON(201, d)
 	})
 	r.GET(base, func(c *gin.Context) {
-		items, err := repo.List(c.Request.Context(), c.Param("applicationId"))
+		items, err := repo.List(c.Request.Context(), c.Param("id"))
 		if err != nil {
 			fail(c, err)
 			return
@@ -126,34 +136,36 @@ func Register(r *gin.Engine, repo Repository, files Files) {
 		c.JSON(200, gin.H{"items": items})
 	})
 	r.GET(base+"/:documentId", func(c *gin.Context) {
-		d, err := repo.Get(c.Request.Context(), c.Param("applicationId"), c.Param("documentId"))
+		d, err := repo.Get(c.Request.Context(), c.Param("id"), c.Param("documentId"))
 		if err != nil {
 			fail(c, err)
 			return
 		}
 		c.JSON(200, d)
 	})
-	r.GET(base+"/:documentId/content", func(c *gin.Context) {
-		d, err := repo.Get(c.Request.Context(), c.Param("applicationId"), c.Param("documentId"))
-		if err != nil {
-			fail(c, err)
-			return
-		}
-		b, err := files.Read(d.StorageKey)
-		if err != nil {
-			fail(c, err)
-			return
-		}
-		if hash(b) != d.SHA256 {
-			fail(c, errors.New("stored original corrupted"))
-			return
-		}
-		c.Header("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": d.FileName}))
-		c.Header("X-Content-Type-Options", "nosniff")
-		c.Data(200, "application/octet-stream", b)
-	})
+	if documentReads {
+		r.GET(base+"/:documentId/content", func(c *gin.Context) {
+			d, err := repo.Get(c.Request.Context(), c.Param("id"), c.Param("documentId"))
+			if err != nil {
+				fail(c, err)
+				return
+			}
+			b, err := files.Read(d.StorageKey)
+			if err != nil {
+				fail(c, err)
+				return
+			}
+			if hash(b) != d.SHA256 {
+				fail(c, errors.New("stored original corrupted"))
+				return
+			}
+			c.Header("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": d.FileName}))
+			c.Header("X-Content-Type-Options", "nosniff")
+			c.Data(200, "application/octet-stream", b)
+		})
+	}
 	r.GET(base+"/:documentId/financial-result", func(c *gin.Context) {
-		app, id := c.Param("applicationId"), c.Param("documentId")
+		app, id := c.Param("id"), c.Param("documentId")
 		if _, err := repo.Get(c.Request.Context(), app, id); err != nil {
 			fail(c, err)
 			return
@@ -169,34 +181,36 @@ func Register(r *gin.Engine, repo Repository, files Files) {
 		}
 		c.Data(200, "application/json", raw)
 	})
-	r.GET(base+"/:documentId/signature-report", func(c *gin.Context) {
-		app, id := c.Param("applicationId"), c.Param("documentId")
-		if _, err := repo.Get(c.Request.Context(), app, id); err != nil {
-			fail(c, err)
-			return
-		}
-		raw, err := repo.Result(c.Request.Context(), app, id)
-		if errors.Is(err, ErrNotFound) {
-			c.JSON(202, gin.H{"state": "PENDING"})
-			return
-		}
-		if err != nil {
-			fail(c, err)
-			return
-		}
-		var result Result
-		if err = json.Unmarshal(raw, &result); err != nil {
-			fail(c, err)
-			return
-		}
-		c.JSON(200, result.Signature)
-	})
+	if documentReads {
+		r.GET(base+"/:documentId/signature-report", func(c *gin.Context) {
+			app, id := c.Param("id"), c.Param("documentId")
+			if _, err := repo.Get(c.Request.Context(), app, id); err != nil {
+				fail(c, err)
+				return
+			}
+			raw, err := repo.Result(c.Request.Context(), app, id)
+			if errors.Is(err, ErrNotFound) {
+				c.JSON(202, gin.H{"state": "PENDING"})
+				return
+			}
+			if err != nil {
+				fail(c, err)
+				return
+			}
+			var result Result
+			if err = json.Unmarshal(raw, &result); err != nil {
+				fail(c, err)
+				return
+			}
+			c.JSON(200, result.Signature)
+		})
+	}
 	r.POST(base+"/:documentId/signature-verification", func(c *gin.Context) {
-		if err := repo.Retry(c.Request.Context(), c.Param("applicationId"), c.Param("documentId")); err != nil {
+		if err := repo.Retry(c.Request.Context(), c.Param("id"), c.Param("documentId")); err != nil {
 			fail(c, err)
 			return
 		}
-		d, err := repo.Get(c.Request.Context(), c.Param("applicationId"), c.Param("documentId"))
+		d, err := repo.Get(c.Request.Context(), c.Param("id"), c.Param("documentId"))
 		if err != nil {
 			fail(c, err)
 			return

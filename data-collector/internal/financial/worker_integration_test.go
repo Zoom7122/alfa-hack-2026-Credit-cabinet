@@ -152,7 +152,7 @@ func TestFinancialWorkerMigrationPreservesCompletedResults(t *testing.T) {
 	if err = r.Complete(ctx, j, testResult(j, d)); err != nil {
 		t.Fatal(err)
 	}
-	raw, err := os.ReadFile("../../../db/migrations/00005_financial_worker.sql")
+	raw, err := os.ReadFile("../../../db/migrations/00008_financial_worker.sql")
 	if err != nil {
 		t.Fatal(err)
 	}

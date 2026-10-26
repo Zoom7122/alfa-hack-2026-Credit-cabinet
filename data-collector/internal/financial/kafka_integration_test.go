@@ -52,7 +52,7 @@ func TestFinancialKafkaRedelivery(t *testing.T) {
 	defer p.Close()
 	r := Repository{Pool: pool, Topic: topic}
 	d, ev := enqueueTestDocument(t, r)
-	pub := outbox.New(postgres.NewOutboxRepository(pool), p, outbox.Config{Topic: topic, BatchSize: 10, PublishTimeout: 10 * time.Second}, workerTestLog)
+	pub := outbox.New(postgres.NewOutboxRepository(pool), p, outbox.Config{Topics: []string{topic}, BatchSize: 10, PublishTimeout: 10 * time.Second}, workerTestLog)
 	if n, err := pub.PublishOnce(ctx); err != nil || n != 1 {
 		t.Fatalf("outbox: %d %v", n, err)
 	}

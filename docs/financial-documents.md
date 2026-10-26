@@ -27,7 +27,7 @@
 
 ## Запуск и API
 
-Применить все миграции до `00005_financial_worker.sql` через модуль `db`. API и worker
+Применить все миграции до `00008_financial_worker.sql` через модуль `db`. API и worker
 используют общий каталог `DOCUMENT_STORAGE_PATH` (по умолчанию `/data/documents`);
 в compose для него добавлен постоянный volume `documents`.
 
