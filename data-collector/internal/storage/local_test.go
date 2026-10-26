@@ -82,3 +82,19 @@ func TestDiscard(t *testing.T) {
 		t.Fatalf("staged file must be removed: %v", err)
 	}
 }
+
+func TestOpenRejectsUnsafeKeys(t *testing.T) {
+	root := t.TempDir()
+	s, err := NewLocal(root, 1<<20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"../secret", "/etc/passwd", "a/../../b", `a\b`, ""} {
+		if _, err := s.Open(key); !errors.Is(err, ErrUnsafeKey) {
+			t.Errorf("Open(%q) = %v, want ErrUnsafeKey", key, err)
+		}
+	}
+	if _, err := s.Open("app_1/nope.pdf"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("missing file: %v, want ErrNotFound", err)
+	}
+}

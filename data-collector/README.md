@@ -40,14 +40,15 @@ GET /applications/{id}, /collections/{id} ──▶ статус заявки и
 
 ## Бинари
 
-Один модуль и один Docker-образ, четыре бинаря:
+Один модуль и один Docker-образ, пять бинарей:
 
 | Бинарь | Пакет | Что делает |
 |---|---|---|
-| `data-collector` | `cmd/data-collector` | HTTP API: регистрация, анкета с файлами, заявки, состояние сбора, `/check-mock` |
+| `data-collector` | `cmd/data-collector` | HTTP API: мок-вход (`/auth/*`, `/me`), регистрация, анкета с файлами, заявки, состояние сбора, `/check-mock` |
 | `data-collector-publisher` | `cmd/outbox-publisher` | переносит события из `outbox` в Kafka (оба топика). Несколько реплик безопасны: события блокируются `FOR UPDATE SKIP LOCKED` |
 | `data-collector-worker` | `cmd/worker` | читает топик задач в consumer group `data-collector-worker`, опрашивает системы, пишет результат. Реплики делят партиции топика |
 | `data-collector-signature-worker` | `cmd/signature-worker` | читает топик документов в consumer group `data-collector-signature-worker`, проверяет подписи и пишет отчёты в `signature_reports`. Реплики делят партиции топика |
+| `data-collector-decision-worker` | `cmd/decision-worker` | оценка после сбора: берёт заявки `VERIFYING` из Postgres (`FOR UPDATE SKIP LOCKED`), собирает запрос в credit-engine, пишет итог (см. «Оценка заявки») |
 
 Топики создают publisher и worker'ы при старте (`KAFKA_TOPIC_PARTITIONS` партиций). Новая группа читает топик с начала, так что задачи, созданные до первого запуска worker'а, не теряются.
 
@@ -91,10 +92,13 @@ make swagger            # перегенерировать docs/ после пр
 | `KAFKA_TOPIC` | всем | `data-collector.collection-tasks` | топик задач на сбор |
 | `KAFKA_DOCUMENTS_TOPIC` | API, publisher, worker подписи | `data-collector.documents` | топик событий о документах |
 | `HTTP_ADDR` | API | `:8081` | адрес HTTP-сервера |
+| `SEED_TEST_USERS` | API | `true` | при старте завести тестовых пользователей для мок-входа (`GET /auth/test-users`); `false` — не заводить |
 | `DOCUMENTS_DIR` | API, worker подписи | `data/documents` (в образе — `/data/documents`) | куда класть файлы документов; worker подписи читает их оттуда |
 | `MAX_FILE_SIZE_MB` | API, worker подписи | `20` | лимит одного файла |
 | `BANK_API_URL` | API | `http://localhost:8090/bank/v1` | корень старого API банка (`/check-mock`) |
 | `BANK_API_TIMEOUT` | API | `5s` | таймаут одного запроса к старому API банка |
+| `MOCK_API_URL` | API | `http://localhost:8090` | эмулятор внешних систем: ЕГРЮЛ для подсказки по ИНН (`/counterparty/lookup`) |
+| `LOOKUP_TIMEOUT` | API | `3s` | таймаут подсказки по ИНН; дольше — `504 UPSTREAM_TIMEOUT` |
 | `KAFKA_BROKERS` | publisher, worker'ы | `localhost:9094` | брокеры через запятую |
 | `KAFKA_TOPIC_PARTITIONS` | publisher, worker'ы | `3` | партиций у топика, если его надо создать |
 | `PUBLISHER_POLL_INTERVAL` | publisher | `500ms` | пауза, когда в outbox пусто. При ошибках подряд пауза удваивается, но не дольше 5 с |
@@ -141,6 +145,49 @@ curl -s localhost:8081/api/v1/applications/app_…                 # SUBMITTED �
 curl -s localhost:8081/api/v1/collections/tsk_…                  # PENDING → RUNNING → COMPLETED
 ```
 
+### Вход: `GET /api/v1/auth/test-users`, `POST /api/v1/auth/mock-login`, `GET /api/v1/me`
+
+Мок-вход, как в контракте кабинета `api/openapi.yaml`: паролей нет, токен — `mock.<user_id>`.
+- `GET /auth/test-users` — тестовые пользователи: `id`, `full_name`, `roles`, `persona`, `companies` (`applicant_id`, `short_name`, `inn`, `role`, `can_sign`).
+- `POST /auth/mock-login` с `{"user_id": "usr_director_north"}` — `{"token": "mock.usr_director_north", "user": Me}`. Ошибки: `400` — нет или пустой `user_id`; `404` — пользователя нет или он не тестовый. Войти можно только под тестовым пользователем (с `persona`): под пользователем, заведённым анонимной регистрацией, нельзя.
+- `GET /me` с `Authorization: Bearer mock.<user_id>` — текущий пользователь и его компании: сначала заведённые ему, потом добавленные регистрацией, по имени (кабинет берёт первую как основную). `pending_signatures` пока всегда пустой — подписания в модуле нет. Без токена или с неизвестным пользователем — `401 UNAUTHORIZED`.
+
+Токен необязателен на всех ручках `/api/v1`, кроме `/me`. Схема `Bearer` — без учёта регистра. Ручкам входа токен не нужен, старый токен им не мешает. Без заголовка всё работает анонимно, как раньше. С неверным токеном остальные ручки отвечают `401`. С верным `POST /applicants` оформляет заявку **от имени вошедшего пользователя**:
+- нового пользователя не заводит, ИНН физлица из тела не нужен;
+- ФИО берёт из профиля (поле в теле всё равно обязательно);
+- по той же компании возвращает его прежний черновик;
+- новая компания попадает в профиль (`company_members`) с ролью из запроса, а **уже записанная роль не меняется** — иначе одна регистрация задним числом поменяла бы роль и `can_sign` во всех его заявках по компании;
+- сотрудник банка (`UNDERWRITER`) заявку не подаёт — `403 FORBIDDEN`.
+
+Тестовые пользователи (`internal/service/testusers.go`) заводятся при старте API (`SEED_TEST_USERS`). При повторном старте:
+- ничего не дублируется;
+- порядок в списке входа — как в коде;
+- убранные из кода пользователи пропадают из списка (строки остаются — на них ссылаются заявки).
+
+Компания с тем же ИНН, по которой уже подавали заявку, остаётся со своим id и собранными данными. Поэтому id компаний в живой базе могут отличаться от указанных в коде — сверять по ИНН. Если id из кода занят другой компанией, заводится `apl_inn_<ИНН>`.
+
+| id | Кто | Компания |
+|---|---|---|
+| `usr_director_romashka`, `usr_accountant_romashka` | директор и бухгалтер | ООО «Ромашка» `7701234567` |
+| `usr_ip_smirnov` | ИП | `771234567890` |
+| `usr_director_vector` | директор | ООО «Вектор Строй» `7724567890` |
+| `usr_underwriter_sokolova` | андеррайтер (`UNDERWRITER`) | — |
+| `usr_director_north`, `usr_accountant_north` | директор и бухгалтер, сценарий A | ООО «Северный ветер» `7799000012` |
+| `usr_director_stroyresurs` | директор, сценарий B | ООО «Стройресурс» `7799000020` |
+| `usr_director_altair` | директор, сценарий C | ООО «Альтаир» `7799000037` |
+| `usr_ip_smirnova` | ИП, сценарий D | `779900010202` |
+| `usr_finance_techno` | отвечает за финансирование, сценарий E | ООО «Техно-Сервис» `7799000044` |
+
+Первые пять — те же id, что у моков фронта (`frontend/src/mocks/data.ts`): на них держатся экраны кабинета, которые пока на моках. По компаниям сценариев A–E mock-api отдаёт данные во всех системах.
+
+```bash
+curl -s localhost:8081/api/v1/auth/test-users
+curl -s -X POST localhost:8081/api/v1/auth/mock-login -H 'Content-Type: application/json' -d '{"user_id":"usr_director_north"}'
+curl -s localhost:8081/api/v1/me -H 'Authorization: Bearer mock.usr_director_north'
+curl -s -X POST localhost:8081/api/v1/applicants -H 'Authorization: Bearer mock.usr_director_north' \
+  -H 'Content-Type: application/json' -d '{"representative":{"full_name":"Ковалёв Игорь Сергеевич","role":"DIRECTOR"},"company":{"inn":"7799000012"}}'
+```
+
 ### `POST /api/v1/applicants` — кто оформляет кредит и за какую компанию
 
 Одной транзакцией создаёт или находит:
@@ -165,7 +212,7 @@ curl -s localhost:8081/api/v1/collections/tsk_…                  # PENDING →
 | `BANKING_EMPLOYEE` | сотрудник, работающий с банковскими продуктами | по доверенности |
 | `AUTHORIZED_EMPLOYEE` | иной сотрудник, уполномоченный оформлять заявку от имени компании | по доверенности |
 
-Ответ `201` — заявка (как в `GET /applications/{id}`, плюс `applicant.already_known`), `Location: /api/v1/applications/{id}`. Ошибки: `400` — битый JSON, нет обязательного поля; `422` — неверный ИНН (компании — 10 или 12 цифр, физлица — 12) или роль.
+Ответ `201` — заявка (как в `GET /applications/{id}`, плюс `applicant.already_known`), `Location: /api/v1/applications/{id}`. Ошибки: `400` — битый JSON, нет обязательного поля; `401` — неверный токен; `422` — неверный ИНН (компании — 10 или 12 цифр, физлица — 12) или роль. С токеном — см. «Вход» выше.
 
 ### `POST /api/v1/applications/{id}/questionnaire` — анкета и документы
 
@@ -194,6 +241,13 @@ curl -s localhost:8081/api/v1/collections/tsk_…                  # PENDING →
 | `poa_number`, `representative_inn` | МЧД представителя, если заявку подаёт не директор | доверенности ищутся только по ИНН компании |
 
 Токены передаются внешним системам в заголовках. В `applications.form`, `raw_collections`, журнал запросов, Kafka и ответ API они не попадают. Пока задача не завершена, они лежат в `collection_tasks.secrets`, потом стираются.
+
+#### Ответы для оценки (`scoring`, необязательно)
+
+То, чего нет в собранных данных и что нужно credit-engine; коды — как в `credit-engine/contracts/contract.go`. Чего нет — банк спросит после оценки (вопрос в `info_requests`). Неверный код или отрицательное число — `422` с полем `scoring.<поле>`.
+
+- общие: `max_annual_rate` (% годовых, 0–100), `min_acceptable_amount`, `max_acceptable_term_months`, `need_cost`, `own_contribution`, `free_cash`, `minimum_cash`, `need_evidence` (`CONTRACT_AND_COST`, `VERIFIED_ESTIMATE`, `ORAL_ONLY`), `experience_years`;
+- только ИП: `primary_income_source`, `qualification`, `total_experience_months`, `net_monthly_income`, `car_class`, `education_level`, `real_estate_status`, `business_location`, `location_stability_months`, `buyer_contracts`.
 
 #### Файлы
 
@@ -236,6 +290,21 @@ curl -s localhost:8081/api/v1/collections/tsk_…                  # PENDING →
 ### `GET /api/v1/applications/{id}` — заявка
 
 Номер, статус, компания (после сбора — имя и ОГРН из ЕГРЮЛ), представитель с ролью и `can_sign`, продукт, сумма и срок, цель, документы и `collection_task_id` — последняя задача на сбор. Ошибки: `404` — заявки нет.
+
+### Кабинет клиента
+
+Для экранов кабинета (главная, вкладки «Документы» и «История», шаг «Компания»):
+
+- `GET /applicants` (нужен токен) — компании пользователя с его ролью, `can_sign` и реквизитами из ЕГРЮЛ после сбора (ОГРН, дата регистрации); основная — первой.
+- `GET /applications?company_id=&status=DRAFT,SUBMITTED&mine=true` (нужен токен) — заявки компаний пользователя, его и коллег, новые сверху, до 100. Черновики коллег не отдаются; `mine=true` — только свои. Неизвестный статус — `422`.
+- `GET /applications/{id}/timeline` — журнал заявки для клиента: создание, отправка анкеты, сбор данных, проверка подписи (`type`, `at`, `from`/`to`, `actor_kind`, `message`).
+- `GET /applications/{id}/documents/{documentId}/content` — файл документа (`Content-Disposition: attachment`, имя по RFC 2231). Файла нет на диске — `404`.
+- `GET /applications/{id}/documents/{documentId}/signature-report` — последний отчёт worker'а подписи (JSON из `signature_reports.report`): по id документа — последний по любой его подписи, по id `.sig` — отчёт этой подписи. `404` с кодом `REPORT_NOT_READY` — подпись ещё не проверяли, `NOT_FOUND` — заявки или документа нет. Итог проверки есть и в списке документов заявки — `signature_verdict`.
+- `POST /counterparty/lookup` `{"inn": "7799000012"}` (нужен токен) — реквизиты из ЕГРЮЛ/ЕГРИП синхронно: название, ОГРН, КПП, дата регистрации, регион, руководитель, `registry_status` (`ACTIVE`/`LIQUIDATED`), `already_known`. Ошибки: `404` — в реестре нет, `422` — неверный ИНН, `504` (`UPSTREAM_TIMEOUT`) — реестр не ответил за `LOOKUP_TIMEOUT`, ответил ошибкой или капчей (причина — в логе).
+
+Регистрация (`POST /applicants`) тоже спрашивает ЕГРЮЛ: ликвидированную компанию не оформить (`422`, `company.inn` — `company_liquidated`); реестр не ответил — регистрация идёт как обычно. Анкету (`POST …/questionnaire`) отправляет только автор заявки: с чужим токеном — `403`, заявку тестового пользователя без токена — `401`.
+
+Журнал, файл и отчёт пока открыты без токена, как и `GET /applications/{id}`.
 
 ### `GET /api/v1/collections/{id}` — состояние сбора
 
@@ -403,6 +472,73 @@ curl -s 'localhost:8081/api/v1/check-mock?inn=7701234567'
 ### `GET /healthz`
 
 Проверка, что сервис поднят.
+
+## Каталог продуктов и калькулятор платежа
+
+Токен не нужен. Каталог — в коде (`internal/domain/product.go`, 7 продуктов), хранилища нет.
+
+- `GET /products?purpose=&applicant_type=` — продукты под цель и тип заявителя (без фильтров — все): диапазоны суммы и срока, ставка «от», залог (`required_above_amount`: `null` — не нужен, `0` — нужен всегда), поручительство. `422` — неизвестная цель или тип.
+- `GET /products/{code}` — карточка продукта, `404` — нет такого.
+- `POST /products/{code}/calculate` `{"amount": 5000000, "term_months": 24}` — аннуитетный платёж по ставке «от» (`rate_annual_from`, `monthly_payment_from`, `disclaimer`), без скоринга. `422` — сумма или срок вне диапазона продукта (`requested.amount`, `requested.term_months`).
+
+Анкета проверяет то же: неизвестный `product_code` — `422 unknown_product`, сумма или срок вне диапазона продукта — `422 out_of_range`.
+
+## Итог для клиента: решение, предложения, вопросы банка
+
+- `GET /applications/{id}/decision` — итог оценки (движка или специалиста): `outcome`, причины отказа для клиента (`reasons`), `reapply_after` — когда подать снова (через 30 дней после отказа), `decided_by` (`ENGINE`/`EMPLOYEE`). `404` — ещё не оценили.
+- `GET /applications/{id}/offers` — предложения (`offers`).
+- `GET /applications/{id}/info-requests` — вопросы банка: `input` — как отвечать (`MONEY`, `NUMBER`, `CHOICE` с `options`, `TEXT`, `NONE`) и `scoring_field` — какое поле анкеты `scoring` уточняет ответ; `documents` — какие документы приложить; `source` — `credit-engine` или `underwriter`; срок ответа — 5 дней.
+- `POST /applications/{id}/info-requests/{requestId}/answer` — ответ: JSON `{value, comment}` или multipart (часть `answer` с тем же JSON и части `files`; форматы и подписи — как у анкеты). Отвечает только автор заявки (`403`, без токена у тестового пользователя — `401`). Ошибки: `409` — банк не ждёт ответов или на вопрос уже ответили, `422` — значение не того типа или нет обязательного документа. Значение с `scoring_field` дописывается в анкету. Ответили на все обязательные вопросы — необязательные отменяются, и заявка уходит дальше: вопросы движка — на повторную оценку (`VERIFYING`), вопросы специалиста — обратно к нему (`MANUAL_REVIEW`, новый срок, тот же исполнитель). При повторной оценке темы, на которые клиент уже ответил, не спрашиваются; если других вопросов не осталось — заявка уходит специалисту.
+
+Вопросы движка строятся по полям, которых ему не хватило (`internal/decision/outcome.go`, `questionTopics`): числа и варианты уточняют анкету, документы (выписка, отчётность, МЧД) — прикладываются файлом.
+
+## Рабочее место андеррайтера (`/api/v1/backoffice/*`)
+
+Экраны 16–18 кабинета. Все ручки — только для андеррайтера (`role = UNDERWRITER`; тестовые — `usr_underwriter_sokolova`, `usr_underwriter_orlov`): без токена — `401`, с токеном клиента — `403`.
+
+- `GET /backoffice/applications?status=MANUAL_REVIEW,WAITING_FOR_INFO&assignee=me|none|<id>&limit=&cursor=` — очередь: сначала ручное рассмотрение по сроку (`sla_due_at` = `applications.deadline_at`), затем остальные — свежие сверху; черновиков нет. В строке — грейд и баллы, причины ручного рассмотрения от credit-engine, системы со сбоем при сборе, исполнитель. `counters` — ручных всего, моих, со сроком сегодня, ждут клиента (без учёта фильтров). `next_cursor` — смещение следующей страницы (до 100 строк).
+- `GET /backoffice/applications/{id}` — досье: заявка, `version` (и `ETag`), исполнитель и срок; компания по собранным данным (ЕГРЮЛ, бухотчётность по годам в ₽, кредитная история, взыскания, суды, отношения с банком, флаги риска); итог сбора по 19 системам (критичные — АБС, ФНС, БКИ, комплаенс, Федресурс); находки; скоринг credit-engine по критериям с баллами (`score.factors`); решение движка (`engine_decision`: итог, основание рассмотрения, причины, предложенные условия); решение андеррайтера; предложения; вопросы клиенту; другие заявки компании; журнал со служебными событиями (`internal: true` — клиенту не виден, `actor` — сотрудник банка).
+- `POST /backoffice/applications/{id}/assign` — взять в работу: только `MANUAL_REVIEW` (иначе `409 INVALID_TRANSITION`), заявку другого — `409 CONFLICT`; повтор своим — без изменений.
+- `POST /backoffice/applications/{id}/decision` (`If-Match: <version>`, `Idempotency-Key`):
+  - `APPROVE` — `offers` (до 3; пусто — условия, предложенные движком), старые предложения отзываются, `OFFERED`; итог `APPROVED` или `APPROVED_WITH_CHANGES`, если условия отличаются от запрошенных;
+  - `REJECT` — `client_reasons` (обязательно), повторно — через 30 дней, `REJECTED`;
+  - `REQUEST_INFO` — `info_requests` (обязательно), срок ответа 5 дней, `WAITING_FOR_INFO`;
+  - `expert_adjustments` и `internal_comment` — в журнал (служебные), клиенту не видны.
+  Заявка без исполнителя закрепляется за андеррайтером. Ошибки: `409` (не на рассмотрении, у другого), `412 VERSION_CONFLICT` (версия устарела), `422` (поля). Повтор с тем же `Idempotency-Key` возвращает досье без второго решения (`decision_requests`, миграция 00006). Решение пишется в `decisions.outcome`/`decided_by`/`comment` поверх строки оценки движка; в журнал — `uw.decision` с текстом для клиента.
+
+Перезапрос одной системы (`…/sources/{code}/refresh` из `openapi.yaml`) не сделан.
+
+## Оценка заявки (`data-collector-decision-worker` + credit-engine)
+
+После сбора заявку оценивает credit-engine (`../credit-engine`, в compose — `credit-engine-scoring` :8082 и `credit-engine-bank`). data-collector для него — три участника из `credit-engine/docs/05_integration.md`:
+- **отправитель А** — `internal/decision`: `DecisionRequest` из анкеты (в том числе блока `scoring`) и `raw_collections`;
+- **поставщик Б** — `GET /api/v1/borrowers/{id}/statements?years=` (id компании `apl_…`): баланс и ОФР из ГИР БО последнего сбора, тыс. руб.;
+- **МС3** — `POST /api/v1/credit-events`: события МС2 (выдача, ручное рассмотрение, проблема банка) в журнал заявки как `credit_engine.*`, повтор по `event_id` не пишется.
+Обе ручки внутренние: nginx кабинета их не пропускает.
+
+Конвейер: `VERIFYING` (подписи проверены или ждали дольше `DECISION_SIGNATURE_WAIT`) → `SCORING` → итог одной транзакцией — строка `decisions` (грейд, баллы, ответ движка, находки), и по статусу движка:
+
+| Ответ движка | Статус заявки | Что ещё пишется |
+|---|---|---|
+| `APPROVED` | `OFFERED` | предложение в `offers` (срок действия `OFFER_VALIDITY`) |
+| `REJECTED` | `REJECTED` | причины в `decisions.client_reasons` |
+| `NEED_INFO` | `WAITING_FOR_INFO` | вопросы клиенту в `info_requests` — по темам полей, которых не хватило |
+| `UNDER_REVIEW` | `MANUAL_REVIEW` | срок `deadline_at` = сейчас + `REVIEW_SLA`; условия движка (если есть) — в `decisions.details.proposed_offer` |
+
+Откуда поля запроса (`internal/decision/request.go`):
+- денежный поток за 12 месяцев — обороты АБС, разложенные по назначениям платежей выписки: займы и свои переводы не выручка, погашения и лизинг — долг, ЕНП — налоги, зарплата и аренда — постоянные, остальное — переменные;
+- долг и график на 36 месяцев — БКИ; кредитная история, просрочки, обращения за 90 дней — БКИ и наши кредиты;
+- возраст бизнеса, активность, ликвидация, руководитель, недостоверность, ОКВЭД — ЕГРЮЛ и «Прозрачный бизнес»; банкротство — Федресурс и КАД; споры и взыскания — ФССП и КАД (существенно — больше 10 % среднемесячных поступлений); ограничения счетов — АБС и блокировки ФНС; санкции — комплаенс; налоговый долг — ЕНС;
+- подтверждение выручки — декларации, иначе БФО (у ООО на ОСН — с НДС);
+- полномочия — руководитель по ЕГРЮЛ, сам ИП или действующая МЧД на представителя;
+- ответы клиента (ставка, границы суммы и срока, потребность, свободные деньги, опыт; у ИП — доход, образование и т. п.) — блок `scoring` анкеты.
+Чего в данных нет, уходит `null`: движок отвечает `NEED_INFO`, и клиент получает вопрос.
+
+Дата оценки — `DEMO_EVALUATION_DATE` (в compose `2026-10-22`, «сегодня» mock-api), одна и та же у worker'а и МС1: от неё считаются 12 месяцев истории и 36 месяцев графика.
+
+Переменные worker'а: `SCORING_URL` (`http://localhost:8082`), `SCORING_TIMEOUT` (`20s`), `DECISION_POLL_INTERVAL` (`2s`), `DECISION_SIGNATURE_WAIT` (`2m`), `DECISION_STALE` (`2m` — когда брошенную оценку берут заново), `REVIEW_SLA` (`4h`), `OFFER_VALIDITY` (`336h`), `DEMO_EVALUATION_DATE`.
+
+Сценарии mock-api на живом стеке (ответы для оценки — как в `examples`, минимальная сумма 30 % от запрошенной): A — `OFFERED` (2,03 млн на 36 мес. под 20,75 %), B — `MANUAL_REVIEW` (8+ кредитных обращений за 90 дней), C — `REJECTED` (банкротство, просрочка 30+), D — `WAITING_FOR_INFO` (у ИП 2 месяца истории счёта), E — `WAITING_FOR_INFO` (финансовый сотрудник без МЧД); после ответов клиента (выписка, МЧД) обе уходят специалисту: документы движок сам не читает.
 
 ## Проверка подписи (`data-collector-signature-worker`)
 

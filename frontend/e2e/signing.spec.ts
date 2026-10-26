@@ -59,6 +59,8 @@ test.describe('Подписание директором (11)', () => {
     });
 
     test('неверный код уменьшает попытки, после трёх — назад к предложениям', async ({ page }) => {
+        // договор ждёт подписи директора — в колокольчике есть новое (pending_signatures из основного API)
+        await expect(page.getByRole('button', { name: 'Уведомления, есть новые' })).toBeVisible();
         await agree(page);
         for (const left of [2, 1]) {
             await typeCode(page, '000000');
@@ -100,7 +102,7 @@ test.describe('Подписание директором (11)', () => {
 
     test('подпись к прошлому договору не подходит к новому', async ({ page }) => {
         const uploadSig = async (name: string) => {
-            await page.getByText('Электронная подпись (КЭП)').click();
+            await page.getByText('Подпись КЭП', { exact: true }).click();
             const chooser = page.waitForEvent('filechooser');
             await page.getByRole('button', { name: 'Загрузить подпись' }).click();
             await (await chooser).setFiles({ name, mimeType: 'application/pkcs7-signature', buffer: Buffer.from('sig') });
@@ -117,14 +119,14 @@ test.describe('Подписание директором (11)', () => {
         }
         await expect(heading(page, 'Банк готов выдать кредит')).toBeVisible();
         await page.getByRole('region', { name: 'Предложения банка' }).getByRole('article').first().getByRole('button', { name: 'Выбрать' }).click();
-        await page.getByText('Электронная подпись (КЭП)').click();
+        await page.getByText('Подпись КЭП', { exact: true }).click();
         await expect(page.getByText(/old\.sig/)).toHaveCount(0);
         await agree(page);
         await expect(signButton(page)).toBeDisabled();
     });
 
     test('КЭП: подпись к договору проверяется, после — кредит выдан', async ({ page }) => {
-        await page.getByText('Электронная подпись (КЭП)').click();
+        await page.getByText('Подпись КЭП', { exact: true }).click();
         const chooser = page.waitForEvent('filechooser');
         await page.getByRole('button', { name: 'Загрузить подпись' }).click();
         await (await chooser).setFiles({ name: 'dogovor.pdf.sig', mimeType: 'application/pkcs7-signature', buffer: Buffer.from('sig') });

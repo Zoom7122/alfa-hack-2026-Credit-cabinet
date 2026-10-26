@@ -22,3 +22,13 @@
     justify-content: space-between;
     gap: var(--gap-12);
 }
+
+@media (max-width: 599px) {
+    .info-requests-tab__item {
+        padding: var(--gap-12) var(--gap-16);
+    }
+
+    .info-requests-tab__head {
+        flex-wrap: wrap;
+    }
+}

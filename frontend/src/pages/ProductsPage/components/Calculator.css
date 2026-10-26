@@ -10,3 +10,19 @@
     border-radius: var(--border-radius-24);
     background: var(--color-light-base-bg-primary);
 }
+
+/* под списком продуктов: липкость не нужна */
+@media (max-width: 1023px) {
+    .calculator {
+        position: static;
+        width: auto;
+    }
+}
+
+@media (max-width: 599px) {
+    .calculator {
+        gap: var(--gap-16);
+        padding: var(--gap-16);
+        border-radius: var(--border-radius-20);
+    }
+}

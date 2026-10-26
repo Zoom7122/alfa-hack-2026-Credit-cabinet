@@ -65,3 +65,40 @@
 .login__submit {
     width: 360px;
 }
+
+@media (max-width: 1023px) {
+    .login {
+        flex-direction: column;
+    }
+
+    .login__promo {
+        width: auto;
+        gap: var(--gap-24);
+        padding: var(--gap-32) var(--gap-24);
+    }
+
+    .login__content {
+        padding: var(--gap-32) var(--gap-24) var(--gap-48);
+    }
+}
+
+@media (max-width: 599px) {
+    .login__promo {
+        padding: var(--gap-24) var(--gap-16);
+    }
+
+    .login__content {
+        padding: var(--gap-24) var(--gap-16) var(--gap-40);
+    }
+
+    .login__roles,
+    .login__submit {
+        width: 100%;
+    }
+
+    /* список пользователей длинный — кнопка входа всегда под рукой */
+    .login__submit {
+        position: sticky;
+        bottom: var(--gap-16);
+    }
+}

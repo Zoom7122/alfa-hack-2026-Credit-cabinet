@@ -3,17 +3,16 @@ import { Table } from '@alfalab/core-components/table';
 import { Typography } from '@alfalab/core-components/typography';
 
 import type { ScoreResult } from '../../../api/types';
-import { SOURCE_LABELS } from '../../../shared/lib/backoffice';
+import { sourceLabel } from '../../../shared/lib/backoffice';
 import { formatDate } from '../../../shared/lib/format';
 import { FormCard } from '../../../shared/ui/FormCard/FormCard';
 import { ScoreCard } from '../components/ScoreCard';
 import './ScoringTab.css';
 
-function sourceLabel(source?: string) {
-    if (source && source in SOURCE_LABELS) return SOURCE_LABELS[source as keyof typeof SOURCE_LABELS];
+function factorSource(source?: string) {
     if (source === 'DERIVED') return 'расчёт';
     if (source === 'DECLARED') return 'анкета';
-    return '—';
+    return sourceLabel(source);
 }
 
 /** Вкладка «Скоринг»: признаки с источниками и баллами, стоп-факторы, лимит. */
@@ -46,7 +45,7 @@ export function ScoringTab({ score }: { score?: ScoreResult | null }) {
                                     </Typography.Text>
                                 </Table.TCell>
                                 <Table.TCell>
-                                    <Typography.Text view='primary-small'>{sourceLabel(f.source)}</Typography.Text>
+                                    <Typography.Text view='primary-small'>{factorSource(f.source)}</Typography.Text>
                                 </Table.TCell>
                                 <Table.TCell>
                                     <Typography.Text view='primary-small' weight='bold' color={f.points < 0 ? 'negative' : 'primary'}>

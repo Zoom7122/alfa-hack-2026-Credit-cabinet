@@ -6,7 +6,7 @@ export const isCollectorId = (id: string | undefined) => Boolean(id && /^app_[0-
 
 type StatusColor = 'green' | 'orange' | 'red' | 'blue' | 'grey';
 
-/** Статусы, которые ставит data-collector (первые четыре из FSM docs/fsm.md). */
+/** Статусы заявки data-collector (FSM docs/fsm.md): сбор данных и оценка credit-engine. */
 export const COLLECTOR_STATUS: Record<CollectorStatus, { label: string; color: StatusColor; title: string; subtitle: string; hint: string; stage: ClientStage }> = {
     DRAFT: { label: 'Черновик', color: 'grey', title: 'Анкета не отправлена', subtitle: 'Продолжите заполнение', hint: 'Продолжить заполнение', stage: 'FILLING' },
     SUBMITTED: { label: 'Отправлена', color: 'blue', title: 'Заявка принята', subtitle: 'Сейчас начнём собирать данные о компании', hint: 'Скоро начнём сбор данных', stage: 'REVIEW' },
@@ -19,6 +19,18 @@ export const COLLECTOR_STATUS: Record<CollectorStatus, { label: string; color: S
         hint: 'Ждёт проверки банком',
         stage: 'REVIEW',
     },
+    SCORING: { label: 'На рассмотрении', color: 'blue', title: 'Банк оценивает заявку', subtitle: 'Считаем скоринг и подбираем условия — обычно это минута', hint: 'Банк оценивает заявку', stage: 'REVIEW' },
+    MANUAL_REVIEW: {
+        label: 'На рассмотрении',
+        color: 'blue',
+        title: 'Заявку рассматривает кредитный специалист',
+        subtitle: 'Решение появится здесь, обычно в течение рабочего дня',
+        hint: 'Рассматривает специалист',
+        stage: 'REVIEW',
+    },
+    WAITING_FOR_INFO: { label: 'Нужно уточнить', color: 'orange', title: 'Банку нужны дополнительные сведения', subtitle: 'Ответьте на вопросы банка', hint: 'Ответьте на вопросы банка', stage: 'ACTION_REQUIRED' },
+    OFFERED: { label: 'Есть предложение', color: 'green', title: 'Банк одобрил кредит', subtitle: 'Посмотрите предложение', hint: 'Посмотрите предложение', stage: 'OFFER' },
+    REJECTED: { label: 'Отказ', color: 'red', title: 'Банк отказал в кредите', subtitle: 'Причины — ниже', hint: 'Банк отказал', stage: 'CLOSED' },
 };
 
 /** Сбор не удался: задача FAILED, а заявка у data-collector так и остаётся в ENRICHING. */

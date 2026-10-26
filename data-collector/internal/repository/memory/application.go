@@ -29,12 +29,24 @@ func (r *ApplicationRepository) Register(_ context.Context, reg domain.Registrat
 
 	rep := reg.Representative
 	userID := reg.UserID
-	if id, ok := r.s.userByINN[rep.INN]; ok && rep.INN != "" {
-		userID = id
-	} else if rep.INN != "" {
-		r.s.userByINN[rep.INN] = userID
+	switch {
+	case reg.ExistingUser:
+		// вошёл по токену: пользователь уже есть, по ИНН его не ищем (в Postgres — FK на users)
+		u, ok := r.s.users[userID]
+		if !ok {
+			return domain.Application{}, fmt.Errorf("user %s is not found", userID)
+		}
+		rep.FullName, rep.INN = u.FullName, u.INN
+	case rep.INN != "":
+		if id, ok := r.s.userByINN[rep.INN]; ok {
+			userID = id
+		} else {
+			r.s.userByINN[rep.INN] = userID
+		}
 	}
-	r.s.users[userID] = domain.Representative{UserID: userID, FullName: rep.FullName, INN: rep.INN}
+	if !reg.ExistingUser {
+		r.s.users[userID] = domain.Representative{UserID: userID, FullName: rep.FullName, INN: rep.INN}
+	}
 
 	companyID, known := r.s.companyByINN[reg.Company.INN]
 	if !known {
@@ -45,7 +57,10 @@ func (r *ApplicationRepository) Register(_ context.Context, reg domain.Registrat
 		r.s.companyByINN[c.INN] = companyID
 	}
 	rep.UserID = userID
-	r.s.members[[2]string{userID, companyID}] = rep
+	// вошедший по токену: уже записанную роль в компании не переписываем (как в Postgres)
+	if _, member := r.s.members[[2]string{userID, companyID}]; !member || !reg.ExistingUser {
+		r.s.members[[2]string{userID, companyID}] = rep
+	}
 
 	appID := ""
 	for id, a := range r.s.applications {
@@ -77,6 +92,19 @@ func (r *ApplicationRepository) Get(_ context.Context, id string) (domain.Applic
 		return domain.Application{}, false, nil
 	}
 	return r.s.application(id), true, nil
+}
+
+// List — заявки по id в том же порядке; пропавшие пропускаются.
+func (r *ApplicationRepository) List(_ context.Context, ids []string) ([]domain.Application, error) {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	out := make([]domain.Application, 0, len(ids))
+	for _, id := range ids {
+		if _, ok := r.s.applications[id]; ok {
+			out = append(out, r.s.application(id))
+		}
+	}
+	return out, nil
 }
 
 // Submit отправляет заявку: документы, анкета, задача на сбор, события в outbox.
@@ -134,6 +162,7 @@ func (s *store) application(id string) domain.Application {
 	app.Company = s.companies[a.companyID]
 	app.Representative = s.members[[2]string{a.userID, a.companyID}]
 	app.Representative.FullName = s.users[a.userID].FullName
+	_, app.Representative.HasLogin = s.personas[a.userID]
 	app.Documents = append([]domain.Document(nil), a.app.Documents...)
 	if app.UpdatedAt.IsZero() {
 		app.UpdatedAt = time.Now().UTC()

@@ -1,100 +1,55 @@
 import type { ReactNode } from 'react';
 import { Button } from '@alfalab/core-components/button';
-import { FileUploadItem } from '@alfalab/core-components/file-upload-item';
 import { Plate } from '@alfalab/core-components/plate';
 import { Skeleton } from '@alfalab/core-components/skeleton';
 import { Status } from '@alfalab/core-components/status';
+import { Tab, Tabs } from '@alfalab/core-components/tabs';
 import { Typography } from '@alfalab/core-components/typography';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { ApiError } from '../../api/client';
-import { useCollection, useCollectorApplication } from '../../api/collector/queries';
-import { COLLECTOR_ROLE_LABELS, type CollectorApplication, type CollectorDocument } from '../../api/collector/types';
+import { useCollection, useCollectorApplication, useCollectorTimeline } from '../../api/collector/queries';
+import { COLLECTOR_ROLE_LABELS, type CollectorApplication } from '../../api/collector/types';
 import { useProducts } from '../../api/queries';
-import type { ClientStage, DocumentType, StageItem } from '../../api/types';
+import type { ClientStage, StageItem, TimelineEvent } from '../../api/types';
 import { COLLECTION_FAILED, COLLECTOR_STATUS } from '../../shared/lib/collector';
-import { DOCUMENT_LABELS, PURPOSE_LABELS } from '../../shared/lib/dictionaries';
+import { PURPOSE_LABELS } from '../../shared/lib/dictionaries';
 import { formatMoney, formatMonths, formatUpdated } from '../../shared/lib/format';
 import { Breadcrumbs } from '../../shared/ui/Breadcrumbs/Breadcrumbs';
+import { EventList } from '../../shared/ui/EventList/EventList';
 import { FormCard } from '../../shared/ui/FormCard/FormCard';
 import { InfoCard } from '../../shared/ui/InfoCard/InfoCard';
 import { SummaryList } from '../../shared/ui/SummaryList/SummaryList';
 import { VisuallyHidden } from '../../shared/ui/VisuallyHidden/VisuallyHidden';
 import { StageBar } from '../ApplicationPage/components/StageBar';
 import { CollectionCard } from './components/CollectionCard';
+import { CollectorOutcome } from './outcome/CollectorOutcome';
+import { CollectorDocumentsTab } from './tabs/CollectorDocumentsTab';
 import './CollectorApplicationPage.css';
 
-/** Этапы, которые видны по data-collector: анкета → сбор данных → проверка банком (дальше сервисов пока нет). */
+const COLLECTING = new Set(['SUBMITTED', 'ENRICHING']);
+const DECIDED = new Set(['WAITING_FOR_INFO', 'OFFERED', 'REJECTED']);
+
+/** Этапы заявки data-collector: анкета → сбор данных → проверка банком (оценка, специалист) → решение. */
 function stagesOf(app: CollectorApplication, failed: boolean): StageItem[] {
-    const collected = app.status === 'VERIFYING' && !failed;
-    const step = (code: ClientStage, title: string, state: StageItem['state']): StageItem => ({ code, title, state });
-    return [
-        step('FILLING', 'Анкета', 'DONE'),
-        step('REVIEW', 'Сбор данных', collected ? 'DONE' : 'CURRENT'),
-        step('OFFER', 'Проверка банком', collected ? 'CURRENT' : 'UPCOMING'),
-        step('DONE', 'Решение', 'UPCOMING'),
-    ];
-}
-
-const SIGNATURE_TEXT: Record<NonNullable<CollectorDocument['signature_state']>, string | undefined> = {
-    NOT_SIGNED: undefined,
-    PENDING: 'проверим подпись',
-    DONE: 'подпись проверена',
-    FAILED: 'подпись не удалось проверить',
-};
-const RECOGNITION_TEXT: Record<NonNullable<CollectorDocument['recognition_state']>, string | undefined> = {
-    NOT_APPLICABLE: undefined,
-    PENDING: 'распознаем',
-    PROCESSING: 'распознаём…',
-    DONE: 'распознали',
-    FAILED: 'проверим вручную',
-};
-
-function DocumentsCard({ documents }: { documents: CollectorDocument[] }) {
-    if (!documents.length) return null;
-    return (
-        <FormCard title='Документы'>
-            <ul className='collector-application__documents' aria-label='Документы заявки'>
-                {documents.map((d) => {
-                    const signedName = d.signed_document_id && documents.find((x) => x.id === d.signed_document_id)?.file_name;
-                    const note = [
-                        DOCUMENT_LABELS[(d.type ?? 'OTHER') as DocumentType],
-                        signedName && `подпись к ${signedName}`,
-                        d.signature_state && SIGNATURE_TEXT[d.signature_state],
-                        d.recognition_state && RECOGNITION_TEXT[d.recognition_state],
-                    ]
-                        .filter(Boolean)
-                        .join(' · ');
-                    return (
-                        <li key={d.id} className='collector-application__document'>
-                            <FileUploadItem
-                                id={d.id}
-                                title={d.file_name}
-                                size={d.size_bytes}
-                                uploadStatus='UPLOADED'
-                                showDelete={false}
-                            >
-                                <FileUploadItem.StatusControl />
-                                <FileUploadItem.Content />
-                            </FileUploadItem>
-                            {note && (
-                                <Typography.Text view='primary-small' color='secondary'>
-                                    {note}
-                                </Typography.Text>
-                            )}
-                        </li>
-                    );
-                })}
-            </ul>
-        </FormCard>
-    );
+    const status = app.status ?? 'SUBMITTED';
+    const current = failed || COLLECTING.has(status) ? 1 : DECIDED.has(status) ? 3 : 2;
+    const state = (i: number): StageItem['state'] => (i < current ? 'DONE' : i === current ? 'CURRENT' : 'UPCOMING');
+    const step = (code: ClientStage, title: string, i: number): StageItem => ({ code, title, state: state(i) });
+    return [step('FILLING', 'Анкета', 0), step('REVIEW', 'Сбор данных', 1), step('OFFER', 'Проверка банком', 2), step('DONE', 'Решение', 3)];
 }
 
 const rowsOf = (items: [string, ReactNode][]) => items.filter(([, value]) => value).map(([label, value]) => ({ label, value }));
 
 /** /applications/:id для заявок data-collector: статус сбора, итог по системам, документы. */
+type TabId = 'status' | 'documents' | 'history';
+const isTab = (v: string | null): v is TabId => v === 'status' || v === 'documents' || v === 'history';
+
 export function CollectorApplicationPage() {
     const { applicationId } = useParams();
+    const [params, setParams] = useSearchParams();
+    const tabParam = params.get('tab');
+    const tab: TabId = isTab(tabParam) ? tabParam : 'status';
     const application = useCollectorApplication(applicationId);
     const collection = useCollection(application.data?.collection_task_id);
     const products = useProducts();
@@ -127,7 +82,11 @@ export function CollectorApplicationPage() {
     const productName = products.data?.find((p) => p.code === app.product_code)?.name ?? 'Кредит';
     const company = app.applicant;
     const rep = app.representative;
-    const meta = [app.number, app.requested?.term_months && formatMonths(app.requested.term_months), app.submitted_at && `отправлена ${formatUpdated(app.submitted_at)}`]
+    const meta = [
+        app.number,
+        app.requested?.term_months && formatMonths(app.requested.term_months),
+        app.submitted_at && `отправлена ${formatUpdated(app.submitted_at)}`,
+    ]
         .filter(Boolean)
         .join(' · ');
 
@@ -151,49 +110,90 @@ export function CollectorApplicationPage() {
                 </Status>
             </div>
 
-            <div className='collector-application__columns'>
-                <div className='collector-application__main'>
-                    <FormCard>
-                        <StageBar stages={stagesOf(app, failed)} clientStage='REVIEW' />
-                        <div className='collector-application__state'>
-                            <Typography.Title tag='h2' view='small' font='system'>
-                                {view.title}
-                            </Typography.Title>
-                            <Typography.Text view='primary-medium' color='secondary'>
-                                {view.subtitle}
-                            </Typography.Text>
+            <Tabs
+                selectedId={tab}
+                onChange={(_, { selectedId }) => setParams(selectedId === 'status' ? {} : { tab: String(selectedId) }, { replace: true })}
+                keepMounted={false}
+            >
+                <Tab id='status' title='Статус'>
+                    <div className='collector-application__columns collector-application__panel'>
+                        <div className='collector-application__main'>
+                            <FormCard>
+                                <StageBar stages={stagesOf(app, failed)} clientStage='REVIEW' />
+                                <div className='collector-application__state'>
+                                    <Typography.Title tag='h2' view='small' font='system'>
+                                        {view.title}
+                                    </Typography.Title>
+                                    <Typography.Text view='primary-medium' color='secondary'>
+                                        {view.subtitle}
+                                    </Typography.Text>
+                                </div>
+                            </FormCard>
+                            <CollectorOutcome app={app} />
+                            <CollectionCard taskId={app.collection_task_id} />
                         </div>
-                    </FormCard>
-                    <CollectionCard taskId={app.collection_task_id} />
-                    <DocumentsCard documents={app.documents ?? []} />
-                </div>
 
-                <aside className='collector-application__aside'>
-                    <InfoCard title='Компания'>
-                        <SummaryList
-                            plain={true}
-                            rows={rowsOf([
-                                ['Название', company?.name],
-                                ['ИНН', company?.inn],
-                                [company?.type === 'SOLE_PROPRIETOR' ? 'ОГРНИП' : 'ОГРН', company?.ogrn ?? (app.status === 'VERIFYING' ? 'нет в ЕГРЮЛ' : 'после сбора данных')],
-                            ])}
-                        />
-                    </InfoCard>
-                    <InfoCard title='Заявка'>
-                        <SummaryList
-                            plain={true}
-                            rows={rowsOf([
-                                ['Сумма', app.requested?.amount ? formatMoney(app.requested.amount) : undefined],
-                                ['Срок', app.requested?.term_months ? formatMonths(app.requested.term_months) : undefined],
-                                ['Цель', app.purpose?.code && PURPOSE_LABELS[app.purpose.code]],
-                                ['Оформляет', rep?.full_name],
-                                ['Роль', rep?.role && COLLECTOR_ROLE_LABELS[rep.role]],
-                                ['Подписывает договор', rep?.can_sign ? 'сам' : 'по доверенности'],
-                            ])}
-                        />
-                    </InfoCard>
-                </aside>
-            </div>
+                        <aside className='collector-application__aside'>
+                            <InfoCard title='Компания'>
+                                <SummaryList
+                                    plain={true}
+                                    rows={rowsOf([
+                                        ['Название', company?.name],
+                                        ['ИНН', company?.inn],
+                                        [
+                                            company?.type === 'SOLE_PROPRIETOR' ? 'ОГРНИП' : 'ОГРН',
+                                            company?.ogrn ?? (COLLECTING.has(app.status ?? '') ? 'после сбора данных' : 'нет в ЕГРЮЛ'),
+                                        ],
+                                    ])}
+                                />
+                            </InfoCard>
+                            <InfoCard title='Заявка'>
+                                <SummaryList
+                                    plain={true}
+                                    rows={rowsOf([
+                                        ['Сумма', app.requested?.amount ? formatMoney(app.requested.amount) : undefined],
+                                        ['Срок', app.requested?.term_months ? formatMonths(app.requested.term_months) : undefined],
+                                        ['Цель', app.purpose?.code && PURPOSE_LABELS[app.purpose.code]],
+                                        ['Оформляет', rep?.full_name],
+                                        ['Роль', rep?.role && COLLECTOR_ROLE_LABELS[rep.role]],
+                                        ['Подписывает договор', rep?.can_sign ? 'сам' : 'по доверенности'],
+                                    ])}
+                                />
+                            </InfoCard>
+                        </aside>
+                    </div>
+                </Tab>
+                <Tab id='documents' title={`Документы · ${app.documents?.length ?? 0}`}>
+                    <div className='collector-application__panel'>
+                        <CollectorDocumentsTab applicationId={app.id ?? ''} documents={app.documents ?? []} />
+                    </div>
+                </Tab>
+                <Tab id='history' title='История'>
+                    <div className='collector-application__panel'>
+                        <HistoryTab app={app} />
+                    </div>
+                </Tab>
+            </Tabs>
         </div>
+    );
+}
+
+/** История заявки — журнал data-collector (application_events). */
+function HistoryTab({ app }: { app: CollectorApplication }) {
+    const timeline = useCollectorTimeline(app);
+    if (timeline.isPending) return <Skeleton visible={true} className='collector-application__skeleton' />;
+    if (timeline.isError) return <Plate view='negative' title='Не удалось загрузить историю' />;
+    // EventList кита кабинета ждёт TimelineEvent контракта: тип для неё — только иконка, текст — message
+    const events: TimelineEvent[] = timeline.data.map((e) => ({
+        id: e.id,
+        at: e.at,
+        type: e.type.startsWith('document.') ? 'DOCUMENT_UPLOADED' : 'STATUS_CHANGED',
+        message: e.message,
+        actor_kind: e.actor_kind,
+    }));
+    return (
+        <FormCard title='История заявки'>
+            <EventList events={events} />
+        </FormCard>
     );
 }

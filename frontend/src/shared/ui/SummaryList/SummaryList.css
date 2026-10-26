@@ -27,3 +27,19 @@
     padding: 0;
     background: none;
 }
+
+@media (max-width: 599px) {
+    .summary-list {
+        padding: var(--gap-16);
+        border-radius: var(--border-radius-20);
+    }
+
+    .summary-list__row {
+        flex-wrap: wrap;
+        gap: var(--gap-2) var(--gap-16);
+    }
+
+    .summary-list_plain {
+        padding: 0;
+    }
+}

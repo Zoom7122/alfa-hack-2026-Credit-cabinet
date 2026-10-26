@@ -2,6 +2,9 @@ import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } f
 
 import { newIdempotencyKey } from '../shared/lib/idempotency';
 import { api, ApiError, isUnauthorized, unwrap } from './client';
+import { collector } from './collector/client';
+import { toBoDossier, toBoListItem } from './collector/backoffice';
+import { toProduct } from './collector/catalog';
 import { session } from './session';
 import type {
     ApplicantType,
@@ -13,6 +16,7 @@ import type {
     DeclineReason,
     Document,
     InfoRequestAnswerInput,
+    Me,
     DocumentType,
     PurposeCode,
     RepresentativeRole,
@@ -20,7 +24,6 @@ import type {
     SigningMethod,
     BoApplicationListItem,
     BoDecisionInput,
-    SourceCode,
 } from './types';
 
 type CatalogParams = { purpose?: PurposeCode; applicantType?: ApplicantType };
@@ -57,7 +60,8 @@ export const queryKeys = {
 export function useTestUsers() {
     return useQuery({
         queryKey: queryKeys.testUsers,
-        queryFn: async () => unwrap(await api.GET('/auth/test-users')).items,
+        // вход — у data-collector (живой или его мок): те же токены `mock.<user_id>`, что у остальных моков
+        queryFn: async () => unwrap(await collector.GET('/auth/test-users')).items,
         staleTime: Infinity,
     });
 }
@@ -66,13 +70,35 @@ export function useMockLogin() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (userId: string) =>
-            unwrap(await api.POST('/auth/mock-login', { body: { user_id: userId } })),
+            unwrap(await collector.POST('/auth/mock-login', { body: { user_id: userId } })),
         onSuccess: ({ token, user }) => {
             // сначала профиль в кэш, потом токен: подписчики токена сразу видят готовый /me
             queryClient.setQueryData(queryKeys.me, user);
             session.setToken(token);
+            // ответ входа — только data-collector; подписи и id компаний основного API — после перечитывания
+            void queryClient.invalidateQueries({ queryKey: queryKeys.me });
         },
     });
+}
+
+/**
+ * Профиль: пользователь и компании — у data-collector (там вход). Подписание пока живёт в основном API (моки по
+ * openapi.yaml): оттуда — `pending_signatures` для колокольчика и id компаний, на которые завязаны его экраны
+ * (совпадение по ИНН). Основной API недоступен — профиль всё равно есть, без подписей.
+ */
+async function loadMe(): Promise<Me> {
+    const [live, legacy] = await Promise.all([
+        collector.GET('/me').then(unwrap),
+        api
+            .GET('/me')
+            .then(unwrap)
+            .catch(() => undefined),
+    ]);
+    const legacyByInn = new Map((legacy?.companies ?? []).map((c) => [c.inn, c]));
+    const companies = live.companies.map((c) => ({ ...c, applicant_id: legacyByInn.get(c.inn)?.applicant_id ?? c.applicant_id }));
+    // компании, привязанные в основном API (экран «Добавить компанию»), — тоже в профиле
+    for (const c of legacy?.companies ?? []) if (!companies.some((x) => x.inn === c.inn)) companies.push(c);
+    return { ...live, companies, pending_signatures: legacy?.pending_signatures ?? live.pending_signatures };
 }
 
 export function useMe(enabled = true) {
@@ -80,7 +106,7 @@ export function useMe(enabled = true) {
         queryKey: queryKeys.me,
         queryFn: async () => {
             try {
-                return unwrap(await api.GET('/me'));
+                return await loadMe();
             } catch (error) {
                 // токен протух — забываем его, гард уведёт на вход
                 if (isUnauthorized(error)) session.clear();
@@ -97,8 +123,9 @@ export function useProducts(params: CatalogParams = {}, enabled = true) {
         enabled,
         queryKey: queryKeys.products(params),
         queryFn: async () =>
-            unwrap(await api.GET('/products', { params: { query: { purpose: params.purpose, applicant_type: params.applicantType } } }))
-                .items,
+            unwrap(await collector.GET('/products', { params: { query: { purpose: params.purpose, applicant_type: params.applicantType } } })).items?.map(
+                toProduct,
+            ) ?? [],
         staleTime: 10 * 60 * 1000,
         placeholderData: keepPreviousData,
     });
@@ -110,8 +137,8 @@ export function useCalculation(code: string | undefined, terms: RequestedTerms |
         queryKey: queryKeys.calculation(code ?? '', terms ?? { amount: 0, term_months: 0 }),
         queryFn: async () =>
             unwrap(
-                await api.POST('/products/{productCode}/calculate', {
-                    params: { path: { productCode: code ?? '' } },
+                await collector.POST('/products/{code}/calculate', {
+                    params: { path: { code: code ?? '' } },
                     body: terms ?? { amount: 0, term_months: 0 },
                 }),
             ),
@@ -548,11 +575,11 @@ export function useSignatureReport(applicationId: string, documentId: string | u
     });
 }
 
-// ---------------------------------------------------------------- рабочее место банка
+// ---------------------------------------------------------------- рабочее место банка (API data-collector)
 
 const QUEUE_PAGES = 20;
 
-/** Очередь андеррайтера целиком (статистика и группы считаются по ней). assignee: me | none | user_id (boListApplications). */
+/** Очередь андеррайтера целиком (статистика и группы считаются по ней). assignee: me | none | user_id. */
 export function useBoQueue(params: { assignee?: string } = {}) {
     return useQuery({
         queryKey: queryKeys.boQueue(params),
@@ -561,37 +588,36 @@ export function useBoQueue(params: { assignee?: string } = {}) {
             let cursor: string | undefined;
             for (let page = 0; page < QUEUE_PAGES; page += 1) {
                 const res = unwrap(
-                    await api.GET('/backoffice/applications', { params: { query: { assignee: params.assignee, limit: 100, cursor } } }),
+                    await collector.GET('/backoffice/applications', { params: { query: { assignee: params.assignee, limit: 100, cursor } } }),
                 );
-                items.push(...res.items);
+                items.push(...(res.items ?? []).map(toBoListItem));
                 if (!res.next_cursor) break;
                 cursor = res.next_cursor;
             }
             return items;
         },
         placeholderData: keepPreviousData,
-        // SLA и «ждут клиента» меняются со временем, а не только по событиям
-        refetchInterval: 60_000,
+        // SLA и «ждут клиента» меняются со временем; событий у data-collector нет — опрашиваем
+        refetchInterval: 30_000,
     });
 }
 
-const SOURCE_POLL_MS = 2_000;
-
+/** Досье заявки: с исполнителем и сроком ручного рассмотрения. Пока заявку оценивают — опрашиваем. */
 export function useBoDossier(id: string | undefined) {
     return useQuery({
         queryKey: queryKeys.boDossier(id ?? ''),
-        queryFn: async () => unwrap(await api.GET('/backoffice/applications/{applicationId}', path(id ?? ''))),
+        queryFn: async () =>
+            toBoDossier(unwrap(await collector.GET('/backoffice/applications/{id}', { params: { path: { id: id ?? '' } } }))),
         enabled: Boolean(id),
-        // WS-событий о готовности источника нет — опрашиваем, пока источник собирается
-        refetchInterval: (query) =>
-            query.state.data?.sources.some((s) => s.state === 'PENDING' || s.state === 'RUNNING') ? SOURCE_POLL_MS : false,
+        refetchInterval: (query) => (['VERIFYING', 'SCORING'].includes(query.state.data?.application.status ?? '') ? 2_000 : 30_000),
     });
 }
 
 export function useBoAssign() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (applicationId: string) => unwrap(await api.POST('/backoffice/applications/{applicationId}/assign', path(applicationId))),
+        mutationFn: async (applicationId: string) =>
+            toBoListItem(unwrap(await collector.POST('/backoffice/applications/{id}/assign', { params: { path: { id: applicationId } } }))),
         onSettled: () => void queryClient.invalidateQueries({ queryKey: ['backoffice'] }),
     });
 }
@@ -600,11 +626,13 @@ export function useBoDecide(applicationId: string) {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async ({ version, idempotencyKey, ...body }: BoDecisionInput & { version: number; idempotencyKey: string }) =>
-            unwrap(
-                await api.POST('/backoffice/applications/{applicationId}/decision', {
-                    params: { path: { applicationId }, header: { 'If-Match': String(version), 'Idempotency-Key': idempotencyKey } },
-                    body,
-                }),
+            toBoDossier(
+                unwrap(
+                    await collector.POST('/backoffice/applications/{id}/decision', {
+                        params: { path: { id: applicationId }, header: { 'If-Match': String(version), 'Idempotency-Key': idempotencyKey } },
+                        body: body as never,
+                    }),
+                ),
             ),
         onSuccess: (dossier) => {
             queryClient.setQueryData(queryKeys.boDossier(applicationId), dossier);
@@ -616,18 +644,5 @@ export function useBoDecide(applicationId: string) {
                 void queryClient.invalidateQueries({ queryKey: queryKeys.boDossier(applicationId) });
             }
         },
-    });
-}
-
-export function useBoRefreshSource(applicationId: string) {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: async (sourceCode: SourceCode) =>
-            unwrap(
-                await api.POST('/backoffice/applications/{applicationId}/sources/{sourceCode}/refresh', {
-                    params: { path: { applicationId, sourceCode } },
-                }),
-            ),
-        onSuccess: () => void queryClient.invalidateQueries({ queryKey: queryKeys.boDossier(applicationId) }),
     });
 }

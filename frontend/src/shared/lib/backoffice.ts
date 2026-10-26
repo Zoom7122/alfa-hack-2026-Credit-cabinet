@@ -1,7 +1,12 @@
+import { type CollectorSystem, SYSTEM_LABELS } from '../../api/collector/types';
 import type { ApplicationStatus, ScoreResult, SourceCode, SourceResult } from '../../api/types';
 import { pluralize } from './format';
 
 /* Справочники рабочего места банка. Здесь видны источники и баллы — клиенту их не показываем. */
+
+/** Подпись источника: код контракта или система data-collector (CORE_BANKING, FNS, …). */
+export const sourceLabel = (code: string | undefined) =>
+    code ? (SYSTEM_LABELS[code as CollectorSystem] ?? SOURCE_LABELS[code as SourceCode] ?? code) : '—';
 
 export const SOURCE_LABELS: Record<SourceCode, string> = {
     EGRUL: 'ЕГРЮЛ',

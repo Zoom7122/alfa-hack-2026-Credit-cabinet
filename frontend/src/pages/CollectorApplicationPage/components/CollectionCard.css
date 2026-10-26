@@ -29,3 +29,10 @@
     gap: var(--gap-2);
     min-width: 0;
 }
+
+@media (max-width: 599px) {
+    .collection-card__item {
+        flex-wrap: wrap;
+        gap: var(--gap-4) var(--gap-12);
+    }
+}

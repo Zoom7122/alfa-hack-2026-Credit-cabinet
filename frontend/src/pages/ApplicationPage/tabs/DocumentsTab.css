@@ -58,3 +58,34 @@
 .documents-tab__name_nowrap {
     white-space: nowrap;
 }
+
+/* таблица документов прокручивается внутри карточки, панель подписи — под ней */
+@media (max-width: 1023px) {
+    .documents-tab {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .documents-tab__main {
+        overflow-x: auto;
+    }
+
+    .documents-tab__aside {
+        width: auto;
+    }
+}
+
+@media (max-width: 599px) {
+    .documents-tab {
+        gap: var(--gap-16);
+    }
+
+    .documents-tab__main {
+        padding: var(--gap-16);
+        border-radius: var(--border-radius-20);
+    }
+
+    .documents-tab__head {
+        flex-wrap: wrap;
+    }
+}

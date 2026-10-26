@@ -14,7 +14,7 @@ import { ApiError } from '../../api/client';
 import { useBoAssign, useBoQueue, useProducts } from '../../api/queries';
 import type { BoApplicationListItem, Me } from '../../api/types';
 import { useNow } from '../../shared/lib/useNow';
-import { BO_STATUS_BADGES, dueToday, GRADE_COLORS, IN_PROCESSING, slaLeft, SOURCE_LABELS } from '../../shared/lib/backoffice';
+import { BO_STATUS_BADGES, dueToday, GRADE_COLORS, IN_PROCESSING, slaLeft, sourceLabel } from '../../shared/lib/backoffice';
 import { formatMoney, formatMonths, formatTime, shortName } from '../../shared/lib/format';
 import './QueuePage.css';
 
@@ -60,7 +60,7 @@ function SourcesCell({ item }: { item: BoApplicationListItem }) {
     const [first] = failed;
     return (
         <Status view='muted-alt' color='orange' size={24} uppercase={false}>
-            {first && SOURCE_LABELS[first]} — ошибка{failed.length > 1 ? ` (+${failed.length - 1})` : ''}
+            {first && sourceLabel(first)} — ошибка{failed.length > 1 ? ` (+${failed.length - 1})` : ''}
         </Status>
     );
 }

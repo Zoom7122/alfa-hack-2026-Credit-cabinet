@@ -5,12 +5,13 @@ import {
     filesErrors,
     type QuestionnaireDraft,
     reviewErrors,
+    scoringErrors,
     type Secrets,
     sourcesErrors,
     termsErrors,
 } from './draft';
 
-export type StepId = 'company' | 'terms' | 'borrower' | 'sources' | 'collateral' | 'documents' | 'review';
+export type StepId = 'company' | 'terms' | 'borrower' | 'scoring' | 'sources' | 'collateral' | 'documents' | 'review';
 
 type StepConfig = {
     id: StepId;
@@ -23,6 +24,7 @@ export const STEPS: StepConfig[] = [
     { id: 'company', title: 'Компания', owns: (f) => f === 'inn' || f.startsWith('company.') || f.startsWith('representative.') },
     { id: 'terms', title: 'Сумма, срок и цель', owns: (f) => /^(requested|purpose|product_code)(\.|$)/.test(f) },
     { id: 'borrower', title: 'Руководитель и анкета', owns: (f) => /^(age|marital_status|children_count|director)(\.|$)/.test(f) },
+    { id: 'scoring', title: 'Для оценки', owns: (f) => f.startsWith('scoring.') },
     { id: 'sources', title: 'Счета и площадки', owns: (f) => /^(other_bank_biks|marketplace_tokens|ofd_token)(\.|\[|$)/.test(f) },
     { id: 'collateral', title: 'Залог', owns: (f) => f.startsWith('collateral') },
     { id: 'documents', title: 'Документы', owns: (f) => /^(files|documents)(\[|\.|$)/.test(f) },
@@ -43,6 +45,8 @@ export function errorsOf(step: StepId, d: QuestionnaireDraft, s: Secrets, needsP
             return termsErrors(d);
         case 'borrower':
             return borrowerErrors(d);
+        case 'scoring':
+            return scoringErrors(d);
         case 'sources':
             return sourcesErrors(d, s);
         case 'collateral':
@@ -64,6 +68,7 @@ export function stepState(step: StepId, d: QuestionnaireDraft, s: Secrets, needs
     const errors = Object.keys(errorsOf(step, d, s, needsPoa)).length > 0;
     if (errors) return REQUIRED.includes(step) ? 'todo' : 'warning';
     if (step === 'documents') return d.files.length ? 'done' : 'warning';
+    if (step === 'scoring') return d.scoring?.max_annual_rate !== undefined && d.scoring.need_cost !== undefined ? 'done' : 'warning';
     if (step === 'review') return d.consents.bki_company || d.consents.tax ? 'done' : 'todo';
     return 'done';
 }

@@ -14,8 +14,19 @@
     flex-direction: column;
     align-items: flex-start;
     gap: var(--gap-12);
-    width: 560px;
+    width: 100%;
+    max-width: 560px;
     padding: var(--gap-32);
     border-radius: var(--border-radius-24);
     background: var(--color-light-base-bg-primary);
+}
+
+@media (max-width: 599px) {
+    .not-ready {
+        padding: var(--gap-24) var(--gap-16);
+    }
+
+    .not-ready__card {
+        padding: var(--gap-20);
+    }
 }

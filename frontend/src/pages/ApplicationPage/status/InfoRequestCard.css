@@ -28,3 +28,18 @@
     justify-content: space-between;
     gap: var(--gap-12);
 }
+
+@media (max-width: 599px) {
+    .info-request-card {
+        padding: var(--gap-16);
+        border-radius: var(--border-radius-20);
+    }
+
+    .info-request-card__fields {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .info-request-card__recognized {
+        flex-wrap: wrap;
+    }
+}

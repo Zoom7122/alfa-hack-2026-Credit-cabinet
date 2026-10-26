@@ -1,17 +1,28 @@
 import { type QueryClient, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import type { SignatureReportJson } from './signatureReport';
+
 import { ApiError, unwrap } from '../client';
 import { collector } from './client';
-import { forgetApplication, indexedFor, rememberApplication, useCollectorIndex } from './localIndex';
 import type { CollectionTask, CollectorApplication, QuestionnaireInput, RegisterInput } from './types';
 
 export const collectorKeys = {
     application: (id: string) => ['collector', 'application', id] as const,
     collection: (id: string) => ['collector', 'collection', id] as const,
+    applications: ['collector', 'applications'] as const,
+    applicants: ['collector', 'applicants'] as const,
+    timeline: (id: string) => ['collector', 'timeline', id] as const,
+    signatureReport: (appId: string, docId: string, state: string) => ['collector', 'signature-report', appId, docId, state] as const,
+    lookup: (inn: string) => ['collector', 'lookup', inn] as const,
+    decision: (id: string) => ['collector', 'decision', id] as const,
+    offers: (id: string) => ['collector', 'offers', id] as const,
+    infoRequests: (id: string) => ['collector', 'info-requests', id] as const,
 };
 
 const POLL_MS = 2_000;
 const IN_PROGRESS = new Set(['SUBMITTED', 'ENRICHING']);
+/** После сбора заявку оценивает банк: VERIFYING → SCORING → итог. */
+const SCORING = new Set(['VERIFYING', 'SCORING']);
 /** Сбор идёт минуты; дольше — значит, завис: дальше не опрашиваем. */
 const MAX_POLL_MS = 30 * 60_000;
 
@@ -20,47 +31,29 @@ const MAX_POLL_MS = 30 * 60_000;
  * поэтому смотрим ещё и на задачу, если она уже в кэше.
  */
 function shouldPoll(app: CollectorApplication | undefined, queryClient: QueryClient) {
-    if (!app || !IN_PROGRESS.has(app.status ?? '')) return false;
+    if (!app) return false;
+    const recent = !app.submitted_at || Date.now() - new Date(app.submitted_at).getTime() < MAX_POLL_MS;
+    // после сбора ждём оценку банка; подписи worker проверяет и в итоговых статусах
+    if (SCORING.has(app.status ?? '')) return recent;
+    if (!IN_PROGRESS.has(app.status ?? '')) return recent && Boolean(app.documents?.some((d) => d.signature_state === 'PENDING'));
     const task = app.collection_task_id ? queryClient.getQueryData<CollectionTask>(collectorKeys.collection(app.collection_task_id)) : undefined;
-    if (task?.status === 'FAILED' || task?.status === 'COMPLETED') return task.status === 'COMPLETED' && app.status !== 'VERIFYING';
-    return !app.submitted_at || Date.now() - new Date(app.submitted_at).getTime() < MAX_POLL_MS;
+    if (task?.status === 'FAILED' || task?.status === 'COMPLETED') return task.status === 'COMPLETED';
+    return recent;
 }
 
-/** Регистрация заявителя: пользователь, компания и черновик (или уже существующий черновик по этой паре). */
-export function useRegister(userId: string) {
+/** Регистрация заявителя от имени вошедшего: компания и черновик (или его прежний черновик по этой компании). */
+export function useRegister() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (body: RegisterInput) => unwrap(await collector.POST('/applicants', { body })),
-        onSuccess: (app, body) => {
+        onSuccess: (app) => {
             queryClient.setQueryData(collectorKeys.application(app.id ?? ''), app);
-            rememberApplication(userId, {
-                id: app.id ?? '',
-                number: app.number,
-                company_inn: body.company.inn,
-                company_name: app.applicant?.name ?? body.company.name,
-                created_at: app.created_at ?? new Date().toISOString(),
-            });
+            // новая компания в профиле, новая заявка в списке
+            void queryClient.invalidateQueries({ queryKey: collectorKeys.applications });
+            void queryClient.invalidateQueries({ queryKey: collectorKeys.applicants });
+            void queryClient.invalidateQueries({ queryKey: ['me'] });
         },
     });
-}
-
-const getApplication = async (id: string) => unwrap(await collector.GET('/applications/{id}', { params: { path: { id } } }));
-
-/**
- * Открытый черновик пользователя по компании. Без ИНН физлица data-collector на каждую регистрацию
- * заводит нового пользователя и новый черновик, а удалить черновик нельзя — поэтому сначала ищем свой.
- */
-export function useFindDraft(userId: string) {
-    const queryClient = useQueryClient();
-    return async (companyInn: string) => {
-        for (const entry of indexedFor(userId, companyInn)) {
-            const app = await queryClient
-                .fetchQuery({ queryKey: collectorKeys.application(entry.id), queryFn: () => getApplication(entry.id) })
-                .catch(() => undefined);
-            if (app?.status === 'DRAFT') return app;
-        }
-        return undefined;
-    };
 }
 
 /** Статус заявки; пока идёт сбор (SUBMITTED, ENRICHING) — опрашиваем: событий у data-collector нет. */
@@ -88,30 +81,77 @@ export function useCollection(taskId: string | undefined) {
     });
 }
 
-/** Заявки пользователя по локальному индексу — каждая своим GET. */
-export function useCollectorApplications(userId: string) {
-    const index = useCollectorIndex(userId);
+/** Заявки компаний пользователя (свои и коллег), новые сверху. Пока какая-то собирается — опрашиваем. */
+export function useCollectorApplications() {
     const queryClient = useQueryClient();
-    return useQueries({
-        queries: index.map((entry) => ({
-            queryKey: collectorKeys.application(entry.id),
-            queryFn: async () => {
-                try {
-                    return unwrap(await collector.GET('/applications/{id}', { params: { path: { id: entry.id } } }));
-                } catch (e) {
-                    // заявки в сервисе больше нет — убираем её из локального списка
-                    if (e instanceof ApiError && e.status === 404) forgetApplication(userId, entry.id);
-                    throw e;
-                }
-            },
-            refetchInterval: (query: { state: { data?: CollectorApplication } }) => (shouldPoll(query.state.data, queryClient) ? POLL_MS : false),
-        })),
-        combine: (results) => ({
-            items: results.flatMap((r) => (r.data ? [r.data] : [])),
-            isPending: results.some((r) => r.isPending),
-            isError: results.some((r) => r.isError),
-        }),
+    return useQuery({
+        queryKey: collectorKeys.applications,
+        queryFn: async () => unwrap(await collector.GET('/applications')).items,
+        refetchInterval: (query) => (query.state.data?.some((a) => shouldPoll(a, queryClient)) ? POLL_MS : false),
     });
+}
+
+/** Компании пользователя с реквизитами из ЕГРЮЛ (после сбора). */
+export function useCollectorApplicants() {
+    return useQuery({
+        queryKey: collectorKeys.applicants,
+        queryFn: async () => unwrap(await collector.GET('/applicants')).items,
+    });
+}
+
+/** Журнал заявки; опрашивается, пока опрашивается сама заявка (сбор, проверка подписи). */
+export function useCollectorTimeline(app: CollectorApplication | undefined) {
+    const queryClient = useQueryClient();
+    const id = app?.id ?? '';
+    return useQuery({
+        queryKey: collectorKeys.timeline(id),
+        queryFn: async () => unwrap(await collector.GET('/applications/{id}/timeline', { params: { path: { id } } })).items,
+        enabled: Boolean(id),
+        refetchInterval: () => (shouldPoll(queryClient.getQueryData(collectorKeys.application(id)), queryClient) ? POLL_MS : false),
+    });
+}
+
+/** Отчёт о подписи. state — signature_state документа: сменился (проверили) — перечитываем. */
+export function useCollectorSignatureReport(applicationId: string, documentId: string | undefined, state: string) {
+    return useQuery({
+        queryKey: collectorKeys.signatureReport(applicationId, documentId ?? '', state),
+        queryFn: async () =>
+            unwrap(
+                await collector.GET('/applications/{id}/documents/{documentId}/signature-report', {
+                    params: { path: { id: applicationId, documentId: documentId ?? '' } },
+                }),
+            ) as SignatureReportJson,
+        enabled: Boolean(documentId),
+        retry: false,
+        staleTime: Infinity,
+    });
+}
+
+/** Подсказка реквизитов по ИНН — синхронно из ЕГРЮЛ через data-collector. */
+export function useCompanyLookup(inn: string | undefined) {
+    return useQuery({
+        queryKey: collectorKeys.lookup(inn ?? ''),
+        queryFn: async () => unwrap(await collector.POST('/counterparty/lookup', { body: { inn: inn ?? '' } })),
+        enabled: Boolean(inn),
+        retry: false,
+        staleTime: 5 * 60_000,
+    });
+}
+
+/** Скачать файл документа: с токеном, поэтому через fetch, а не ссылкой. */
+export async function downloadCollectorDocument(applicationId: string, documentId: string, fileName: string) {
+    const { data, response, error } = await collector.GET('/applications/{id}/documents/{documentId}/content', {
+        params: { path: { id: applicationId, documentId } },
+        parseAs: 'blob',
+    });
+    if (error !== undefined || !response.ok || !data) throw new ApiError(response.status, 'Не удалось скачать файл');
+    const url = URL.createObjectURL(data);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    // сразу отзывать нельзя: Safari и Firefox начинают загрузку не мгновенно
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 export type SubmitFile = { file: File; name: string };
@@ -159,5 +199,59 @@ export function useCollectionsOf(apps: CollectorApplication[]) {
             staleTime: 30_000,
         })),
         combine: (results) => new Map(results.flatMap((r) => (r.data?.id ? [[r.data.id, r.data] as const] : []))),
+    });
+}
+
+/** Итог по заявке для клиента: причины отказа, когда подать снова. 404 — ещё не оценили. */
+export function useCollectorDecision(id: string, enabled: boolean) {
+    return useQuery({
+        queryKey: collectorKeys.decision(id),
+        queryFn: async () => unwrap(await collector.GET('/applications/{id}/decision', { params: { path: { id } } })),
+        enabled,
+        retry: false,
+    });
+}
+
+/** Предложения банка по заявке. */
+export function useCollectorOffers(id: string, enabled: boolean) {
+    return useQuery({
+        queryKey: collectorKeys.offers(id),
+        queryFn: async () => unwrap(await collector.GET('/applications/{id}/offers', { params: { path: { id } } })).items,
+        enabled,
+    });
+}
+
+/** Вопросы банка по заявке. */
+export function useCollectorInfoRequests(id: string, enabled: boolean) {
+    return useQuery({
+        queryKey: collectorKeys.infoRequests(id),
+        queryFn: async () => unwrap(await collector.GET('/applications/{id}/info-requests', { params: { path: { id } } })).items,
+        enabled,
+    });
+}
+
+/** Ответ на вопрос банка: значение, комментарий и файлы одним multipart. */
+export function useAnswerInfoRequest(applicationId: string) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ requestId, value, comment, files }: { requestId: string; value?: unknown; comment?: string; files: File[] }) => {
+            const form = new FormData();
+            form.append('answer', JSON.stringify({ value, comment: comment?.trim() || undefined }));
+            for (const f of files) form.append('files', f, f.name);
+            return unwrap(
+                await collector.POST('/applications/{id}/info-requests/{requestId}/answer', {
+                    params: { path: { id: applicationId, requestId } },
+                    // без body openapi-fetch не вызывает bodySerializer — тело заменит FormData
+                    body: {},
+                    bodySerializer: () => form,
+                }),
+            );
+        },
+        onSuccess: (res) => {
+            if (res.info_requests) queryClient.setQueryData(collectorKeys.infoRequests(applicationId), res.info_requests);
+            // ответили на всё — заявка уходит дальше: перечитываем статус
+            void queryClient.invalidateQueries({ queryKey: collectorKeys.application(applicationId) });
+            void queryClient.invalidateQueries({ queryKey: collectorKeys.timeline(applicationId) });
+        },
     });
 }

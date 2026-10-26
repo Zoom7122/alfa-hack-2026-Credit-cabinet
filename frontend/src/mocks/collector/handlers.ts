@@ -12,26 +12,35 @@ import {
     type CollectorSystem,
     type QuestionnaireInput,
 } from '../../api/collector/types';
+import { REGISTRY_TIMEOUT_INN, registry } from '../data';
 import { mockFailure } from '../handlers';
 import { stepMs } from '../workflow';
+import { productByCode, termsErrors } from './catalog';
+import { allAnswered, offerOf, questionsOf, REJECT_REASONS, scoredOutcome } from './outcome';
 import { FAILING_COLLECTION_INN, scenarioByInn } from './scenarios';
 import { mutateCollector, newId, readCollector, type StoredCollectorApp } from './store';
+import { collectorUser, COLLECTOR_TEST_USERS } from './users';
 
 /* Мок data-collector по его swagger и README: регистрация, анкета с файлами, статус заявки, итог сбора. */
 
-const url = (path: string) => `${COLLECTOR_BASE_URL}${path}`;
+export const url = (path: string) => `${COLLECTOR_BASE_URL}${path}`;
 
 type Field = { field: string; code: string; message: string };
 
-function problem(status: number, code: string, title: string, detail?: string, errors?: Field[]) {
+export function problem(status: number, code: string, title: string, detail?: string, errors?: Field[]) {
     return HttpResponse.json(
         { type: `https://errors.credit-cabinet.local/${code.toLowerCase().replace(/_/g, '-')}`, title, status, code, detail, errors },
         { status, headers: { 'Content-Type': 'application/problem+json' } },
     );
 }
 
-const validation = (status: 400 | 422, detail: string, errors: Field[]) => problem(status, 'VALIDATION_FAILED', 'Ошибка в данных', detail, errors);
-const notFound = (detail: string) => problem(404, 'NOT_FOUND', 'Не найдено', detail);
+export const validation = (status: 400 | 422, detail: string, errors: Field[]) => problem(status, 'VALIDATION_FAILED', 'Ошибка в данных', detail, errors);
+export const notFound = (detail: string) => problem(404, 'NOT_FOUND', 'Не найдено', detail);
+const isTestUser = (id: string | undefined) => COLLECTOR_TEST_USERS.some((u) => u.id === id);
+/** Content-Disposition как у Go (mime.FormatMediaType): не-ASCII имя — через filename*. */
+function attachment(name: string) {
+    return /^[\x20-\x7e]*$/.test(name) && !/["\\]/.test(name) ? `attachment; filename="${name}"` : `attachment; filename*=utf-8''${encodeURIComponent(name)}`;
+}
 
 const INN = /^(\d{10}|\d{12})$/;
 const PERSON_INN = /^\d{12}$/;
@@ -67,24 +76,39 @@ const SYSTEMS: CollectorSystem[] = [
 
 const extOf = (name: string) => name.split('.').pop()?.toLowerCase() ?? '';
 const isSignature = (name: string) => /\.(sig|p7s)$/i.test(name);
-const iso = (ms: number) => new Date(ms).toISOString();
+export const iso = (ms: number) => new Date(ms).toISOString();
 const canSign = (role: CollectorRole, soleProprietor: boolean) => role === 'DIRECTOR' || (soleProprietor && role === 'OWNER');
 
 /** Статус по времени отправки: шаг конвейера — как у остальных моков (флаг credit-cabinet:mock-pipeline-ms). */
-function statusOf(app: StoredCollectorApp, now = Date.now()): CollectorStatus {
+export function statusOf(app: StoredCollectorApp, now = Date.now()): CollectorStatus {
     if (app.submitted_ms === undefined) return 'DRAFT';
     const elapsed = now - app.submitted_ms;
     if (elapsed < stepMs()) return 'SUBMITTED';
     // сбор не удался — заявка так и остаётся в ENRICHING, в журнале enrich.failed
     if (elapsed < 2 * stepMs() || app.company.inn === FAILING_COLLECTION_INN) return 'ENRICHING';
-    return 'VERIFYING';
+    // ещё шаг — оценка credit-engine, дальше итог по сценарию; на вопросы ответили — к специалисту
+    if (elapsed < 3 * stepMs()) return 'VERIFYING';
+    // решение андеррайтера — поверх итога движка
+    const latest = app.review?.decisions.at(-1);
+    if (latest?.action === 'APPROVE') return 'OFFERED';
+    if (latest?.action === 'REJECT') return 'REJECTED';
+    if (latest?.action === 'REQUEST_INFO') return latest.questions?.every((q) => app.answers?.[q.id]) ? 'MANUAL_REVIEW' : 'WAITING_FOR_INFO';
+    const outcome = scoredOutcome(app.company.inn);
+    if (outcome === 'WAITING_FOR_INFO' && allAnswered(app, scoredAt(app))) return 'MANUAL_REVIEW';
+    return outcome;
 }
 
-function toApplication(app: StoredCollectorApp, withKnown = false): CollectorApplication {
+/** Сбор завершён: VERIFYING и всё после оценки. */
+const isCollected = (status: CollectorStatus) => !['DRAFT', 'SUBMITTED', 'ENRICHING'].includes(status);
+
+/** Когда заявку оценили (мс). */
+export const scoredAt = (app: StoredCollectorApp) => (app.submitted_ms ?? 0) + 3 * stepMs();
+
+export function toApplication(app: StoredCollectorApp, withKnown = false): CollectorApplication {
     const status = statusOf(app);
     const scenario = scenarioByInn(app.company.inn);
     // после сбора имя и ОГРН компании — из ЕГРЮЛ, и для всех её заявок (компания одна на ИНН)
-    const collected = scenario && readCollector().apps.some((a) => a.company.inn === app.company.inn && statusOf(a) === 'VERIFYING');
+    const collected = scenario && readCollector().apps.some((a) => a.company.inn === app.company.inn && isCollected(statusOf(a)));
     const q = app.questionnaire;
     return {
         id: app.id,
@@ -102,12 +126,90 @@ function toApplication(app: StoredCollectorApp, withKnown = false): CollectorApp
         product_code: q?.product_code,
         requested: q?.requested,
         purpose: q?.purpose,
-        documents: app.documents,
+        documents: app.documents.map((d) => {
+            const state = signatureState(app, d);
+            // тестовый профиль проверки — не выше VALID_WITH_WARNINGS
+            return { ...d, signature_state: state, signature_verdict: state === 'DONE' ? 'VALID_WITH_WARNINGS' : undefined };
+        }),
         collection_task_id: app.task_id,
         created_at: app.created_at,
         submitted_at: app.submitted_ms === undefined ? undefined : iso(app.submitted_ms),
         updated_at: app.updated_at,
     };
+}
+
+/** Подпись worker проверяет после сбора: PENDING → DONE через два шага конвейера. */
+function signatureState(app: StoredCollectorApp, doc: CollectorDocument): CollectorDocument['signature_state'] {
+    if (doc.signature_state !== 'PENDING' || app.submitted_ms === undefined) return doc.signature_state;
+    return Date.now() - app.submitted_ms >= 2 * stepMs() ? 'DONE' : 'PENDING';
+}
+
+/** Отчёт worker'а подписи (signature.Report) — тестовый профиль, как у data-collector. */
+function signatureReport(app: StoredCollectorApp, requested: CollectorDocument) {
+    // по id .sig — отчёт этой подписи о подписанном ею документе
+    const doc = requested.type === 'SIGNATURE' ? (app.documents.find((d) => d.id === requested.signed_document_id) ?? requested) : requested;
+    const sig = requested.type === 'SIGNATURE' ? requested : app.documents.find((d) => d.signed_document_id === doc.id);
+    const director = app.questionnaire?.director;
+    const signer = director ? `${director.last_name} ${director.first_name} ${director.middle_name ?? ''}`.trim() : app.representative.full_name;
+    const at = iso((app.submitted_ms ?? Date.now()) + 2 * stepMs());
+    const ok = { status: 'VERIFIED' };
+    return {
+        id: `sigr_${(sig ?? doc).id?.slice(4)}`,
+        profile: 'TEST',
+        profile_notice: 'Профиль TEST: подпись проверена тестовыми корнями и моками реестров. Это не проверка УКЭП, поэтому вердикт не выше VALID_WITH_WARNINGS.',
+        file_name: doc.file_name,
+        signature_file_name: sig?.file_name,
+        format: 'CADES_BES',
+        decision: 'VERIFIED',
+        verdict: 'VALID_WITH_WARNINGS',
+        policy: doc.type === 'FINANCIAL_STATEMENTS' ? 'FINANCIAL_STATEMENTS' : 'GENERIC',
+        policy_result: { satisfied: true, message: 'подпись проверена по профилю TEST' },
+        stages: { integrity: ok, format: ok, certificate: ok, identity: ok, authority: ok, decision: ok },
+        signing_time: { value: app.created_at, source: 'SIGNED_ATTRIBUTE' },
+        signer: { kind: 'INDIVIDUAL', full_name: signer, position: 'Генеральный директор' },
+        certificate: { issuer: { name: 'Тестовый УЦ Альфа-Хак', accredited: false }, valid_to: '2027-12-31T00:00:00Z' },
+        limitations: ['аккредитация УЦ и квалифицированность сертификата не проверяются'],
+        verified_at: at,
+    };
+}
+
+/** Журнал заявки — как application_events у data-collector. */
+export function timelineOf(app: StoredCollectorApp) {
+    const events: { id: string; at: string; type: string; message: string; actor_kind: 'CLIENT' | 'SYSTEM' }[] = [
+        { id: 'evt_1', at: app.created_at, type: 'application.created', message: 'Заявка создана', actor_kind: 'CLIENT' },
+    ];
+    const status = statusOf(app);
+    if (app.submitted_ms !== undefined) {
+        events.push({ id: 'evt_2', at: iso(app.submitted_ms), type: 'application.submitted', message: 'Заявка отправлена на рассмотрение', actor_kind: 'CLIENT' });
+    }
+    if (status === 'ENRICHING' || isCollected(status)) {
+        events.push({ id: 'evt_3', at: iso((app.submitted_ms ?? 0) + stepMs()), type: 'enrich.started', message: 'Начали собирать данные о компании', actor_kind: 'SYSTEM' });
+    }
+    if (isCollected(status)) {
+        events.push({ id: 'evt_4', at: iso((app.submitted_ms ?? 0) + 2 * stepMs()), type: 'enrich.completed', message: 'Данные о компании собраны', actor_kind: 'SYSTEM' });
+    }
+    const scored: Record<string, string> = {
+        OFFERED: 'Банк одобрил кредит — посмотрите предложение',
+        REJECTED: 'Банк отказал в кредите',
+        WAITING_FOR_INFO: 'Банку нужны дополнительные сведения',
+        MANUAL_REVIEW: 'Заявку рассматривает кредитный специалист',
+    };
+    if (['OFFERED', 'REJECTED', 'WAITING_FOR_INFO', 'MANUAL_REVIEW'].includes(status)) {
+        const message = scored[scoredOutcome(app.company.inn)] ?? 'Заявку рассматривает кредитный специалист';
+        events.push({ id: 'evt_5', at: iso(scoredAt(app)), type: 'scoring.completed', message, actor_kind: 'SYSTEM' });
+    }
+    const answers = Object.values(app.answers ?? {});
+    if (status === 'MANUAL_REVIEW' && answers.length) {
+        const last = answers.map((a) => a.at).sort().at(-1) ?? iso(Date.now());
+        events.push({ id: 'evt_6', at: last, type: 'info.provided', message: 'Ответы отправлены банку', actor_kind: 'CLIENT' });
+    }
+    if (toTask(app).status === 'FAILED') {
+        events.push({ id: 'evt_4', at: iso((app.submitted_ms ?? 0) + 2 * stepMs()), type: 'enrich.failed', message: 'Сбор данных о компании не удался', actor_kind: 'SYSTEM' });
+    }
+    for (const e of app.review?.events ?? []) {
+        if (!e.internal) events.push({ id: e.id, at: e.at, type: e.type, message: e.message, actor_kind: e.actor ? 'EMPLOYEE' : 'SYSTEM' } as (typeof events)[number]);
+    }
+    return events.sort((a, b) => b.at.localeCompare(a.at));
 }
 
 /** Системы без входных данных (domain.SkippedSystems) — с причиной. */
@@ -126,7 +228,7 @@ function skippedSystems(q: NonNullable<StoredCollectorApp['questionnaire']>): Pa
     return skipped;
 }
 
-function toTask(app: StoredCollectorApp, now = Date.now()): CollectionTask {
+export function toTask(app: StoredCollectorApp, now = Date.now()): CollectionTask {
     const q = app.questionnaire;
     const start = app.submitted_ms ?? now;
     const skipped = q ? skippedSystems(q) : {};
@@ -177,6 +279,11 @@ function validateQuestionnaire(q: QuestionnaireInput, inn: string): Field[] {
         if (!(q.requested.amount > 0)) add('requested.amount', 'out_of_range', 'сумма должна быть больше нуля');
         if (!(q.requested.term_months > 0 && q.requested.term_months <= 600)) add('requested.term_months', 'out_of_range', 'срок от 1 до 600 месяцев');
     }
+    if (q.product_code) {
+        const product = productByCode(q.product_code);
+        if (!product) add('product_code', 'unknown_product', 'нет такого продукта в каталоге');
+        else if (q.requested && !errors.length) errors.push(...termsErrors(product, q.requested.amount, q.requested.term_months));
+    }
     if (q.purpose) {
         if (!PURPOSES.includes(q.purpose.code)) add('purpose.code', 'invalid_value', `допустимые значения: ${PURPOSES.join(', ')}`);
         if ((q.purpose.description?.length ?? 0) > 2000) add('purpose.description', 'too_long', 'не длиннее 2000 символов');
@@ -209,6 +316,12 @@ function validateQuestionnaire(q: QuestionnaireInput, inn: string): Field[] {
     col.serials?.forEach((s, i) => (!s || s.length > 64) && add(`collateral.serials[${i}]`, 'invalid_format', 'заводской номер — от 1 до 64 символов'));
     if (q.poa_number && !UUID.test(q.poa_number)) add('poa_number', 'invalid_format', 'номер МЧД — UUID');
     if (q.representative_inn && !PERSON_INN.test(q.representative_inn)) add('representative_inn', 'invalid_format', 'ИНН физлица — 12 цифр');
+    // ответы для credit-engine — как validateScoring у data-collector
+    const sc = q.scoring ?? {};
+    if (sc.max_annual_rate !== undefined && (sc.max_annual_rate <= 0 || sc.max_annual_rate > 100)) add('scoring.max_annual_rate', 'out_of_range', 'ставка от 0 до 100 % годовых');
+    for (const [field, value] of Object.entries(sc)) {
+        if (typeof value === 'number' && value < 0) add(`scoring.${field}`, 'out_of_range', 'не может быть отрицательным');
+    }
     return errors;
 }
 
@@ -294,6 +407,44 @@ function buildDocuments(files: File[], specs: QuestionnaireInput['documents'], t
     return [...built.filter((_, i) => !targets.has(i)), ...built.filter((_, i) => targets.has(i))];
 }
 
+// ---------------------------------------------------------------- вход (мок-логин, как у data-collector)
+
+export const unauthorized = (detail: string) => problem(401, 'UNAUTHORIZED', 'Unauthorized', detail);
+
+/** Пользователь по `Authorization: Bearer mock.<user_id>`. Без заголовка — анонимно; неверный токен — 401. */
+export function authenticate(request: Request) {
+    const header = request.headers.get('Authorization');
+    if (!header) return { user: undefined };
+    // схема — без учёта регистра, как у data-collector
+    const token = /^bearer\s+(\S+)\s*$/i.exec(header.trim())?.[1];
+    const id = token?.match(/^mock\.(.+)$/)?.[1];
+    const user = id ? collectorUser(id) : undefined;
+    return user ? { user } : { error: unauthorized('токен недействителен') };
+}
+
+/** Вход — без проверки токена: по контракту она ему не нужна, и старый токен не мешает перелогиниться. */
+const AUTH_PATHS = ['/auth/test-users', '/auth/mock-login'];
+
+/** Роль пользователя в компании, если уже записана: заведённая или с прошлой регистрации. Не переписывается. */
+function memberRole(userId: string, inn: string): { role: CollectorRole; can_sign: boolean } | undefined {
+    const seeded = collectorUser(userId)?.companies.find((c) => c.inn === inn);
+    if (seeded) return { role: seeded.role, can_sign: seeded.can_sign };
+    const app = readCollector().apps.find((a) => a.representative.id === userId && a.company.inn === inn);
+    return app && { role: app.representative.role, can_sign: app.representative.can_sign };
+}
+
+/** Профиль: заведённые компании и те, по которым пользователь подавал заявки (company_members у сервиса). */
+function meOf(user: (typeof COLLECTOR_TEST_USERS)[number]) {
+    // сначала заведённые компании, потом добавленные регистрацией — по имени (как у сервиса)
+    const added: typeof user.companies = [];
+    for (const app of readCollector().apps) {
+        if (app.representative.id !== user.id || [...user.companies, ...added].some((c) => c.inn === app.company.inn)) continue;
+        added.push({ applicant_id: app.company.id, short_name: app.company.name ?? `ИНН ${app.company.inn}`, inn: app.company.inn, role: app.representative.role, can_sign: app.representative.can_sign });
+    }
+    added.sort((a, b) => a.short_name.localeCompare(b.short_name) || a.applicant_id.localeCompare(b.applicant_id));
+    return { id: user.id, full_name: user.full_name, roles: user.roles, companies: [...user.companies, ...added], pending_signatures: [] };
+}
+
 // ---------------------------------------------------------------- обработчики
 
 type RegisterBody = {
@@ -302,7 +453,32 @@ type RegisterBody = {
 };
 
 export const collectorHandlers = [
-    http.all(url('/*'), ({ request }) => mockFailure(request)),
+    http.all(url('/*'), ({ request }) => {
+        const failure = mockFailure(request);
+        if (failure) return failure;
+        if (AUTH_PATHS.some((p) => new URL(request.url).pathname.endsWith(p))) return undefined;
+        return authenticate(request).error;
+    }),
+
+    http.get(url('/auth/test-users'), async () => {
+        await delay(250);
+        return HttpResponse.json({ items: COLLECTOR_TEST_USERS });
+    }),
+
+    http.post(url('/auth/mock-login'), async ({ request }) => {
+        await delay(250);
+        const { user_id } = (await request.json().catch(() => ({}))) as { user_id?: string };
+        if (!user_id) return validation(400, 'тело запроса не прошло проверку', [{ field: 'user_id', code: 'required', message: 'обязательное поле' }]);
+        const user = collectorUser(user_id);
+        if (!user) return notFound('пользователь не найден');
+        return HttpResponse.json({ token: `mock.${user.id}`, user: meOf(user) });
+    }),
+
+    http.get(url('/me'), async ({ request }) => {
+        await delay(150);
+        const { user } = authenticate(request);
+        return user ? HttpResponse.json(meOf(user)) : unauthorized('нужен токен: Authorization: Bearer mock.<user_id>');
+    }),
 
     http.post(url('/applicants'), async ({ request }) => {
         await delay(400);
@@ -329,28 +505,53 @@ export const collectorHandlers = [
 
         const inn = company.inn;
         const role = rep.role as CollectorRole;
-        const fullName = rep.full_name ?? '';
+        const liquidated = registry.find((r) => r.inn === inn && r.registry_status && r.registry_status !== 'ACTIVE');
+        if (liquidated) {
+            return validation(422, 'ошибка в данных заявителя', [
+                { field: 'company.inn', code: 'company_liquidated', message: 'компания ликвидирована — кредит на неё не оформить' },
+            ]);
+        }
+        // вошёл по токену — заявка от его имени: ФИО из профиля, черновик по компании — его
+        const { user } = authenticate(request);
+        if (user && !user.roles.includes('CLIENT')) return problem(403, 'FORBIDDEN', 'Forbidden', 'заявку на кредит подаёт клиент, а не сотрудник банка');
+        const fullName = user?.full_name ?? rep.full_name ?? '';
+        // вошедший: уже записанная роль в компании не переписывается
+        const kept = user ? memberRole(user.id, inn) : undefined;
         const { apps } = readCollector();
-        // тот же пользователь (по ИНН физлица) и та же компания — тот же черновик
-        const existingDraft = rep.inn && apps.find((a) => a.representative.inn === rep.inn && a.company.inn === inn && a.submitted_ms === undefined);
+        const existingDraft = apps.find(
+            (a) =>
+                a.company.inn === inn &&
+                a.submitted_ms === undefined &&
+                (user ? a.representative.id === user.id : Boolean(rep.inn) && a.representative.inn === rep.inn),
+        );
         if (existingDraft) {
             const updated = mutateCollector((d) => {
                 const app = d.apps.find((a) => a.id === existingDraft.id) ?? existingDraft;
-                app.representative = { ...app.representative, full_name: fullName, role, can_sign: canSign(role, inn.length === 12) };
+                app.representative = kept
+                    ? { ...app.representative, full_name: fullName, ...kept }
+                    : { ...app.representative, full_name: fullName, role, can_sign: canSign(role, inn.length === 12) };
                 return app;
             });
             return HttpResponse.json(toApplication(updated, true), { status: 201, headers: { Location: `/api/v1/applications/${updated.id}` } });
         }
         const known = apps.find((a) => a.company.inn === inn);
+        // компании тестовых пользователей заведены заранее — со своими id
+        const seeded = COLLECTOR_TEST_USERS.flatMap((u) => u.companies).find((c) => c.inn === inn);
         const now = new Date().toISOString();
         const app = mutateCollector((d) => {
             d.seq += 1;
             const created: StoredCollectorApp = {
                 id: newId('app'),
                 number: `A-2026-${String(d.seq).padStart(6, '0')}`,
-                company: known ? known.company : { id: newId('apl'), inn, name: company.name || undefined },
-                representative: { id: newId('usr'), full_name: fullName, inn: rep.inn || undefined, role, can_sign: canSign(role, inn.length === 12) },
-                already_known: Boolean(known),
+                company: known ? known.company : seeded ? { id: seeded.applicant_id, inn, name: seeded.short_name } : { id: newId('apl'), inn, name: company.name || undefined },
+                representative: {
+                    id: user?.id ?? newId('usr'),
+                    full_name: fullName,
+                    inn: user ? undefined : rep.inn || undefined,
+                    role: kept?.role ?? role,
+                    can_sign: kept?.can_sign ?? canSign(role, inn.length === 12),
+                },
+                already_known: Boolean(known ?? seeded),
                 created_at: now,
                 updated_at: now,
                 documents: [],
@@ -376,6 +577,10 @@ export const collectorHandlers = [
         }
         const app = readCollector().apps.find((a) => a.id === params.id);
         if (!app) return notFound('заявка не найдена');
+        // анкету отправляет только автор заявки; заявку тестового пользователя — только с его токеном
+        const { user: actor } = authenticate(request);
+        if (actor && actor.id !== app.representative.id) return problem(403, 'FORBIDDEN', 'Forbidden', 'анкету отправляет тот, кто оформил заявку');
+        if (!actor && isTestUser(app.representative.id)) return unauthorized('заявка оформлена тестовым пользователем — нужен его токен');
 
         let raw: unknown;
         let files: File[] = [];
@@ -439,5 +644,218 @@ export const collectorHandlers = [
         const app = readCollector().apps.find((a) => a.task_id === params.id);
         if (!app) return notFound('задача не найдена');
         return HttpResponse.json(toTask(app));
+    }),
+
+    http.get(url('/applicants'), async ({ request }) => {
+        await delay(200);
+        const { user } = authenticate(request);
+        if (!user) return unauthorized('нужен токен: Authorization: Bearer mock.<user_id>');
+        const items = meOf(user).companies.map((c) => {
+            // реквизиты — после сбора по компании (как companies.registry у data-collector)
+            const scenario = scenarioByInn(c.inn);
+            const collected = scenario && readCollector().apps.some((a) => a.company.inn === c.inn && isCollected(statusOf(a)));
+            const prefill = registry.find((r) => r.inn === c.inn);
+            return {
+                id: c.applicant_id,
+                inn: c.inn,
+                applicant_type: c.inn.length === 12 ? 'SOLE_PROPRIETOR' : 'LEGAL_ENTITY',
+                short_name: collected ? scenario.egrulName : c.short_name,
+                ...(collected && {
+                    ogrn: scenario.ogrn,
+                    full_name: prefill?.full_name,
+                    registration_date: prefill?.registration_date,
+                    director_name: prefill?.director_name,
+                    registry_status: 'ACTIVE',
+                }),
+                my_role: c.role,
+                can_sign: c.can_sign,
+            };
+        });
+        return HttpResponse.json({ items });
+    }),
+
+    http.get(url('/applications'), async ({ request }) => {
+        await delay(200);
+        const { user } = authenticate(request);
+        if (!user) return unauthorized('нужен токен: Authorization: Bearer mock.<user_id>');
+        const params = new URL(request.url).searchParams;
+        const statuses = (params.get('status') ?? '')
+            .split(',')
+            .map((x) => x.trim().toUpperCase())
+            .filter(Boolean);
+        if (statuses.some((x) => !['DRAFT', 'SUBMITTED', 'ENRICHING', 'VERIFYING'].includes(x))) {
+            return validation(422, 'неизвестный статус', [{ field: 'status', code: 'invalid_value', message: 'допустимые значения: DRAFT, SUBMITTED, ENRICHING, VERIFYING' }]);
+        }
+        const companyId = params.get('company_id');
+        const onlyMine = params.get('mine') === 'true';
+        // заявки компаний пользователя — его и коллег по компании; черновики — только свои
+        const inns = new Set(meOf(user).companies.map((c) => c.inn));
+        const items = readCollector()
+            .apps.filter((a) => inns.has(a.company.inn) && (!companyId || a.company.id === companyId))
+            .filter((a) => (a.representative.id === user.id || (!onlyMine && a.submitted_ms !== undefined)))
+            .map((a) => toApplication(a))
+            .filter((a) => !statuses.length || statuses.includes(a.status ?? ''))
+            .sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+            .slice(0, 100);
+        return HttpResponse.json({ items });
+    }),
+
+    http.get(url('/applications/:id/timeline'), async ({ params }) => {
+        await delay(150);
+        const app = readCollector().apps.find((a) => a.id === params.id);
+        if (!app) return notFound('заявка не найдена');
+        return HttpResponse.json({ items: timelineOf(app) });
+    }),
+
+    http.get(url('/applications/:id/documents/:documentId/content'), async ({ params }) => {
+        await delay(150);
+        const app = readCollector().apps.find((a) => a.id === params.id);
+        const doc = app?.documents.find((d) => d.id === params.documentId);
+        if (!doc) return notFound('заявка или документ не найдены');
+        // содержимого мок не хранит — отдаём заглушку того же типа
+        return new HttpResponse(`Мок data-collector: ${doc.file_name}`, {
+            headers: { 'Content-Type': doc.mime_type ?? 'application/octet-stream', 'Content-Disposition': attachment(doc.file_name ?? 'document') },
+        });
+    }),
+
+    http.get(url('/applications/:id/documents/:documentId/signature-report'), async ({ params }) => {
+        await delay(150);
+        const app = readCollector().apps.find((a) => a.id === params.id);
+        const doc = app?.documents.find((d) => d.id === params.documentId);
+        if (!app || !doc) return notFound('заявка или документ не найдены');
+        const state = signatureState(app, doc);
+        // отчёт пишется и при FAILED (нет файла, внутренняя ошибка)
+        if (state !== 'DONE' && state !== 'FAILED') return problem(404, 'REPORT_NOT_READY', 'Не найдено', 'подпись этого документа ещё не проверяли');
+        return HttpResponse.json(signatureReport(app, doc));
+    }),
+
+    http.post(url('/counterparty/lookup'), async ({ request }) => {
+        await delay(300);
+        if (!authenticate(request).user) return unauthorized('нужен токен: Authorization: Bearer mock.<user_id>');
+        const { inn } = (await request.json().catch(() => ({}))) as { inn?: string | null };
+        if (inn === undefined || inn === null) return validation(400, 'тело запроса не прошло проверку', [{ field: 'inn', code: 'required', message: 'обязательное поле' }]);
+        if (!INN.test(inn)) return validation(422, 'неверный ИНН', [{ field: 'inn', code: 'invalid_format', message: 'ИНН — 10 цифр для юрлица или 12 для ИП' }]);
+        if (inn === REGISTRY_TIMEOUT_INN) {
+            await delay(1500);
+            return problem(504, 'UPSTREAM_TIMEOUT', 'Gateway timeout', 'ЕГРЮЛ не ответил — продолжайте, реквизиты соберём при сборе данных');
+        }
+        const found = registry.find((r) => r.inn === inn);
+        if (!found) return notFound('компания с таким ИНН не найдена в ЕГРЮЛ');
+        return HttpResponse.json({
+            inn,
+            applicant_type: found.applicant_type,
+            short_name: found.short_name ?? found.full_name,
+            full_name: found.full_name,
+            ogrn: found.ogrn,
+            kpp: found.kpp ?? undefined,
+            registration_date: found.registration_date,
+            director_name: found.director_name,
+            region: found.legal_address?.full,
+            registry_status: found.registry_status === 'ACTIVE' || !found.registry_status ? 'ACTIVE' : 'LIQUIDATED',
+            already_known: readCollector().apps.some((a) => a.company.inn === inn) || COLLECTOR_TEST_USERS.some((u) => u.companies.some((c) => c.inn === inn)),
+        });
+    }),
+
+    http.get(url('/applications/:id/decision'), async ({ params }) => {
+        await delay(150);
+        const app = readCollector().apps.find((a) => a.id === params.id);
+        if (!app) return notFound('не найдено');
+        const status = statusOf(app);
+        if (!['OFFERED', 'REJECTED', 'WAITING_FOR_INFO', 'MANUAL_REVIEW'].includes(status)) return notFound('заявку ещё не оценили');
+        const uw = app.review?.decisions.at(-1);
+        if (uw) {
+            return HttpResponse.json({ outcome: uw.outcome, reasons: uw.reasons ?? [], reapply_after: uw.reapply_after ?? null, decided_at: uw.at, decided_by: 'EMPLOYEE' });
+        }
+        const outcome = status === 'OFFERED' ? 'APPROVED' : status === 'REJECTED' ? 'REJECTED' : status === 'WAITING_FOR_INFO' ? 'NEED_INFO' : 'MANUAL_REVIEW';
+        const at = scoredAt(app);
+        return HttpResponse.json({
+            outcome,
+            reasons: status === 'REJECTED' ? REJECT_REASONS : [],
+            reapply_after: status === 'REJECTED' ? iso(at + 30 * 86_400_000).slice(0, 10) : null,
+            decided_at: iso(at),
+            decided_by: 'ENGINE',
+        });
+    }),
+
+    http.get(url('/applications/:id/offers'), async ({ params }) => {
+        await delay(150);
+        const app = readCollector().apps.find((a) => a.id === params.id);
+        if (!app) return notFound('не найдено');
+        const approved = app.review?.decisions.filter((d) => d.action === 'APPROVE').at(-1);
+        if (approved) {
+            return HttpResponse.json({
+                items: (approved.offers ?? []).map((o, i) => ({ id: `ofr_${app.id.slice(4)}_${i}`, state: 'ACTIVE', recommended: i === 0, collateral_required: [], conditions: [], ...o })),
+            });
+        }
+        return HttpResponse.json({ items: statusOf(app) === 'OFFERED' ? [offerOf(app, scoredAt(app))] : [] });
+    }),
+
+    http.get(url('/applications/:id/info-requests'), async ({ params }) => {
+        await delay(150);
+        const app = readCollector().apps.find((a) => a.id === params.id);
+        if (!app) return notFound('не найдено');
+        const decided = !['DRAFT', 'SUBMITTED', 'ENRICHING', 'VERIFYING'].includes(statusOf(app));
+        return HttpResponse.json({ items: decided ? questionsOf(app, scoredAt(app)) : [] });
+    }),
+
+    http.post(url('/applications/:id/info-requests/:requestId/answer'), async ({ request, params }) => {
+        await delay(400);
+        const app = readCollector().apps.find((a) => a.id === params.id);
+        if (!app) return notFound('не найдено');
+        const { user } = authenticate(request);
+        if (user && user.id !== app.representative.id) return problem(403, 'FORBIDDEN', 'Forbidden', 'на вопросы банка отвечает тот, кто оформил заявку');
+        if (!user && isTestUser(app.representative.id)) return unauthorized('заявка оформлена тестовым пользователем — нужен его токен');
+        const question = questionsOf(app, scoredAt(app)).find((q) => q.id === params.requestId);
+        if (!question) return notFound('не найдено');
+        if (statusOf(app) !== 'WAITING_FOR_INFO') return problem(409, 'INVALID_TRANSITION', 'Conflict', 'банк сейчас не ждёт ответов по этой заявке');
+        if (question.state !== 'OPEN') return problem(409, 'CONFLICT', 'Conflict', 'на этот вопрос уже ответили');
+
+        let answer: { value?: unknown; comment?: string } = {};
+        let files: File[] = [];
+        const type = request.headers.get('Content-Type') ?? '';
+        try {
+            if (type.startsWith('multipart/form-data')) {
+                const form = await request.formData();
+                const part = form.get('answer');
+                if (typeof part === 'string') answer = JSON.parse(part) as typeof answer;
+                files = form.getAll('files').filter((f): f is File => f instanceof File);
+            } else {
+                answer = (await request.json()) as typeof answer;
+            }
+        } catch {
+            return validation(400, 'часть answer — JSON {value, comment}', []);
+        }
+        const input = question.input as { type?: string };
+        if ((input.type === 'MONEY' || input.type === 'NUMBER') && (typeof answer.value !== 'number' || answer.value < 0)) {
+            return validation(422, 'ответ не прошёл проверку', [{ field: 'value', code: 'invalid_value', message: 'нужно неотрицательное число' }]);
+        }
+        if ((question.documents as { required?: boolean } | undefined)?.required && !files.length) {
+            return validation(422, 'ответ не прошёл проверку', [{ field: 'files', code: 'required', message: 'приложите документ' }]);
+        }
+        const now = Date.now();
+        const docs = files.map((f) => ({
+            id: newId('doc'),
+            type: 'BANK_STATEMENT' as const,
+            file_name: f.name,
+            mime_type: MIME[extOf(f.name)] ?? 'application/octet-stream',
+            size_bytes: f.size,
+            signature_state: 'NOT_SIGNED' as const,
+            recognition_state: RECOGNIZABLE.has(extOf(f.name)) ? ('PENDING' as const) : ('NOT_APPLICABLE' as const),
+            uploaded_at: iso(now),
+        }));
+        const updated = mutateCollector((d) => {
+            const stored = d.apps.find((a) => a.id === app.id) ?? app;
+            stored.documents = [...stored.documents, ...docs];
+            stored.answers = { ...stored.answers, [question.id ?? '']: { value: answer.value, comment: answer.comment, document_ids: docs.map((x) => x.id), at: iso(now) } };
+            stored.updated_at = iso(now);
+            // ответили на все вопросы андеррайтера — заявка снова у него, с новым сроком
+            const latest = stored.review?.decisions.at(-1);
+            if (stored.review && latest?.action === 'REQUEST_INFO' && latest.questions?.every((q) => stored.answers?.[q.id])) {
+                stored.review.deadline = iso(now + 4 * 3_600_000);
+                stored.review.version += 1;
+            }
+            return stored;
+        });
+        return HttpResponse.json({ status: statusOf(updated), info_requests: questionsOf(updated, scoredAt(updated)) });
     }),
 ];

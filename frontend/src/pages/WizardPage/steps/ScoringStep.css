@@ -1,0 +1,12 @@
+.scoring-step__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: var(--gap-16);
+}
+
+@media (max-width: 599px) {
+    .scoring-step__grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

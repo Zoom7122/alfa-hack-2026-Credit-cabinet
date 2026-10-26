@@ -20,6 +20,33 @@ export type StoredCollectorApp = {
     };
     documents: CollectorDocument[];
     task_id?: string;
+    /** Ответы на вопросы банка: id вопроса → ответ. */
+    answers?: Record<string, { value?: unknown; comment?: string; document_ids: string[]; at: string }>;
+    /** Ручное рассмотрение: исполнитель, версия заявки, решения андеррайтера, служебный журнал. */
+    review?: StoredReview;
+};
+
+export type StoredQuestion = { id: string; title: string; description?: string; required: boolean; input: unknown; documents?: unknown; created_at: string };
+
+export type StoredDecision = {
+    action: 'APPROVE' | 'REJECT' | 'REQUEST_INFO';
+    outcome: string;
+    user: { id: string; full_name: string };
+    at: string;
+    comment?: string;
+    reasons?: { code: string; title: string; description?: string }[];
+    offers?: { kind: string; product_code: string; amount: number; term_months: number; rate_annual: number; monthly_payment: number; conditions?: string[]; guarantee_required?: boolean; valid_until: string }[];
+    questions?: StoredQuestion[];
+    reapply_after?: string;
+};
+
+export type StoredReview = {
+    assignee?: { id: string; full_name: string };
+    version: number;
+    deadline?: string;
+    decisions: StoredDecision[];
+    events: { id: string; at: string; type: string; message: string; internal: boolean; actor?: { id: string; full_name: string } }[];
+    keys: string[];
 };
 
 type CollectorDb = { seq: number; apps: StoredCollectorApp[] };

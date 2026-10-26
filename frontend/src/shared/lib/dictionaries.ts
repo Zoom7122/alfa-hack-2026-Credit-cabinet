@@ -16,6 +16,8 @@ export const ROLE_LABELS: Record<RepresentativeRole, string> = {
     OWNER: 'Собственник',
     CFO: 'Финансовый директор',
     ACCOUNTANT: 'Бухгалтер',
+    FINANCE_EMPLOYEE: 'Отвечает за финансирование',
+    BANKING_EMPLOYEE: 'Банковские продукты',
     AUTHORIZED_EMPLOYEE: 'Сотрудник',
 };
 

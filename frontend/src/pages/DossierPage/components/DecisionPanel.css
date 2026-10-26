@@ -49,3 +49,13 @@
     margin: 0;
     padding-left: var(--gap-20);
 }
+
+@media (max-width: 599px) {
+    .decision-panel__entry {
+        padding: var(--gap-12) var(--gap-16);
+    }
+
+    .decision-panel__grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

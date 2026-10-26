@@ -1,6 +1,8 @@
 package httptransport
 
 import (
+	"cmp"
+	"slices"
 	"time"
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/domain"
@@ -71,7 +73,45 @@ type questionnaireRequest struct {
 	// Номер МЧД, если заявку подаёт представитель, и его ИНН.
 	POANumber         string `json:"poa_number" example:"0f5a2c1e-7b3d-4e8a-9c21-6d4b8e0a1f37"`
 	RepresentativeINN string `json:"representative_inn" example:"779900010333"`
+	// Ответы для оценки credit-engine, которых нет в собранных данных. Чего нет — банк спросит позже.
+	Scoring *scoringRequest `json:"scoring"`
 } //	@name	QuestionnaireRequest
+
+// scoringRequest — ответы для credit-engine (коды — как в его контракте). Поля «только ИП» юрлицу не нужны.
+type scoringRequest struct {
+	MaxAnnualRate           *float64 `json:"max_annual_rate" example:"24"`
+	MinAcceptableAmount     *int64   `json:"min_acceptable_amount" example:"3000000"`
+	MaxAcceptableTermMonths *int     `json:"max_acceptable_term_months" example:"36"`
+	NeedCost                *int64   `json:"need_cost" example:"6000000"`
+	OwnContribution         *int64   `json:"own_contribution" example:"1000000"`
+	FreeCash                *int64   `json:"free_cash" example:"400000"`
+	MinimumCash             *int64   `json:"minimum_cash" example:"100000"`
+	NeedEvidence            string   `json:"need_evidence" enums:"CONTRACT_AND_COST,VERIFIED_ESTIMATE,ORAL_ONLY"`
+	ExperienceYears         *int     `json:"experience_years" example:"9"`
+	PrimaryIncomeSource     string   `json:"primary_income_source" enums:"BUSINESS,PUBLIC_EMPLOYMENT,PRIVATE_EMPLOYMENT,PENSION,SELF_EMPLOYED_OR_GPH,NONE"`
+	Qualification           string   `json:"qualification" enums:"NONE,SUPPORT,SPECIALIST,MANAGER_OR_HIGHLY_QUALIFIED"`
+	TotalExperienceMonths   *int     `json:"total_experience_months"`
+	NetMonthlyIncome        *int64   `json:"net_monthly_income"`
+	CarClass                string   `json:"car_class" enums:"NONE,ECONOMY,COMFORT,PREMIUM"`
+	EducationLevel          string   `json:"education_level" enums:"BELOW_GENERAL,GENERAL,VOCATIONAL,HIGHER,ACADEMIC_DEGREE"`
+	RealEstateStatus        string   `json:"real_estate_status" enums:"UNENCUMBERED_WHOLE,UNENCUMBERED_SHARE,ENCUMBERED_ONLY,NONE"`
+	BusinessLocation        string   `json:"business_location" enums:"VERIFIED_PHYSICAL,VERIFIED_ONLINE_OR_MOBILE,UNVERIFIED"`
+	LocationStabilityMonths *int     `json:"location_stability_months"`
+	BuyerContracts          string   `json:"buyer_contracts" enums:"ACTIVE_AND_PERFORMED,REPEAT_ORDERS,PLANS_ONLY"`
+} //	@name	ScoringAnswers
+
+func (r *scoringRequest) toDomain() *domain.ScoringAnswers {
+	if r == nil {
+		return nil
+	}
+	return &domain.ScoringAnswers{MaxAnnualRate: r.MaxAnnualRate, MinAcceptableAmount: r.MinAcceptableAmount,
+		MaxAcceptableTermMonths: r.MaxAcceptableTermMonths, NeedCost: r.NeedCost, OwnContribution: r.OwnContribution,
+		FreeCash: r.FreeCash, MinimumCash: r.MinimumCash, NeedEvidence: r.NeedEvidence, ExperienceYears: r.ExperienceYears,
+		PrimaryIncomeSource: r.PrimaryIncomeSource, Qualification: r.Qualification, TotalExperienceMonths: r.TotalExperienceMonths,
+		NetMonthlyIncome: r.NetMonthlyIncome, CarClass: r.CarClass, EducationLevel: r.EducationLevel,
+		RealEstateStatus: r.RealEstateStatus, BusinessLocation: r.BusinessLocation,
+		LocationStabilityMonths: r.LocationStabilityMonths, BuyerContracts: r.BuyerContracts}
+}
 
 type personRequest struct {
 	INN        string `json:"inn" example:"779900010139"`
@@ -127,6 +167,7 @@ func (r questionnaireRequest) toSubmitInput(files []storage.Staged) service.Subm
 		ChildrenCount: *r.ChildrenCount,
 		Company:       r.toCollectInput(),
 		ProductCode:   r.ProductCode,
+		Scoring:       r.Scoring.toDomain(),
 		Files:         files,
 	}
 	if q := r.Requested; q != nil {
@@ -176,8 +217,10 @@ type applicationResponse struct {
 	ID     string `json:"id" example:"app_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"`
 	Number string `json:"number" example:"A-2026-000001"`
 	// DRAFT — создана при регистрации, SUBMITTED — анкета отправлена, ENRICHING — идёт сбор данных,
-	// VERIFYING — данные собраны.
-	Status         string                 `json:"status" enums:"DRAFT,SUBMITTED,ENRICHING,VERIFYING" example:"DRAFT"`
+	// VERIFYING — данные собраны, ждём проверку подписей, SCORING — оценивает credit-engine,
+	// MANUAL_REVIEW — у андеррайтера, WAITING_FOR_INFO — банк ждёт ответов клиента,
+	// OFFERED — выдано предложение, REJECTED — отказ.
+	Status         string                 `json:"status" enums:"DRAFT,SUBMITTED,ENRICHING,VERIFYING,SCORING,MANUAL_REVIEW,WAITING_FOR_INFO,OFFERED,REJECTED" example:"DRAFT"`
 	Applicant      applicantResponse      `json:"applicant"`
 	Representative representativeResponse `json:"representative"`
 	ProductCode    string                 `json:"product_code,omitempty" example:"WORKING_CAPITAL"`
@@ -223,8 +266,10 @@ type documentResponse struct {
 	SizeBytes int64  `json:"size_bytes" example:"48213"`
 	SHA256    string `json:"sha256"`
 	// У открепленной подписи (type=SIGNATURE) — какой документ она подписывает.
-	SignedDocumentID string    `json:"signed_document_id,omitempty"`
-	SignatureState   string    `json:"signature_state" enums:"NOT_SIGNED,PENDING,DONE,FAILED"`
+	SignedDocumentID string `json:"signed_document_id,omitempty"`
+	SignatureState   string `json:"signature_state" enums:"NOT_SIGNED,PENDING,DONE,FAILED"`
+	// Итог проверки подписи (после DONE или FAILED); нет — подпись не проверяли.
+	SignatureVerdict string    `json:"signature_verdict,omitempty" enums:"VALID,VALID_WITH_WARNINGS,INVALID,INDETERMINATE"`
 	RecognitionState string    `json:"recognition_state" enums:"NOT_APPLICABLE,PENDING,PROCESSING,DONE,FAILED"`
 	UploadedAt       time.Time `json:"uploaded_at"`
 } //	@name	Document
@@ -306,7 +351,7 @@ func toDocumentResponses(docs []domain.Document) []documentResponse {
 	for _, d := range docs {
 		out = append(out, documentResponse{ID: d.ID, Type: string(d.Type), FileName: d.FileName, MimeType: d.MimeType,
 			SizeBytes: d.SizeBytes, SHA256: d.SHA256, SignedDocumentID: d.SignedDocumentID,
-			SignatureState: string(d.SignatureState), RecognitionState: string(d.RecognitionState), UploadedAt: d.UploadedAt})
+			SignatureState: string(d.SignatureState), SignatureVerdict: d.SignatureVerdict, RecognitionState: string(d.RecognitionState), UploadedAt: d.UploadedAt})
 	}
 	return out
 }
@@ -402,4 +447,201 @@ func toInternalDataResponse(d domain.InternalBankData) internalDataResponse {
 		SalaryProject: d.SalaryProject,
 		CardIndex:     d.CardIndex,
 	}
+}
+
+// loginRequest — тело POST /auth/mock-login.
+type loginRequest struct {
+	UserID *string `json:"user_id" binding:"required" example:"usr_director_north"`
+} //	@name	MockLoginRequest
+
+// companyAccessResponse — компания пользователя и его роль в ней.
+type companyAccessResponse struct {
+	ApplicantID string `json:"applicant_id" validate:"required" example:"apl_north_wind"`
+	ShortName   string `json:"short_name" validate:"required" example:"ООО «Северный ветер»"`
+	INN         string `json:"inn" validate:"required" example:"7799000012"`
+	Role        string `json:"role" validate:"required" enums:"OWNER,DIRECTOR,CFO,ACCOUNTANT,FINANCE_EMPLOYEE,BANKING_EMPLOYEE,AUTHORIZED_EMPLOYEE" example:"DIRECTOR"`
+	// Может подписать договор без доверенности: директор, у ИП — сам предприниматель.
+	CanSign bool `json:"can_sign" validate:"required"`
+} //	@name	CompanyAccess
+
+// meResponse — текущий пользователь (Me в api/openapi.yaml).
+type meResponse struct {
+	ID        string                  `json:"id" validate:"required" example:"usr_director_north"`
+	FullName  string                  `json:"full_name" validate:"required" example:"Ковалёв Игорь Сергеевич"`
+	Roles     []string                `json:"roles" validate:"required" enums:"CLIENT,UNDERWRITER"`
+	Companies []companyAccessResponse `json:"companies" validate:"required"`
+	// Заявки, ждущие подписи пользователя как директора. Подписания в data-collector пока нет — всегда пусто.
+	PendingSignatures []string `json:"pending_signatures" validate:"required"`
+} //	@name	Me
+
+// testUserResponse — тестовый пользователь для экрана входа (TestUser в api/openapi.yaml).
+type testUserResponse struct {
+	ID        string                  `json:"id" validate:"required" example:"usr_director_north"`
+	FullName  string                  `json:"full_name" validate:"required" example:"Ковалёв Игорь Сергеевич"`
+	Roles     []string                `json:"roles" validate:"required" enums:"CLIENT,UNDERWRITER"`
+	Persona   string                  `json:"persona" validate:"required" example:"Сценарий A: директор ООО «Северный ветер»"`
+	Companies []companyAccessResponse `json:"companies" validate:"required"`
+} //	@name	TestUser
+
+type testUsersResponse struct {
+	Items []testUserResponse `json:"items" validate:"required"`
+} //	@name	TestUsers
+
+// loginResponse — ответ POST /auth/mock-login.
+type loginResponse struct {
+	// Токен для Authorization: Bearer …
+	Token string     `json:"token" validate:"required" example:"mock.usr_director_north"`
+	User  meResponse `json:"user" validate:"required"`
+} //	@name	MockLoginResponse
+
+func toCompanyAccess(cs []domain.CompanyAccess) []companyAccessResponse {
+	out := make([]companyAccessResponse, 0, len(cs))
+	for _, c := range cs {
+		out = append(out, companyAccessResponse{ApplicantID: c.CompanyID, ShortName: c.Name, INN: c.INN, Role: string(c.Role), CanSign: c.CanSign})
+	}
+	return out
+}
+
+func toMeResponse(u domain.User) meResponse {
+	return meResponse{ID: u.ID, FullName: u.FullName, Roles: []string{string(u.Role)}, Companies: toCompanyAccess(u.Companies),
+		PendingSignatures: []string{}}
+}
+
+func toTestUserResponse(u domain.User) testUserResponse {
+	return testUserResponse{ID: u.ID, FullName: u.FullName, Roles: []string{string(u.Role)}, Persona: u.Persona,
+		Companies: toCompanyAccess(u.Companies)}
+}
+
+// applicantProfileResponse — компания пользователя (Applicant в api/openapi.yaml): роль и реквизиты из ЕГРЮЛ.
+type applicantProfileResponse struct {
+	ID               string `json:"id" validate:"required" example:"apl_north_wind"`
+	INN              string `json:"inn" validate:"required" example:"7799000012"`
+	ApplicantType    string `json:"applicant_type" validate:"required" enums:"LEGAL_ENTITY,SOLE_PROPRIETOR"`
+	ShortName        string `json:"short_name" validate:"required" example:"ООО \"СЕВЕРНЫЙ ВЕТЕР\""`
+	FullName         string `json:"full_name,omitempty"`
+	OGRN             string `json:"ogrn,omitempty" example:"1217700412345"`
+	KPP              string `json:"kpp,omitempty"`
+	RegistrationDate string `json:"registration_date,omitempty" example:"2021-03-14"`
+	DirectorName     string `json:"director_name,omitempty"`
+	Region           string `json:"region,omitempty"`
+	// ACTIVE или LIQUIDATED (в выписке есть дата прекращения). Нет — реквизиты ещё не собирали.
+	RegistryStatus string `json:"registry_status,omitempty" enums:"ACTIVE,LIQUIDATED"`
+	MyRole         string `json:"my_role" validate:"required" enums:"OWNER,DIRECTOR,CFO,ACCOUNTANT,FINANCE_EMPLOYEE,BANKING_EMPLOYEE,AUTHORIZED_EMPLOYEE"`
+	CanSign        bool   `json:"can_sign" validate:"required"`
+} //	@name	ApplicantProfile
+
+type applicantsResponse struct {
+	Items []applicantProfileResponse `json:"items" validate:"required"`
+} //	@name	Applicants
+
+type applicationsResponse struct {
+	Items []applicationResponse `json:"items" validate:"required"`
+} //	@name	Applications
+
+// timelineEventResponse — событие журнала заявки для клиента.
+type timelineEventResponse struct {
+	ID string    `json:"id" validate:"required"`
+	At time.Time `json:"at" validate:"required"`
+	// Тип события модуля: application.created, application.submitted, enrich.started, enrich.completed, enrich.failed,
+	// document.signatures_verified.
+	Type       string `json:"type" validate:"required" example:"enrich.completed"`
+	Message    string `json:"message" validate:"required" example:"Данные о компании собраны"`
+	FromStatus string `json:"from_status,omitempty"`
+	ToStatus   string `json:"to_status,omitempty"`
+	ActorKind  string `json:"actor_kind" validate:"required" enums:"CLIENT,SYSTEM,EMPLOYEE"`
+} //	@name	TimelineEvent
+
+type timelineResponse struct {
+	Items []timelineEventResponse `json:"items" validate:"required"`
+} //	@name	Timeline
+
+type lookupRequest struct {
+	INN *string `json:"inn" binding:"required" example:"7799000012"`
+} //	@name	CounterpartyLookupRequest
+
+// counterpartyResponse — реквизиты из ЕГРЮЛ/ЕГРИП (CounterpartyPrefill в api/openapi.yaml).
+type counterpartyResponse struct {
+	INN              string `json:"inn" validate:"required" example:"7799000012"`
+	ApplicantType    string `json:"applicant_type" validate:"required" enums:"LEGAL_ENTITY,SOLE_PROPRIETOR"`
+	ShortName        string `json:"short_name" validate:"required" example:"ООО \"СЕВЕРНЫЙ ВЕТЕР\""`
+	FullName         string `json:"full_name" validate:"required"`
+	OGRN             string `json:"ogrn,omitempty" example:"1217700412345"`
+	KPP              string `json:"kpp,omitempty"`
+	RegistrationDate string `json:"registration_date,omitempty" example:"2021-03-14"`
+	DirectorName     string `json:"director_name,omitempty" example:"Ковалёв Игорь Сергеевич"`
+	Region           string `json:"region,omitempty"`
+	RegistryStatus   string `json:"registry_status" validate:"required" enums:"ACTIVE,LIQUIDATED"`
+	// Компания уже есть в системе: по ней подавали заявку.
+	AlreadyKnown bool `json:"already_known" validate:"required"`
+} //	@name	CounterpartyPrefill
+
+func registryStatus(card domain.CompanyCard) string {
+	if card.TerminatedOn != "" {
+		return "LIQUIDATED"
+	}
+	return "ACTIVE"
+}
+
+func toApplicantProfile(p domain.CompanyProfile) applicantProfileResponse {
+	r := applicantProfileResponse{ID: p.ID, INN: p.INN, ApplicantType: string(p.Type), ShortName: p.Name, OGRN: p.OGRN,
+		MyRole: string(p.Role), CanSign: p.CanSign}
+	if c := p.Card; c != nil {
+		r.FullName, r.KPP, r.RegistrationDate, r.DirectorName, r.Region = c.FullName, c.KPP, c.RegistrationDate, c.DirectorName, c.Region
+		r.RegistryStatus = registryStatus(*c)
+		if c.OGRN != "" {
+			r.OGRN = c.OGRN
+		}
+	}
+	return r
+}
+
+func toCounterparty(c domain.CompanyCard, known bool) counterpartyResponse {
+	return counterpartyResponse{INN: c.INN, ApplicantType: string(c.Type), ShortName: c.Name(), FullName: c.FullName, OGRN: c.OGRN,
+		KPP: c.KPP, RegistrationDate: c.RegistrationDate, DirectorName: c.DirectorName, Region: c.Region,
+		RegistryStatus: registryStatus(c), AlreadyKnown: known}
+}
+
+// eventMessages — тексты для клиента у событий без сохранённого message. Остальные события — служебные.
+var eventMessages = map[string]string{
+	"application.created":          "Черновик заявки создан",
+	"application.submitted":        "Анкета отправлена",
+	"enrich.started":               "Начали собирать данные о компании",
+	"enrich.completed":             "Данные о компании собраны",
+	"enrich.failed":                "Сбор данных о компании не удался",
+	"document.signatures_verified": "Проверили электронную подпись документа",
+	"scoring.started":              "Банк оценивает заявку",
+}
+
+func toTimelineEvent(e domain.ApplicationEvent) (timelineEventResponse, bool) {
+	msg := e.Message
+	if msg == "" {
+		msg = eventMessages[e.Type]
+	}
+	if msg == "" {
+		return timelineEventResponse{}, false
+	}
+	return timelineEventResponse{ID: e.ID, At: e.At, Type: e.Type, Message: msg, FromStatus: string(e.From),
+		ToStatus: string(e.To), ActorKind: actorKind(e)}, true
+}
+
+// actorKind — кто автор события: клиент, сотрудник банка или система.
+func actorKind(e domain.ApplicationEvent) string {
+	switch {
+	case e.ActorRole == domain.UserUnderwriter:
+		return "EMPLOYEE"
+	case e.ActorID != "":
+		return "CLIENT"
+	}
+	return "SYSTEM"
+}
+
+// sortByOrder — компании в порядке профиля пользователя; которых нет в профиле — в конце.
+func sortByOrder(items []applicantProfileResponse, order map[string]int) {
+	rank := func(id string) int {
+		if i, ok := order[id]; ok {
+			return i
+		}
+		return len(order)
+	}
+	slices.SortStableFunc(items, func(a, b applicantProfileResponse) int { return cmp.Compare(rank(a.ID), rank(b.ID)) })
 }

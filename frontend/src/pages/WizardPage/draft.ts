@@ -6,6 +6,7 @@ import type {
     MaritalStatus,
     Marketplace,
     QuestionnaireInput,
+    ScoringAnswers,
     TaxScope,
 } from '../../api/collector/types';
 import { deleteFile, listFileKeys } from './fileStore';
@@ -44,6 +45,8 @@ export type QuestionnaireDraft = {
     tax_scope: TaxScope[];
     poa_number: string;
     representative_inn: string;
+    /** Ответы для оценки банком; чего нет — банк спросит после оценки. */
+    scoring: ScoringAnswers;
 };
 
 export type Secrets = { marketplace_tokens: Partial<Record<Marketplace, string>>; ofd_token: string };
@@ -60,6 +63,7 @@ export const emptyDraft = (init: Partial<QuestionnaireDraft> = {}): Questionnair
     tax_scope: ['DECLARATIONS', 'ENS_BALANCE'],
     poa_number: '',
     representative_inn: '',
+    scoring: {},
     ...init,
 });
 
@@ -305,6 +309,27 @@ export function filesErrors(d: QuestionnaireDraft): Errors {
     return e;
 }
 
+/** Шаг «Для оценки»: необязателен, но заполненное должно быть согласовано с суммой и сроком. */
+export function scoringErrors(d: QuestionnaireDraft): Errors {
+    const e: Errors = {};
+    const s = d.scoring ?? {};
+    if (s.max_annual_rate !== undefined && (s.max_annual_rate <= 0 || s.max_annual_rate > 100)) e['scoring.max_annual_rate'] = 'Ставка — от 0 до 100 % годовых';
+    if (s.min_acceptable_amount !== undefined && d.requested && s.min_acceptable_amount > d.requested.amount) {
+        e['scoring.min_acceptable_amount'] = 'Не больше запрошенной суммы';
+    }
+    if (s.max_acceptable_term_months !== undefined && d.requested && s.max_acceptable_term_months < d.requested.term_months) {
+        e['scoring.max_acceptable_term_months'] = 'Не меньше запрошенного срока';
+    }
+    if (s.max_acceptable_term_months !== undefined && s.max_acceptable_term_months > 120) e['scoring.max_acceptable_term_months'] = 'Не больше 120 месяцев';
+    if (s.need_cost !== undefined && s.own_contribution !== undefined && s.own_contribution > s.need_cost) {
+        e['scoring.own_contribution'] = 'Вклад больше стоимости — кредит не нужен';
+    }
+    if (s.business_location === 'VERIFIED_PHYSICAL' && s.location_stability_months === undefined) {
+        e['scoring.location_stability_months'] = 'Укажите, сколько месяцев вы на этом месте';
+    }
+    return e;
+}
+
 export function reviewErrors(d: QuestionnaireDraft, needsPoa: boolean): Errors {
     const e: Errors = {};
     if (d.consents.tax && !d.tax_scope.length) e['consents.tax.scope'] = 'Отметьте хотя бы одно';
@@ -358,6 +383,7 @@ export function toQuestionnaire(d: QuestionnaireDraft, s: Secrets, number: strin
                 : undefined,
         poa_number: needsPoa && d.poa_number.trim() ? d.poa_number.trim().toLowerCase() : undefined,
         representative_inn: needsPoa && d.representative_inn ? d.representative_inn : undefined,
+        scoring: d.scoring && Object.values(d.scoring).some((v) => v !== undefined) ? d.scoring : undefined,
     };
 }
 

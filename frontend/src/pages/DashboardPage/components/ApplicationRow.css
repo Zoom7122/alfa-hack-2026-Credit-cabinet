@@ -48,3 +48,33 @@
 .application-row__hint {
     white-space: nowrap;
 }
+
+/* телефон: статус уходит под название, с отступом на ширину иконки */
+@media (max-width: 599px) {
+    .application-row {
+        flex-wrap: wrap;
+        gap: var(--gap-8) var(--gap-12);
+    }
+
+    .application-row__icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .application-row__main {
+        flex-basis: calc(100% - 52px);
+    }
+
+    .application-row__state {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--gap-8);
+        width: 100%;
+        padding-left: 52px;
+    }
+
+    .application-row__hint {
+        white-space: normal;
+    }
+}

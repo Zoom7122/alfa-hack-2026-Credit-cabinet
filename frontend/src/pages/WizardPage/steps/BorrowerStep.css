@@ -4,3 +4,9 @@
     align-items: start;
     gap: var(--gap-16);
 }
+
+@media (max-width: 599px) {
+    .borrower-step__grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

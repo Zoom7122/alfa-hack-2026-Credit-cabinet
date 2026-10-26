@@ -57,3 +57,24 @@
 .retention-offer__value {
     text-align: right;
 }
+
+@media (max-width: 599px) {
+    .retention-offer__icon {
+        width: 56px;
+        height: 56px;
+    }
+
+    .retention-offer__panel {
+        padding: var(--gap-16);
+        border-radius: var(--border-radius-20);
+    }
+
+    .retention-offer__rate {
+        flex-wrap: wrap;
+    }
+
+    .retention-offer__row {
+        flex-wrap: wrap;
+        gap: var(--gap-2) var(--gap-16);
+    }
+}

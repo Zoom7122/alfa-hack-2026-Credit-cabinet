@@ -9,7 +9,10 @@ import type { Applicant, CompanyAccess } from '../../../api/types';
 import { ROLE_LABELS } from '../../../shared/lib/dictionaries';
 import './CompanyCard.css';
 
-type Props = { company: CompanyAccess; applicant?: Applicant; loading?: boolean };
+/** Реквизиты для карточки: из data-collector (ЕГРЮЛ после сбора) или из моков — нужны только эти поля. */
+type CompanyFacts = Pick<Applicant, 'applicant_type' | 'ogrn' | 'registration_date'>;
+
+type Props = { company: CompanyAccess; applicant?: CompanyFacts; loading?: boolean };
 
 export function CompanyCard({ company, applicant, loading }: Props) {
     const rows: [string, string | undefined][] = [

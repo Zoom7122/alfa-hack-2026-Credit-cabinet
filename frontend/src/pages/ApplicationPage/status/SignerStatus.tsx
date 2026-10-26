@@ -169,7 +169,7 @@ export function SignerStatus({ app, me, status }: Props) {
                         </Typography.Title>
                         <SegmentedControl selectedId={method} onChange={(id) => setChosenMethod(id as SigningMethod)}>
                             <Segment id='SIMPLE_CODE' title='Код подтверждения' />
-                            <Segment id='QUALIFIED_SIGNATURE' title='Электронная подпись (КЭП)' />
+                            <Segment id='QUALIFIED_SIGNATURE' title='Подпись КЭП' />
                         </SegmentedControl>
 
                         {start.error && (

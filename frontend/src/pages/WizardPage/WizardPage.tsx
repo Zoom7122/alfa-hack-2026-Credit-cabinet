@@ -22,6 +22,7 @@ import { CollateralStep } from './steps/CollateralStep';
 import { CompanyStep } from './steps/CompanyStep';
 import { DocumentsStep } from './steps/DocumentsStep';
 import { ReviewStep } from './steps/ReviewStep';
+import { ScoringStep } from './steps/ScoringStep';
 import { SourcesStep } from './steps/SourcesStep';
 import { TermsStep } from './steps/TermsStep';
 import './WizardPage.css';
@@ -156,6 +157,7 @@ function EditWizard({ userId, app, step, products }: { userId: string; app: Coll
         company: <CompanyStep mode='edit' app={app} nextHref={hrefFor('terms')} />,
         terms: <TermsStep {...props} />,
         borrower: <BorrowerStep {...props} />,
+        scoring: <ScoringStep {...props} />,
         sources: <SourcesStep {...props} />,
         collateral: <CollateralStep {...props} />,
         documents: <DocumentsStep {...props} />,

@@ -50,3 +50,21 @@
     justify-content: center;
     gap: var(--gap-12);
 }
+
+@media (max-width: 599px) {
+    .result-card {
+        gap: var(--gap-20);
+        padding: var(--gap-24) var(--gap-16);
+        border-radius: var(--border-radius-20);
+    }
+
+    .result-card__icon {
+        width: 56px;
+        height: 56px;
+    }
+
+    .result-card__actions {
+        flex-direction: column;
+        align-self: stretch;
+    }
+}

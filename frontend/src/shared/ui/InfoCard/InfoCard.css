@@ -10,3 +10,9 @@
 .info-card__title {
     margin: 0;
 }
+
+@media (max-width: 599px) {
+    .info-card {
+        padding: var(--gap-16);
+    }
+}

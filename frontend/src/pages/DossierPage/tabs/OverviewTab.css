@@ -101,3 +101,34 @@
     outline: 2px solid var(--color-light-accent-secondary);
     outline-offset: var(--gap-2);
 }
+
+@media (max-width: 1023px) {
+    .overview {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .overview__aside {
+        width: auto;
+    }
+
+    .overview__card {
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 599px) {
+    .overview__card {
+        padding: var(--gap-16);
+        border-radius: var(--border-radius-20);
+    }
+
+    .overview__offer {
+        padding: var(--gap-12) var(--gap-16);
+    }
+
+    /* на узком экране таблица не сжимается в столбик, а прокручивается */
+    .overview__table {
+        min-width: 560px;
+    }
+}

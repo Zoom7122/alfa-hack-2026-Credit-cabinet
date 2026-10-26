@@ -23,7 +23,7 @@ const toNumber = (value: string) => (value === '' ? undefined : Number(value));
 /** Шаг «Руководитель и анкета»: поля анкеты заёмщика и данные руководителя для проверок физлица. */
 export function BorrowerStep({ app, draft, hrefFor, errors, serverErrors, soleProprietor }: StepProps) {
     const d = draft.value;
-    const gate = useStepGate(errors, serverErrors, hrefFor('sources'));
+    const gate = useStepGate(errors, serverErrors, hrefFor('scoring'));
     const setDirector = (patch: Partial<DirectorDraft>) => draft.update((prev) => ({ director: { ...prev.director, ...patch } }));
 
     // у ИП руководитель — сам предприниматель: ИНН совпадает с ИНН ИП

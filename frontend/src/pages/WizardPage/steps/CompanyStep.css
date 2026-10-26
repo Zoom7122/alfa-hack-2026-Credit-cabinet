@@ -17,3 +17,10 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--gap-16);
 }
+
+@media (max-width: 599px) {
+    .company-step__facts,
+    .company-step__roles {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

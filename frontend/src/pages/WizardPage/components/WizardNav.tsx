@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { ProgressBar } from '@alfalab/core-components/progress-bar';
 import { Typography } from '@alfalab/core-components/typography';
 import { CheckmarkCompactSIcon } from '@alfalab/icons-glyph/CheckmarkCompactSIcon';
@@ -25,6 +26,14 @@ const STATE_LABELS: Record<StepState, string> = {
 
 /** Карточка слева: продукт, прогресс и вертикальные шаги (Steps кита только горизонтальный). */
 export function WizardNav({ productName, subtitle, percent, current, hrefFor, stateOf }: Props) {
+    const stepsRef = useRef<HTMLOListElement>(null);
+    // на узком экране шаги — лентой: текущий держим в середине видимой части
+    useEffect(() => {
+        const list = stepsRef.current;
+        const step = list?.querySelector<HTMLElement>('[aria-current="step"]');
+        if (!list || !step || list.scrollWidth <= list.clientWidth) return;
+        list.scrollLeft = step.offsetLeft - (list.clientWidth - step.offsetWidth) / 2;
+    }, [current]);
     return (
         <aside className='wizard-nav' aria-labelledby='wizard-nav-title'>
             <div className='wizard-nav__head'>
@@ -47,7 +56,7 @@ export function WizardNav({ productName, subtitle, percent, current, hrefFor, st
                 <ProgressBar value={percent} view='positive' size={8} />
             </div>
             <nav aria-label='Шаги анкеты'>
-                <ol className='wizard-nav__steps'>
+                <ol ref={stepsRef} className='wizard-nav__steps'>
                     {STEPS.map((step, i) => {
                         const isCurrent = step.id === current;
                         const state = isCurrent ? 'current' : stateOf(step.id);

@@ -5,8 +5,10 @@ import { Tag } from '@alfalab/core-components/tag';
 import { Typography } from '@alfalab/core-components/typography';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { useApplicants, useApplications, useProducts } from '../../api/queries';
+import { useCollectorApplicants, useCollectorApplications } from '../../api/collector/queries';
+import { useProducts } from '../../api/queries';
 import type { CompanyAccess, PurposeCode } from '../../api/types';
+import { collectorSummary } from '../../shared/lib/collector';
 import { ACTIVE_STAGES, PURPOSE_LABELS, PURPOSES } from '../../shared/lib/dictionaries';
 import { fitTerms, type TermsValue } from '../../shared/lib/terms';
 import { useRovingRadio } from '../../shared/lib/useRovingRadio';
@@ -25,11 +27,16 @@ export function ProductsPage({ company }: { company?: CompanyAccess }) {
     const purposeParam = params.get('purpose');
     const purpose: PurposeCode = isPurpose(purposeParam) ? purposeParam : 'WORKING_CAPITAL';
 
-    const applicants = useApplicants();
-    const applicant = applicants.data?.find((a) => a.id === company?.applicant_id);
+    const applicants = useCollectorApplicants();
+    const applicant = applicants.data?.find((a) => a.inn === company?.inn);
     // ждём тип компании, иначе каталог сначала пришёл бы без фильтра и сменился на глазах
     const catalog = useProducts({ purpose, applicantType: applicant?.applicant_type }, !company || !applicants.isPending);
-    const applications = useApplications({ applicantId: company?.applicant_id });
+    const applications = useCollectorApplications();
+    // черновик не мешает: data-collector продолжит его при регистрации
+    const active = (applications.data ?? [])
+        .filter((a) => a.applicant?.inn === company?.inn && a.status !== 'DRAFT')
+        .map((a) => collectorSummary(a))
+        .filter((a) => ACTIVE_STAGES.includes(a.client_stage));
 
     const [selectedCode, setSelectedCode] = useState<string>();
     // сумма и срок запоминаются вместе с продуктом, для которого их ввели
@@ -38,8 +45,8 @@ export function ProductsPage({ company }: { company?: CompanyAccess }) {
     const products = catalog.data ?? [];
     // по умолчанию — первый (самый подходящий) продукт под задачу
     const product = products.find((p) => p.code === selectedCode) ?? products[0];
-    const existing = applications.data?.find((a) => a.product_code === product?.code && ACTIVE_STAGES.includes(a.client_stage));
-    const hasActive = (code: string) => applications.data?.some((a) => a.product_code === code && ACTIVE_STAGES.includes(a.client_stage));
+    const existing = active.find((a) => a.product_code === product?.code);
+    const hasActive = (code: string) => active.some((a) => a.product_code === code);
 
     // сменился продукт (выбрали другой или фильтр по задаче) — приводим к его диапазону
     const terms = product && termsState.code !== product.code ? fitTerms(product, termsState.value) : termsState.value;

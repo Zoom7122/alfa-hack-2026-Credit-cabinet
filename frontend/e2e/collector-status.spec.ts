@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 import { expect, type Page, test } from '@playwright/test';
 
-import { expectPath, seedToken, setPipelineStep, USERS } from './helpers';
+import { COLLECTOR_LIVE, expectPath, MOCK_ONLY, seedToken, setPipelineStep, USERS } from './helpers';
 
 /* Заявка data-collector после отправки анкеты: статус сбора, итог по системам, документы, главная. */
 
@@ -20,11 +20,8 @@ const QUESTIONNAIRE = {
     consents: { bki_company: { id: 'CNS-1', signed_at: '2026-10-21T14:02:11Z', valid_until: '2027-04-21' } },
 };
 
-/**
- * Регистрация и анкета — прямо в API data-collector (его моки), как это делает анкета кабинета;
- * id — в локальный список заявок пользователя (ручки списка у сервиса нет).
- */
-async function createApplication(page: Page, { submit = true, inn = '7799000012' } = {}) {
+/** Регистрация и анкета — прямо в API data-collector, с токеном вошедшего, как это делает анкета кабинета. */
+async function createApplication(page: Page, { submit = true, inn = '7799000012', as = '' } = {}) {
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     const files = submit
@@ -34,32 +31,34 @@ async function createApplication(page: Page, { submit = true, inn = '7799000012'
           ]
         : [];
     return page.evaluate(
-        async ({ questionnaire, files, submit, userId, inn }) => {
+        async ({ questionnaire, files, submit, inn, as }) => {
             const base = '/collector/api/v1';
+            const auth = { Authorization: `Bearer ${as ? `mock.${as}` : localStorage.getItem('credit-cabinet:token')}` };
             const registered = await fetch(`${base}/applicants`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...auth },
                 body: JSON.stringify({ representative: { full_name: 'Петров Пётр Петрович', role: 'DIRECTOR' }, company: { inn, name: 'ООО «Северный ветер»' } }),
             });
-            const app = (await registered.json()) as { id: string; number: string; created_at: string };
-            const key = `credit-cabinet:collector-apps:${userId}`;
-            const list = JSON.parse(localStorage.getItem(key) ?? '[]') as unknown[];
-            localStorage.setItem(key, JSON.stringify([{ id: app.id, number: app.number, company_inn: inn, created_at: app.created_at }, ...list]));
+            const app = (await registered.json()) as { id: string };
             if (submit) {
                 const form = new FormData();
                 form.append('questionnaire', JSON.stringify(questionnaire));
                 for (const f of files) form.append('files', new File([new Uint8Array(f.data)], f.name, { type: f.type }), f.name);
-                const sent = await fetch(`${base}/applications/${app.id}/questionnaire`, { method: 'POST', body: form });
+                const sent = await fetch(`${base}/applications/${app.id}/questionnaire`, { method: 'POST', body: form, headers: auth });
                 if (sent.status !== 202) throw new Error(`questionnaire: ${sent.status} ${await sent.text()}`);
             }
             return app.id;
         },
-        { questionnaire: QUESTIONNAIRE, files, submit, userId: USERS.director.id, inn },
+        { questionnaire: QUESTIONNAIRE, files, submit, inn, as },
     );
 }
 
+/** Заголовок статуса после сбора: «данные собраны» (мок) или итог оценки (живой сервис). */
+const AFTER_COLLECTION = /Данные о компании собраны|Банк оценивает заявку|Банку нужны|Банк одобрил|Банк отказал|кредитный специалист/;
+
 test.beforeEach(async ({ page }) => {
-    await seedToken(page, 'director');
+    // директор «Северного ветра»: компания сценария A уже в профиле — так же и у живого сервиса
+    await seedToken(page, 'northDirector');
 });
 
 test('статус сбора доходит до «данные собраны» сам, без перезагрузки', async ({ page }) => {
@@ -68,8 +67,9 @@ test('статус сбора доходит до «данные собраны�
     await page.goto(`/applications/${id}`);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Оборотный кредит · 5 000 000 ₽');
     const stages = page.getByRole('list', { name: 'Этапы заявки' });
-    await expect(page.getByRole('heading', { level: 2, name: 'Данные о компании собраны' })).toBeVisible({ timeout: 10_000 });
-    await expect(stages.getByRole('listitem').filter({ hasText: 'Проверка банком' })).toHaveAttribute('aria-current', 'step');
+    // после сбора живой сервис сразу отдаёт заявку на оценку — дальше статус уже итоговый
+    await expect(page.getByRole('heading', { level: 2, name: AFTER_COLLECTION })).toBeVisible({ timeout: 10_000 });
+    await expect(stages.getByRole('listitem').filter({ hasText: /Проверка банком|Решение/ }).and(page.locator('[aria-current="step"]'))).toHaveCount(1);
 
     // название и ОГРН — из ЕГРЮЛ после сбора
     const company = page.getByRole('region', { name: 'Компания' });
@@ -90,33 +90,27 @@ test('итог сбора по системам: получено и пропу�
     await expect(page.getByText(/Получили данные из \d+ систем из 19/)).toBeVisible();
 });
 
-test('документы заявки: тип, подпись к документу', async ({ page }) => {
-    const id = await createApplication(page);
-    await page.goto(`/applications/${id}`);
-    const docs = page.getByRole('list', { name: 'Документы заявки' }).getByRole('listitem');
-    await expect(docs).toHaveCount(2);
-    await expect(docs.filter({ hasText: 'balance.pdf.sig' })).toContainText('подпись к balance.pdf');
-    await expect(docs.first()).toContainText('Бухгалтерская отчётность');
-});
-
 test('главная: заявка и черновик data-collector в «Моих заявках»', async ({ page }) => {
     await setPipelineStep(page, 300);
     const submitted = await createApplication(page);
     const draft = await createApplication(page, { submit: false });
     await page.goto('/');
     const rows = page.getByRole('region', { name: 'Мои заявки' }).getByRole('link');
-    // после сбора у компании — название из ЕГРЮЛ (у всех её заявок, включая черновик)
-    const submittedRow = rows.filter({ hasText: 'ООО "СЕВЕРНЫЙ ВЕТЕР"' }).filter({ hasText: 'Данные собраны' });
-    await expect(submittedRow).toHaveCount(1, { timeout: 10_000 });
+    // строки — по ссылкам: у живого сервиса в списке есть и заявки коллег по компании
+    const submittedRow = page.locator(`a[href="/applications/${submitted}"]`);
+    await expect(submittedRow).toContainText(/Данные собраны|На рассмотрении|Нужно уточнить|Есть предложение|Отказ/, { timeout: 10_000 });
     await expect(submittedRow).toContainText('Оборотный кредит · 5 000 000 ₽');
-    await expect(rows.filter({ hasText: 'Продолжить заполнение' })).toHaveCount(1);
-    // демо-черновик моков больше не показываем: черновики живут в data-collector
-    await expect(rows.filter({ hasText: 'A-2026-000140' })).toHaveCount(0);
+    await expect(rows.first()).toBeVisible();
+    // список — с сервера (заявки компании, в том числе коллег), строка черновика ведёт в анкету
+    const draftRow = page.locator(`a[href^="/applications/${draft}"]`);
+    await expect(draftRow).toContainText('Продолжить заполнение');
+    // карточка компании — реквизиты из ЕГРЮЛ после сбора
+    await expect(page.getByRole('region', { name: /СЕВЕРНЫЙ ВЕТЕР|Северный ветер/ })).toContainText('1217700412345');
 
-    await submittedRow.click();
+    await page.locator(`a[href="/applications/${submitted}"]`).click();
     await expectPath(page, `/applications/${submitted}`);
     await page.goto('/');
-    await rows.filter({ hasText: 'Продолжить заполнение' }).click();
+    await draftRow.click();
     await expect(page).toHaveURL(new RegExp(`/applications/${draft}/edit/`));
 });
 
@@ -129,6 +123,7 @@ test('черновик по ссылке статуса — в анкету; н�
 });
 
 test('сбор не удался: честный статус, опрос останавливается', async ({ page }) => {
+    test.skip(COLLECTOR_LIVE, MOCK_ONLY);
     await setPipelineStep(page, 300);
     // у этой компании в моке задача сбора уходит в FAILED, а заявка остаётся в ENRICHING — как у data-collector
     const id = await createApplication(page, { inn: '7799000077' });
@@ -146,4 +141,113 @@ test('сбор не удался: честный статус, опрос ост
 
     await page.goto('/');
     await expect(page.getByRole('region', { name: 'Мои заявки' }).getByRole('link').filter({ hasText: 'Сбор не удался' })).toHaveCount(1);
+});
+
+test('вкладка «Документы»: файлы, скачивание, отчёт о подписи (экран 15)', async ({ page }) => {
+    await setPipelineStep(page, 300);
+    const id = await createApplication(page);
+    await page.goto(`/applications/${id}?tab=documents`);
+    const rows = page.getByRole('table').getByRole('row');
+    await expect(rows.filter({ hasText: 'balance.pdf.sig' })).toContainText('подпись к «balance.pdf»');
+    const doc = rows.filter({ hasText: 'Бухгалтерская отчётность' });
+    await expect(doc).toContainText('Верна, есть замечания', { timeout: 10_000 });
+
+    const download = page.waitForEvent('download');
+    await doc.getByRole('button', { name: 'Скачать: balance.pdf' }).click();
+    expect((await download).suggestedFilename()).toBe('balance.pdf');
+
+    // отчёт — у открепленной подписи: подписантов у документа может быть несколько
+    await expect(doc.getByRole('button', { name: /Отчёт о подписи/ })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Отчёт о подписи: balance.pdf.sig' }).click();
+    const panel = page.getByRole('complementary', { name: 'Проверка подписи' });
+    await expect(panel).toContainText('Подпись верна, с замечаниями');
+    await expect(panel.getByRole('list', { name: 'Этапы проверки' }).getByRole('listitem')).toHaveCount(5);
+    await expect(panel).toContainText('Тестовый профиль проверки');
+});
+
+test('вкладка «История»: журнал заявки', async ({ page }) => {
+    await setPipelineStep(page, 300);
+    const id = await createApplication(page);
+    await page.goto(`/applications/${id}?tab=history`);
+    const history = page.getByRole('tabpanel');
+    await expect(history).toContainText('Данные о компании собраны', { timeout: 10_000 });
+    await expect(history).toContainText('Начали собирать данные о компании');
+    await expect(history).toContainText(/Заявка отправлена/);
+});
+
+test('черновик коллеги не виден и не отправляется', async ({ page }) => {
+    const colleagueDraft = await createApplication(page, { submit: false, as: USERS.northAccountant.id });
+    const list = page.waitForResponse((r) => new URL(r.url()).pathname === '/collector/api/v1/applications');
+    await page.goto('/');
+    const items = ((await (await list).json()) as { items: { id: string }[] }).items;
+    expect(items.map((a) => a.id)).not.toContain(colleagueDraft);
+    await expect(page.locator(`a[href^="/applications/${colleagueDraft}"]`)).toHaveCount(0);
+    const status = await page.evaluate(async (id) => {
+        const form = new FormData();
+        form.append('questionnaire', JSON.stringify({ age: 40, marital_status: 'SINGLE', children_count: 0 }));
+        const r = await fetch(`/collector/api/v1/applications/${id}/questionnaire`, {
+            method: 'POST',
+            body: form,
+            headers: { Authorization: `Bearer ${localStorage.getItem('credit-cabinet:token')}` },
+        });
+        return r.status;
+    }, colleagueDraft);
+    expect(status).toBe(403);
+});
+
+test.describe('итог оценки', () => {
+    // итог зависит от полной анкеты и ответов для оценки — в моке он задан по сценарию mock-api
+    test.skip(COLLECTOR_LIVE, MOCK_ONLY);
+
+    test('одобрено: предложение банка без выбора и подписания', async ({ page }) => {
+        await setPipelineStep(page, 300);
+        const id = await createApplication(page);
+        await page.goto(`/applications/${id}`);
+        await expect(page.getByRole('heading', { level: 2, name: 'Банк одобрил кредит' })).toBeVisible({ timeout: 10_000 });
+        const offer = page.getByRole('region', { name: 'Предложение банка' }).getByRole('article');
+        await expect(offer).toContainText('2 030 000 ₽');
+        await expect(offer).toContainText('20,75');
+        await expect(offer.getByRole('button', { name: 'Выбрать' })).toHaveCount(0);
+        await expect(page.getByText('Подписание договора онлайн появится позже', { exact: false })).toBeVisible();
+    });
+
+    test('отказ: причины и когда подать снова', async ({ page }) => {
+        await setPipelineStep(page, 300);
+        const id = await createApplication(page, { inn: '7799000037' });
+        await page.goto(`/applications/${id}`);
+        const reasons = page.getByRole('region', { name: 'Почему банк отказал' });
+        await expect(reasons).toContainText('Подтверждено банкротство заёмщика', { timeout: 10_000 });
+        await expect(reasons).toContainText(/Подать новую заявку можно с \d{2}\.\d{2}\.\d{4}/);
+        await expect(reasons.getByRole('link', { name: 'Подобрать другой кредит' })).toHaveAttribute('href', '/products');
+        await page.goto('/');
+        await page.getByRole('button', { name: /Завершённые/ }).click();
+        await expect(page.locator(`a[href="/applications/${id}"]`)).toContainText('Отказ');
+    });
+
+    test('нужно уточнить: ответы на вопросы — и к специалисту', async ({ page }) => {
+        await setPipelineStep(page, 300);
+        const id = await createApplication(page, { inn: '779900010202', as: USERS.ipSmirnova.id });
+        await seedToken(page, 'ipSmirnova');
+        await page.goto(`/applications/${id}`);
+        const questions = page.getByRole('region', { name: 'Вопросы банка' });
+        await expect(questions.getByRole('heading', { level: 3 })).toHaveCount(2, { timeout: 10_000 });
+
+        const cash = questions.getByRole('region', { name: /Свободные деньги/ });
+        await expect(cash.getByRole('button', { name: 'Отправить ответ' })).toBeDisabled();
+        await cash.getByLabel('Ответ').fill('20000');
+        await cash.getByRole('button', { name: 'Отправить ответ' }).click();
+        await expect(questions.getByRole('heading', { level: 3 })).toHaveCount(1);
+        await expect(questions).toContainText('Уже ответили: Свободные деньги');
+
+        const statement = questions.getByRole('region', { name: /Выписка по счетам/ });
+        await expect(statement.getByRole('button', { name: 'Отправить ответ' })).toBeDisabled();
+        await statement.locator('input[type="file"]').setInputFiles({ name: 'statement.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4') });
+        await statement.getByRole('button', { name: 'Отправить ответ' }).click();
+        await expect(page.getByRole('heading', { level: 2, name: 'Заявку рассматривает кредитный специалист' })).toBeVisible({ timeout: 10_000 });
+
+        await page.goto(`/applications/${id}?tab=history`);
+        await expect(page.getByRole('tabpanel')).toContainText('Ответы отправлены банку');
+        await page.goto(`/applications/${id}?tab=documents`);
+        await expect(page.getByRole('table')).toContainText('statement.pdf');
+    });
 });

@@ -37,7 +37,7 @@ export function WizardHeader({ status, savedAt, exitLabel, onExit }: Props) {
         <header className='wizard-header'>
             <Link to='/' className='wizard-header__logo' aria-label='Альфа Бизнес — на главную'>
                 <Logo />
-                <Typography.Text view='primary-large' weight='bold'>
+                <Typography.Text view='primary-large' weight='bold' className='wizard-header__brand'>
                     Альфа Бизнес
                 </Typography.Text>
             </Link>

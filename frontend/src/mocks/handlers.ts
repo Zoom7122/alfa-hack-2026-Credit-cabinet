@@ -1,19 +1,17 @@
 import { delay, http, HttpResponse } from 'msw';
 
 import type {
-    ApplicantType,
     ApplicationInput,
     ApplicationStatus,
     DocumentType,
     Problem,
-    PurposeCode,
     RepresentativeRole,
     RequestedTerms,
 } from '../api/types';
 import { fieldLabel, PURPOSES } from '../shared/lib/dictionaries';
 import { isInn, isValidInn } from '../shared/lib/inn';
 import { mergePatch } from '../shared/lib/mergePatch';
-import { products, REGISTRY_TIMEOUT_INN, registry, type StoredApplication, testUsers } from './data';
+import { REGISTRY_TIMEOUT_INN, registry, type StoredApplication, testUsers } from './data';
 import {
     companyIds,
     currentUser,
@@ -28,7 +26,6 @@ import {
     versionMismatch,
     withEtag,
 } from './http';
-import { annuity } from './seedWorkflow';
 import { addTimeline, signerOf, statusViewFor, tick, transition } from './workflow';
 import {
     addDocument,
@@ -149,42 +146,6 @@ export const handlers = [
         await delay(150);
         const me = currentUser(request);
         return me ? HttpResponse.json(me) : unauthorized();
-    }),
-
-    // ---------------------------------------------------------------- catalog
-    http.get(url('/products'), async ({ request }) => {
-        await delay(150);
-        if (!currentUser(request)) return unauthorized();
-        const params = new URL(request.url).searchParams;
-        const purpose = params.get('purpose') as PurposeCode | null;
-        const applicantType = params.get('applicant_type') as ApplicantType | null;
-        const items = products
-            .filter((p) => !purpose || p.purposes?.includes(purpose))
-            .filter((p) => !applicantType || p.applicant_types.includes(applicantType));
-        return HttpResponse.json({ items });
-    }),
-
-    http.get(url('/products/:productCode'), async ({ request, params }) => {
-        await delay(100);
-        if (!currentUser(request)) return unauthorized();
-        const product = productByCode(String(params.productCode));
-        return product ? HttpResponse.json(product) : problem(404, 'NOT_FOUND', 'Продукт не найден');
-    }),
-
-    http.post(url('/products/:productCode/calculate'), async ({ request, params }) => {
-        await delay(200);
-        if (!currentUser(request)) return unauthorized();
-        const code = String(params.productCode);
-        const product = productByCode(code);
-        if (!product) return problem(404, 'NOT_FOUND', 'Продукт не найден');
-        const terms = (await request.json()) as RequestedTerms;
-        const errors = validateTerms(terms, code);
-        if (errors.length) return problem(422, 'VALIDATION_FAILED', 'Проверьте сумму и срок', { errors });
-        return HttpResponse.json({
-            rate_annual_from: product.rate_annual_from,
-            monthly_payment_from: annuity(terms.amount, terms.term_months, product.rate_annual_from),
-            disclaimer: 'Предварительный расчёт по условиям продукта. Точные условия — после рассмотрения заявки.',
-        });
     }),
 
     // ---------------------------------------------------------------- applicants

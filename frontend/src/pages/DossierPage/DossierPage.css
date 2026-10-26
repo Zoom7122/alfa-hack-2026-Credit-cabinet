@@ -42,3 +42,36 @@
     height: 600px;
     border-radius: var(--border-radius-24);
 }
+
+@media (max-width: 1023px) {
+    .dossier {
+        padding: var(--gap-24) var(--gap-24) var(--gap-48);
+    }
+
+    .dossier__head {
+        flex-direction: column;
+        gap: var(--gap-16);
+    }
+
+    .dossier__actions {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 599px) {
+    .dossier {
+        gap: var(--gap-16);
+        padding: var(--gap-20) var(--gap-16) var(--gap-40);
+    }
+
+    .dossier__actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--gap-8);
+        width: 100%;
+    }
+
+    .dossier__panel {
+        padding-top: var(--gap-16);
+    }
+}

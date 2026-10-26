@@ -18,3 +18,11 @@
     gap: var(--gap-12);
     margin-top: var(--gap-8);
 }
+
+/* телефон: кнопки шага — столбиком на всю ширину */
+@media (max-width: 599px) {
+    .step-layout__actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+}

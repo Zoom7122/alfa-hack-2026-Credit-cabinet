@@ -48,6 +48,9 @@ type Collector interface {
 
 // SubmitInput — анкета с формы, данные заявки и принятые файлы.
 type SubmitInput struct {
+	// ActorID — вошедший по токену пользователь; пусто — без токена. Анкету отправляет только автор
+	// заявки, а заявку тестового пользователя — только с его токеном.
+	ActorID       string
 	Age           int
 	MaritalStatus domain.MaritalStatus
 	ChildrenCount int
@@ -55,7 +58,8 @@ type SubmitInput struct {
 	ProductCode   string
 	Requested     *domain.RequestedTerms
 	Purpose       *domain.Purpose
-	Documents     []DocumentSpec   // типы документов по именам файлов
+	Documents     []DocumentSpec // типы документов по именам файлов
+	Scoring       *domain.ScoringAnswers
 	Files         []storage.Staged // принятые через StageFile
 }
 
@@ -149,6 +153,12 @@ func (s *QuestionnaireService) Submit(ctx context.Context, applicationID string,
 	if !ok {
 		return Submitted{}, ErrNotFound
 	}
+	switch {
+	case in.ActorID != "" && in.ActorID != app.Representative.UserID:
+		return Submitted{}, ErrForbidden
+	case in.ActorID == "" && app.Representative.HasLogin:
+		return Submitted{}, ErrUnauthorized
+	}
 	if app.Status != domain.ApplicationDraft {
 		return Submitted{}, ErrInvalidTransition
 	}
@@ -159,6 +169,7 @@ func (s *QuestionnaireService) Submit(ctx context.Context, applicationID string,
 	fields := validate(in)
 	fields = append(fields, s.collector.Validate(in.Company)...)
 	fields = append(fields, validateApplication(in)...)
+	fields = append(fields, validateScoring(in.Scoring)...)
 	planned, fileFields := planDocuments(app.ID, app.Representative.UserID, in.Files, in.Documents, s.newDocID, now)
 	fields = append(fields, fileFields...)
 	if len(fields) > 0 {
@@ -193,7 +204,7 @@ func (s *QuestionnaireService) Submit(ctx context.Context, applicationID string,
 	saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), saveTimeout)
 	defer cancel()
 	sub := domain.Submission{ApplicationID: app.ID, ActorID: app.Representative.UserID, Questionnaire: q,
-		ProductCode: in.ProductCode, Requested: in.Requested, Purpose: in.Purpose, Documents: docs, Task: task,
+		ProductCode: in.ProductCode, Requested: in.Requested, Purpose: in.Purpose, Scoring: in.Scoring, Documents: docs, Task: task,
 		SubmittedAt: now}
 	if err := s.apps.Submit(saveCtx, sub); err != nil {
 		s.files.Remove(keys...)
@@ -252,6 +263,14 @@ func validateApplication(in SubmitInput) []FieldError {
 			add("requested.term_months", "out_of_range", fmt.Sprintf("срок от 1 до %d месяцев", maxTermMonths))
 		}
 	}
+	// продукт — из каталога; сумма и срок — в его диапазоне (общие проверки выше уже дали ошибку — не повторяем)
+	if in.ProductCode != "" {
+		if p, ok := domain.ProductByCode(in.ProductCode); !ok {
+			add("product_code", "unknown_product", "нет такого продукта в каталоге")
+		} else if r := in.Requested; r != nil && len(fields) == 0 {
+			fields = append(fields, termsErrors(p, r.Amount, r.TermMonths)...)
+		}
+	}
 	if p := in.Purpose; p != nil {
 		if !slices.Contains(domain.PurposeCodes, p.Code) {
 			add("purpose.code", "invalid_value", "допустимые значения: "+strings.Join(domain.PurposeCodes, ", "))
@@ -259,6 +278,49 @@ func validateApplication(in SubmitInput) []FieldError {
 		if utf8.RuneCountInString(p.Description) > maxPurposeLength {
 			add("purpose.description", "too_long", fmt.Sprintf("не длиннее %d символов", maxPurposeLength))
 		}
+	}
+	return fields
+}
+
+// validateScoring проверяет ответы для credit-engine: коды — из его перечней, числа неотрицательны.
+func validateScoring(sc *domain.ScoringAnswers) []FieldError {
+	if sc == nil {
+		return nil
+	}
+	var fields []FieldError
+	enum := func(field, v string) {
+		if v != "" && !slices.Contains(domain.ScoringEnums[field], v) {
+			fields = append(fields, FieldError{Field: "scoring." + field, Code: "invalid_value",
+				Message: "допустимые значения: " + strings.Join(domain.ScoringEnums[field], ", ")})
+		}
+	}
+	enum("need_evidence", sc.NeedEvidence)
+	enum("primary_income_source", sc.PrimaryIncomeSource)
+	enum("qualification", sc.Qualification)
+	enum("car_class", sc.CarClass)
+	enum("education_level", sc.EducationLevel)
+	enum("real_estate_status", sc.RealEstateStatus)
+	enum("business_location", sc.BusinessLocation)
+	enum("buyer_contracts", sc.BuyerContracts)
+	negative := func(field string, neg bool) {
+		if neg {
+			fields = append(fields, FieldError{Field: "scoring." + field, Code: "out_of_range", Message: "не может быть отрицательным"})
+		}
+	}
+	neg64 := func(p *int64) bool { return p != nil && *p < 0 }
+	negInt := func(p *int) bool { return p != nil && *p < 0 }
+	negative("min_acceptable_amount", neg64(sc.MinAcceptableAmount))
+	negative("need_cost", neg64(sc.NeedCost))
+	negative("own_contribution", neg64(sc.OwnContribution))
+	negative("free_cash", neg64(sc.FreeCash))
+	negative("minimum_cash", neg64(sc.MinimumCash))
+	negative("net_monthly_income", neg64(sc.NetMonthlyIncome))
+	negative("max_acceptable_term_months", negInt(sc.MaxAcceptableTermMonths))
+	negative("experience_years", negInt(sc.ExperienceYears))
+	negative("total_experience_months", negInt(sc.TotalExperienceMonths))
+	negative("location_stability_months", negInt(sc.LocationStabilityMonths))
+	if r := sc.MaxAnnualRate; r != nil && (*r <= 0 || *r > 100) {
+		fields = append(fields, FieldError{Field: "scoring.max_annual_rate", Code: "out_of_range", Message: "ставка от 0 до 100 % годовых"})
 	}
 	return fields
 }

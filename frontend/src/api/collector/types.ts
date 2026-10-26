@@ -10,6 +10,9 @@ export type CollectionSource = Schemas['CollectionSource'];
 export type CollectorSystem = NonNullable<CollectionSource['source']>;
 export type CollectorStatus = NonNullable<CollectorApplication['status']>;
 export type CollectorRole = Schemas['RepresentativeInput']['role'];
+export type CollectorDecision = Schemas['ClientDecision'];
+export type CollectorOffer = Schemas['Offer'];
+export type CollectorInfoRequest = Schemas['InfoRequest'];
 export type RegisterInput = Schemas['RegisterApplicantRequest'];
 export type QuestionnaireSubmitted = Schemas['QuestionnaireSubmitted'];
 export type CollectorProblem = Schemas['Problem'];
@@ -59,6 +62,30 @@ export type QuestionnaireInput = {
     collateral?: { cadastral_numbers?: string[]; vins?: string[]; serials?: string[] };
     poa_number?: string;
     representative_inn?: string;
+    scoring?: ScoringAnswers;
+};
+
+/** Ответы для оценки credit-engine (блок scoring анкеты; dto.go scoringRequest). Коды — как у движка. */
+export type ScoringAnswers = {
+    max_annual_rate?: number;
+    min_acceptable_amount?: number;
+    max_acceptable_term_months?: number;
+    need_cost?: number;
+    own_contribution?: number;
+    free_cash?: number;
+    minimum_cash?: number;
+    need_evidence?: 'CONTRACT_AND_COST' | 'VERIFIED_ESTIMATE' | 'ORAL_ONLY';
+    experience_years?: number;
+    primary_income_source?: 'BUSINESS' | 'PUBLIC_EMPLOYMENT' | 'PRIVATE_EMPLOYMENT' | 'PENSION' | 'SELF_EMPLOYED_OR_GPH' | 'NONE';
+    qualification?: 'NONE' | 'SUPPORT' | 'SPECIALIST' | 'MANAGER_OR_HIGHLY_QUALIFIED';
+    total_experience_months?: number;
+    net_monthly_income?: number;
+    car_class?: 'NONE' | 'ECONOMY' | 'COMFORT' | 'PREMIUM';
+    education_level?: 'BELOW_GENERAL' | 'GENERAL' | 'VOCATIONAL' | 'HIGHER' | 'ACADEMIC_DEGREE';
+    real_estate_status?: 'UNENCUMBERED_WHOLE' | 'UNENCUMBERED_SHARE' | 'ENCUMBERED_ONLY' | 'NONE';
+    business_location?: 'VERIFIED_PHYSICAL' | 'VERIFIED_ONLINE_OR_MOBILE' | 'UNVERIFIED';
+    location_stability_months?: number;
+    buyer_contracts?: 'ACTIVE_AND_PERFORMED' | 'REPEAT_ORDERS' | 'PLANS_ONLY';
 };
 
 export const COLLECTOR_ROLES: CollectorRole[] = [

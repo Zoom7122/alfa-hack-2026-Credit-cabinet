@@ -714,10 +714,13 @@ export interface components {
         /** @enum {string} */
         UserRole: "CLIENT" | "UNDERWRITER";
         /**
-         * @description Роль пользователя в компании. Подписывать договор может только DIRECTOR (для ИП — сам ИП)
+         * @description Роль пользователя в компании. Подписывать договор может только DIRECTOR (для ИП — сам ИП), остальным нужна МЧД.
+         *     OWNER — собственник бизнеса, DIRECTOR — генеральный директор, CFO / ACCOUNTANT — финансовый директор или
+         *     бухгалтер, FINANCE_EMPLOYEE — сотрудник, отвечающий за финансирование, BANKING_EMPLOYEE — сотрудник,
+         *     работающий с банковскими продуктами, AUTHORIZED_EMPLOYEE — иной сотрудник, уполномоченный оформлять заявку.
          * @enum {string}
          */
-        RepresentativeRole: "DIRECTOR" | "OWNER" | "CFO" | "ACCOUNTANT" | "AUTHORIZED_EMPLOYEE";
+        RepresentativeRole: "DIRECTOR" | "OWNER" | "CFO" | "ACCOUNTANT" | "FINANCE_EMPLOYEE" | "BANKING_EMPLOYEE" | "AUTHORIZED_EMPLOYEE";
         CompanyAccess: {
             applicant_id: string;
             short_name: string;

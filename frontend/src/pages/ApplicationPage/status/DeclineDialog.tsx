@@ -1,6 +1,6 @@
 import { useId, useRef, useState } from 'react';
 import { Button } from '@alfalab/core-components/button';
-import { ModalDesktop } from '@alfalab/core-components/modal/desktop';
+import { ModalResponsive } from '@alfalab/core-components/modal';
 import { Plate } from '@alfalab/core-components/plate';
 import { Radio } from '@alfalab/core-components/radio';
 import { RadioGroup } from '@alfalab/core-components/radio-group';
@@ -77,9 +77,9 @@ export function DeclineDialog({ status, open, onClose, base, companyName }: Prop
     };
 
     return (
-        <ModalDesktop open={open} onClose={close} size={600} wrapperProps={{ 'aria-labelledby': titleId, 'aria-modal': true }}>
-            <ModalDesktop.Header hasCloser={true} />
-            <ModalDesktop.Content>
+        <ModalResponsive breakpoint={600} open={open} onClose={close} size={600} wrapperProps={{ 'aria-labelledby': titleId, 'aria-modal': true }}>
+            <ModalResponsive.Header hasCloser={true} />
+            <ModalResponsive.Content>
                 {retention ? (
                     <RetentionOffer offer={retention} base={base} companyName={companyName} titleId={titleId} />
                 ) : (
@@ -118,10 +118,10 @@ export function DeclineDialog({ status, open, onClose, base, companyName }: Prop
                         {errorText(error)}
                     </Plate>
                 )}
-            </ModalDesktop.Content>
-            <ModalDesktop.Footer>
+            </ModalResponsive.Content>
+            <ModalResponsive.Footer>
                 {retention ? (
-                    <ModalDesktop.Controls
+                    <ModalResponsive.Controls
                         primary={
                             <Button view='primary' size={48} onClick={acceptRetention} loading={accept.isPending} disabled={pending}>
                                 Принять предложение
@@ -134,7 +134,7 @@ export function DeclineDialog({ status, open, onClose, base, companyName }: Prop
                         }
                     />
                 ) : (
-                    <ModalDesktop.Controls
+                    <ModalResponsive.Controls
                         primary={
                             <Button view='primary' size={48} onClick={sendDecline} loading={decline.isPending} disabled={!reason || pending}>
                                 Отправить
@@ -147,7 +147,7 @@ export function DeclineDialog({ status, open, onClose, base, companyName }: Prop
                         }
                     />
                 )}
-            </ModalDesktop.Footer>
-        </ModalDesktop>
+            </ModalResponsive.Footer>
+        </ModalResponsive>
     );
 }

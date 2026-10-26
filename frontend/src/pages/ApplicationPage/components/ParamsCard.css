@@ -19,3 +19,10 @@
 .params-card__value {
     text-align: right;
 }
+
+@media (max-width: 599px) {
+    .params-card__row {
+        flex-wrap: wrap;
+        gap: var(--gap-2) var(--gap-16);
+    }
+}

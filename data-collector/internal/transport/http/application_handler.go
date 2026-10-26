@@ -36,15 +36,22 @@ func NewApplicationHandler(svc ApplicationService, log *slog.Logger) *Applicatio
 //	@Description	и черновик заявки (DRAFT). Если у этого пользователя по этой компании уже есть черновик, возвращается он.
 //	@Description	Подписывать договор без доверенности может директор, у ИП — сам предприниматель (can_sign).
 //	@Description	Дальше — анкета: POST /applications/{id}/questionnaire выводит заявку из DRAFT и запускает сбор данных.
+//	@Description	С токеном `Authorization: Bearer mock.<user_id>` (POST /auth/mock-login) заявка оформляется от имени вошедшего
+//	@Description	пользователя: нового пользователя не заводится, ФИО берётся из профиля (поле в теле всё равно обязательно),
+//	@Description	`representative.inn` не нужен, черновик по компании — его. Уже записанная роль в компании не меняется.
+//	@Description	Сотрудник банка (UNDERWRITER) заявку подать не может — 403.
 //	@Description
 //	@Description.markdown	applicants
 //	@Tags					applicants
 //	@Accept					json
 //	@Produce				json
+//	@Security				bearer
 //	@Param					body	body		registerRequest	true	"Представитель и компания"
 //	@Success				201		{object}	applicationResponse
 //	@Header					201		{string}	Location	"/api/v1/applications/{id}"
 //	@Failure				400		{object}	problem		"битый JSON, нет обязательного поля (representative.full_name, representative.role, company.inn)"
+//	@Failure				401		{object}	problem		"неверный токен"
+//	@Failure				403		{object}	problem		"токен сотрудника банка"
 //	@Failure				422		{object}	problem		"неверный ИНН или роль"
 //	@Failure				500		{object}	problem
 //	@Router					/applicants [post]
@@ -55,7 +62,16 @@ func (h *ApplicationHandler) register(c *gin.Context) {
 		return
 	}
 
-	app, err := h.svc.Register(c.Request.Context(), req.toRegisterInput())
+	in := req.toRegisterInput()
+	if user, ok := currentUser(c); ok {
+		if user.Role != domain.UserClient {
+			writeProblem(c, forbiddenProblem("заявку на кредит подаёт клиент, а не сотрудник банка"))
+			return
+		}
+		// вошёл по токену: заявка — от его имени; ИНН физлица из тела не нужен — пользователь уже известен
+		in.UserID, in.FullName, in.PersonINN = user.ID, user.FullName, ""
+	}
+	app, err := h.svc.Register(c.Request.Context(), in)
 	if err != nil {
 		var verr *service.ValidationError
 		if errors.As(err, &verr) {
@@ -85,6 +101,7 @@ func (h *ApplicationHandler) register(c *gin.Context) {
 //	@Success		200	{object}	applicationResponse
 //	@Failure		404	{object}	problem	"заявки нет"
 //	@Failure		500	{object}	problem
+//	@Security		bearer
 //	@Router			/applications/{id} [get]
 func (h *ApplicationHandler) get(c *gin.Context) {
 	app, err := h.svc.Get(c.Request.Context(), c.Param("id"))

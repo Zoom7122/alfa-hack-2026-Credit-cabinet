@@ -58,6 +58,7 @@ type Representative struct {
 	INN      string // ИНН физлица; может быть пустым
 	Role     RepresentativeRole
 	CanSign  bool
+	HasLogin bool // тестовый пользователь (persona): входит по мок-входу, анкету без его токена не отправить
 }
 
 // Company — компания или ИП; в API — Applicant.
@@ -81,6 +82,7 @@ type CompanyCard struct {
 	RegistrationDate string // YYYY-MM-DD
 	DirectorName     string
 	Region           string
+	TerminatedOn     string // YYYY-MM-DD: компания ликвидирована (в выписке есть дата прекращения)
 }
 
 // Name — как называть компанию: короткое имя, если есть.
@@ -91,15 +93,28 @@ func (c CompanyCard) Name() string {
 	return c.FullName
 }
 
-// ApplicationStatus — статус заявки по FSM (docs/fsm.md). Модуль ставит только эти четыре.
+// ApplicationStatus — статус заявки по FSM (docs/fsm.md).
 type ApplicationStatus string
 
 const (
-	ApplicationDraft     ApplicationStatus = "DRAFT"     // создана при регистрации
-	ApplicationSubmitted ApplicationStatus = "SUBMITTED" // анкета отправлена, сбор в очереди
-	ApplicationEnriching ApplicationStatus = "ENRICHING" // worker опрашивает системы
-	ApplicationVerifying ApplicationStatus = "VERIFYING" // данные собраны, дальше — проверки
+	ApplicationDraft          ApplicationStatus = "DRAFT"            // создана при регистрации
+	ApplicationSubmitted      ApplicationStatus = "SUBMITTED"        // анкета отправлена, сбор в очереди
+	ApplicationEnriching      ApplicationStatus = "ENRICHING"        // worker опрашивает системы
+	ApplicationVerifying      ApplicationStatus = "VERIFYING"        // данные собраны, ждём проверку подписей
+	ApplicationScoring        ApplicationStatus = "SCORING"          // заявку оценивает credit-engine
+	ApplicationManualReview   ApplicationStatus = "MANUAL_REVIEW"    // решение за андеррайтером
+	ApplicationWaitingForInfo ApplicationStatus = "WAITING_FOR_INFO" // банк ждёт ответы клиента
+	ApplicationOffered        ApplicationStatus = "OFFERED"          // клиенту выданы предложения
+	ApplicationRejected       ApplicationStatus = "REJECTED"         // отказ банка
 )
+
+// ApplicationStatuses — статусы, которые ставит модуль, в порядке конвейера.
+var ApplicationStatuses = []ApplicationStatus{ApplicationDraft, ApplicationSubmitted, ApplicationEnriching,
+	ApplicationVerifying, ApplicationScoring, ApplicationManualReview, ApplicationWaitingForInfo, ApplicationOffered,
+	ApplicationRejected}
+
+// Valid — статус из тех, что ставит модуль.
+func (s ApplicationStatus) Valid() bool { return slices.Contains(ApplicationStatuses, s) }
 
 // Цели кредита (PurposeCode в api/openapi.yaml).
 var PurposeCodes = []string{"WORKING_CAPITAL", "EQUIPMENT", "VEHICLE", "REAL_ESTATE", "REFINANCING",
@@ -138,7 +153,9 @@ type Application struct {
 // их связь и черновик заявки. Id новых строк; существующие пользователь (по ИНН),
 // компания (по ИНН) и черновик переиспользуются.
 type Registration struct {
-	UserID         string
+	UserID string
+	// ExistingUser — UserID — уже заведённый пользователь (вошёл по токену): его не ищут по ИНН и не создают.
+	ExistingUser   bool
 	CompanyID      string
 	ApplicationID  string
 	Representative Representative
@@ -155,6 +172,7 @@ type Submission struct {
 	ProductCode   string
 	Requested     *RequestedTerms
 	Purpose       *Purpose
+	Scoring       *ScoringAnswers
 	Documents     []Document
 	Task          CollectionTask
 	SubmittedAt   time.Time

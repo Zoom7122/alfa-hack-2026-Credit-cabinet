@@ -30,6 +30,10 @@ type store struct {
 	applications map[string]*application
 	events       map[string][]string // типы событий по заявке
 	appSeq       int
+
+	roles     map[string]domain.UserRole // роль пользователя в системе; нет — CLIENT
+	personas  map[string]string          // persona тестовых пользователей
+	testUsers []string                   // id тестовых пользователей в порядке заведения
 }
 
 // application — заявка в памяти.
@@ -52,6 +56,8 @@ func newStore() *store {
 		members:      make(map[[2]string]domain.Representative),
 		applications: make(map[string]*application),
 		events:       make(map[string][]string),
+		roles:        make(map[string]domain.UserRole),
+		personas:     make(map[string]string),
 	}
 }
 

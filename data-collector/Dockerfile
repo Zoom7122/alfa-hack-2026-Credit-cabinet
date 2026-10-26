@@ -3,9 +3,9 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-# четыре бинаря одного модуля: API, publisher outbox → Kafka, worker сбора, worker проверки подписи
+# бинари одного модуля: API, publisher outbox → Kafka, worker сбора, worker проверки подписи, worker оценки
 RUN for cmd in data-collector:data-collector data-collector-publisher:outbox-publisher data-collector-worker:worker \
-               data-collector-signature-worker:signature-worker; do \
+               data-collector-signature-worker:signature-worker data-collector-decision-worker:decision-worker; do \
         CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o "/out/bin/${cmd%%:*}" "./cmd/${cmd#*:}" || exit 1; \
     done && \
     mkdir -p /out/data/documents

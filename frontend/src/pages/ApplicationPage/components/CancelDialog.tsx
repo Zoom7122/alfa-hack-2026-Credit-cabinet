@@ -1,6 +1,6 @@
 import { useId, useRef, useState } from 'react';
 import { Button } from '@alfalab/core-components/button';
-import { ModalDesktop } from '@alfalab/core-components/modal/desktop';
+import { ModalResponsive } from '@alfalab/core-components/modal';
 import { Plate } from '@alfalab/core-components/plate';
 import { Textarea } from '@alfalab/core-components/textarea';
 import { Typography } from '@alfalab/core-components/typography';
@@ -32,9 +32,9 @@ export function CancelDialog({ applicationId, open, onClose }: Props) {
         );
 
     return (
-        <ModalDesktop open={open} onClose={onClose} size={500} wrapperProps={{ 'aria-labelledby': titleId, 'aria-modal': true }}>
-            <ModalDesktop.Header hasCloser={true} />
-            <ModalDesktop.Content>
+        <ModalResponsive breakpoint={600} open={open} onClose={onClose} size={500} wrapperProps={{ 'aria-labelledby': titleId, 'aria-modal': true }}>
+            <ModalResponsive.Header hasCloser={true} />
+            <ModalResponsive.Content>
                 <div className='cancel-dialog'>
                     <Typography.Title id={titleId} tag='h2' view='small' font='system'>
                         Отозвать заявку?
@@ -57,9 +57,9 @@ export function CancelDialog({ applicationId, open, onClose }: Props) {
                         </Plate>
                     )}
                 </div>
-            </ModalDesktop.Content>
-            <ModalDesktop.Footer>
-                <ModalDesktop.Controls
+            </ModalResponsive.Content>
+            <ModalResponsive.Footer>
+                <ModalResponsive.Controls
                     primary={
                         <Button view='primary' size={48} onClick={confirm} loading={cancel.isPending}>
                             Отозвать
@@ -71,7 +71,7 @@ export function CancelDialog({ applicationId, open, onClose }: Props) {
                         </Button>
                     }
                 />
-            </ModalDesktop.Footer>
-        </ModalDesktop>
+            </ModalResponsive.Footer>
+        </ModalResponsive>
     );
 }

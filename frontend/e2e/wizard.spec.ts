@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 import { expect, type Page, test } from '@playwright/test';
 
-import { expectPath, seedToken, setMockFailures } from './helpers';
+import { COLLECTOR_LIVE, expectPath, MOCK_ONLY, seedToken, setMockFailures } from './helpers';
 
 /* Анкета на API data-collector (в тестах — его MSW-моки, src/mocks/collector). */
 
@@ -32,7 +32,12 @@ async function chooseFiles(page: Page, list: ReturnType<typeof balance>[]) {
 }
 
 // input радио кита скрыт визуально — выбираем кликом по подписи
-const chooseRole = (page: Page, role: string) => page.getByText(role, { exact: true }).click();
+/** Роль в своей компании задана профилем и заблокирована — тогда только проверяем её. */
+async function chooseRole(page: Page, role: string) {
+    const radio = page.getByRole('radio', { name: role, exact: true });
+    if (await radio.isDisabled()) await expect(radio).toBeChecked();
+    else await page.getByText(role, { exact: true }).click();
+}
 
 /** Шаг «Компания» для сценария A mock-api. */
 async function register(page: Page, inn = '7799000012', role = 'Генеральный директор') {
@@ -60,6 +65,7 @@ async function toReview(page: Page) {
     await next(page); // сумма и цель пришли из калькулятора
     await fillBorrower(page);
     await next(page);
+    await next(page); // для оценки — необязательно
     await next(page); // счета и площадки
     await next(page); // залог
     await next(page); // документы
@@ -71,18 +77,22 @@ const collectorApp = (page: Page, id: string) =>
     page.evaluate(async (appId) => (await (await fetch(`/collector/api/v1/applications/${appId}`)).json()) as CollectorAppView, id);
 
 test.beforeEach(async ({ page }) => {
-    await seedToken(page, 'director');
+    // представитель компании сценария A: «Северный ветер» уже в его профиле директором — так же и у живого сервиса,
+    // сколько бы раз ни гоняли тесты (у других пользователей профиль копит компании из прошлых прогонов)
+    await seedToken(page, 'northDirector');
 });
 
 test.describe('Анкета — компания', () => {
     test('сценарий A: реквизиты из подсказки, роль, черновик в data-collector', async ({ page }) => {
+        await seedToken(page, 'northAccountant');
         await page.goto(NEW);
         await page.getByLabel('ИНН компании или ИП').fill('7799000012');
         await expect(page.getByText('Нашли компанию в реестре')).toBeVisible();
-        await expect(page.getByLabel('Название')).toHaveValue('ООО «Северный ветер»');
+        await expect(page.getByLabel('Название')).toHaveValue(/ООО «Северный ветер»|ООО "СЕВЕРНЫЙ ВЕТЕР"/);
         await expect(page.getByLabel('Руководитель')).toHaveValue('Ковалёв Игорь Сергеевич');
-        await expect(page.getByLabel('ФИО')).toHaveValue('Петров Пётр Петрович');
-        await expect(page.getByRole('button', { name: 'Продолжить' })).toBeDisabled();
+        await expect(page.getByLabel('ФИО')).toHaveValue('Литвинова Марина Олеговна');
+        // роль в своей компании — из профиля, сменить нельзя
+        await expect(page.getByRole('radio', { name: 'Генеральный директор' })).toBeDisabled();
         await chooseRole(page, 'Бухгалтер');
         await next(page);
         await expect(page).toHaveURL(/\/edit\/terms$/);
@@ -94,21 +104,34 @@ test.describe('Анкета — компания', () => {
 
     test('ИНН вне подсказок — можно продолжить, реквизиты возьмём из ЕГРЮЛ', async ({ page }) => {
         await page.goto(NEW);
-        await page.getByLabel('ИНН компании или ИП').fill('7711111111');
-        await expect(page.getByText('В подсказках реестра такой компании нет')).toBeVisible();
+        // каждый раз новый ИНН: у живого сервиса компания из прошлого прогона уже была бы в профиле
+        await page.getByLabel('ИНН компании или ИП').fill(`77${String(Date.now()).slice(-8)}`);
+        await expect(page.getByText('В ЕГРЮЛ такой компании нет')).toBeVisible();
         await chooseRole(page, 'Генеральный директор');
         await next(page);
         await expect(page).toHaveURL(/\/edit\/terms$/);
     });
 
     test('ликвидируемая компания — дальше нельзя', async ({ page }) => {
+        test.skip(COLLECTOR_LIVE, MOCK_ONLY);
         await page.goto(NEW);
         await page.getByLabel('ИНН компании или ИП').fill('7709876543');
-        await expect(page.getByText('Компания ликвидируется или реорганизуется')).toBeVisible();
+        await expect(page.getByText('Компания ликвидирована')).toBeVisible();
         await expect(page.getByRole('button', { name: 'Продолжить' })).toBeDisabled();
     });
 
+    test('реестр не ответил — плашка, можно продолжать', async ({ page }) => {
+        test.skip(COLLECTOR_LIVE, MOCK_ONLY);
+        await page.goto(NEW);
+        await page.getByLabel('ИНН компании или ИП').fill('7700000000');
+        await expect(page.getByText('Реестр сейчас не отвечает')).toBeVisible({ timeout: 10_000 });
+        await chooseRole(page, 'Генеральный директор');
+        await next(page);
+        await expect(page).toHaveURL(/\/edit\/terms$/);
+    });
+
     test('422 от data-collector — ошибка у поля', async ({ page }) => {
+        test.skip(COLLECTOR_LIVE, MOCK_ONLY);
         await page.goto(NEW);
         await setMockFailures(page, [{ method: 'POST', path: '/collector/api/v1/applicants$', status: 422, field: 'company.inn', times: 1 }]);
         await page.getByLabel('ИНН компании или ИП').fill('7799000012');
@@ -139,13 +162,40 @@ test.describe('Анкета — шаги', () => {
         await expect(page.getByText('Возраст — от 18 до 100 лет')).toBeVisible();
         await page.getByLabel('Возраст, лет').fill('30');
         await next(page);
+        await expect(page).toHaveURL(/\/edit\/scoring$/);
+    });
+
+    test('«Для оценки»: ответы для скоринга проверяются и уходят в черновик', async ({ page }) => {
+        const appId = editPath(page).split('/').pop() ?? '';
+        await next(page);
+        await fillBorrower(page);
+        await next(page);
+        await expect(page.getByRole('heading', { level: 1, name: 'Для оценки' })).toBeVisible();
+        await page.getByLabel('Максимальная ставка, % годовых').fill('150');
+        await page.getByLabel('Максимальный срок, мес.').fill('12');
+        await next(page);
+        await expect(page.getByText('Ставка — от 0 до 100 % годовых')).toBeVisible();
+        await expect(page.getByText('Не меньше запрошенного срока')).toBeVisible();
+        await page.getByLabel('Максимальная ставка, % годовых').fill('26,5');
+        await page.getByLabel('Максимальный срок, мес.').fill('36');
+        await openSelect(page, 'Чем подтверждена стоимость', 'Коммерческие предложения или смета');
+        await page.getByLabel('Опыт руководителя в этом бизнесе, лет').fill('9');
+        // у юрлица вопросов о предпринимателе нет
+        await expect(page.getByLabel('Образование')).toHaveCount(0);
+        await next(page);
         await expect(page).toHaveURL(/\/edit\/sources$/);
+        const draft = await page.evaluate(
+            (id) => Object.entries(localStorage).find(([k]) => k.startsWith('credit-cabinet:questionnaire:') && k.endsWith(id))?.[1],
+            appId,
+        );
+        expect(JSON.parse(draft ?? '{}').scoring).toEqual({ max_annual_rate: 26.5, max_acceptable_term_months: 36, need_evidence: 'VERIFIED_ESTIMATE', experience_years: 9 });
     });
 
     test('БИК, VIN и кадастровый номер — проверка формата', async ({ page }) => {
         await next(page);
         await fillBorrower(page);
         await next(page);
+        await next(page); // для оценки — необязательно
         await page.getByRole('button', { name: 'Добавить банк' }).click();
         await page.getByRole('textbox', { name: 'БИК банка 1' }).fill('1234');
         await next(page);
@@ -194,6 +244,7 @@ test.describe('Анкета — отправка', () => {
         await next(page);
         await fillBorrower(page);
         await next(page);
+        await next(page); // для оценки — необязательно
         await page.getByRole('button', { name: 'Добавить банк' }).click();
         await page.getByRole('textbox', { name: 'БИК банка 1' }).fill('044525225');
         await page.getByLabel('Токен оператора фискальных данных (ОФД)').fill('demo-ofd-token');
@@ -213,10 +264,10 @@ test.describe('Анкета — отправка', () => {
         await expect(page.getByLabel('Номер МЧД')).toHaveCount(0);
         await page.getByRole('button', { name: 'Отправить заявку' }).click();
         await expectPath(page, appPath);
-        await expect(page.getByRole('heading', { level: 2, name: /Заявка принята|Собираем данные о компании|Данные о компании собраны/ })).toBeVisible();
+        await expect(page.getByRole('heading', { level: 2, name: /Заявка принята|Собираем данные о компании|Данные о компании собраны|Банк оценивает заявку|Банку нужны|Банк одобрил|Банк отказал|кредитный специалист/ })).toBeVisible();
 
         const app = await collectorApp(page, appId);
-        expect(['SUBMITTED', 'ENRICHING', 'VERIFYING']).toContain(app.status);
+        expect(['SUBMITTED', 'ENRICHING', 'VERIFYING', 'SCORING', 'MANUAL_REVIEW', 'WAITING_FOR_INFO', 'OFFERED', 'REJECTED']).toContain(app.status);
         expect(app.documents.map((d) => [d.file_name, d.type])).toEqual([
             ['balance.pdf', 'FINANCIAL_STATEMENTS'],
             ['balance.pdf.sig', 'SIGNATURE'],
@@ -227,6 +278,7 @@ test.describe('Анкета — отправка', () => {
     });
 
     test('бухгалтер: МЧД проверяется по формату', async ({ page }) => {
+        await seedToken(page, 'northAccountant');
         await register(page, '7799000012', 'Бухгалтер');
         await toReview(page);
         await page.getByLabel('Номер МЧД').fill('12345');
@@ -247,6 +299,7 @@ test.describe('Анкета — отправка', () => {
     });
 
     test('422 data-collector — ошибка разложена по шагам', async ({ page }) => {
+        test.skip(COLLECTOR_LIVE, MOCK_ONLY);
         await register(page);
         await toReview(page);
         await setMockFailures(page, [{ method: 'POST', path: '/questionnaire$', status: 422, field: 'director.inn', times: 1 }]);
@@ -258,6 +311,7 @@ test.describe('Анкета — отправка', () => {
     });
 
     test('ИП (сценарий D): руководитель — сам предприниматель, без МЧД', async ({ page }) => {
+        await seedToken(page, 'ipSmirnova');
         await register(page, '779900010202', 'Собственник бизнеса');
         await next(page);
         await expect(page.getByRole('heading', { level: 1, name: 'Руководитель и анкета' })).toBeVisible();
@@ -275,7 +329,9 @@ test.describe('Анкета — надёжность', () => {
         await page.goto('/applications/new?product=EXPRESS&amount=1000000&term=12&purpose=WORKING_CAPITAL');
         await page.getByLabel('ИНН компании или ИП').fill('7799000012');
         await expect(page.getByText('Нашли компанию в реестре')).toBeVisible();
-        await chooseRole(page, 'Генеральный директор');
+        // компания уже в профиле после первой регистрации — роль из профиля, менять нельзя
+        await expect(page.getByRole('radio', { name: 'Генеральный директор' })).toBeChecked();
+        await expect(page.getByRole('radio', { name: 'Бухгалтер' })).toBeDisabled();
         await next(page);
         await expect(page).toHaveURL(/\/edit\/terms$/);
         expect(editPath(page)).toBe(first);
@@ -283,6 +339,7 @@ test.describe('Анкета — надёжность', () => {
     });
 
     test('ошибка сервера у поля пропадает, когда поле исправили', async ({ page }) => {
+        test.skip(COLLECTOR_LIVE, MOCK_ONLY);
         await register(page);
         await toReview(page);
         await setMockFailures(page, [{ method: 'POST', path: '/questionnaire$', status: 422, field: 'director.inn', times: 1 }]);
@@ -299,6 +356,7 @@ test.describe('Анкета — надёжность', () => {
         await next(page);
         await fillBorrower(page);
         await next(page);
+        await next(page); // для оценки — необязательно
         await page.getByLabel('Токен оператора фискальных данных (ОФД)').fill('secret-ofd-token');
         const stored = () => page.evaluate(() => ({ local: JSON.stringify(localStorage), session: JSON.stringify(sessionStorage) }));
         expect((await stored()).local).not.toContain('secret-ofd-token');
@@ -333,5 +391,27 @@ test.describe('Анкета — надёжность', () => {
         await expect(page.getByRole('checkbox', { name: 'Согласие руководителя на запрос его кредитной истории' })).not.toBeChecked();
         await page.getByRole('button', { name: 'Отправить заявку' }).click();
         await expect(page).not.toHaveURL(/\/edit\//);
+    });
+});
+
+test.describe('Анкета — пользователь data-collector', () => {
+    test('своя компания из профиля: роль подставлена, черновик привязан к пользователю', async ({ page }) => {
+        await seedToken(page, 'northAccountant');
+        await page.goto(NEW);
+        await page.getByLabel('ИНН компании или ИП').fill('7799000012');
+        await expect(page.getByText('Нашли компанию в реестре')).toBeVisible();
+        await expect(page.getByRole('radio', { name: 'Бухгалтер' })).toBeChecked();
+        await expect(page.getByLabel('ФИО')).toHaveValue('Литвинова Марина Олеговна');
+        await next(page);
+        await expect(page).toHaveURL(/\/edit\/terms$/);
+        const id = editPath(page).split('/').pop() ?? '';
+        const app = await page.evaluate(
+            async (appId) =>
+                (await (await fetch(`/collector/api/v1/applications/${appId}`, { headers: { Authorization: 'Bearer mock.usr_accountant_north' } })).json()) as {
+                    representative: { id: string };
+                },
+            id,
+        );
+        expect(app.representative.id).toBe('usr_accountant_north');
     });
 });

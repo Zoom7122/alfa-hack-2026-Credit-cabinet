@@ -30,3 +30,25 @@
     border-radius: var(--border-radius-24);
     background: var(--color-light-base-bg-primary);
 }
+
+@media (max-width: 1023px) {
+    .offers-status__grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: var(--gap-16);
+    }
+}
+
+@media (max-width: 599px) {
+    .offers-status {
+        gap: var(--gap-16);
+    }
+
+    .offers-status__grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .offers-status__retention {
+        padding: var(--gap-16);
+        border-radius: var(--border-radius-20);
+    }
+}

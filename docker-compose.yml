@@ -85,6 +85,8 @@ services:
       BANK_API_URL: http://mock-api:8090/bank/v1
       BANK_API_TIMEOUT: 5s
       DOCUMENT_STORAGE_PATH: /data/documents
+      # подсказка реквизитов по ИНН (POST /counterparty/lookup) — синхронно в ЕГРЮЛ эмулятора
+      MOCK_API_URL: http://mock-api:8090
       # файлы документов; этот же volume на чтение — у worker'а проверки подписи (и будущего OCR)
       DOCUMENTS_DIR: /data/documents
     volumes:
@@ -163,6 +165,41 @@ services:
         condition: service_completed_successfully
       kafka:
         condition: service_healthy
+    restart: unless-stopped
+
+  # Оценка заявок после сбора: берёт VERIFYING из Postgres, спрашивает credit-engine, пишет итог.
+  data-collector-decision-worker:
+    build: ./data-collector
+    entrypoint: ["/data-collector-decision-worker"]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
+      SCORING_URL: http://credit-engine-scoring:8082
+      # та же дата оценки, что у движка: от неё считаются 12 месяцев истории и 36 — графика долгов
+      DEMO_EVALUATION_DATE: ${DEMO_EVALUATION_DATE:-2026-10-22}
+      DECISION_SIGNATURE_WAIT: 2m
+      REVIEW_SLA: 4h
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # credit-engine (../credit-engine): МС1 — скоринг и подбор условий, МС2 — состояние банка.
+  # Поставщик отчётности Б и МС3 (события) — data-collector.
+  credit-engine-scoring:
+    build: ./credit-engine
+    environment:
+      BANK_URL: http://credit-engine-bank:8083
+      STATEMENTS_URL: http://data-collector:8081
+      DEMO_EVALUATION_DATE: ${DEMO_EVALUATION_DATE:-2026-10-22}
+    ports:
+      - "${CREDIT_ENGINE_PORT:-8082}:8082"
+    restart: unless-stopped
+
+  credit-engine-bank:
+    build: ./credit-engine
+    entrypoint: ["/bank-state-service"]
+    environment:
+      ADMIN_URL: http://data-collector:8081
     restart: unless-stopped
 
   # Эмулятор внешних систем: свой префикс на каждую систему (список — mock-api/README.md)
