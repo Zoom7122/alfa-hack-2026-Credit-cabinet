@@ -69,7 +69,7 @@ type handler struct {
 // Register вешает эндпоинты на группу (обычно /gosuslugi/v1).
 func Register(rg *gin.RouterGroup) {
 	h := &handler{byINN: map[string]*person{}, byName: map[string]string{}, requests: mockkit.NewStore[request]()}
-	for inn, body := range mockkit.Seeds(seedFS, "seed") {
+	for inn, body := range mockkit.CabinetSeeds(seedFS, "seed") {
 		var s struct {
 			Person struct {
 				LastName   string `json:"last_name"`

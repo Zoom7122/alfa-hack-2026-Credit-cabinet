@@ -50,7 +50,7 @@ type handler struct {
 // Register вешает эндпоинты на группу (обычно /open-banking/v1).
 func Register(rg *gin.RouterGroup) {
 	h := &handler{accounts: map[string][]*account{}, consents: mockkit.NewStore[consent]()}
-	for inn, body := range mockkit.Seeds(seedFS, "seed") {
+	for inn, body := range mockkit.CabinetSeeds(seedFS, "seed") {
 		var s struct {
 			INN   string                `json:"inn"`
 			Banks map[string][]*account `json:"banks"`

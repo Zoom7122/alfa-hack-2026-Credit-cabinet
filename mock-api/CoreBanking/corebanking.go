@@ -44,7 +44,7 @@ func Register(rg *gin.RouterGroup) {
 
 func load() map[string]*client {
 	out := map[string]*client{}
-	for inn, body := range mockkit.Seeds(seedFS, "seed") {
+	for inn, body := range mockkit.CabinetSeeds(seedFS, "seed") {
 		var cl client
 		mockkit.MustDecode(inn, body, &cl)
 

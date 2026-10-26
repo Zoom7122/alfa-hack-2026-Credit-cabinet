@@ -3,12 +3,10 @@
 package postgres
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
+	"io"
 	"testing"
 	"time"
 
@@ -18,45 +16,15 @@ import (
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/domain"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/service"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/storage"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/testdocument"
 )
 
-// Полный набор проверяем в отдельной схеме с настоящими миграциями: не трогаем
-// пользовательские заявки и уже работающие API/worker'ы в public.
+// Миграции создают credit_engine_runtime вне search_path, поэтому каждому тесту
+// нужна отдельная база, а не только отдельная схема.
 func testApplicationsPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	ctx := context.Background()
-	admin := testPool(t)
-	schema := fmt.Sprintf("test_seed_%d", time.Now().UnixNano())
-	quoted := pgx.Identifier{schema}.Sanitize()
-	if _, err := admin.Exec(ctx, "CREATE SCHEMA "+quoted); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if _, err := admin.Exec(context.Background(), "DROP SCHEMA "+quoted+" CASCADE"); err != nil {
-			t.Errorf("drop test schema: %v", err)
-		}
-	})
-	cfg := admin.Config()
-	cfg.ConnConfig.RuntimeParams["search_path"] = schema
-	pool, err := pgxpool.NewWithConfig(ctx, cfg)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(pool.Close)
-	paths, err := filepath.Glob("../../../../db/migrations/*.sql")
-	if err != nil || len(paths) == 0 {
-		t.Fatalf("find migrations: %v (%d files)", err, len(paths))
-	}
-	for _, path := range paths {
-		body, err := os.ReadFile(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		up, _, _ := strings.Cut(string(body), "-- +goose Down")
-		if _, err := pool.Exec(ctx, up); err != nil {
-			t.Fatalf("apply %s: %v", path, err)
-		}
-	}
+	pool := scoringTestDB(t)
 	if _, err := pool.Exec(ctx, `INSERT INTO companies (id, inn, type, name, ogrn, registry)
         VALUES ('apl_existing_romashka', '7701234567', 'LEGAL_ENTITY', 'ООО «Ромашка»', 'existing-ogrn',
                 '{"full_name":"Сохранённые реквизиты"}')`); err != nil {
@@ -71,7 +39,7 @@ func testApplicationsPool(t *testing.T) *pgxpool.Pool {
 func testApplicationSnapshot(t *testing.T, pool *pgxpool.Pool) map[string]string {
 	t.Helper()
 	out := map[string]string{}
-	for _, table := range []string{"users", "companies", "company_members", "applications", "application_events", "decisions", "offers", "info_requests", "collection_tasks", "outbox"} {
+	for _, table := range []string{"users", "companies", "company_members", "applications", "application_events", "decisions", "offers", "info_requests", "collection_tasks", "raw_collections", "documents", "scoring_jobs", "outbox"} {
 		var contents string
 		if err := pool.QueryRow(context.Background(), `SELECT coalesce(jsonb_agg(row_data ORDER BY row_data::text), '[]'::jsonb)::text
             FROM (SELECT to_jsonb(t) AS row_data FROM `+pgx.Identifier{table}.Sanitize()+` t) seed_rows`).Scan(&contents); err != nil {
@@ -93,7 +61,11 @@ func TestIntegrationSeedTestApplications(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	count, err := r.SeedTestApplications(ctx)
+	files, err := storage.NewLocal(t.TempDir(), 1<<20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	count, err := r.SeedTestApplications(ctx, files)
 	if err != nil || count != 17 {
 		t.Fatalf("seed: inserted=%d err=%v", count, err)
 	}
@@ -102,7 +74,11 @@ func TestIntegrationSeedTestApplications(t *testing.T) {
 	}
 	for _, seed := range testApplications {
 		app, ok, err := r.Get(ctx, testApplicationID(seed.ID))
-		if err != nil || !ok || app.Status != seed.Status || app.Requested == nil || app.Requested.Amount != seed.Amount {
+		expected := domain.ApplicationSubmitted
+		if seed.Status == domain.ApplicationDraft {
+			expected = domain.ApplicationDraft
+		}
+		if err != nil || !ok || app.Status != expected || app.Requested == nil || app.Requested.Amount != seed.Amount {
 			t.Fatalf("application %d: %+v found=%v err=%v", seed.ID, app, ok, err)
 		}
 		if seed.Company == "romashka" && app.Company.ID != "apl_existing_romashka" {
@@ -147,48 +123,35 @@ func TestIntegrationSeedTestApplications(t *testing.T) {
 		t.Fatalf("existing registry changed: %s %s %v", ogrn, registry, err)
 	}
 	bo := NewBackofficeRepository(pool)
-	counters, err := bo.Counters(ctx, "usr_underwriter_sokolova")
-	if err != nil || counters.ManualReview != 7 || counters.Mine != 1 || counters.WaitingForInfo != 3 {
-		t.Fatalf("queue counters: %+v %v", counters, err)
-	}
 	for _, seed := range testApplications {
 		if seed.Status == domain.ApplicationDraft {
 			continue
 		}
 		dossier, ok, err := bo.Dossier(ctx, testApplicationID(seed.ID))
-		if err != nil || !ok || dossier.Card == nil || len(dossier.Events) < 2 {
-			t.Fatalf("dossier %d: %+v %v %v", seed.ID, dossier, ok, err)
+		if err != nil || !ok || dossier.Card == nil || len(dossier.Events) < 2 || dossier.Decision != nil || len(dossier.Application.Documents) != 1 {
+			t.Fatalf("queued dossier %d: %+v %v %v", seed.ID, dossier, ok, err)
 		}
-		if seed.Status == domain.ApplicationRejected && dossier.Decision.MaxAmount != nil {
-			t.Fatalf("rejected application %d must not have an approved limit", seed.ID)
+		doc := dossier.Application.Documents[0]
+		if !doc.IsTest() || doc.SignatureState != domain.SignatureNotSigned {
+			t.Fatalf("test document: %+v", doc)
+		}
+		body, err := files.Open(doc.StorageKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		actual, err := io.ReadAll(body)
+		body.Close()
+		if err != nil || !bytes.Equal(actual, testdocument.PDF()) {
+			t.Fatal("seed PDF differs from the accepted sample")
 		}
 	}
-	files, err := storage.NewLocal(t.TempDir(), 1<<20)
-	if err != nil {
+	var jobs, documents, signatureJobs, financialJobs int
+	if err := pool.QueryRow(ctx, `SELECT (SELECT count(*) FROM collection_tasks),(SELECT count(*) FROM documents),
+        (SELECT count(*) FROM outbox WHERE topic='test.seed.documents'),(SELECT count(*) FROM financial_document_jobs)`).Scan(&jobs, &documents, &signatureJobs, &financialJobs); err != nil || jobs != 16 || documents != 16 || signatureJobs != 0 || financialJobs != 0 {
+		t.Fatalf("seed pipeline: jobs=%d documents=%d signatures=%d financials=%d err=%v", jobs, documents, signatureJobs, financialJobs, err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE applications SET status='MANUAL_REVIEW' WHERE id=$1`, testApplicationID(147)); err != nil {
 		t.Fatal(err)
-	}
-	outcomes := service.NewOutcomeService(bo, r, files, 4*time.Hour)
-	offers, err := outcomes.Offers(ctx, testApplicationID(501))
-	if err != nil || len(offers) != 1 || offers[0].Amount != 2_030_000 || offers[0].TermMonths != 36 {
-		t.Fatalf("north offer: %+v %v", offers, err)
-	}
-	rejected, err := outcomes.Decision(ctx, testApplicationID(504))
-	if err != nil || rejected.Outcome != "REJECTED" || len(rejected.Reasons) == 0 || rejected.ByEmployee {
-		t.Fatalf("rejected: %+v %v", rejected, err)
-	}
-	questions, err := outcomes.InfoRequests(ctx, testApplicationID(505))
-	if err != nil || len(questions) != 2 {
-		t.Fatalf("smirnova questions: %+v %v", questions, err)
-	}
-	// Реальный ответ на вопрос: после рестарта он не должен исчезнуть или открыться заново.
-	questions, err = outcomes.InfoRequests(ctx, testApplicationID(131))
-	if err != nil || len(questions) != 1 {
-		t.Fatalf("romashka questions: %+v %v", questions, err)
-	}
-	status, err := outcomes.Answer(ctx, "usr_accountant_romashka", testApplicationID(131), questions[0].ID,
-		service.AnswerInput{Value: json.RawMessage(`"Полномочия подтверждены"`)})
-	if err != nil || status != domain.ApplicationManualReview {
-		t.Fatalf("answer: %s %v", status, err)
 	}
 	if _, err := bo.Assign(ctx, testApplicationID(147), "usr_underwriter_orlov"); err != nil {
 		t.Fatal(err)
@@ -237,7 +200,7 @@ func TestIntegrationSeedTestApplicationsConcurrent(t *testing.T) {
 		t.Fatalf("concurrent starts inserted %d applications", total)
 	}
 	var jobs, events int
-	if err := pool.QueryRow(context.Background(), `SELECT (SELECT count(*) FROM collection_tasks), (SELECT count(*) FROM outbox)`).Scan(&jobs, &events); err != nil || jobs != 1 || events != 1 {
+	if err := pool.QueryRow(context.Background(), `SELECT (SELECT count(*) FROM collection_tasks), (SELECT count(*) FROM outbox)`).Scan(&jobs, &events); err != nil || jobs != 16 || events != 16 {
 		t.Fatalf("collection scheduled more than once: jobs=%d outbox=%d err=%v", jobs, events, err)
 	}
 }

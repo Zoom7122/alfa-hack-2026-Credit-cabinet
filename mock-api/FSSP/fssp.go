@@ -42,7 +42,7 @@ type handler struct {
 
 // Register вешает эндпоинты на группу (обычно /fssp/v1).
 func Register(rg *gin.RouterGroup) {
-	h := &handler{byINN: mockkit.Seeds(seedFS, "seed")}
+	h := &handler{byINN: mockkit.CabinetSeeds(seedFS, "seed")}
 	for inn, body := range h.byINN {
 		var s struct {
 			Debtor struct {

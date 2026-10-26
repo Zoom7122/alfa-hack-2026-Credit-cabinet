@@ -81,7 +81,7 @@ type handler struct {
 // Register вешает эндпоинты на группу (обычно /tax-reports/v1).
 func Register(rg *gin.RouterGroup) {
 	h := &handler{taxpayers: map[string]*taxpayer{}, requests: mockkit.NewStore[request]()}
-	for inn, body := range mockkit.Seeds(seedFS, "seed") {
+	for inn, body := range mockkit.CabinetSeeds(seedFS, "seed") {
 		var tp struct {
 			taxpayer
 			Documents []json.RawMessage `json:"documents"`

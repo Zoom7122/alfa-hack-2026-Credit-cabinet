@@ -50,6 +50,21 @@ func TestAllScenarios(t *testing.T) {
 	}
 }
 
+func TestCabinetCompaniesHaveOwnIdentityAndFinancialHistory(t *testing.T) {
+	for _, inn := range []string{"7701234567", "7724567890", "7709876501", "2901122334", "5001928374", "7811223344", "771234567890", "780198765432"} {
+		cl := mt.Decode[struct {
+			INN string `json:"inn"`
+		}](t, mt.Get(router, base+inn), http.StatusOK)
+		if cl.INN != inn {
+			t.Fatalf("cabinet identity: got %q want %q", cl.INN, inn)
+		}
+		history := mt.Decode[turnover](t, mt.Get(router, base+inn+"/turnover"), http.StatusOK)
+		if len(history.Months) == 0 {
+			t.Fatalf("cabinet company %s has no financial history", inn)
+		}
+	}
+}
+
 func TestUnknownAndInvalidINN(t *testing.T) {
 	for _, ep := range endpoints {
 		if code := mt.ErrorCode(t, mt.Get(router, base+mt.Unknown+ep), http.StatusNotFound); code != mockkit.CodeNotFound {

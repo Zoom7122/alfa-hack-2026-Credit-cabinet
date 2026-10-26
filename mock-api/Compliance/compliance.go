@@ -83,7 +83,7 @@ type handler struct {
 
 // Register вешает эндпоинты на группу (обычно /compliance/v1).
 func Register(rg *gin.RouterGroup) {
-	h := &handler{zsk: mockkit.Seeds(seedFS, "seed/zsk")}
+	h := &handler{zsk: mockkit.CabinetSeeds(seedFS, "seed/zsk")}
 	body, err := seedFS.ReadFile("seed/lists.json")
 	if err != nil {
 		panic("compliance: missing seed/lists.json")

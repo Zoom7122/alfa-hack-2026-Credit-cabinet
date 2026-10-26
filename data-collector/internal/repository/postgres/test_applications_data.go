@@ -24,7 +24,8 @@ type testApplication struct {
 }
 
 // Кабинет и очередь банка — по frontend/src/mocks/data.ts. Компании A–E —
-// по service.TestUsers и mock-api; это синтетические снимки, а не результаты скоринга.
+// по service.TestUsers и mock-api. Status описывает прежний демонстрационный снимок;
+// новые заявки проходят настоящий сбор и скоринг, их исход определяется движком.
 var testCompanies = map[string]testCompany{
 	"romashka": {
 		TestCompanySeed: domain.TestCompanySeed{ID: "apl_romashka", INN: "7701234567", Name: "ООО «Ромашка»", Role: domain.RoleDirector},

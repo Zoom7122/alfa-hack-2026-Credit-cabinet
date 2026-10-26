@@ -55,6 +55,15 @@ func TestEGRUL(t *testing.T) {
 	mt.ErrorCode(t, mt.PostForm(router, "/fns/egrul/", url.Values{}), http.StatusBadRequest)
 }
 
+func TestCabinetRegistryIdentity(t *testing.T) {
+	for _, inn := range []string{"7701234567", "7724567890", "7709876501", "2901122334", "5001928374", "7811223344", "771234567890", "780198765432"} {
+		rows := egrul(t, inn)
+		if len(rows) != 1 || rows[0].I != inn {
+			t.Fatalf("cabinet registry %s: %+v", inn, rows)
+		}
+	}
+}
+
 type pbSearch struct {
 	UL *struct {
 		RowCount int `json:"rowCount"`

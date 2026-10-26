@@ -31,7 +31,7 @@ type handler struct{ companies map[string]*company }
 // Register вешает эндпоинты на группу (обычно /signals/v1).
 func Register(rg *gin.RouterGroup) {
 	h := &handler{companies: map[string]*company{}}
-	for inn, body := range mockkit.Seeds(seedFS, "seed") {
+	for inn, body := range mockkit.CabinetSeeds(seedFS, "seed") {
 		var co company
 		mockkit.MustDecode(inn, body, &co)
 		for _, raw := range co.News {

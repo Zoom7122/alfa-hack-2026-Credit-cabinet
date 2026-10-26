@@ -81,8 +81,8 @@ func Register(rg *gin.RouterGroup) {
 
 func load() *handler {
 	h := &handler{companies: map[string]*company{}, boByID: map[int64]*company{},
-		disqualified: mockkit.Seeds(seedFS, "seed/disqualified")}
-	for inn, body := range mockkit.Seeds(seedFS, "seed") {
+		disqualified: mockkit.CabinetSeeds(seedFS, "seed/disqualified")}
+	for inn, body := range mockkit.CabinetSeeds(seedFS, "seed") {
 		var co company
 		mockkit.MustDecode(inn, body, &co)
 

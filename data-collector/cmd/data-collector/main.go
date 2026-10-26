@@ -105,7 +105,7 @@ func run(log *slog.Logger) error {
 		}
 		log.Info("test users seeded", "count", len(service.TestUsers))
 		if env.String("SEED_TEST_APPLICATIONS", "true") != "false" {
-			count, err := applications.SeedTestApplications(ctx)
+			count, err := applications.SeedTestApplications(ctx, files)
 			if err != nil {
 				return fmt.Errorf("seed test applications: %w", err)
 			}

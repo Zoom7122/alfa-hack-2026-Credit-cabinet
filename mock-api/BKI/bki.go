@@ -72,7 +72,7 @@ func Register(rg *gin.RouterGroup) {
 
 func load() *handler {
 	h := &handler{reports: map[string]map[string]json.RawMessage{}, byPerson: map[string]json.RawMessage{}}
-	for inn, body := range mockkit.Seeds(seedFS, "seed") {
+	for inn, body := range mockkit.CabinetSeeds(seedFS, "seed") {
 		var bySubject map[string]json.RawMessage
 		mockkit.MustDecode(inn, body, &bySubject)
 		for typ, rep := range bySubject {
