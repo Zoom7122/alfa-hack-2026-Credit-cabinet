@@ -1,2 +1,9 @@
-# Preserve the exact bytes hashed by the immutable scoring release manifest.
-credit-engine/docs/02_inputs_and_scoring.md text eol=crlf
+# Preserve the LF bytes hashed by scoring releases on every checkout.
+credit-engine/models/*.json text eol=lf
+credit-engine/models/*.md text eol=lf
+credit-engine/models/SHA256SUMS text eol=lf
+credit-engine/models/releases/*/manifest.json text eol=lf
+credit-engine/contracts/*.json text eol=lf
+credit-engine/contracts/*_generated.go text eol=lf
+credit-engine/internal/modelbindings/*_generated.go text eol=lf
+credit-engine/docs/02_inputs_and_scoring.md text eol=lf
