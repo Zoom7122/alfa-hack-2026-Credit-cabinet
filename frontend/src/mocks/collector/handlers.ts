@@ -15,6 +15,7 @@ import {
 import { REGISTRY_TIMEOUT_INN, registry } from '../data';
 import { mockFailure } from '../handlers';
 import { stepMs } from '../workflow';
+import { productByCode, termsErrors } from './catalog';
 import { allAnswered, offerOf, questionsOf, REJECT_REASONS, scoredOutcome } from './outcome';
 import { FAILING_COLLECTION_INN, scenarioByInn } from './scenarios';
 import { mutateCollector, newId, readCollector, type StoredCollectorApp } from './store';
@@ -277,6 +278,11 @@ function validateQuestionnaire(q: QuestionnaireInput, inn: string): Field[] {
     if (q.requested) {
         if (!(q.requested.amount > 0)) add('requested.amount', 'out_of_range', 'сумма должна быть больше нуля');
         if (!(q.requested.term_months > 0 && q.requested.term_months <= 600)) add('requested.term_months', 'out_of_range', 'срок от 1 до 600 месяцев');
+    }
+    if (q.product_code) {
+        const product = productByCode(q.product_code);
+        if (!product) add('product_code', 'unknown_product', 'нет такого продукта в каталоге');
+        else if (q.requested && !errors.length) errors.push(...termsErrors(product, q.requested.amount, q.requested.term_months));
     }
     if (q.purpose) {
         if (!PURPOSES.includes(q.purpose.code)) add('purpose.code', 'invalid_value', `допустимые значения: ${PURPOSES.join(', ')}`);

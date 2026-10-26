@@ -2019,6 +2019,187 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Каталог кредитных продуктов
+         * @description Продукты под задачу и тип заявителя; без фильтров — весь каталог. Порядок — от самого подходящего.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Цель кредита */
+                    purpose?: "WORKING_CAPITAL" | "EQUIPMENT" | "VEHICLE" | "REAL_ESTATE" | "REFINANCING" | "TENDER" | "BUSINESS_EXPANSION" | "OTHER";
+                    /** @description Тип заявителя */
+                    applicant_type?: "LEGAL_ENTITY" | "SOLE_PROPRIETOR";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProductList"];
+                    };
+                };
+                /** @description неизвестная цель или тип заявителя */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Карточка продукта */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /**
+                     * @description Код продукта
+                     * @example WORKING_CAPITAL
+                     */
+                    code: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Product"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{code}/calculate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Предварительный расчёт платежа
+         * @description Аннуитетный платёж по ставке «от» продукта, без скоринга. Сумма и срок — в диапазоне продукта.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /**
+                     * @description Код продукта
+                     * @example WORKING_CAPITAL
+                     */
+                    code: string;
+                };
+                cookie?: never;
+            };
+            /** @description Сумма и срок */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CalculateRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Calculation"];
+                    };
+                };
+                /** @description некорректное тело */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description сумма или срок вне диапазона продукта */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2288,6 +2469,19 @@ export interface components {
             /** @enum {string} */
             outcome?: "APPROVED" | "APPROVED_WITH_CHANGES" | "REJECTED" | "NEED_INFO";
         };
+        CalculateRequest: {
+            /** @example 5000000 */
+            amount: number;
+            /** @example 24 */
+            term_months: number;
+        };
+        Calculation: {
+            disclaimer?: string;
+            /** @example 251234 */
+            monthly_payment_from?: number;
+            /** @example 18.5 */
+            rate_annual_from?: number;
+        };
         ClientDecision: {
             decided_at?: string;
             /** @enum {string} */
@@ -2553,6 +2747,30 @@ export interface components {
             field?: string;
             message?: string;
         };
+        Product: {
+            amount?: components["schemas"]["Range"];
+            applicant_types?: ("LEGAL_ENTITY" | "SOLE_PROPRIETOR")[];
+            /** @example WORKING_CAPITAL */
+            code?: string;
+            collateral?: components["schemas"]["ProductCollateral"];
+            description?: string;
+            /** @description Нужно ли поручительство (обычно — собственника). */
+            guarantee_required?: boolean;
+            /** @example Оборотный кредит */
+            name?: string;
+            purposes?: string[];
+            /** @example 18.5 */
+            rate_annual_from?: number;
+            term_months?: components["schemas"]["Range"];
+        };
+        ProductCollateral: {
+            accepted_types?: string[];
+            /** @description С какой суммы нужен залог: null — не нужен, 0 — нужен всегда. */
+            required_above_amount?: number | null;
+        };
+        ProductList: {
+            items?: components["schemas"]["Product"][];
+        };
         Purpose: {
             /**
              * @example WORKING_CAPITAL
@@ -2574,6 +2792,12 @@ export interface components {
             application?: components["schemas"]["Application"];
             collection?: components["schemas"]["CollectionTask"];
             questionnaire?: components["schemas"]["Questionnaire"];
+        };
+        Range: {
+            /** @example 30000000 */
+            max?: number;
+            /** @example 300000 */
+            min?: number;
         };
         RegisterApplicantRequest: {
             company: components["schemas"]["CompanyInput"];

@@ -263,6 +263,14 @@ func validateApplication(in SubmitInput) []FieldError {
 			add("requested.term_months", "out_of_range", fmt.Sprintf("срок от 1 до %d месяцев", maxTermMonths))
 		}
 	}
+	// продукт — из каталога; сумма и срок — в его диапазоне (общие проверки выше уже дали ошибку — не повторяем)
+	if in.ProductCode != "" {
+		if p, ok := domain.ProductByCode(in.ProductCode); !ok {
+			add("product_code", "unknown_product", "нет такого продукта в каталоге")
+		} else if r := in.Requested; r != nil && len(fields) == 0 {
+			fields = append(fields, termsErrors(p, r.Amount, r.TermMonths)...)
+		}
+	}
 	if p := in.Purpose; p != nil {
 		if !slices.Contains(domain.PurposeCodes, p.Code) {
 			add("purpose.code", "invalid_value", "допустимые значения: "+strings.Join(domain.PurposeCodes, ", "))

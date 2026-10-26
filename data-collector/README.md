@@ -473,6 +473,16 @@ curl -s 'localhost:8081/api/v1/check-mock?inn=7701234567'
 
 Проверка, что сервис поднят.
 
+## Каталог продуктов и калькулятор платежа
+
+Токен не нужен. Каталог — в коде (`internal/domain/product.go`, 7 продуктов), хранилища нет.
+
+- `GET /products?purpose=&applicant_type=` — продукты под цель и тип заявителя (без фильтров — все): диапазоны суммы и срока, ставка «от», залог (`required_above_amount`: `null` — не нужен, `0` — нужен всегда), поручительство. `422` — неизвестная цель или тип.
+- `GET /products/{code}` — карточка продукта, `404` — нет такого.
+- `POST /products/{code}/calculate` `{"amount": 5000000, "term_months": 24}` — аннуитетный платёж по ставке «от» (`rate_annual_from`, `monthly_payment_from`, `disclaimer`), без скоринга. `422` — сумма или срок вне диапазона продукта (`requested.amount`, `requested.term_months`).
+
+Анкета проверяет то же: неизвестный `product_code` — `422 unknown_product`, сумма или срок вне диапазона продукта — `422 out_of_range`.
+
 ## Итог для клиента: решение, предложения, вопросы банка
 
 - `GET /applications/{id}/decision` — итог оценки (движка или специалиста): `outcome`, причины отказа для клиента (`reasons`), `reapply_after` — когда подать снова (через 30 дней после отказа), `decided_by` (`ENGINE`/`EMPLOYEE`). `404` — ещё не оценили.

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { expectPath, seedToken } from './helpers';
+import { expectPath, SCENARIO_B, seedToken, USERS } from './helpers';
 
 test.describe('Подбор продукта и калькулятор', () => {
     test.beforeEach(async ({ page }) => {
@@ -8,14 +8,51 @@ test.describe('Подбор продукта и калькулятор', () => {
     });
 
     test('под «Пополнить оборот» три продукта, у оборотного — уже есть заявка', async ({ page }) => {
+        // заявку подаём прямо в API data-collector — после старта моков, иначе прокси dev-сервера уведёт запрос в живой стек
+        await seedToken(page, 'stroyresurs');
+        await page.goto('/');
+        await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+        const number = await page.evaluate(
+            async ({ questionnaire, token }) => {
+                const base = '/collector/api/v1';
+                const auth = { Authorization: `Bearer ${token}` };
+                const registered = await fetch(`${base}/applicants`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...auth },
+                    body: JSON.stringify({ representative: { full_name: 'Орлов Денис Павлович', role: 'DIRECTOR' }, company: { inn: '7799000020' } }),
+                });
+                const app = (await registered.json()) as { id: string; number: string };
+                const form = new FormData();
+                form.append('questionnaire', JSON.stringify(questionnaire));
+                const sent = await fetch(`${base}/applications/${app.id}/questionnaire`, { method: 'POST', body: form, headers: auth });
+                if (sent.status !== 202) throw new Error(`questionnaire: ${sent.status} ${await sent.text()}`);
+                return app.number;
+            },
+            { questionnaire: SCENARIO_B, token: `mock.${USERS.stroyresurs.id}` },
+        );
+
         await page.goto('/products');
         const products = page.getByRole('radiogroup', { name: 'Кредитный продукт' }).getByRole('radio');
         await expect(products).toHaveCount(3);
         await expect(products.first()).toHaveAttribute('aria-checked', 'true');
         await expect(products.first()).toContainText('Уже есть заявка');
-        // вторую заявку на тот же продукт банк не примет — ведём к существующей
-        await expect(page.getByRole('link', { name: 'Перейти к заявке A-2026-000123' })).toBeVisible();
+        // вторую заявку на тот же продукт не оформляем — ведём к существующей
+        await expect(page.getByRole('link', { name: `Перейти к заявке ${number}` })).toBeVisible();
         await expect(page.getByRole('button', { name: 'Оформить заявку' })).toHaveCount(0);
+    });
+
+    test('расчёт вне диапазона продукта — 422 по сумме и сроку', async ({ page }) => {
+        await page.goto('/');
+        await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+        const res = await page.evaluate(async () => {
+            const r = await fetch('/collector/api/v1/products/EXPRESS/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: 8_000_000, term_months: 36 }),
+            });
+            return { status: r.status, fields: ((await r.json()) as { errors?: { field: string }[] }).errors?.map((e) => e.field) };
+        });
+        expect(res).toEqual({ status: 422, fields: ['requested.amount', 'requested.term_months'] });
     });
 
     test('смена задачи фильтрует каталог и попадает в URL', async ({ page }) => {

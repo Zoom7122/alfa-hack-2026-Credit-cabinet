@@ -1,6 +1,6 @@
 import { type Browser, expect, type Page, test } from '@playwright/test';
 
-import { COLLECTOR_LIVE, expectPath, MOCK_ONLY, seedToken, setMockFailures, setPipelineStep, USERS, type UserKey } from './helpers';
+import { COLLECTOR_LIVE, expectPath, MOCK_ONLY, SCENARIO_B, seedToken, setMockFailures, setPipelineStep, USERS, type UserKey } from './helpers';
 
 /* Рабочее место банка (16–18) на API data-collector. Заявку на ручное рассмотрение каждый тест создаёт сам:
    сценарий B mock-api (ООО «Стройресурс») — у движка «много кредитных обращений», и в моке, и в живом стеке. */
@@ -9,33 +9,6 @@ const rows = (page: Page) => page.getByRole('region', { name: 'Заявки' }).
 const panel = (page: Page) => page.getByRole('dialog', { name: 'Решение по заявке' });
 const rejectSubmit = (page: Page) => panel(page).getByRole('button', { name: 'Отказать', exact: true }).last();
 const stat = (page: Page, label: string) => page.getByRole('group', { name: label });
-
-const SCENARIO_B = {
-    age: 47,
-    marital_status: 'MARRIED',
-    children_count: 3,
-    product_code: 'WORKING_CAPITAL',
-    requested: { amount: 8_000_000, term_months: 36 },
-    purpose: { code: 'WORKING_CAPITAL' },
-    director: { inn: '779900020136', last_name: 'Орлов', first_name: 'Денис', middle_name: 'Павлович', birth_date: '1979-02-11' },
-    consents: {
-        bki_company: { id: 'CNS-2026-000801', signed_at: '2026-10-21T14:02:11Z', valid_until: '2027-04-21' },
-        bki_person: { id: 'CNS-2026-000802', signed_at: '2026-10-21T14:02:40Z', valid_until: '2027-04-21' },
-        tax: { id: 'TAX-CNS-2026-000801', signed_at: '2026-10-21T14:03:02Z', valid_until: '2027-04-21', scope: ['DECLARATIONS', 'ENS_BALANCE'] },
-    },
-    other_bank_biks: ['044525777', '044525650'],
-    scoring: {
-        max_annual_rate: 28,
-        min_acceptable_amount: 2_400_000,
-        max_acceptable_term_months: 48,
-        need_cost: 8_800_000,
-        own_contribution: 800_000,
-        free_cash: 50_000,
-        minimum_cash: 20_000,
-        need_evidence: 'VERIFIED_ESTIMATE',
-        experience_years: 8,
-    },
-};
 
 type Created = { id: string; number: string };
 

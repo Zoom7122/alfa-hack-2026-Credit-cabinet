@@ -120,6 +120,8 @@ func run(log *slog.Logger) error {
 		httptransport.NewInternalDataHandler(internalDataSvc, log),
 		httptransport.WithAuth(httptransport.NewAuthHandler(authSvc, log)),
 		httptransport.WithCabinet(httptransport.NewCabinetHandler(cabinetSvc, log)),
+		// каталог продуктов и калькулятор платежа
+		httptransport.WithCatalog(httptransport.NewCatalogHandler(service.NewCatalogService())),
 		// итог для клиента: решение, предложения, вопросы банка и ответы
 		httptransport.WithOutcome(httptransport.NewOutcomeHandler(service.NewOutcomeService(postgres.NewBackofficeRepository(pool),
 			applications, files, 4*time.Hour), service.MaxFiles*maxFileSize+2<<20, log)),

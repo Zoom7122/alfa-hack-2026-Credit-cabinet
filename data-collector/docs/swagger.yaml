@@ -550,6 +550,29 @@ definitions:
         - NEED_INFO
         type: string
     type: object
+  CalculateRequest:
+    properties:
+      amount:
+        example: 5000000
+        type: integer
+      term_months:
+        example: 24
+        type: integer
+    required:
+    - amount
+    - term_months
+    type: object
+  Calculation:
+    properties:
+      disclaimer:
+        type: string
+      monthly_payment_from:
+        example: 251234
+        type: integer
+      rate_annual_from:
+        example: 18.5
+        type: number
+    type: object
   ClientDecision:
     properties:
       decided_at:
@@ -1096,6 +1119,58 @@ definitions:
       message:
         type: string
     type: object
+  Product:
+    properties:
+      amount:
+        $ref: '#/definitions/Range'
+      applicant_types:
+        items:
+          enum:
+          - LEGAL_ENTITY
+          - SOLE_PROPRIETOR
+          type: string
+        type: array
+      code:
+        example: WORKING_CAPITAL
+        type: string
+      collateral:
+        $ref: '#/definitions/ProductCollateral'
+      description:
+        type: string
+      guarantee_required:
+        description: Нужно ли поручительство (обычно — собственника).
+        type: boolean
+      name:
+        example: Оборотный кредит
+        type: string
+      purposes:
+        items:
+          type: string
+        type: array
+      rate_annual_from:
+        example: 18.5
+        type: number
+      term_months:
+        $ref: '#/definitions/Range'
+    type: object
+  ProductCollateral:
+    properties:
+      accepted_types:
+        items:
+          type: string
+        type: array
+      required_above_amount:
+        description: 'С какой суммы нужен залог: null — не нужен, 0 — нужен всегда.'
+        type: integer
+        x-nullable: true
+    type: object
+  ProductList:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/Product'
+        type: array
+    type: object
   Purpose:
     properties:
       code:
@@ -1136,6 +1211,15 @@ definitions:
         $ref: '#/definitions/CollectionTask'
       questionnaire:
         $ref: '#/definitions/Questionnaire'
+    type: object
+  Range:
+    properties:
+      max:
+        example: 30000000
+        type: integer
+      min:
+        example: 300000
+        type: integer
     type: object
   RegisterApplicantRequest:
     properties:
@@ -2932,6 +3016,109 @@ paths:
       summary: Текущий пользователь и его компании
       tags:
       - auth
+  /products:
+    get:
+      description: Продукты под задачу и тип заявителя; без фильтров — весь каталог.
+        Порядок — от самого подходящего.
+      parameters:
+      - description: Цель кредита
+        enum:
+        - WORKING_CAPITAL
+        - EQUIPMENT
+        - VEHICLE
+        - REAL_ESTATE
+        - REFINANCING
+        - TENDER
+        - BUSINESS_EXPANSION
+        - OTHER
+        in: query
+        name: purpose
+        type: string
+      - description: Тип заявителя
+        enum:
+        - LEGAL_ENTITY
+        - SOLE_PROPRIETOR
+        in: query
+        name: applicant_type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ProductList'
+        "422":
+          description: неизвестная цель или тип заявителя
+          schema:
+            $ref: '#/definitions/Problem'
+      summary: Каталог кредитных продуктов
+      tags:
+      - catalog
+  /products/{code}:
+    get:
+      parameters:
+      - description: Код продукта
+        example: WORKING_CAPITAL
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Product'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Problem'
+      summary: Карточка продукта
+      tags:
+      - catalog
+  /products/{code}/calculate:
+    post:
+      consumes:
+      - application/json
+      description: Аннуитетный платёж по ставке «от» продукта, без скоринга. Сумма
+        и срок — в диапазоне продукта.
+      parameters:
+      - description: Код продукта
+        example: WORKING_CAPITAL
+        in: path
+        name: code
+        required: true
+        type: string
+      - description: Сумма и срок
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/CalculateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Calculation'
+        "400":
+          description: некорректное тело
+          schema:
+            $ref: '#/definitions/Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Problem'
+        "422":
+          description: сумма или срок вне диапазона продукта
+          schema:
+            $ref: '#/definitions/Problem'
+      summary: Предварительный расчёт платежа
+      tags:
+      - catalog
 securityDefinitions:
   bearer:
     description: Bearer mock.<user_id> из POST /auth/mock-login

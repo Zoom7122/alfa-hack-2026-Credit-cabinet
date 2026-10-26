@@ -170,6 +170,12 @@ func TestSubmitValidation(t *testing.T) {
 			[]string{"marital_status"}},
 		{"negative children", func(in *service.SubmitInput, _ *fixture, _ *testing.T) { in.ChildrenCount = -1 },
 			[]string{"children_count"}},
+		{"unknown product", func(in *service.SubmitInput, _ *fixture, _ *testing.T) { in.ProductCode = "YACHT_LOAN" },
+			[]string{"product_code"}},
+		{"terms outside product", func(in *service.SubmitInput, _ *fixture, _ *testing.T) {
+			in.ProductCode = "EXPRESS"
+			in.Requested = &domain.RequestedTerms{Amount: 8_000_000, TermMonths: 36}
+		}, []string{"requested.amount", "requested.term_months"}},
 		// ошибки анкеты, данных для сбора, заявки и файлов возвращаются вместе
 		{"everything together", func(in *service.SubmitInput, f *fixture, t *testing.T) {
 			in.Age = 5

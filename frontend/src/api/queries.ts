@@ -4,6 +4,7 @@ import { newIdempotencyKey } from '../shared/lib/idempotency';
 import { api, ApiError, isUnauthorized, unwrap } from './client';
 import { collector } from './collector/client';
 import { toBoDossier, toBoListItem } from './collector/backoffice';
+import { toProduct } from './collector/catalog';
 import { session } from './session';
 import type {
     ApplicantType,
@@ -122,8 +123,9 @@ export function useProducts(params: CatalogParams = {}, enabled = true) {
         enabled,
         queryKey: queryKeys.products(params),
         queryFn: async () =>
-            unwrap(await api.GET('/products', { params: { query: { purpose: params.purpose, applicant_type: params.applicantType } } }))
-                .items,
+            unwrap(await collector.GET('/products', { params: { query: { purpose: params.purpose, applicant_type: params.applicantType } } })).items?.map(
+                toProduct,
+            ) ?? [],
         staleTime: 10 * 60 * 1000,
         placeholderData: keepPreviousData,
     });
@@ -135,8 +137,8 @@ export function useCalculation(code: string | undefined, terms: RequestedTerms |
         queryKey: queryKeys.calculation(code ?? '', terms ?? { amount: 0, term_months: 0 }),
         queryFn: async () =>
             unwrap(
-                await api.POST('/products/{productCode}/calculate', {
-                    params: { path: { productCode: code ?? '' } },
+                await collector.POST('/products/{code}/calculate', {
+                    params: { path: { code: code ?? '' } },
                     body: terms ?? { amount: 0, term_months: 0 },
                 }),
             ),

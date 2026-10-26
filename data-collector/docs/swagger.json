@@ -1310,6 +1310,155 @@
                     }
                 }
             }
+        },
+        "/products": {
+            "get": {
+                "description": "Продукты под задачу и тип заявителя; без фильтров — весь каталог. Порядок — от самого подходящего.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Каталог кредитных продуктов",
+                "parameters": [
+                    {
+                        "enum": [
+                            "WORKING_CAPITAL",
+                            "EQUIPMENT",
+                            "VEHICLE",
+                            "REAL_ESTATE",
+                            "REFINANCING",
+                            "TENDER",
+                            "BUSINESS_EXPANSION",
+                            "OTHER"
+                        ],
+                        "type": "string",
+                        "description": "Цель кредита",
+                        "name": "purpose",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "LEGAL_ENTITY",
+                            "SOLE_PROPRIETOR"
+                        ],
+                        "type": "string",
+                        "description": "Тип заявителя",
+                        "name": "applicant_type",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ProductList"
+                        }
+                    },
+                    "422": {
+                        "description": "неизвестная цель или тип заявителя",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/products/{code}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Карточка продукта",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "WORKING_CAPITAL",
+                        "description": "Код продукта",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/Product"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/products/{code}/calculate": {
+            "post": {
+                "description": "Аннуитетный платёж по ставке «от» продукта, без скоринга. Сумма и срок — в диапазоне продукта.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Предварительный расчёт платежа",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "WORKING_CAPITAL",
+                        "description": "Код продукта",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Сумма и срок",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CalculateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/Calculation"
+                        }
+                    },
+                    "400": {
+                        "description": "некорректное тело",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "сумма или срок вне диапазона продукта",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -2096,6 +2245,39 @@
                 }
             }
         },
+        "CalculateRequest": {
+            "type": "object",
+            "required": [
+                "amount",
+                "term_months"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 5000000
+                },
+                "term_months": {
+                    "type": "integer",
+                    "example": 24
+                }
+            }
+        },
+        "Calculation": {
+            "type": "object",
+            "properties": {
+                "disclaimer": {
+                    "type": "string"
+                },
+                "monthly_payment_from": {
+                    "type": "integer",
+                    "example": 251234
+                },
+                "rate_annual_from": {
+                    "type": "number",
+                    "example": 18.5
+                }
+            }
+        },
         "ClientDecision": {
             "type": "object",
             "properties": {
@@ -2853,6 +3035,82 @@
                 }
             }
         },
+        "Product": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "$ref": "#/definitions/Range"
+                },
+                "applicant_types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "LEGAL_ENTITY",
+                            "SOLE_PROPRIETOR"
+                        ]
+                    }
+                },
+                "code": {
+                    "type": "string",
+                    "example": "WORKING_CAPITAL"
+                },
+                "collateral": {
+                    "$ref": "#/definitions/ProductCollateral"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "guarantee_required": {
+                    "description": "Нужно ли поручительство (обычно — собственника).",
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Оборотный кредит"
+                },
+                "purposes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rate_annual_from": {
+                    "type": "number",
+                    "example": 18.5
+                },
+                "term_months": {
+                    "$ref": "#/definitions/Range"
+                }
+            }
+        },
+        "ProductCollateral": {
+            "type": "object",
+            "properties": {
+                "accepted_types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "required_above_amount": {
+                    "description": "С какой суммы нужен залог: null — не нужен, 0 — нужен всегда.",
+                    "type": "integer",
+                    "x-nullable": true
+                }
+            }
+        },
+        "ProductList": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Product"
+                    }
+                }
+            }
+        },
         "Purpose": {
             "type": "object",
             "properties": {
@@ -2908,6 +3166,19 @@
                 },
                 "questionnaire": {
                     "$ref": "#/definitions/Questionnaire"
+                }
+            }
+        },
+        "Range": {
+            "type": "object",
+            "properties": {
+                "max": {
+                    "type": "integer",
+                    "example": 30000000
+                },
+                "min": {
+                    "type": "integer",
+                    "example": 300000
                 }
             }
         },
