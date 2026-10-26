@@ -331,6 +331,24 @@ func TestHandleDuplicateEvent(t *testing.T) {
 	onlyReport(t, e2)
 }
 
+func TestHandleExplicitVerificationRequest(t *testing.T) {
+	e := newEnv(t, sigworker.Config{})
+	doc, sig := e.addPair(t, []byte("%PDF-1.4 баланс"))
+	handle(t, e, event(t, doc, sig))
+	request := events.NewDocumentsSubmitted(appID, "7799000012", []domain.Document{doc, sig}, now)
+	request.VerificationID = "verify_second_check"
+	message, err := json.Marshal(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for range 3 {
+		handle(t, e, message)
+	}
+	if calls := e.verifier.calls.Load(); calls != 2 {
+		t.Fatalf("explicit retry should verify once and remain idempotent: calls=%d", calls)
+	}
+}
+
 // Нет файла документа или подписи — отчёт INDETERMINATE, состояние FAILED; сообщение подтверждается.
 func TestHandleMissingFile(t *testing.T) {
 	for _, missing := range []string{"document", "signature"} {
@@ -512,6 +530,28 @@ func TestHandleEmbeddedPDFSignature(t *testing.T) {
 	}
 	if state, _ := e.repo.Signature(appID, plain.ID); state != domain.SignatureNotSigned {
 		t.Fatalf("plain PDF state = %s", state)
+	}
+}
+
+func TestHandleExplicitEmbeddedVerificationRequest(t *testing.T) {
+	e := newEnv(t, sigworker.Config{})
+	pdf, err := sigtest.SignPDF("Balance 2025", pki(t).litvinova, sigtest.PDFOptions{SigningTime: now.Add(-time.Hour)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc := e.addDoc(t, "doc_embedded", "signed.pdf", "application/pdf", domain.DocFinancialStatements, pdf, "")
+	handle(t, e, event(t, doc))
+	request := events.NewDocumentsSubmitted(appID, "7799000012", []domain.Document{doc}, now)
+	request.VerificationID = "verify_embedded_again"
+	message, err := json.Marshal(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for range 3 {
+		handle(t, e, message)
+	}
+	if calls := e.verifier.calls.Load(); calls != 2 {
+		t.Fatalf("embedded explicit retry reused old report: calls=%d", calls)
 	}
 }
 

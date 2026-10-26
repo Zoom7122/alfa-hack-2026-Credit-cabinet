@@ -233,6 +233,9 @@ type DecisionRequest struct {
 	Scoring            *ScoringInput   `json:"scoring"`
 	Evidence           *Evidence       `json:"evidence"`
 	IPEconomicData     *IpEconomicData `json:"ip_economic_data"`
+	// Optional application-scoped statements assembled from verified documents.
+	// When absent, the statements supplier is queried as before.
+	FinancialStatements *StatementsResponse `json:"financial_statements,omitempty"`
 }
 
 type AnnualReport struct {

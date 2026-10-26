@@ -771,6 +771,7 @@ export interface paths {
          * Ответ на вопрос банка
          * @description JSON {value, comment} или multipart/form-data: часть answer с тем же JSON и части files с документами
          *     (форматы и подписи — как у анкеты). Ответили на все обязательные вопросы — заявка уходит на повторную
+         *     Проверенные до ответа вложения передаются в document_ids; загружать те же байты повторно не нужно.
          *     оценку или к специалисту, если вопросы задал он. Отвечает только автор заявки.
          */
         post: {
@@ -2785,6 +2786,7 @@ export interface components {
             file_name?: string;
             /** @example doc_01JB8Z5X0G6Q9T4V2W8Y3K7M1N */
             id?: string;
+            info_request_id?: string;
             /** @example application/pdf */
             mime_type?: string;
             /** @enum {string} */
@@ -2829,6 +2831,7 @@ export interface components {
         };
         InfoRequestAnswerInput: {
             comment?: string;
+            document_ids?: string[];
             /** @description Значение по input.type вопроса: число (NUMBER, MONEY), код варианта (CHOICE), строка (TEXT). NONE — не нужно. */
             value?: string;
         };

@@ -241,8 +241,13 @@ test.describe('итог оценки', () => {
 
         const statement = questions.getByRole('region', { name: /Выписка по счетам/ });
         await expect(statement.getByRole('button', { name: 'Отправить ответ' })).toBeDisabled();
+        const upload = page.waitForResponse((response) => response.request().method() === 'POST' && response.url().endsWith(`/collector/api/v1/applications/${id}/documents`));
         await statement.locator('input[type="file"]').setInputFiles({ name: 'statement.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4') });
+        const document = await (await upload).json() as { id: string };
+        await expect(statement.getByRole('list', { name: 'Загруженные файлы' })).toContainText('statement.pdf');
+        const answer = page.waitForRequest((request) => request.method() === 'POST' && request.url().includes('/info-requests/') && request.url().endsWith('/answer'));
         await statement.getByRole('button', { name: 'Отправить ответ' }).click();
+        expect((await answer).postData()).toContain(document.id);
         await expect(page.getByRole('heading', { level: 2, name: 'Заявку рассматривает кредитный специалист' })).toBeVisible({ timeout: 10_000 });
 
         await page.goto(`/applications/${id}?tab=history`);

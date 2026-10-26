@@ -113,9 +113,33 @@ test.describe('Нужно уточнить (08)', () => {
         await seedToken(page, 'accountant');
         await page.goto('/applications/app_000131');
         const revenue = page.getByRole('region', { name: /Уточните выручку/ });
+        const recognized = page.waitForResponse((response) => response.url().includes('/financial-result') && response.status() === 200);
         await chooseFile(page, revenue, { name: 'Баланс_2025.pdf', mimeType: 'application/pdf' });
+        await recognized;
         await revenue.getByRole('button', { name: 'Подставить' }).click({ timeout: 10_000 });
         await expect(revenue.getByLabel('Выручка за год')).toHaveValue(/41\s600\s000/);
+    });
+
+    test('отчёт и повторная проверка доверенности доступны в вопросе банка', async ({ page }) => {
+        await seedToken(page, 'accountant');
+        await page.goto('/applications/app_000131');
+        const poa = page.getByRole('region', { name: /Загрузите доверенность/ });
+        await chooseFile(page, poa, POA);
+        const original = poa.getByRole('listitem').first();
+        await expect(original).toContainText('подпись верна', { timeout: 10_000 });
+        const report = page.waitForResponse((response) => response.url().endsWith('/signature-report') && response.status() === 200);
+        await original.getByRole('button', { name: 'Отчёт о подписи' }).click();
+        await report;
+        await expect(original.getByRole('region', { name: /Проверка подписи/ })).toContainText('Подпись верна');
+        const retry = page.waitForRequest((request) => request.method() === 'POST' && request.url().endsWith('/signature-verification'));
+        await original.getByRole('button', { name: 'Проверить подпись повторно' }).click();
+        await retry;
+        await expect(original).toContainText('проверяем подпись');
+        await expect(original.getByRole('button', { name: 'Проверить подпись повторно' })).toBeEnabled({ timeout: 10_000 });
+        // Вложения остаются привязаны к доверенности после обновления страницы.
+        await page.reload();
+        await expect(poa.getByRole('listitem')).toHaveCount(2);
+        await expect(page.getByRole('region', { name: /Уточните выручку/ }).getByRole('listitem')).toHaveCount(0);
     });
 });
 

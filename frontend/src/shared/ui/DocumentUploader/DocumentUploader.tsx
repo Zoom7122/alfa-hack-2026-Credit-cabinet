@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Attach } from '@alfalab/core-components/attach';
 import { Dropzone } from '@alfalab/core-components/dropzone';
 import { FileUploadItem } from '@alfalab/core-components/file-upload-item';
@@ -8,9 +8,10 @@ import { Typography } from '@alfalab/core-components/typography';
 import { useDeleteDocument, useUploadDocument } from '../../../api/queries';
 import type { Document, DocumentType } from '../../../api/types';
 import { formatDate, formatFileSize } from '../../lib/format';
+import { DocumentVerification } from './DocumentVerification';
 import './DocumentUploader.css';
 
-const ACCEPT = '.pdf,.docx,.xlsx,.jpg,.jpeg,.png';
+const ACCEPT = '.pdf,.docx,.xlsx,.jpg,.jpeg,.png,.sig,.p7s';
 const DEFAULT_HINT = 'PDF, DOCX, XLSX, JPG, PNG · до 20 МБ';
 
 type Upload = { key: string; name: string; size: number; error?: string };
@@ -23,9 +24,8 @@ const isSignatureFile = (file: File) => /\.(sig|p7s)$/i.test(file.name);
  */
 function signedTarget(file: File, batch: Document[], existing: Document[]) {
     const base = file.name.replace(/\.(sig|p7s)$/i, '');
-    return (
-        [...batch, ...existing].find((d) => d.file_name === base) ?? batch[0] ?? (existing.length === 1 ? existing[0] : undefined)
-    );
+    return [...batch, ...existing].find((d) => d.file_name === base) ??
+        (batch.length === 1 ? batch[0] : batch.length === 0 && existing.length === 1 ? existing[0] : undefined);
 }
 
 type Props = {
@@ -46,6 +46,7 @@ type Props = {
     deletable?: boolean;
     /** К каким уже загруженным документам можно прикрепить .sig (если список рисуется не здесь). */
     signTargets?: Document[];
+    onUploadingChange?: (uploading: boolean) => void;
 };
 
 function signatureText(doc: Document) {
@@ -84,10 +85,13 @@ export function DocumentUploader({
     editable = true,
     deletable = editable,
     signTargets = [],
+    onUploadingChange,
 }: Props) {
     const upload = useUploadDocument(applicationId);
     const remove = useDeleteDocument(applicationId);
     const [uploads, setUploads] = useState<Upload[]>([]);
+    const uploading = uploads.some((u) => !u.error);
+    useEffect(() => { onUploadingChange?.(uploading); }, [uploading, onUploadingChange]);
 
     const track = (file: File) => {
         const key = `${file.name}-${file.size}-${file.lastModified}-${Math.random()}`;
@@ -126,7 +130,7 @@ export function DocumentUploader({
         const existing = [...documents, ...signTargets].filter(notSignature);
         for (const file of signatures) {
             const t = track(file);
-            const target = signedTarget(file, batch, existing);
+            const target = regular.length && !batch.length ? undefined : signedTarget(file, batch, existing);
             if (!target) {
                 t.fail(
                     new Error(
@@ -186,6 +190,8 @@ export function DocumentUploader({
                             [signedName && `подпись к ${signedName}`, recognitionText(doc), signatureText(doc)].filter(Boolean).join(' · ') ||
                             undefined;
                         const done = doc.recognition?.state === 'DONE' || doc.signatures?.state === 'DONE';
+                        const bundledSignature = doc.type === 'SIGNATURE' && documents.some((parent) =>
+                            parent.id === doc.signed_document_id && ['FINANCIAL_STATEMENTS', 'TAX_RETURN'].includes(parent.type));
                         return (
                             <li key={doc.id} className='document-uploader__item'>
                                 <FileUploadItem
@@ -204,6 +210,7 @@ export function DocumentUploader({
                                     <FileUploadItem.Content />
                                     <FileUploadItem.Actions />
                                 </FileUploadItem>
+                                {infoRequestId && !bundledSignature && <DocumentVerification applicationId={applicationId} document={doc} editable={editable} />}
                                 {renderExtra?.(doc)}
                             </li>
                         );

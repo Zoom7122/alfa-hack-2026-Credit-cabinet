@@ -9,18 +9,19 @@ import "encoding/json"
 
 // Request — DecisionRequest credit-engine (POST /api/v1/decisions).
 type Request struct {
-	ApplicationID      string          `json:"application_id"`
-	Borrower           Borrower        `json:"borrower"`
-	FactsDate          *string         `json:"facts_date"`
-	CreditRequest      *CreditRequest  `json:"credit_request"`
-	Need               *Need           `json:"need"`
-	Cash               *Cash           `json:"cash"`
-	MonthlyHistory     []MonthCash     `json:"monthly_history"`
-	FinancialDebtRUB   *int64          `json:"financial_debt_rub"`
-	FutureDebtPayments []DebtPayment   `json:"future_debt_payments"`
-	Scoring            *ScoringInput   `json:"scoring"`
-	Evidence           *Evidence       `json:"evidence"`
-	IPEconomicData     *IPEconomicData `json:"ip_economic_data"`
+	ApplicationID       string          `json:"application_id"`
+	Borrower            Borrower        `json:"borrower"`
+	FactsDate           *string         `json:"facts_date"`
+	CreditRequest       *CreditRequest  `json:"credit_request"`
+	Need                *Need           `json:"need"`
+	Cash                *Cash           `json:"cash"`
+	MonthlyHistory      []MonthCash     `json:"monthly_history"`
+	FinancialDebtRUB    *int64          `json:"financial_debt_rub"`
+	FutureDebtPayments  []DebtPayment   `json:"future_debt_payments"`
+	Scoring             *ScoringInput   `json:"scoring"`
+	Evidence            *Evidence       `json:"evidence"`
+	IPEconomicData      *IPEconomicData `json:"ip_economic_data"`
+	FinancialStatements *Statements     `json:"financial_statements,omitempty"`
 }
 
 type Borrower struct {

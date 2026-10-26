@@ -234,6 +234,12 @@ func signatureEligible(r SignatureReport, a Applicant, sha string, pdf bool) boo
 	return false
 }
 
+// EligibleForScoring rechecks the persisted signature boundary when a decision
+// reads parser results. TEST/MOCK and incomplete verification remain excluded.
+func (r Result) EligibleForScoring(a Applicant) bool {
+	return signatureEligible(r.Signature, a, r.DocumentSHA256, a.Type == "LEGAL_ENTITY")
+}
+
 type Processor struct {
 	Files    Files
 	Verifier SignatureVerifier

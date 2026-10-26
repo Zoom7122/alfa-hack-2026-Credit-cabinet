@@ -11,6 +11,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/domain"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/signature"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -62,7 +65,7 @@ func register(r *gin.RouterGroup, repo Repository, files Files, documentReads bo
 		}
 		typ := c.PostForm("type")
 		target := c.PostForm("signed_document_id")
-		if typ != "TAX_RETURN" && typ != "FINANCIAL_STATEMENTS" && typ != "SIGNATURE" {
+		if !domain.DocumentType(typ).Valid() {
 			fail(c, ErrUnsupported)
 			return
 		}
@@ -99,7 +102,18 @@ func register(r *gin.RouterGroup, repo Repository, files Files, documentReads bo
 			}
 			stored = append(stored, key)
 			name := filepath.Base(strings.ReplaceAll(fh.Filename, "\\", "/"))
-			return Document{ID: newID("doc_"), ApplicationID: c.Param("id"), Type: kind, FileName: name, MIME: http.DetectContentType(raw), Size: int64(len(raw)), SHA256: hash(raw), StorageKey: key, SignedDocumentID: parent}, nil
+			mime := http.DetectContentType(raw)
+			if strings.EqualFold(filepath.Ext(name), ".xml") {
+				mime = "application/xml"
+			}
+			if strings.HasSuffix(strings.ToLower(name), ".sig") || strings.HasSuffix(strings.ToLower(name), ".p7s") {
+				mime = "application/pkcs7-signature"
+			}
+			state := "NOT_SIGNED"
+			if mime == "application/pkcs7-signature" || signature.EmbeddedSignature(raw) != "" {
+				state = "PENDING"
+			}
+			return Document{ID: newID("doc_"), ApplicationID: c.Param("id"), Type: kind, FileName: name, MIME: mime, Size: int64(len(raw)), SHA256: hash(raw), StorageKey: key, SignedDocumentID: parent, InfoRequestID: c.PostForm("info_request_id"), Signatures: SignatureSummary{State: state}}, nil
 		}
 		d, err := save(form.File["file"][0], typ, target)
 		if err != nil {
@@ -126,6 +140,13 @@ func register(r *gin.RouterGroup, repo Repository, files Files, documentReads bo
 			return
 		}
 		c.JSON(201, d)
+	})
+	r.DELETE(base+"/:documentId", func(c *gin.Context) {
+		if err := repo.Delete(c.Request.Context(), c.Param("id"), c.Param("documentId")); err != nil {
+			fail(c, err)
+			return
+		}
+		c.Status(204)
 	})
 	r.GET(base, func(c *gin.Context) {
 		items, err := repo.List(c.Request.Context(), c.Param("id"))

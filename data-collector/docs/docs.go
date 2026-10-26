@@ -564,7 +564,7 @@ const docTemplate = `{
                         "bearer": []
                     }
                 ],
-                "description": "JSON {value, comment} или multipart/form-data: часть answer с тем же JSON и части files с документами\n(форматы и подписи — как у анкеты). Ответили на все обязательные вопросы — заявка уходит на повторную\nоценку или к специалисту, если вопросы задал он. Отвечает только автор заявки.",
+                "description": "JSON {value, comment} или multipart/form-data: часть answer с тем же JSON и части files с документами\n(форматы и подписи — как у анкеты). Ответили на все обязательные вопросы — заявка уходит на повторную\nПроверенные до ответа вложения передаются в document_ids; загружать те же байты повторно не нужно.\nоценку или к специалисту, если вопросы задал он. Отвечает только автор заявки.",
                 "consumes": [
                     "application/json",
                     "multipart/form-data"
@@ -2768,6 +2768,9 @@ const docTemplate = `{
                     "type": "string",
                     "example": "doc_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"
                 },
+                "info_request_id": {
+                    "type": "string"
+                },
                 "mime_type": {
                     "type": "string",
                     "example": "application/pdf"
@@ -2893,6 +2896,12 @@ const docTemplate = `{
             "properties": {
                 "comment": {
                     "type": "string"
+                },
+                "document_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "value": {
                     "description": "Значение по input.type вопроса: число (NUMBER, MONEY), код варианта (CHOICE), строка (TEXT). NONE — не нужно.",

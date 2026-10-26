@@ -105,10 +105,16 @@ func (e *Evaluator) evaluateCompiled(ctx context.Context, r contracts.DecisionRe
 		}
 	}
 	if r.Borrower.Type == contracts.BorrowerTypeLegalEntity {
-		if e.source == nil {
-			return Assessment{}, &Error{Status: 502, Code: "STATEMENTS_UNAVAILABLE"}
+		var response contracts.StatementsResponse
+		var sourceErr error
+		if r.FinancialStatements != nil {
+			response = *r.FinancialStatements
+		} else {
+			if e.source == nil {
+				return Assessment{}, &Error{Status: 502, Code: "STATEMENTS_UNAVAILABLE"}
+			}
+			response, sourceErr = e.source.Statements(ctx, r.Borrower.ID, []int{p.Date.Year() - 2, p.Date.Year() - 1})
 		}
-		response, sourceErr := e.source.Statements(ctx, r.Borrower.ID, []int{p.Date.Year() - 2, p.Date.Year() - 1})
 		if errors.Is(sourceErr, ErrStatementsNotFound) {
 		} else if sourceErr != nil {
 			var failure *Error

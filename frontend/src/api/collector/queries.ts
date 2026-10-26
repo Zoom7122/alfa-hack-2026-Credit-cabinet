@@ -234,9 +234,9 @@ export function useCollectorInfoRequests(id: string, enabled: boolean) {
 export function useAnswerInfoRequest(applicationId: string) {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ requestId, value, comment, files }: { requestId: string; value?: unknown; comment?: string; files: File[] }) => {
+        mutationFn: async ({ requestId, value, comment, files = [], documentIds = [] }: { requestId: string; value?: unknown; comment?: string; files?: File[]; documentIds?: string[] }) => {
             const form = new FormData();
-            form.append('answer', JSON.stringify({ value, comment: comment?.trim() || undefined }));
+            form.append('answer', JSON.stringify({ value, comment: comment?.trim() || undefined, document_ids: documentIds }));
             for (const f of files) form.append('files', f, f.name);
             return unwrap(
                 await collector.POST('/applications/{id}/info-requests/{requestId}/answer', {
@@ -248,6 +248,7 @@ export function useAnswerInfoRequest(applicationId: string) {
             );
         },
         onSuccess: (res) => {
+            void queryClient.invalidateQueries({ queryKey: ['applications', 'documents', applicationId] });
             if (res.info_requests) queryClient.setQueryData(collectorKeys.infoRequests(applicationId), res.info_requests);
             // ответили на всё — заявка уходит дальше: перечитываем статус
             void queryClient.invalidateQueries({ queryKey: collectorKeys.application(applicationId) });

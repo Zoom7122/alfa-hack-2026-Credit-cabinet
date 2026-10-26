@@ -28,7 +28,10 @@ async function stubCollector(page: Page, role: 'director' | 'underwriter') {
         if (path.startsWith('/api/v1/') || path.endsWith('/mockServiceWorker.js')) legacyRequests.push(path);
         if (path.startsWith('/collector/api/v1/')) collectorRequests.push(path);
     });
-    page.on('websocket', (socket) => sockets.push(socket.url()));
+    page.on('websocket', (socket) => {
+        // WebSocket Vite нужен dev-серверу; проверяем только соединения приложения.
+        if (new URL(socket.url()).pathname.startsWith('/api/v1/')) sockets.push(socket.url());
+    });
 
     await page.route('**/api/v1/**', (route) => {
         const path = new URL(route.request().url()).pathname;
@@ -59,6 +62,7 @@ test('без моков кабинет использует только data-co
     await loginAs(page, 'director');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Добрый день, Пётр Петрович');
     await expect(page.getByText('Активных заявок нет', { exact: true })).toBeVisible();
+    await expect(page.getByText('Не удалось загрузить заявки', { exact: true })).toHaveCount(0);
     await expect(page.getByRole('region', { name: 'ООО «Живая компания»' })).toContainText('1207700123456');
     await expect(page.getByText('Ждут вашего действия', { exact: true })).toHaveCount(0);
 
@@ -87,8 +91,37 @@ test('без моков рабочее место банка загружает 
     const network = await stubCollector(page, 'underwriter');
     await loginAs(page, 'underwriter' satisfies UserKey);
     await expect(page.getByRole('heading', { name: 'Очередь заявок', exact: true })).toBeVisible();
-    await expect(page.getByRole('group', { name: 'Ручное рассмотрение', exact: true })).toContainText('0');
+    await expect(page.getByRole('group', { name: 'Ждут ручного рассмотрения', exact: true })).toContainText('0');
+    await expect(page.getByText('Здесь пока пусто', { exact: true })).toBeVisible();
     expect(network.collectorRequests).toContain('/collector/api/v1/backoffice/applications');
+    expect(network.legacyRequests).toEqual([]);
+    expect(network.sockets).toEqual([]);
+});
+
+test('без моков заявка data-collector видна в кабинете и открывается', async ({ page }) => {
+    const network = await stubCollector(page, 'director');
+    const application = {
+        id: `app_${'0'.repeat(26)}`,
+        number: 'LIVE-001',
+        status: 'VERIFYING',
+        product_code: 'WORKING_CAPITAL',
+        applicant: { id: 'apl_live_company', name: 'ООО «Живая компания»', inn: '7701234567' },
+        requested: { amount: 5_000_000, term_months: 24 },
+        created_at: '2026-01-01T10:00:00Z',
+        updated_at: '2026-01-01T10:00:00Z',
+    };
+    await page.route('**/collector/api/v1/applications', (route) => route.fulfill({ json: { items: [application] } }));
+    await page.route(`**/collector/api/v1/applications/${application.id}`, (route) => route.fulfill({ json: application }));
+    await page.route(`**/collector/api/v1/applications/${application.id}/timeline`, (route) => route.fulfill({ json: { items: [] } }));
+
+    await loginAs(page, 'director');
+    const applications = page.getByRole('region', { name: 'Мои заявки' });
+    await expect(applications.getByRole('listitem')).toHaveCount(1);
+    await expect(applications).toContainText(application.number);
+    await expect(page.getByText('Активных заявок нет', { exact: true })).toHaveCount(0);
+    await applications.getByRole('link').click();
+    await expect(page.getByRole('heading', { name: 'Данные о компании собраны', exact: true })).toBeVisible();
+    expect(network.collectorRequests).toContain(`/collector/api/v1/applications/${application.id}`);
     expect(network.legacyRequests).toEqual([]);
     expect(network.sockets).toEqual([]);
 });

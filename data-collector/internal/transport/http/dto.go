@@ -267,6 +267,7 @@ type documentResponse struct {
 	SHA256    string `json:"sha256"`
 	// У открепленной подписи (type=SIGNATURE) — какой документ она подписывает.
 	SignedDocumentID string `json:"signed_document_id,omitempty"`
+	InfoRequestID    string `json:"info_request_id,omitempty"`
 	SignatureState   string `json:"signature_state" enums:"NOT_SIGNED,PENDING,DONE,FAILED"`
 	// Итог проверки подписи (после DONE или FAILED); нет — подпись не проверяли.
 	SignatureVerdict string    `json:"signature_verdict,omitempty" enums:"VALID,VALID_WITH_WARNINGS,INVALID,INDETERMINATE"`
@@ -350,7 +351,7 @@ func toDocumentResponses(docs []domain.Document) []documentResponse {
 	out := make([]documentResponse, 0, len(docs))
 	for _, d := range docs {
 		out = append(out, documentResponse{ID: d.ID, Type: string(d.Type), FileName: d.FileName, MimeType: d.MimeType,
-			SizeBytes: d.SizeBytes, SHA256: d.SHA256, SignedDocumentID: d.SignedDocumentID,
+			SizeBytes: d.SizeBytes, SHA256: d.SHA256, SignedDocumentID: d.SignedDocumentID, InfoRequestID: d.InfoRequestID,
 			SignatureState: string(d.SignatureState), SignatureVerdict: d.SignatureVerdict, RecognitionState: string(d.RecognitionState), UploadedAt: d.UploadedAt})
 	}
 	return out

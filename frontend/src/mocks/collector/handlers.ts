@@ -836,7 +836,7 @@ export const collectorHandlers = [
         if (statusOf(app) !== 'WAITING_FOR_INFO') return problem(409, 'INVALID_TRANSITION', 'Conflict', 'банк сейчас не ждёт ответов по этой заявке');
         if (question.state !== 'OPEN') return problem(409, 'CONFLICT', 'Conflict', 'на этот вопрос уже ответили');
 
-        let answer: { value?: unknown; comment?: string } = {};
+        let answer: { value?: unknown; comment?: string; document_ids?: string[] } = {};
         let files: File[] = [];
         const type = request.headers.get('Content-Type') ?? '';
         try {
@@ -855,7 +855,9 @@ export const collectorHandlers = [
         if ((input.type === 'MONEY' || input.type === 'NUMBER') && (typeof answer.value !== 'number' || answer.value < 0)) {
             return validation(422, 'ответ не прошёл проверку', [{ field: 'value', code: 'invalid_value', message: 'нужно неотрицательное число' }]);
         }
-        if ((question.documents as { required?: boolean } | undefined)?.required && !files.length) {
+        const existing = app.documents.filter((d) => answer.document_ids?.includes(d.id ?? '') && d.info_request_id === question.id);
+        if (existing.length !== (answer.document_ids?.length ?? 0)) return validation(422, 'документ не относится к вопросу', []);
+        if ((question.documents as { required?: boolean } | undefined)?.required && !files.length && !existing.some((d) => d.type !== 'SIGNATURE')) {
             return validation(422, 'ответ не прошёл проверку', [{ field: 'files', code: 'required', message: 'приложите документ' }]);
         }
         const now = Date.now();
@@ -872,7 +874,7 @@ export const collectorHandlers = [
         const updated = mutateCollector((d) => {
             const stored = d.apps.find((a) => a.id === app.id) ?? app;
             stored.documents = [...stored.documents, ...docs];
-            stored.answers = { ...stored.answers, [question.id ?? '']: { value: answer.value, comment: answer.comment, document_ids: docs.map((x) => x.id), at: iso(now) } };
+            stored.answers = { ...stored.answers, [question.id ?? '']: { value: answer.value, comment: answer.comment, document_ids: [...docs.map((x) => x.id), ...existing.map((x) => x.id ?? '')], at: iso(now) } };
             stored.updated_at = iso(now);
             // ответили на все вопросы андеррайтера — заявка снова у него, с новым сроком
             const latest = stored.review?.decisions.at(-1);

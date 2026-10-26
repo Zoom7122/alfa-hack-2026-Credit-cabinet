@@ -143,7 +143,7 @@ func run(log *slog.Logger) error {
 		httptransport.WithEngineHooks(httptransport.NewEngineHandler(
 			service.NewDecisionService(postgres.NewDecisionRepository(pool), nil, service.DecisionConfig{}), log)),
 		func(_ *gin.Engine, api *gin.RouterGroup) {
-			financial.RegisterForCabinet(api, financial.Repository{Pool: pool, Topic: topic},
+			financial.RegisterForCabinet(api.Group("", httptransport.DocumentAccess(applicationSvc)), financial.Repository{Pool: pool, Topic: topic, DocumentsTopic: documentsTopic},
 				financial.Files{Root: env.String("DOCUMENT_STORAGE_PATH", "/data/documents")})
 		},
 	)

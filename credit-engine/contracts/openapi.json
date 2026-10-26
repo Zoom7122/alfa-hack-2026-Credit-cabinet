@@ -1210,6 +1210,17 @@
                 "type": "null"
               }
             ]
+          },
+          "financial_statements": {
+            "description": "Optional application-scoped financial statements from verified documents. For LEGAL_ENTITY only; borrower_id must match borrower.id. Takes precedence over the statements supplier; the same completeness, period, unit and reconciliation checks apply.",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatementsResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [

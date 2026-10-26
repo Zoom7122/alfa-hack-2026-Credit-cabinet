@@ -151,3 +151,40 @@ func TestOutcomeDecision(t *testing.T) {
 		t.Errorf("underwriter approval: %+v", d)
 	}
 }
+
+func TestOutcomeAnswerPreviouslyUploadedDocuments(t *testing.T) {
+	svc, repo, _ := newOutcome(t)
+	repo.app.Documents = []domain.Document{
+		{ID: "poa", Type: domain.DocPowerOfAttorney, InfoRequestID: "ir_doc"},
+		{ID: "sig", Type: domain.DocSignature, SignedDocumentID: "poa", InfoRequestID: "ir_doc"},
+		{ID: "other-question", Type: domain.DocPowerOfAttorney, InfoRequestID: "ir_other"},
+		{ID: "wrong-type", Type: domain.DocFinancialStatements, InfoRequestID: "ir_doc"},
+	}
+	for _, tc := range []struct {
+		name  string
+		ids   []string
+		valid bool
+	}{
+		{"original and signature", []string{"poa", "sig"}, true},
+		{"signature alone", []string{"sig"}, false},
+		{"other question", []string{"other-question"}, false},
+		{"unknown document", []string{"missing"}, false},
+		{"wrong type", []string{"wrong-type"}, false},
+		{"duplicate ids", []string{"poa", "poa"}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			repo.answered = nil
+			_, err := svc.Answer(context.Background(), "usr_rep", "app_1", "ir_doc", service.AnswerInput{DocumentIDs: tc.ids})
+			if tc.valid {
+				if err != nil || repo.answered == nil || len(repo.answered.Documents) != 0 || len(repo.answered.DocumentIDs) != 2 {
+					t.Fatalf("answer: %+v %v", repo.answered, err)
+				}
+			} else {
+				var validation *service.ValidationError
+				if !errors.As(err, &validation) || repo.answered != nil {
+					t.Fatalf("invalid attachments accepted: %v", err)
+				}
+			}
+		})
+	}
+}

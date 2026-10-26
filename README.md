@@ -17,6 +17,10 @@ make help    # остальные команды
 | data-collector-publisher | — | переносит события о задачах и документах из таблицы `outbox` в Kafka |
 | data-collector-worker | — | читает задачи из Kafka, опрашивает все моки и пишет сырые ответы в `raw_collections` |
 | data-collector-signature-worker | — | читает события о документах из Kafka, проверяет электронные подписи (CMS/CAdES и подпись внутри PDF, профиль TEST — тестовые корни, не УКЭП) и пишет отчёты в `signature_reports`; [data-collector/README.md](data-collector/README.md#проверка-подписи-data-collector-signature-worker) |
+| credit-engine-scoring | http://localhost:8082 | скоринг и подбор условий, `POST /api/v1/decisions` |
+| credit-engine-bank | — | состояние банка; события передаёт в data-collector |
+| credit-engine-admin-migrate | — | накатывает миграции схемы `credit_engine_admin` в общей БД и завершается |
+| credit-engine-admin | http://localhost:8084 | конструктор скоринга: модели, правила, пробные расчёты и подготовка релизов; доступ с localhost |
 | kafka | `localhost:${KAFKA_PORT}` (9094) | брокер сообщений (KRaft, один узел); внутри compose — `kafka:9092` |
 | kafka-ui | http://localhost:8086 | топики, сообщения и лаг consumer group в браузере |
 | mock-api | http://localhost:8090 | эмулятор внешних систем: АБС банка, ФНС, БКИ, Compliance, ФССП, КАД, Федресурс, МЧД, налоговая отчётность, залоги, ЕГРН, Госуслуги, мультибанкинг, маркетплейсы, ОФД, закупки, сигналы, ЦБ, hh.ru; [mock-api/](mock-api/) |
@@ -25,8 +29,23 @@ make help    # остальные команды
 
 Порты и доступы к БД — в `.env`.
 
+### Конструктор скоринга
+
+`make up` поднимает конструктор вместе со стеком и сначала применяет его миграции. Для уже работающего стека достаточно:
+
+```bash
+docker compose up -d --build credit-engine-admin
+```
+
+Откройте http://localhost:8084. В `.env.example` настроен локальный вход **admin / credit-admin**. Если `.env` уже был создан, перенесите в него блок настроек конструктора из `.env.example`. Данные конструктора хранятся в схеме `credit_engine_admin` существующего PostgreSQL и сохраняются в volume `pgdata`.
+
+Порт задаёт `ADMIN_PORT`; пустой `ADMIN_PUBLIC_ORIGIN` автоматически использует `http://localhost` с этим портом. Для другого адреса задайте точный `ADMIN_PUBLIC_ORIGIN`, для HTTPS — также `ADMIN_COOKIE_SECURE=true`. Собственный bcrypt-хеш можно получить утилитой `/admin-password` из образа credit-engine; [инструкция по настройке доступа](credit-engine/docs/33_container_delivery.md).
+
+Конструктор получает метаданные работающего движка через `ADMIN_SCORING_URL`. Подготовленный в нём релиз модели переносится в исходники credit-engine с последующей сборкой образа — [порядок выпуска](credit-engine/docs/36_release_and_integration.md).
+
 ## Документация
 
+- [docs/backend-test-data.md](docs/backend-test-data.md) — все тестовые входные данные backend: компании A–E, готовые JSON, согласия, токены, МЧД, залоги и файлы
 - [api/openapi.yaml](api/openapi.yaml) — REST-контракт для фронтенда и back-office (OpenAPI 3.1)
 - [docs/fsm.md](docs/fsm.md) — FSM заявки: диаграмма, таблица переходов, клиентские этапы
 - [docs/db-schema.md](docs/db-schema.md) — схема БД: справочник всех таблиц и колонок; ERD — [docs/db-schema.dbml](docs/db-schema.dbml) для dbdiagram.io

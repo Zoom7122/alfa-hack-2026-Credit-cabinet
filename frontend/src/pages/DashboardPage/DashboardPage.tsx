@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom';
 import { useCollectionsOf, useCollectorApplicants, useCollectorApplications } from '../../api/collector/queries';
 import { useApplicants, useApplications, useApplicationStatuses, useProducts } from '../../api/queries';
 import type { ApplicationStatusView, ApplicationSummary, CompanyAccess, Me } from '../../api/types';
+import { API_MOCK_ENABLED } from '../../config';
 import { COLLECTION_FAILED, COLLECTOR_STATUS, collectorSummary } from '../../shared/lib/collector';
 import { ACTIVE_STAGES, STAGES_WITH_TASKS } from '../../shared/lib/dictionaries';
 import { formatDay, pluralize, splitName } from '../../shared/lib/format';
@@ -162,7 +163,7 @@ export function DashboardPage({ me, company }: Props) {
                         </Plate>
                     )}
 
-                    {applications.isSuccess && !collector.isPending && shown.length + shownCollector.length === 0 && (
+                    {(!API_MOCK_ENABLED || applications.isSuccess) && !collector.isPending && shown.length + shownCollector.length === 0 && (
                         <div className='dashboard__empty'>
                             <Typography.Text view='primary-medium' color='secondary'>
                                 {filter === 'active' ? 'Активных заявок нет' : 'Завершённых заявок пока нет'}
@@ -201,7 +202,13 @@ export function DashboardPage({ me, company }: Props) {
                 </section>
 
                 <aside className='dashboard__aside'>
-                    {company && <CompanyCard company={company} applicant={applicant} loading={collectorApplicants.isLoading && applicants.isLoading} />}
+                    {company && (
+                        <CompanyCard
+                            company={company}
+                            applicant={applicant}
+                            loading={collectorApplicants.isLoading && (!API_MOCK_ENABLED || applicants.isLoading)}
+                        />
+                    )}
 
                     <section className='dashboard__card dashboard__card_size_s'>
                         <Typography.Title tag='h2' view='xsmall' font='system'>

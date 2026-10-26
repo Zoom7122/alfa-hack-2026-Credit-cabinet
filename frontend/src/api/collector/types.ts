@@ -4,7 +4,7 @@ type Schemas = components['schemas'];
 
 export type CollectorApplication = Schemas['Application'];
 export type CollectorApplicant = Schemas['Applicant'];
-export type CollectorDocument = Schemas['Document'];
+export type CollectorDocument = Schemas['Document'] & { info_request_id?: string; generation?: number };
 export type CollectionTask = Schemas['CollectionTask'];
 export type CollectionSource = Schemas['CollectionSource'];
 export type CollectorSystem = NonNullable<CollectionSource['source']>;

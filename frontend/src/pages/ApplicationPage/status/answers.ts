@@ -15,7 +15,7 @@ export function toApiValue(request: InfoRequest, value: AnswerDraft['value']) {
 
 /** Готов ли ответ к отправке: значение по типу поля и документы, если они обязательны. */
 export function isAnswerReady(request: InfoRequest, answer: AnswerDraft, documents: Document[]) {
-    if (request.documents?.required && !documents.length) return false;
+    if (request.documents?.required && !documents.some((doc) => doc.type !== 'SIGNATURE')) return false;
     const { value } = answer;
     switch (request.input.type) {
         case 'MONEY':

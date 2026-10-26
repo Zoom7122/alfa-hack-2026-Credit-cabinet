@@ -63,6 +63,7 @@ type Document struct {
 	StorageKey       string // путь в хранилище: {application_id}/{id}.{ext}
 	UploadedBy       string // usr_…
 	SignedDocumentID string // у открепленной подписи — какой документ она подписывает
+	InfoRequestID    string // вопрос банка, к которому загружен документ
 	SignatureState   SignatureState
 	SignatureVerdict string // итог проверки подписи (VALID, VALID_WITH_WARNINGS, INVALID, INDETERMINATE); пусто — не проверяли
 	RecognitionState RecognitionState

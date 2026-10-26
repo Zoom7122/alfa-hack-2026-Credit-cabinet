@@ -137,6 +137,10 @@ func (r *DecisionRepository) Input(ctx context.Context, appID string, now time.T
 	in := decision.Input{Application: app, Age: q.Age, MaritalStatus: domain.MaritalStatus(q.MaritalStatus),
 		Children: q.ChildrenCount, Scoring: formDecoded.Scoring.toDomain(), Collect: fromRequestRecord(q.Collect, nil),
 		Systems: map[domain.System]json.RawMessage{}, FactsDate: finished.UTC(), Now: now, ForgedDocument: forged}
+	in.DocumentIndicators, err = r.documentFinancials(ctx, app)
+	if err != nil {
+		return decision.Input{}, err
+	}
 	if rawID == "" {
 		return in, nil // сбора нет — движок попросит данные
 	}
