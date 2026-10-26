@@ -12,7 +12,7 @@ type Props = {
     /** Предложение «как запросили» — с ним сравниваем альтернативы для бейджа. */
     base?: Offer;
     guarantorNames: string[];
-    /** Нет — карточка только для просмотра (заявки data-collector: выбора и подписания пока нет). */
+    /** Нет — карточка только для просмотра. */
     onChoose?: () => void;
     loading?: boolean;
     disabled?: boolean;

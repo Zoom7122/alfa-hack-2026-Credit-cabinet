@@ -136,6 +136,8 @@ definitions:
         - WAITING_FOR_INFO
         - OFFERED
         - REJECTED
+        - SIGNING
+        - COMPLETED
         example: DRAFT
         type: string
       submitted_at:
@@ -764,6 +766,18 @@ definitions:
     required:
     - inn
     type: object
+  ConfirmSigningRequest:
+    properties:
+      code:
+        example: "123456"
+        type: string
+      method:
+        enum:
+        - SIMPLE_CODE
+        type: string
+    required:
+    - code
+    type: object
   CounterpartyLookupRequest:
     properties:
       inn:
@@ -992,8 +1006,7 @@ definitions:
         example: usr_director_north
         type: string
       pending_signatures:
-        description: Заявки, ждущие подписи пользователя как директора. Подписания
-          в data-collector пока нет — всегда пусто.
+        description: Заявки, ждущие демо-подписи директора или самого ИП.
         items:
           type: string
         type: array
@@ -1320,6 +1333,60 @@ definitions:
     required:
     - data
     - version
+    type: object
+  SigningSession:
+    properties:
+      attempts_left:
+        type: integer
+      awaiting_me:
+        type: boolean
+      code_expires_at:
+        type: string
+      demo_code:
+        type: string
+      disbursement:
+        $ref: '#/definitions/domain.MockDisbursement'
+      document_sha256:
+        type: string
+      documents:
+        items:
+          $ref: '#/definitions/Document'
+        type: array
+      id:
+        type: string
+      method:
+        enum:
+        - SIMPLE_CODE
+        type: string
+      offer_id:
+        type: string
+      profile:
+        enum:
+        - MOCK
+        type: string
+      required_signer:
+        $ref: '#/definitions/httptransport.signingSignerResponse'
+      signed_at:
+        type: string
+      state:
+        enum:
+        - AWAITING_SIGNER
+        - SIGNED
+        - FAILED
+        - CANCELLED
+        type: string
+    required:
+    - attempts_left
+    - awaiting_me
+    - code_expires_at
+    - document_sha256
+    - documents
+    - id
+    - method
+    - offer_id
+    - profile
+    - required_signer
+    - state
     type: object
   SourceResult:
     properties:
@@ -1680,6 +1747,15 @@ definitions:
       merchantId:
         type: string
     type: object
+  domain.MockDisbursement:
+    properties:
+      account_masked:
+        type: string
+      amount:
+        type: integer
+      executed_at:
+        type: string
+    type: object
   domain.Money:
     properties:
       amount:
@@ -1798,6 +1874,16 @@ definitions:
         type: integer
       recipient:
         type: string
+    type: object
+  httptransport.signingSignerResponse:
+    properties:
+      full_name:
+        type: string
+      id:
+        type: string
+    required:
+    - full_name
+    - id
     type: object
 info:
   contact: {}
@@ -2344,6 +2430,57 @@ paths:
       summary: Предложения банка по заявке
       tags:
       - applications
+  /applications/{id}/offers/{offerId}/accept:
+    post:
+      description: OFFERED → SIGNING. Повтор выбора того же предложения возвращает
+        прежнюю сессию. Код виден только подписанту, действует 10 минут; 3 попытки.
+      parameters:
+      - description: id заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: id предложения
+        in: path
+        name: offerId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SigningSession'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/Problem'
+        "410":
+          description: Gone
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
+      summary: Выбрать предложение и получить договор с демо-кодом
+      tags:
+      - signing
   /applications/{id}/questionnaire:
     post:
       consumes:
@@ -2672,6 +2809,107 @@ paths:
         из моков'
       tags:
       - questionnaires
+  /applications/{id}/signing:
+    get:
+      description: Сессия сохраняется в БД; после перезагрузки возвращается тот же
+        код. У других представителей компании код скрыт.
+      parameters:
+      - description: id заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SigningSession'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
+      summary: Состояние демо-подписания договора
+      tags:
+      - signing
+  /applications/{id}/signing/confirm:
+    post:
+      consumes:
+      - application/json
+      description: Только директор компании или сам ИП. SIGNING → COMPLETED, код стирается.
+        Повтор успешного подтверждения безопасен. Неверный код расходует попытку;
+        3 ошибки или истечение кода возвращают заявку в OFFERED.
+      parameters:
+      - description: id заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Код из интерфейса
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ConfirmSigningRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SigningSession'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/Problem'
+        "410":
+          description: Gone
+          schema:
+            $ref: '#/definitions/Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
+      summary: Подтвердить договор кодом и завершить учебную выдачу
+      tags:
+      - signing
   /applications/{id}/timeline:
     get:
       description: |-

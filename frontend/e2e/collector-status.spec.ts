@@ -199,7 +199,7 @@ test.describe('итог оценки', () => {
     // итог зависит от полной анкеты и ответов для оценки — в моке он задан по сценарию mock-api
     test.skip(COLLECTOR_LIVE, MOCK_ONLY);
 
-    test('одобрено: предложение банка без выбора и подписания', async ({ page }) => {
+    test('одобрено: предложение банка доступно для выбора и подписания', async ({ page }) => {
         await setPipelineStep(page, 300);
         const id = await createApplication(page);
         await page.goto(`/applications/${id}`);
@@ -207,8 +207,8 @@ test.describe('итог оценки', () => {
         const offer = page.getByRole('region', { name: 'Предложение банка' }).getByRole('article');
         await expect(offer).toContainText('2 030 000 ₽');
         await expect(offer).toContainText('20,75');
-        await expect(offer.getByRole('button', { name: 'Выбрать' })).toHaveCount(0);
-        await expect(page.getByText('Подписание договора онлайн появится позже', { exact: false })).toBeVisible();
+        await expect(offer.getByRole('button', { name: 'Выбрать' })).toBeEnabled();
+        await expect(page.getByText('Выберите предложение — сформируем договор для демонстрационного подписания кодом.', { exact: true })).toBeVisible();
     });
 
     test('отказ: причины и когда подать снова', async ({ page }) => {

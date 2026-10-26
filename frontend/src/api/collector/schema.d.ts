@@ -913,6 +913,104 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/applications/{id}/offers/{offerId}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Выбрать предложение и получить договор с демо-кодом
+         * @description OFFERED → SIGNING. Повтор выбора того же предложения возвращает прежнюю сессию. Код виден только подписанту, действует 10 минут; 3 попытки.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description id заявки */
+                    id: string;
+                    /** @description id предложения */
+                    offerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SigningSession"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Gone */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/applications/{id}/questionnaire": {
         parameters: {
             query?: never;
@@ -1260,6 +1358,203 @@ export interface paths {
                     };
                 };
                 /** @description нарушено правило анкеты или файлов: формат, размер, пары подписей, больше 10 файлов */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/signing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Состояние демо-подписания договора
+         * @description Сессия сохраняется в БД; после перезагрузки возвращается тот же код. У других представителей компании код скрыт.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description id заявки */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SigningSession"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/signing/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Подтвердить договор кодом и завершить учебную выдачу
+         * @description Только директор компании или сам ИП. SIGNING → COMPLETED, код стирается. Повтор успешного подтверждения безопасен. Неверный код расходует попытку; 3 ошибки или истечение кода возвращают заявку в OFFERED.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description id заявки */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            /** @description Код из интерфейса */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ConfirmSigningRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SigningSession"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Gone */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Unprocessable Entity */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -2452,7 +2747,7 @@ export interface components {
              * @example DRAFT
              * @enum {string}
              */
-            status?: "DRAFT" | "SUBMITTED" | "ENRICHING" | "VERIFYING" | "SCORING" | "MANUAL_REVIEW" | "WAITING_FOR_INFO" | "OFFERED" | "REJECTED";
+            status?: "DRAFT" | "SUBMITTED" | "ENRICHING" | "VERIFYING" | "SCORING" | "MANUAL_REVIEW" | "WAITING_FOR_INFO" | "OFFERED" | "REJECTED" | "SIGNING" | "COMPLETED";
             submitted_at?: string;
             updated_at?: string;
         };
@@ -2756,6 +3051,12 @@ export interface components {
              */
             name?: string;
         };
+        ConfirmSigningRequest: {
+            /** @example 123456 */
+            code: string;
+            /** @enum {string} */
+            method?: "SIMPLE_CODE";
+        };
         CounterpartyLookupRequest: {
             /** @example 7799000012 */
             inn: string;
@@ -2869,7 +3170,7 @@ export interface components {
             full_name: string;
             /** @example usr_director_north */
             id: string;
-            /** @description Заявки, ждущие подписи пользователя как директора. Подписания в data-collector пока нет — всегда пусто. */
+            /** @description Заявки, ждущие демо-подписи директора или самого ИП. */
             pending_signatures: string[];
             roles: ("CLIENT" | "UNDERWRITER")[];
         };
@@ -3024,6 +3325,25 @@ export interface components {
         SaveApplicationDraft: {
             data: Record<string, never>;
             version: number;
+        };
+        SigningSession: {
+            attempts_left: number;
+            awaiting_me: boolean;
+            code_expires_at: string;
+            demo_code?: string;
+            disbursement?: components["schemas"]["domain.MockDisbursement"];
+            document_sha256: string;
+            documents: components["schemas"]["Document"][];
+            id: string;
+            /** @enum {string} */
+            method: "SIMPLE_CODE";
+            offer_id: string;
+            /** @enum {string} */
+            profile: "MOCK";
+            required_signer: components["schemas"]["httptransport.signingSignerResponse"];
+            signed_at?: string;
+            /** @enum {string} */
+            state: "AWAITING_SIGNER" | "SIGNED" | "FAILED" | "CANCELLED";
         };
         SourceResult: {
             duration_ms?: number;
@@ -3198,6 +3518,11 @@ export interface components {
             mcc?: string;
             merchantId?: string;
         };
+        "domain.MockDisbursement": {
+            account_masked?: string;
+            amount?: number;
+            executed_at?: string;
+        };
         "domain.Money": {
             amount?: string;
             currency?: string;
@@ -3263,6 +3588,10 @@ export interface components {
             /** @description очерёдность списания (ст. 855 ГК) */
             queue?: number;
             recipient?: string;
+        };
+        "httptransport.signingSignerResponse": {
+            full_name: string;
+            id: string;
         };
     };
     responses: never;

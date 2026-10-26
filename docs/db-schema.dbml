@@ -286,6 +286,10 @@ Table signings {
   code text [note: 'только mock']
   attempts_left smallint [not null]
   signed_at timestamptz
+  document_id text [ref: > documents.id]
+  document_sha256 text
+  code_expires_at timestamptz
+  disbursement jsonb [note: 'учебная выдача; реальные выплаты не выполняются']
   created_at timestamptz [not null]
 }
 

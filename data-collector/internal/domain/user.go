@@ -15,11 +15,12 @@ const (
 
 // User — пользователь с компаниями, от имени которых он действует.
 type User struct {
-	ID        string // usr_…
-	FullName  string
-	Role      UserRole
-	Persona   string // что демонстрирует тестовый пользователь; пусто — обычный пользователь
-	Companies []CompanyAccess
+	ID                string // usr_…
+	FullName          string
+	Role              UserRole
+	Persona           string // что демонстрирует тестовый пользователь; пусто — обычный пользователь
+	Companies         []CompanyAccess
+	PendingSignatures []string
 }
 
 // CompanyAccess — компания пользователя и его роль в ней (CompanyAccess в api/openapi.yaml).

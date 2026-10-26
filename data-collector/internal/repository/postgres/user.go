@@ -135,6 +135,18 @@ func (r *UserRepository) User(ctx context.Context, id string) (domain.User, bool
 	if err := r.withCompanies(ctx, users); err != nil {
 		return domain.User{}, false, err
 	}
+	pending, err := r.pool.Query(ctx, `SELECT s.application_id FROM signings s
+        JOIN applications a ON a.id = s.application_id
+        JOIN company_members m ON m.company_id = a.company_id AND m.user_id = s.signer_id
+        WHERE s.signer_id = $1 AND s.status = 'AWAITING_SIGNER' AND a.status = 'SIGNING' AND m.can_sign
+        ORDER BY s.created_at, s.id`, id)
+	if err != nil {
+		return domain.User{}, false, err
+	}
+	users[0].PendingSignatures, err = pgx.CollectRows(pending, pgx.RowTo[string])
+	if err != nil {
+		return domain.User{}, false, err
+	}
 	return users[0], true, nil
 }
 

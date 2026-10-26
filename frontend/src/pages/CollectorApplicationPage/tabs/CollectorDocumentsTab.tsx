@@ -8,6 +8,7 @@ import { Typography } from '@alfalab/core-components/typography';
 import { DownloadMIcon } from '@alfalab/icons-glyph/DownloadMIcon';
 
 import { downloadCollectorDocument } from '../../../api/collector/queries';
+import { useCollectorSigning } from '../../../api/collector/signing';
 import type { CollectorDocument } from '../../../api/collector/types';
 import type { DocumentType } from '../../../api/types';
 import { DOCUMENT_LABELS } from '../../../shared/lib/dictionaries';
@@ -68,6 +69,7 @@ function hasReport(doc: CollectorDocument, documents: CollectorDocument[]) {
 
 /** Вкладка «Документы» (экран 15) для заявки data-collector: файлы анкеты, распознавание, подпись и отчёт о ней. */
 export function CollectorDocumentsTab({ applicationId, documents }: { applicationId: string; documents: CollectorDocument[] }) {
+    const signing = useCollectorSigning(applicationId, documents.some((d) => d.type === 'LOAN_AGREEMENT_DRAFT'));
     const [selectedId, setSelectedId] = useState<string>();
     const [downloading, setDownloading] = useState<string>();
     const [downloadError, setDownloadError] = useState<string>();
@@ -135,7 +137,7 @@ export function CollectorDocumentsTab({ applicationId, documents }: { applicatio
                                     </Table.TCell>
                                     <Table.TCell>
                                         <span className='collector-documents__signature'>
-                                            <StateBadge badge={signatureBadge(doc)} />
+                                            <StateBadge badge={signing.data?.state === 'SIGNED' && signing.data.documents.some((d) => d.id === doc.id) ? { label: 'Подписан демо-кодом', color: 'green' } : signatureBadge(doc)} />
                                             {hasReport(doc, documents) && (
                                                 <Button
                                                     view='text'

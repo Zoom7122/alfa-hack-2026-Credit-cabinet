@@ -5,11 +5,13 @@ import { Typography } from '@alfalab/core-components/typography';
 import { Link } from 'react-router-dom';
 
 import { useCollectorDecision, useCollectorInfoRequests, useCollectorOffers } from '../../../api/collector/queries';
+import { useAcceptCollectorOffer } from '../../../api/collector/signing';
 import type { CollectorApplication, CollectorOffer } from '../../../api/collector/types';
 import type { Offer } from '../../../api/types';
 import { formatIsoDate, formatMoney, formatMonths } from '../../../shared/lib/format';
 import { OfferCard } from '../../ApplicationPage/status/OfferCard';
 import { CollectorQuestion } from './CollectorQuestion';
+import { CollectorSigning } from './CollectorSigning';
 import './CollectorOutcome.css';
 
 /** Чем условия отличаются от запрошенных; пусто — дали как просили. */
@@ -49,6 +51,9 @@ export function CollectorOutcome({ app }: { app: CollectorApplication }) {
     const offers = useCollectorOffers(id, status === 'OFFERED');
     const decision = useCollectorDecision(id, status === 'REJECTED');
     const questions = useCollectorInfoRequests(id, status === 'WAITING_FOR_INFO');
+    const accept = useAcceptCollectorOffer(id);
+
+    if (status === 'SIGNING' || status === 'COMPLETED') return <CollectorSigning applicationId={id} />;
 
     if (status === 'OFFERED') {
         const active = (offers.data ?? []).filter((o) => o.state === 'ACTIVE');
@@ -61,12 +66,15 @@ export function CollectorOutcome({ app }: { app: CollectorApplication }) {
                 {offers.isError && <Plate view='negative' title='Не удалось загрузить предложения' />}
                 <div className='collector-outcome__offers'>
                     {active.map((o) => (
-                        <OfferCard key={o.id} offer={asOffer(o, app)} guarantorNames={[]} />
+                        <OfferCard key={o.id} offer={asOffer(o, app)} guarantorNames={[]}
+                            onChoose={() => accept.mutate(o.id ?? '')}
+                            loading={accept.isPending && accept.variables === o.id} disabled={accept.isPending} />
                     ))}
                 </div>
-                <Plate view='common' title='Что дальше'>
-                    Подписание договора онлайн появится позже — специалист банка свяжется с вами, чтобы оформить кредит.
-                </Plate>
+                {accept.error && <Plate view='negative' title='Не удалось выбрать предложение'>{accept.error.message}</Plate>}
+                <Typography.Text view='primary-small' color='secondary'>
+                    Выберите предложение — сформируем договор для демонстрационного подписания кодом.
+                </Typography.Text>
             </section>
         );
     }
