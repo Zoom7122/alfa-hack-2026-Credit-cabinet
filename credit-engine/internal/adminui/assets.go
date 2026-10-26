@@ -4,23 +4,29 @@ package adminui
 import (
 	"embed"
 	"path"
+	"strings"
 )
 
-//go:embed web/*
+//go:embed dist
 var files embed.FS
 
 func Asset(name string) ([]byte, string, bool) {
 	contentType := ""
-	switch name {
-	case "index.html":
+	if path.Clean(name) != name || strings.HasPrefix(name, "/") {
+		return nil, "", false
+	}
+	switch {
+	case name == "index.html":
 		contentType = "text/html; charset=utf-8"
-	case "app.js", "api.js", "dom.js", "numbers.js", "forms.js", "model-edit.js", "editor.js", "rules-editor.js", "workbench.js", "audit.js":
+	case strings.HasPrefix(name, "assets/") && path.Ext(name) == ".js":
 		contentType = "text/javascript; charset=utf-8"
-	case "styles.css":
+	case strings.HasPrefix(name, "assets/") && path.Ext(name) == ".css":
 		contentType = "text/css; charset=utf-8"
+	case strings.HasPrefix(name, "assets/") && path.Ext(name) == ".woff2":
+		contentType = "font/woff2"
 	default:
 		return nil, "", false
 	}
-	data, err := files.ReadFile(path.Join("web", name))
+	data, err := files.ReadFile(path.Join("dist", name))
 	return data, contentType, err == nil
 }

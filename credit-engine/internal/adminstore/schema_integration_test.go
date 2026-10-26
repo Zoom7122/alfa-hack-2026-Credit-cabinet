@@ -107,7 +107,7 @@ func TestAdminSchemaIntegration(t *testing.T) {
 	migrationOK(t, err)
 	status, err := migrator.Status(ctx)
 	migrationOK(t, err)
-	if len(status) != 1 || status[0].Source.Version != 1 || string(status[0].State) != "pending" {
+	if len(status) != 2 || status[0].Source.Version != 1 || status[1].Source.Version != 2 || string(status[0].State) != "pending" || string(status[1].State) != "pending" {
 		t.Fatal(status)
 	}
 	if n := countRows(t, db, "SELECT count(*) FROM pg_namespace WHERE nspname='credit_engine_admin'"); n != 0 {
@@ -137,7 +137,7 @@ func TestAdminSchemaIntegration(t *testing.T) {
 		for _, err := range failures {
 			migrationOK(t, err)
 		}
-		if counts[0]+counts[1] != 1 {
+		if counts[0]+counts[1] != 2 {
 			t.Fatal("migration applied twice", counts)
 		}
 		results, err := migrator.Up(ctx)
@@ -146,8 +146,8 @@ func TestAdminSchemaIntegration(t *testing.T) {
 			t.Fatal("repeated up changed schema")
 		}
 	})
-	if n := countRows(t, db, "SELECT count(*) FROM information_schema.tables WHERE table_schema='credit_engine_admin'"); n != 8 {
-		t.Fatal("expected seven data tables plus private Goose table", n)
+	if n := countRows(t, db, "SELECT count(*) FROM information_schema.tables WHERE table_schema='credit_engine_admin'"); n != 9 {
+		t.Fatal("expected eight data tables plus private Goose table", n)
 	}
 	t.Run("documents_revisions_and_immutability", func(t *testing.T) {
 		catalog, err := modelbindings.Default()
@@ -243,6 +243,14 @@ func TestAdminSchemaIntegration(t *testing.T) {
 	t.Run("down_reapply_and_neighbor_isolation", func(t *testing.T) {
 		result, err := migrator.Down(ctx)
 		migrationOK(t, err)
+		if result == nil || result.Source.Version != 2 {
+			t.Fatal(result)
+		}
+		if n := countRows(t, db, "SELECT count(*) FROM information_schema.tables WHERE table_schema='credit_engine_admin'"); n != 8 {
+			t.Fatal("active-model down affected existing tables", n)
+		}
+		result, err = migrator.Down(ctx)
+		migrationOK(t, err)
 		if result == nil || result.Source.Version != 1 {
 			t.Fatal(result)
 		}
@@ -254,7 +262,7 @@ func TestAdminSchemaIntegration(t *testing.T) {
 		}
 		results, err := migrator.Up(ctx)
 		migrationOK(t, err)
-		if len(results) != 1 {
+		if len(results) != 2 {
 			t.Fatal(results)
 		}
 		if n := countRows(t, db, "SELECT count(*) FROM public.root_sentinel WHERE value='unchanged'"); n != 1 {

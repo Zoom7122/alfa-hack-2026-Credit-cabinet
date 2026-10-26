@@ -41,7 +41,7 @@ func main() {
 		if err != nil {
 			return err
 		}
-		if d.IsDir() && (d.Name() == ".work" || d.Name() == ".git") {
+		if d.IsDir() && (d.Name() == ".work" || d.Name() == ".git" || d.Name() == "node_modules") {
 			return filepath.SkipDir
 		}
 		if d.Type()&os.ModeSymlink != 0 {

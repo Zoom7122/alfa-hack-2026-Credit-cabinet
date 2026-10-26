@@ -79,7 +79,7 @@ export function InfoRequestsStatus({ status }: { status: ApplicationStatusView }
 
             {requests.isLoading && <Skeleton visible={true} className='info-requests-status__skeleton' />}
             {requests.isError && <Plate view='negative' title='Не удалось загрузить вопросы банка' />}
-            {documents.isError && <Plate view='negative' title='Не удалось загрузить результаты проверки документов'>{documents.error.message}</Plate>}
+            {documents.isError && <Plate view='negative' title='Не удалось загрузить документы' />}
 
             {open.map((r, i) => (
                 <InfoRequestCard

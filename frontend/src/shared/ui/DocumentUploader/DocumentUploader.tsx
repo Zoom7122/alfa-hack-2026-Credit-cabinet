@@ -98,9 +98,9 @@ export function DocumentUploader({
         setUploads((list) => [...list, { key, name: file.name, size: file.size }]);
         return {
             done: () => setUploads((list) => list.filter((u) => u.key !== key)),
-            fail: (e: unknown) =>
+            fail: (message = 'Не удалось загрузить документы') =>
                 setUploads((list) =>
-                    list.map((u) => (u.key === key ? { ...u, error: (e instanceof Error && e.message) || 'Не удалось загрузить' } : u)),
+                    list.map((u) => (u.key === key ? { ...u, error: message } : u)),
                 ),
         };
     };
@@ -118,8 +118,8 @@ export function DocumentUploader({
                         t.done();
                         return doc;
                     })
-                    .catch((e: unknown) => {
-                        t.fail(e);
+                    .catch(() => {
+                        t.fail();
                         return undefined;
                     });
             }),
@@ -133,18 +133,16 @@ export function DocumentUploader({
             const target = regular.length && !batch.length ? undefined : signedTarget(file, batch, existing);
             if (!target) {
                 t.fail(
-                    new Error(
-                        existing.length
-                            ? 'Не поняли, к какому документу подпись: назовите файл как документ, например «Устав.pdf.sig»'
-                            : 'Сначала загрузите документ, к которому относится подпись',
-                    ),
+                    existing.length
+                        ? 'Не поняли, к какому документу подпись: назовите файл как документ, например «Устав.pdf.sig»'
+                        : 'Сначала загрузите документ, к которому относится подпись',
                 );
                 continue;
             }
             upload
                 .mutateAsync({ file, type: 'SIGNATURE', infoRequestId, signedDocumentId: target.id })
                 .then(t.done)
-                .catch(t.fail);
+                .catch(() => t.fail());
         }
     };
 
@@ -174,9 +172,7 @@ export function DocumentUploader({
             )}
 
             {remove.error && (
-                <Plate view='negative' title='Не удалось удалить файл'>
-                    {remove.error.message}
-                </Plate>
+                <Plate view='negative' title='Не удалось удалить файл' />
             )}
 
             {(documents.length > 0 || uploads.length > 0) && (

@@ -44,6 +44,8 @@ func NewAdmin(cfg config.Admin, source clock.Clock) (*Admin, error) {
 	}
 	router := httpapi.NewAdminRouter(access, cfg.RequestTimeout)
 	httpapi.RegisterAdminModels(router, access, repo)
+	httpapi.RegisterAdminActivation(router, access, repo)
+	httpapi.RegisterAdminFields(router, access)
 	httpapi.RegisterAdminEvents(router, access, repo)
 	httpapi.RegisterAdminSimulation(router, access, repo)
 	var metadataSource httpapi.ScoringMetadataSource
@@ -84,6 +86,9 @@ func (a *Admin) Initialize(ctx context.Context) error {
 			return errors.New("admin database migrations must be applied before startup")
 		}
 	}
-	return a.Repository.SeedBaseline(ctx)
+	if err := a.Repository.SeedBaseline(ctx); err != nil {
+		return err
+	}
+	return a.Repository.SeedActiveModels(ctx)
 }
 func (a *Admin) Close() error { return a.Database.Close() }

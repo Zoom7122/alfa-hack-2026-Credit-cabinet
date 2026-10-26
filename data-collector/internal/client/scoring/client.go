@@ -79,6 +79,8 @@ func (c *Client) DecideWithKey(ctx context.Context, req decision.Request, key st
 	if out.Status == "APPROVED" && (out.Terms == nil || !out.TermsConfirmed || out.LoanID == nil || out.MonthlyPaymentRUB == nil) {
 		return decision.Response{}, &Error{Status: 200, Code: "INVALID_RESPONSE"}
 	}
+	out.ModelVersion = resp.Header.Get("X-Scoring-Model-Version")
+	out.ModelSHA256 = resp.Header.Get("X-Scoring-Model-SHA256")
 	return out, nil
 }
 

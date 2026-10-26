@@ -15,6 +15,8 @@ import { DOCUMENT_LABELS, PURPOSE_LABELS } from '../../../shared/lib/dictionarie
 import { formatMoney, formatMonths, pluralize } from '../../../shared/lib/format';
 import { FormCard } from '../../../shared/ui/FormCard/FormCard';
 import { StepLayout } from '../components/StepLayout';
+import { TestField } from '../../../shared/ui/TestField/TestField';
+import { TEST_POA } from '../testValues';
 import { discardDraft, type Errors, isDetachedSignature, skippedPreview, toQuestionnaire } from '../draft';
 import { getFile } from '../fileStore';
 import type { StepProps } from '../stepProps';
@@ -154,6 +156,9 @@ export function ReviewStep({ userId, app, draft, hrefFor, errors, serverErrors, 
                     size={24}
                 />
                 {d.consents.tax && (
+                    <TestField label='Что можно запросить в налоговой' value={d.tax_scope.join(',')}
+                        values={{ good: 'DECLARATIONS,ENS_BALANCE', neutral: 'DECLARATIONS', bad: 'ENS_BALANCE' }}
+                        onChange={(value) => draft.update({ tax_scope: value.split(',') as TaxScope[] })}>
                     <div className='review-step__scopes' role='group' aria-label='Что можно запросить в налоговой'>
                         {TAX_SCOPES.map((s) => (
                             <Checkbox
@@ -172,6 +177,7 @@ export function ReviewStep({ userId, app, draft, hrefFor, errors, serverErrors, 
                             </Typography.Text>
                         )}
                     </div>
+                    </TestField>
                 )}
                 <Typography.Text view='primary-small' color='secondary'>
                     Согласия действуют полгода. Без них банк не запросит эти данные — решение займёт больше времени.
@@ -183,6 +189,7 @@ export function ReviewStep({ userId, app, draft, hrefFor, errors, serverErrors, 
                     <Typography.Text view='primary-small' color='secondary'>
                         Вы оформляете заявку не как руководитель — укажите машиночитаемую доверенность (МЧД), если она уже есть.
                     </Typography.Text>
+                    <TestField label='Номер МЧД' value={d.poa_number} values={TEST_POA} onChange={(poa_number) => draft.update({ poa_number })}>
                     <Input
                         label='Номер МЧД'
                         value={d.poa_number}
@@ -192,6 +199,10 @@ export function ReviewStep({ userId, app, draft, hrefFor, errors, serverErrors, 
                         block={true}
                         size={56}
                     />
+                    </TestField>
+                    <TestField label='Ваш ИНН физлица' value={d.representative_inn}
+                        values={{ good: '779900010333', neutral: '779900099018', bad: '779900030147' }}
+                        onChange={(representative_inn) => draft.update({ representative_inn })}>
                     <Input
                         label='Ваш ИНН физлица'
                         value={d.representative_inn}
@@ -201,6 +212,7 @@ export function ReviewStep({ userId, app, draft, hrefFor, errors, serverErrors, 
                         block={true}
                         size={56}
                     />
+                    </TestField>
                 </FormCard>
             )}
 

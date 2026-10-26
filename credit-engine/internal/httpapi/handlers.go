@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/contracts"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/modelbindings"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/scoring"
 	"github.com/gin-gonic/gin"
 )
@@ -16,6 +17,12 @@ type Decisions interface {
 }
 type ModelResolver interface {
 	ModelVersion(contracts.DecisionRequest) (string, error)
+}
+type KeyedModelDecisions interface {
+	DecideWithKeyModel(context.Context, contracts.DecisionRequest, string) (contracts.DecisionResponse, modelbindings.Metadata, error)
+}
+type ModelSnapshotResolver interface {
+	ModelSnapshot(context.Context, contracts.DecisionRequest) (context.Context, modelbindings.Metadata, error)
 }
 type BankOperations interface {
 	Check(context.Context, contracts.BankCheckRequest) (contracts.BankCheckResponse, error)
@@ -31,7 +38,41 @@ func NewScoringRouter(service Decisions) *gin.Engine {
 			writeError(c, err)
 			return
 		}
-		if resolver, ok := service.(ModelResolver); ok {
+		key := c.GetHeader("Idempotency-Key")
+		if len(key) > 200 {
+			writeProblem(c, 400, "INVALID_IDEMPOTENCY_KEY", nil)
+			return
+		}
+		if request.InputSnapshot != nil && key == "" {
+			writeProblem(c, 400, "IDEMPOTENCY_KEY_REQUIRED", nil)
+			return
+		}
+		if keyed, ok := service.(KeyedModelDecisions); ok && key != "" {
+			result, metadata, err := keyed.DecideWithKeyModel(c.Request.Context(), request, key)
+			if metadata.Version != "" {
+				c.Header("X-Scoring-Model-Version", metadata.Version)
+			}
+			if metadata.DefinitionSHA256 != "" {
+				c.Header("X-Scoring-Model-SHA256", metadata.DefinitionSHA256)
+			}
+			if err != nil {
+				writeError(c, err)
+				return
+			}
+			writeJSON(c, http.StatusOK, result)
+			return
+		}
+		ctx := c.Request.Context()
+		if resolver, ok := service.(ModelSnapshotResolver); ok {
+			pinned, metadata, err := resolver.ModelSnapshot(ctx, request)
+			if err != nil {
+				writeError(c, err)
+				return
+			}
+			ctx = pinned
+			c.Header("X-Scoring-Model-Version", metadata.Version)
+			c.Header("X-Scoring-Model-SHA256", metadata.DefinitionSHA256)
+		} else if resolver, ok := service.(ModelResolver); ok {
 			version, err := resolver.ModelVersion(request)
 			if err != nil {
 				writeError(c, err)
@@ -40,16 +81,7 @@ func NewScoringRouter(service Decisions) *gin.Engine {
 			c.Header("X-Scoring-Model-Version", version)
 		}
 		var result contracts.DecisionResponse
-		key := c.GetHeader("Idempotency-Key")
-		if request.InputSnapshot != nil && key == "" {
-			writeProblem(c, 400, "IDEMPOTENCY_KEY_REQUIRED", nil)
-			return
-		}
 		if key != "" {
-			if len(key) > 200 {
-				writeProblem(c, 400, "INVALID_IDEMPOTENCY_KEY", nil)
-				return
-			}
 			keyed, ok := service.(interface {
 				DecideWithKey(context.Context, contracts.DecisionRequest, string) (contracts.DecisionResponse, error)
 			})
@@ -57,9 +89,9 @@ func NewScoringRouter(service Decisions) *gin.Engine {
 				writeProblem(c, 503, "PERSISTENCE_REQUIRED", nil)
 				return
 			}
-			result, err = keyed.DecideWithKey(c.Request.Context(), request, key)
+			result, err = keyed.DecideWithKey(ctx, request, key)
 		} else {
-			result, err = service.Decide(c.Request.Context(), request)
+			result, err = service.Decide(ctx, request)
 		}
 		if err != nil {
 			writeError(c, err)

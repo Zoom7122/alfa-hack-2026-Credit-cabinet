@@ -113,7 +113,10 @@ func generateOpenAPI(definitions []model.ModelDefinition, facts FactsOutput, rel
 		if status == "400" || status == "422" {
 			continue
 		}
-		value.(map[string]any)["headers"] = object{"X-Scoring-Model-Version": object{"description": "Exact selected model, including score=null and dependency errors; absent if selection failed.", "schema": object{"type": "string", "enum": versions}}}
+		value.(map[string]any)["headers"] = object{
+			"X-Scoring-Model-Version": object{"description": "Exact selected immutable model, including score=null and dependency errors; absent if selection failed. Active JSON versions are listed by GET /api/v1/models.", "schema": object{"type": "string"}},
+			"X-Scoring-Model-SHA256":  object{"description": "SHA-256 of the canonical JSON model snapshot used for this evaluation attempt; absent if selection failed.", "schema": object{"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+		}
 	}
 	if len(requests) > 0 {
 		supplierSchemas["PublishedScoringFactsRequest"] = object{"oneOf": requests}

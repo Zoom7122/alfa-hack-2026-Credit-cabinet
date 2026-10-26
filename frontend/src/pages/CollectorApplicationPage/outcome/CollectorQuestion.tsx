@@ -41,7 +41,7 @@ export function CollectorQuestion({ applicationId, question, index }: Props) {
 
     return (
         <InfoRequestCard index={index} request={request} applicationId={applicationId} answer={answer} documents={attached} onChange={setAnswer} onUploadingChange={setUploading}>
-            {documents.isError && <Plate view='negative' title='Не удалось загрузить документы'>{documents.error.message}</Plate>}
+            {documents.isError && <Plate view='negative' title='Не удалось загрузить документы' />}
             {error && (
                 <Plate view='negative' title='Ответ не принят'>
                     {error}

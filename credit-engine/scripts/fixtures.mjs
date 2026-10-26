@@ -1,6 +1,6 @@
 // Network fixture provider and transparent bank proxy; never a production API.
 import {createServer} from "node:http";
-import {parseJSON,stringifyJSON} from "../internal/adminui/web/numbers.js";
+import {parseJSON,stringifyJSON} from "../admin-frontend/src/legacy/numbers.js";
 if(process.env.CREDIT_ENGINE_UI_TEST!=="1")throw Error("Isolated acceptance required");
 let statement=null, calls={statements:[],bank:[],facts:[]};
 const send=(res,status,value)=>{res.writeHead(status,{"Content-Type":"application/json"});res.end(stringifyJSON(value));};

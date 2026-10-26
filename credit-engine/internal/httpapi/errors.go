@@ -29,7 +29,7 @@ func writeError(c *gin.Context, err error) {
 	case errors.Is(err, context.Canceled):
 		status, code = 502, "REQUEST_CANCELED"
 	}
-	if status != 400 && status != 409 && status != 422 && status != 502 && status != 504 {
+	if status != 400 && status != 409 && status != 422 && status != 503 && status != 502 && status != 504 {
 		status, code, fields = 500, "INTERNAL_ERROR", []string{}
 	}
 	if code == "OPERATION_IN_PROGRESS" {

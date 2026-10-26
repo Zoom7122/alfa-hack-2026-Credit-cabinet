@@ -21,6 +21,7 @@ const (
 	claimScoringSQL = `SELECT a.id,a.status FROM applications a WHERE a.status='VERIFYING'
  AND NOT EXISTS(SELECT 1 FROM documents d WHERE d.application_id=a.id AND d.deleted_at IS NULL AND d.signature_state='PENDING')
  AND NOT EXISTS(SELECT 1 FROM scoring_jobs j WHERE j.application_id=a.id AND j.status IN ('PENDING','RUNNING','RETRY_WAIT'))
+ AND NOT EXISTS(SELECT 1 FROM documents d JOIN financial_document_jobs j ON j.document_id=d.id AND j.generation=d.financial_generation WHERE d.application_id=a.id AND d.deleted_at IS NULL AND j.status IN ('PENDING','RUNNING'))
  ORDER BY a.updated_at LIMIT 1 FOR UPDATE OF a SKIP LOCKED`
 
 	touchScoringSQL = `UPDATE applications SET status = 'SCORING', version = version + 1, updated_at = now() WHERE id = $1`

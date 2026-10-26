@@ -16,7 +16,7 @@ function dependencyNotice(definition, id) {
   const rows = dependencies(definition, id);
   return el("div", {class: "notice warning"}, el("p", {}, "Отключение или удаление не изменяет связанные правила автоматически. Перед выпуском нужно устранить недопустимые ссылки."), rows.length ? el("ul", {}, rows.map(row => el("li", {}, names[row.section] + ": " + row.title + " (" + row.id + ")" + (row.enabled ? "" : " · выключен")))) : el("p", {}, "Явных зависимостей в определении не найдено. Доверенные расчётные зависимости дополнительно проверит сервер."));
 }
-function editParameter(state, index) {
+export function editParameter(state, index) {
   const d = state.definition, existing = d.parameters[index];
   const p = copyJSON(existing || {id: "", enabled: true, title: "", source: {kind: "SUPPLIER", path: ""}, json_name: "", type: "NUMBER", unit: "COUNT", number: {integer: true}, required: true});
   const supplier = p.source.kind === "SUPPLIER";
@@ -78,7 +78,7 @@ function scoreCases(initial, parameters, label) {
   initial.forEach(add);
   return {node: el("section", {}, el("h3", {}, label), list, button("Добавить вариант: " + label, () => add())), read: () => controls.map(c => c.read())};
 }
-function editCriterion(state, index) {
+export function editCriterion(state, index) {
   const d = state.definition, existing = d.criteria[index];
   const c = copyJSON(existing || {id: "", enabled: true, title: "", block: "QUESTIONNAIRE", max_points: new ExactNumber("0"), unknown_action: "NEED_INFO", special_cases: [], cases: []});
   const id = text(c.id, {required: true, disabled: Boolean(existing)}), title = text(c.title, {required: true}), enabled = check(c.enabled), description = area(c.description);
@@ -137,7 +137,7 @@ export function createDraftEditor(draft, validation, onSaved) {
     criteria.replaceChildren(el("div", {class: "page-heading"}, el("h2", {}, "Критерии и баллы"), button("Добавить критерий", () => editCriterion(state, -1))), table(["Название / ID", "Блок", "Максимум", "Действия"], state.definition.criteria.map((c, index) => [el("span", {}, c.title, el("code", {class: "block"}, c.id), c.enabled ? "" : " · выключен"), c.block === "QUESTIONNAIRE" ? "Анкета" : "Дополнительно", String(c.max_points), el("div", {class: "actions"}, button("Изменить критерий " + c.id, () => editCriterion(state, index)), button("Удалить критерий " + c.id, () => remove("criteria", index)))])));
     extra.replaceChildren(...extensions.map(renderer => renderer(state)));
   }
-  node.append(el("p", {class: "notice info"}, "Изменения сохраняются в черновике. Действующая сборка МС1 изменится только после выпуска, сборки и развёртывания."), summary, el("section", {class: "panel"}, status, field("Основание изменения", reason), errors, el("div", {class: "actions"}, save, button("Скачать определение", () => downloadDefinition(state.definition)))), el("section", {class: "panel"}, parameters), el("section", {class: "panel"}, criteria), extra);
+  node.append(el("p", {class: "notice info"}, "Изменения сохраняются в черновике. Для включения изменений примените проверенную сохранённую ревизию."), summary, el("section", {class: "panel"}, status, field("Основание изменения", reason), errors, el("div", {class: "actions"}, save, button("Скачать определение", () => downloadDefinition(state.definition)))), el("section", {class: "panel"}, parameters), el("section", {class: "panel"}, criteria), extra);
   draw(); return state;
 }
 export function downloadDefinition(definition) {

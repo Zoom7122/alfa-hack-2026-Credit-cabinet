@@ -14,7 +14,10 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
-type ScoringJobRepository struct{ Pool *pgxpool.Pool }
+type ScoringJobRepository struct {
+	Pool            *pgxpool.Pool
+	UseActiveModels bool
+}
 
 const readyApplicationSQL = `SELECT a.id,a.status FROM applications a
  WHERE (a.status IN ('VERIFYING','ENRICHING') OR (a.status='SCORING' AND NOT EXISTS(SELECT 1 FROM scoring_jobs j WHERE j.application_id=a.id)))
@@ -103,6 +106,9 @@ func (r ScoringJobRepository) EnqueueNext(ctx context.Context, date time.Time) (
 			if err != nil {
 				return err
 			}
+		}
+		if r.UseActiveModels {
+			req.ModelVersion = nil
 		}
 		answered, err := repo.AnsweredCodes(ctx, app)
 		if err != nil {

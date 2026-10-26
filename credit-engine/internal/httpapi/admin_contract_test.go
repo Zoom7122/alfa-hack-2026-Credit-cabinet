@@ -28,6 +28,8 @@ func TestAdminContractCoversRegisteredRoutesAndLocalReferences(t *testing.T) {
 	}
 	router := NewAdminRouter(adminTestAccess(t), time.Second)
 	RegisterAdminModels(router, adminTestAccess(t), nil)
+	RegisterAdminActivation(router, adminTestAccess(t), nil)
+	RegisterAdminFields(router, adminTestAccess(t))
 	RegisterAdminEvents(router, adminTestAccess(t), nil)
 	RegisterAdminSimulation(router, adminTestAccess(t), nil)
 	RegisterAdminRuntime(router, adminTestAccess(t), nil)

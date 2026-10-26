@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import {readFile,writeFile,readdir,appendFile,mkdir} from "node:fs/promises";
 import {resolve} from "node:path";
-import {parseJSON,stringifyJSON,ExactNumber,integer} from "../internal/adminui/web/numbers.js";
+import {parseJSON,stringifyJSON,ExactNumber,integer} from "../admin-frontend/src/legacy/numbers.js";
 if(process.env.CREDIT_ENGINE_UI_TEST!=="1")throw Error("Isolated acceptance required");
 const root=resolve("."), output=process.env.CREDIT_ENGINE_UI_OUTPUT, runID=process.env.CREDIT_ENGINE_RUN_ID;
 const bank=process.env.CREDIT_ENGINE_BANK_URL, scoring=process.env.CREDIT_ENGINE_SCORING_URL, admin=process.env.CREDIT_ENGINE_ADMIN_URL, provider=process.env.CREDIT_ENGINE_FACTS_URL;

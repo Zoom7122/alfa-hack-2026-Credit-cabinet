@@ -62,6 +62,7 @@ type Evaluator struct {
 	source  StatementsSource
 	clock   clock.Clock
 	catalog *modelbindings.Catalog
+	models  modelbindings.Provider
 	facts   FactsSource
 }
 

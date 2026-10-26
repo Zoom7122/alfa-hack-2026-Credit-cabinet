@@ -66,11 +66,12 @@ func TestCompiledV2AcrossExistingHTTPAcceptance(t *testing.T) {
 		t.Fatal(err)
 	}
 	adapter := `package scoring
-import("context";"errors";"sync";"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/contracts";"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/modelbindings")
+import("context";"encoding/json";"errors";"sync";"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/contracts";"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/modelbindings")
 var compiledCompatibilityOnce sync.Once
 var compiledCompatibilityCatalog *modelbindings.Catalog
 var compiledCompatibilityError error
 func compiledCompatibilityEvaluate(e *Evaluator,ctx context.Context,r contracts.DecisionRequest)(Assessment,error){
+ if err:=Validate(r);err!=nil{return Assessment{},err}
  // The compatibility bridge compares legacy envelopes. Snapshot protocol has separate tests.
  if r.InputSnapshot!=nil || r.FinancialStatements!=nil{return e.evaluateCompiled(ctx,r)}
  p,err:=PrepareApplication(r,dateOnly(e.clock.Now()));if err!=nil{return Assessment{},err}
@@ -78,8 +79,13 @@ func compiledCompatibilityEvaluate(e *Evaluator,ctx context.Context,r contracts.
  version,err:=modelbindings.LegacyVersion(r.Borrower.Type);if err!=nil{return Assessment{},err};entry,err:=compiledCompatibilityCatalog.Lookup(version,r.Borrower.Type);if err!=nil{return Assessment{},err}
  stops,err:=entry.Engine().Stops(p.Input);if err!=nil{return Assessment{},err}
  if len(stops)==0&&r.Borrower.Type==contracts.BorrowerTypeLegalEntity {
-  if e.source==nil{return Assessment{},&Error{Status:502,Code:"STATEMENTS_UNAVAILABLE"}}
-  response,sourceErr:=e.source.Statements(ctx,r.Borrower.ID,[]int{p.Date.Year()-2,p.Date.Year()-1})
+  // Application-scoped statements are an optional transport extension. Decode
+  // them independently so this historical baseline adapter works in both
+  // checkouts, without assuming the extension is present in DecisionRequest.
+  var application struct{FinancialStatements *contracts.StatementsResponse ` + "`json:\"financial_statements\"`" + `}
+  raw,err:=json.Marshal(r);if err!=nil{return Assessment{},err};if err=json.Unmarshal(raw,&application);err!=nil{return Assessment{},err}
+  var response contracts.StatementsResponse;var sourceErr error
+  if application.FinancialStatements!=nil{response=*application.FinancialStatements}else{if e.source==nil{return Assessment{},&Error{Status:502,Code:"STATEMENTS_UNAVAILABLE"}};response,sourceErr=e.source.Statements(ctx,r.Borrower.ID,[]int{p.Date.Year()-2,p.Date.Year()-1})}
   if errors.Is(sourceErr,ErrStatementsNotFound){}else if sourceErr!=nil{var failure *Error;if errors.As(sourceErr,&failure){return Assessment{},failure};status:=502;var timeout interface{Timeout()bool};if errors.Is(sourceErr,context.DeadlineExceeded)||errors.As(sourceErr,&timeout)&&timeout.Timeout(){status=504};return Assessment{},&Error{Status:status,Code:"STATEMENTS_UNAVAILABLE"}}else{p,err=WithStatements(p,response);if err!=nil{return Assessment{},err}}
  }
  result,err:=EvaluatePrepared(entry.Engine(),p);if err!=nil{return Assessment{},err};return ToAssessment(result)

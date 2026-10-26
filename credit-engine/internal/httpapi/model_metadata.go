@@ -11,9 +11,17 @@ import (
 )
 
 func RegisterScoringModels(router *gin.Engine, catalog *modelbindings.Catalog) {
+	RegisterScoringModelProvider(router, catalog)
+}
+func RegisterScoringModelProvider(router *gin.Engine, provider modelbindings.Provider) {
 	router.GET("/api/v1/models", func(c *gin.Context) {
 		c.Header("Cache-Control", "no-store")
-		c.JSON(200, modelbindings.RuntimeMetadata{FormatVersion: 1, Models: catalog.List()})
+		result, err := provider.Models(c.Request.Context())
+		if err != nil {
+			writeProblem(c, 503, "SCORING_MODELS_UNAVAILABLE", nil)
+			return
+		}
+		c.JSON(200, result)
 	})
 }
 
