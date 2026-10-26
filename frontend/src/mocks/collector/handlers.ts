@@ -13,6 +13,7 @@ import {
     type QuestionnaireInput,
 } from '../../api/collector/types';
 import { REGISTRY_TIMEOUT_INN, registry } from '../data';
+import { isTestDocument, TEST_DOCUMENT_SHA256 } from '../../shared/lib/testDocument';
 import { mockFailure } from '../handlers';
 import { stepMs } from '../workflow';
 import { productByCode, termsErrors } from './catalog';
@@ -142,6 +143,7 @@ export function toApplication(app: StoredCollectorApp, withKnown = false): Colle
 
 /** Подпись worker проверяет после сбора: PENDING → DONE через два шага конвейера. */
 function signatureState(app: StoredCollectorApp, doc: CollectorDocument): CollectorDocument['signature_state'] {
+    if (doc.is_test) return 'NOT_SIGNED';
     if (doc.signature_state !== 'PENDING' || app.submitted_ms === undefined) return doc.signature_state;
     return Date.now() - app.submitted_ms >= 2 * stepMs() ? 'DONE' : 'PENDING';
 }
@@ -385,23 +387,26 @@ function validateFiles(files: File[], specs: QuestionnaireInput['documents'] = [
     return { errors, signedBy, targets };
 }
 
-function buildDocuments(files: File[], specs: QuestionnaireInput['documents'], targets: Map<number, number>, signedBy: Map<number, number>) {
+async function buildDocuments(files: File[], specs: QuestionnaireInput['documents'], targets: Map<number, number>, signedBy: Map<number, number>) {
     const ids = files.map(() => newId('doc'));
+    const testFiles = await Promise.all(files.map(isTestDocument));
     const now = new Date().toISOString();
     const built = files.map((f, i): CollectorDocument => {
         const ext = extOf(f.name);
         const sig = isSignature(f.name);
         const target = targets.get(i);
+        const test = testFiles[i] || (target !== undefined && testFiles[target]);
         return {
             id: ids[i],
             type: target !== undefined ? 'SIGNATURE' : (specs?.find((s) => s.file_name.toLowerCase() === f.name.toLowerCase())?.type ?? 'OTHER'),
             file_name: f.name,
             mime_type: MIME[ext],
             size_bytes: f.size,
-            sha256: `${f.size.toString(16)}${i}`.padEnd(64, '0'),
+            sha256: testFiles[i] ? TEST_DOCUMENT_SHA256 : `${f.size.toString(16)}${i}`.padEnd(64, '0'),
+            is_test: testFiles[i],
             signed_document_id: target === undefined ? undefined : ids[target],
-            signature_state: sig || signedBy.has(i) ? 'PENDING' : 'NOT_SIGNED',
-            recognition_state: RECOGNIZABLE.has(ext) ? 'PENDING' : 'NOT_APPLICABLE',
+            signature_state: !test && (sig || signedBy.has(i)) ? 'PENDING' : 'NOT_SIGNED',
+            recognition_state: !test && RECOGNIZABLE.has(ext) ? 'PENDING' : 'NOT_APPLICABLE',
             uploaded_at: now,
         };
     });
@@ -639,7 +644,7 @@ export const collectorHandlers = [
         if (errors.length) return validation(422, 'анкета не прошла проверку', errors);
 
         const now = Date.now();
-        const documents = buildDocuments(files, input.documents, fileCheck.targets, fileCheck.signedBy);
+        const documents = await buildDocuments(files, input.documents, fileCheck.targets, fileCheck.signedBy);
         const { marketplace_tokens, ofd_token, ...rest } = input;
         const updated = mutateCollector((d) => {
             const stored = d.apps.find((a) => a.id === app.id) ?? app;

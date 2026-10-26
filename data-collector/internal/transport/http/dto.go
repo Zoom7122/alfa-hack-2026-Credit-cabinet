@@ -272,6 +272,7 @@ type documentResponse struct {
 	// Итог проверки подписи (после DONE или FAILED); нет — подпись не проверяли.
 	SignatureVerdict string    `json:"signature_verdict,omitempty" enums:"VALID,VALID_WITH_WARNINGS,INVALID,INDETERMINATE"`
 	RecognitionState string    `json:"recognition_state" enums:"NOT_APPLICABLE,PENDING,PROCESSING,DONE,FAILED"`
+	IsTest           bool      `json:"is_test,omitempty"`
 	UploadedAt       time.Time `json:"uploaded_at"`
 } //	@name	Document
 
@@ -352,7 +353,7 @@ func toDocumentResponses(docs []domain.Document) []documentResponse {
 	for _, d := range docs {
 		out = append(out, documentResponse{ID: d.ID, Type: string(d.Type), FileName: d.FileName, MimeType: d.MimeType,
 			SizeBytes: d.SizeBytes, SHA256: d.SHA256, SignedDocumentID: d.SignedDocumentID, InfoRequestID: d.InfoRequestID,
-			SignatureState: string(d.SignatureState), SignatureVerdict: d.SignatureVerdict, RecognitionState: string(d.RecognitionState), UploadedAt: d.UploadedAt})
+			SignatureState: string(d.SignatureState), SignatureVerdict: d.SignatureVerdict, RecognitionState: string(d.RecognitionState), UploadedAt: d.UploadedAt, IsTest: d.IsTest()})
 	}
 	return out
 }

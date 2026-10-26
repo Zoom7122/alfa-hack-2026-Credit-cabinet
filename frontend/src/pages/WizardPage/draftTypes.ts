@@ -7,6 +7,7 @@ export type FileEntry = {
     size: number;
     /** Тип документа; у открепленной подписи (.sig, .p7s) — нет, она всегда SIGNATURE. */
     type?: CollectorDocumentType;
+    isTest?: boolean;
 };
 
 export type DirectorDraft = { inn: string; last_name: string; first_name: string; middle_name: string; birth_date: string };

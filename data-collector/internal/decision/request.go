@@ -64,6 +64,7 @@ func rub(v float64) int64 { return int64(math.Round(v)) }
 // движок ответит NEED_INFO с перечнем полей, и банк спросит клиента.
 func Build(in Input) (Request, Facts) {
 	app := in.Application
+	app.Documents = slices.DeleteFunc(slices.Clone(app.Documents), func(d domain.Document) bool { return d.IsTest() })
 	var (
 		core  coreBanking
 		b     bki

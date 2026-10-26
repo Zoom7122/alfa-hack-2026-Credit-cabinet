@@ -172,20 +172,22 @@ func (u unit) key() string {
 // PDF и XML без открепленной подписи, их ещё надо прочитать.
 func plan(docs []domain.Document, inEvent map[string]bool) (units []unit, candidates []domain.Document) {
 	byID := make(map[string]domain.Document, len(docs))
+	testIDs := make(map[string]bool)
 	for _, d := range docs {
 		byID[d.ID] = d
+		testIDs[d.ID] = d.IsTest()
 	}
 	signed := map[string]bool{}
 	for _, s := range docs {
 		d, ok := byID[s.SignedDocumentID]
-		if s.SignedDocumentID == "" || !ok || !(inEvent[s.ID] || inEvent[d.ID]) {
+		if s.SignedDocumentID == "" || !ok || testIDs[s.ID] || testIDs[d.ID] || !(inEvent[s.ID] || inEvent[d.ID]) {
 			continue
 		}
 		units = append(units, unit{doc: d, signature: &s, container: signature.ContainerDetached})
 		signed[d.ID] = true
 	}
 	for _, d := range docs {
-		if !inEvent[d.ID] || d.SignedDocumentID != "" || signed[d.ID] {
+		if !inEvent[d.ID] || d.SignedDocumentID != "" || signed[d.ID] || testIDs[d.ID] {
 			continue
 		}
 		switch d.MimeType {

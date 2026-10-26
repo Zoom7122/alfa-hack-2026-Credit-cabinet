@@ -32,8 +32,9 @@ func financialDB(t *testing.T) *pgxpool.Pool {
 	if err != nil {
 		t.Fatal(err)
 	}
-	schema := strings.ToLower(newID("test_"))
-	if _, err = base.Exec(ctx, `CREATE SCHEMA `+schema); err != nil {
+	// Runtime migrations create fixed schemas, so each test needs its own database.
+	databaseName := strings.ToLower(newID("test_"))
+	if _, err = base.Exec(ctx, `CREATE DATABASE `+databaseName); err != nil {
 		base.Close()
 		t.Fatal(err)
 	}
@@ -41,12 +42,16 @@ func financialDB(t *testing.T) *pgxpool.Pool {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg.ConnConfig.RuntimeParams["search_path"] = schema
+	cfg.ConnConfig.Database = databaseName
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { pool.Close(); base.Exec(context.Background(), `DROP SCHEMA `+schema+` CASCADE`); base.Close() })
+	t.Cleanup(func() {
+		pool.Close()
+		base.Exec(context.Background(), `DROP DATABASE `+databaseName+` WITH (FORCE)`)
+		base.Close()
+	})
 	paths, err := filepath.Glob("../../../db/migrations/0*.sql")
 	if err != nil || len(paths) < 5 {
 		t.Fatal("migration files missing", err)

@@ -30,6 +30,7 @@ export async function documentRequest<T>(applicationId: string, suffix = '', ini
 
 /** Keep recognition tied to the current generation, including after re-verification. */
 export async function loadDocumentResult(applicationId: string, doc: StoredDocument): Promise<Document> {
+    if (doc.is_test) return doc;
     if (!['FINANCIAL_STATEMENTS', 'TAX_RETURN'].includes(doc.type) || (isCollectorId(applicationId) && !doc.generation)) return doc;
     try {
         const result = await documentRequest<FinancialResult>(applicationId, `/${encodeURIComponent(doc.id)}/financial-result`);

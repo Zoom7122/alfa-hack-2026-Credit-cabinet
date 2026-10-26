@@ -16,6 +16,8 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/testdocument"
+
 	"github.com/oklog/ulid/v2"
 )
 
@@ -184,6 +186,9 @@ func policy(a Applicant) string {
 	return "GIRBO_FNS"
 }
 func signatureEligible(r SignatureReport, a Applicant, sha string, pdf bool) bool {
+	if testdocument.IsSHA256(sha) {
+		return false
+	}
 	if r.DocumentSHA256 != sha || r.Policy != policy(a) || !r.PolicyResult.Satisfied || r.TrustMode != "LIVE" {
 		return false
 	}

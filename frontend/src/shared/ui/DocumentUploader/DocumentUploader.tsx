@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useState } from 'react';
 import { Attach } from '@alfalab/core-components/attach';
+import { Button } from '@alfalab/core-components/button';
 import { Dropzone } from '@alfalab/core-components/dropzone';
 import { FileUploadItem } from '@alfalab/core-components/file-upload-item';
 import { Plate } from '@alfalab/core-components/plate';
@@ -8,6 +9,7 @@ import { Typography } from '@alfalab/core-components/typography';
 import { useDeleteDocument, useUploadDocument } from '../../../api/queries';
 import type { Document, DocumentType } from '../../../api/types';
 import { formatDate, formatFileSize } from '../../lib/format';
+import { createTestDocument, TEST_DOCUMENT_NOTICE } from '../../lib/testDocument';
 import { DocumentVerification } from './DocumentVerification';
 import './DocumentUploader.css';
 
@@ -90,7 +92,9 @@ export function DocumentUploader({
     const upload = useUploadDocument(applicationId);
     const remove = useDeleteDocument(applicationId);
     const [uploads, setUploads] = useState<Upload[]>([]);
-    const uploading = uploads.some((u) => !u.error);
+    const [addingTest, setAddingTest] = useState(false);
+    const [testError, setTestError] = useState<string>();
+    const uploading = addingTest || uploads.some((u) => !u.error);
     useEffect(() => { onUploadingChange?.(uploading); }, [uploading, onUploadingChange]);
 
     const track = (file: File) => {
@@ -146,6 +150,18 @@ export function DocumentUploader({
         }
     };
 
+    const addTest = async () => {
+        setAddingTest(true);
+        setTestError(undefined);
+        try {
+            await send([await createTestDocument()]);
+        } catch (error) {
+            setTestError(error instanceof Error ? error.message : 'Не удалось добавить тестовый PDF');
+        } finally {
+            setAddingTest(false);
+        }
+    };
+
     return (
         <div className='document-uploader'>
             {editable && (
@@ -171,6 +187,13 @@ export function DocumentUploader({
                 </Dropzone>
             )}
 
+            {editable && accept.split(',').some((ext) => ['.pdf', 'application/pdf'].includes(ext.trim())) && (
+                <Button view='secondary' size={40} loading={addingTest} disabled={uploading} onClick={() => void addTest()}>
+                    Добавить тестовый PDF
+                </Button>
+            )}
+            {testError && <Plate view='negative' title={testError} />}
+
             {remove.error && (
                 <Plate view='negative' title='Не удалось удалить файл' />
             )}
@@ -190,6 +213,7 @@ export function DocumentUploader({
                             parent.id === doc.signed_document_id && ['FINANCIAL_STATEMENTS', 'TAX_RETURN'].includes(parent.type));
                         return (
                             <li key={doc.id} className='document-uploader__item'>
+                                {doc.is_test && <Typography.Text view='primary-small' color='secondary'>{TEST_DOCUMENT_NOTICE}</Typography.Text>}
                                 <FileUploadItem
                                     id={doc.id}
                                     title={doc.file_name}

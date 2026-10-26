@@ -23,6 +23,7 @@ type SignatureSummary struct {
 }
 
 type Document struct {
+	IsTest           bool             `json:"is_test,omitempty"`
 	Origin           string           `json:"origin"`
 	Signatures       SignatureSummary `json:"signatures"`
 	ID               string           `json:"id"`

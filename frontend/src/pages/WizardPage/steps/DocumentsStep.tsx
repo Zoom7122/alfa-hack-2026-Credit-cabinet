@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Attach } from '@alfalab/core-components/attach';
+import { Button } from '@alfalab/core-components/button';
 import { Dropzone } from '@alfalab/core-components/dropzone';
 import { FileUploadItem } from '@alfalab/core-components/file-upload-item';
 import { Plate } from '@alfalab/core-components/plate';
@@ -8,6 +9,7 @@ import { Typography } from '@alfalab/core-components/typography';
 
 import type { CollectorDocumentType } from '../../../api/collector/types';
 import { DOCUMENT_LABELS } from '../../../shared/lib/dictionaries';
+import { createTestDocument, isTestDocument, TEST_DOCUMENT_NOTICE } from '../../../shared/lib/testDocument';
 import { FormCard } from '../../../shared/ui/FormCard/FormCard';
 import { StepLayout } from '../components/StepLayout';
 import { type FileEntry, isDetachedSignature, isSignatureName, safeFileName, signedTarget } from '../draft';
@@ -29,26 +31,40 @@ function signatureNote(file: FileEntry, files: FileEntry[]) {
 }
 
 /** Шаг «Документы»: файлы держим в браузере, уйдут вместе с анкетой. Подпись X.sig относится к документу X. */
-export function DocumentsStep({ draft, hrefFor, errors, serverErrors }: StepProps) {
+export function DocumentsStep({ draft, hrefFor, errors, serverErrors, soleProprietor }: StepProps) {
     const files = draft.value.files;
     const gate = useStepGate(errors, serverErrors, hrefFor('review'));
     const [storeError, setStoreError] = useState<string>();
+    const [addingTest, setAddingTest] = useState(false);
 
-    const add = async (picked: File[]) => {
+    const add = async (picked: File[], type: CollectorDocumentType = 'OTHER') => {
         setStoreError(undefined);
         const entries: FileEntry[] = [];
         for (const file of picked) {
             // ключ переживает перезагрузку вместе с черновиком — счётчик не подойдёт
             const key = crypto.randomUUID();
             try {
+                const isTest = await isTestDocument(file);
                 await putFile(key, file);
                 const name = safeFileName(file.name);
-                entries.push({ key, name, size: file.size, type: 'OTHER' });
+                entries.push({ key, name, size: file.size, type, isTest });
             } catch {
                 setStoreError(`Не удалось сохранить «${file.name}» в браузере — попробуйте ещё раз`);
             }
         }
         if (entries.length) draft.update((prev) => ({ files: [...prev.files, ...entries] }));
+    };
+
+    const addTest = async () => {
+        setAddingTest(true);
+        setStoreError(undefined);
+        try {
+            await add([await createTestDocument()], soleProprietor ? 'TAX_RETURN' : 'FINANCIAL_STATEMENTS');
+        } catch (error) {
+            setStoreError(error instanceof Error ? error.message : 'Не удалось добавить тестовый PDF');
+        } finally {
+            setAddingTest(false);
+        }
     };
 
     const remove = (key: string) => {
@@ -88,6 +104,14 @@ export function DocumentsStep({ draft, hrefFor, errors, serverErrors }: StepProp
                         />
                     </div>
                 </Dropzone>
+                <div className='documents-step__demo'>
+                    <Button view='secondary' size={40} loading={addingTest} disabled={addingTest || files.length >= 10 || files.some((f) => f.isTest)} onClick={() => void addTest()}>
+                        Добавить тестовый PDF
+                    </Button>
+                    <Typography.Text view='primary-small' color='secondary'>
+                        Образец будет принят без проверки. Его данные не участвуют в скоринге.
+                    </Typography.Text>
+                </div>
                 <Plate view='common' rounded={true}>
                     Открепленную подпись называйте как документ с окончанием .sig: «balance.pdf» и «balance.pdf.sig».
                 </Plate>
@@ -120,6 +144,7 @@ export function DocumentsStep({ draft, hrefFor, errors, serverErrors }: StepProp
                                             {note}
                                         </Typography.Text>
                                     )}
+                                    {f.isTest && <Typography.Text view='primary-small' color='secondary'>{TEST_DOCUMENT_NOTICE}</Typography.Text>}
                                     {!detached && (
                                         <Select
                                             label={`Что за документ: ${f.name}`}

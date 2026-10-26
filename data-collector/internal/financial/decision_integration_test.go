@@ -96,6 +96,10 @@ func TestDocumentResultReachesScoringInput(t *testing.T) {
 		t.Fatal("approved generation not restored")
 	}
 	// A new verification invalidates the old result before it finishes.
+	// ClaimNext above moved the application to SCORING; client edits require an editable state.
+	if _, err := pool.Exec(ctx, `UPDATE applications SET status='DRAFT' WHERE id='app-ip'`); err != nil {
+		t.Fatal(err)
+	}
 	if err := repo.Retry(ctx, "app-ip", doc.ID); err != nil {
 		t.Fatal(err)
 	}

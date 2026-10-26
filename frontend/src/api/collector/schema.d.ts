@@ -3088,6 +3088,7 @@ export interface components {
             /** @example doc_01JB8Z5X0G6Q9T4V2W8Y3K7M1N */
             id?: string;
             info_request_id?: string;
+            is_test?: boolean;
             /** @example application/pdf */
             mime_type?: string;
             /** @enum {string} */

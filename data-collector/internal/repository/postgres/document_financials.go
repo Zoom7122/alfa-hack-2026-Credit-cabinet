@@ -7,6 +7,7 @@ import (
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/decision"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/domain"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/testdocument"
 )
 
 // Read the persisted approval contract without coupling the repository to the
@@ -55,6 +56,9 @@ func (r *DecisionRepository) documentFinancials(ctx context.Context, app domain.
 		var applicantJSON, resultJSON []byte
 		if err := rows.Scan(&id, &sha, &generation, &applicantJSON, &resultJSON); err != nil {
 			return nil, err
+		}
+		if testdocument.IsSHA256(sha) {
+			continue
 		}
 		var applicant struct {
 			Type      string `json:"applicant_type"`

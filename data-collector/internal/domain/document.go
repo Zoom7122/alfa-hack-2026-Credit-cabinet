@@ -3,6 +3,8 @@ package domain
 import (
 	"slices"
 	"time"
+
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/testdocument"
 )
 
 // DocumentType — тип документа (documents.type, DocumentType в api/openapi.yaml).
@@ -69,3 +71,6 @@ type Document struct {
 	RecognitionState RecognitionState
 	UploadedAt       time.Time
 }
+
+// IsTest is derived from bytes hashed by storage, never a request flag or filename.
+func (d Document) IsTest() bool { return testdocument.IsSHA256(d.SHA256) }

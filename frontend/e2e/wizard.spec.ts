@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -243,6 +244,39 @@ test.describe('Анкета — шаги', () => {
 });
 
 test.describe('Анкета — отправка', () => {
+    test('тестовый PDF сохраняется в черновике и отправляется с отметкой исключения из скоринга', async ({ page }) => {
+        await register(page);
+        const appPath = editPath(page);
+        const appId = appPath.split('/').pop() ?? '';
+        await next(page);
+        await fillBorrower(page);
+        await next(page);
+        await next(page);
+        await next(page);
+        await next(page);
+        const addTest = page.getByRole('button', { name: 'Добавить тестовый PDF' });
+        await addTest.click();
+        await expect(files(page)).toHaveCount(1);
+        await expect(files(page)).toContainText('Тестовый документ: данные не участвуют в скоринге');
+        await expect(addTest).toBeDisabled();
+        await page.reload();
+        await expect(files(page)).toHaveCount(1);
+        await expect(files(page)).toContainText('Тестовый документ: данные не участвуют в скоринге');
+        await next(page);
+        const sending = page.waitForRequest((request) => request.method() === 'POST' && request.url().endsWith(`/applications/${appId}/questionnaire`));
+        await page.getByRole('button', { name: 'Отправить заявку' }).click();
+        const submitted = await sending;
+        const sample = readFileSync(resolve(import.meta.dirname, '../public/test-documents/test-financial-document.pdf'));
+        expect(sample.equals(readFileSync(resolve(import.meta.dirname, '../../data-collector/internal/testdocument/test-financial-document.pdf')))).toBe(true);
+        expect(submitted.headers()['content-type']).toContain('multipart/form-data');
+        await expectPath(page, appPath);
+        const app = await collectorApp(page, appId);
+        const doc = app.documents[0] as typeof app.documents[number] & { is_test?: boolean; signature_state?: string; recognition_state?: string };
+        expect(doc).toMatchObject({ file_name: 'test-financial-document.pdf', type: 'FINANCIAL_STATEMENTS', is_test: true, signature_state: 'NOT_SIGNED', recognition_state: 'NOT_APPLICABLE', sha256: createHash('sha256').update(sample).digest('hex') });
+        await page.getByRole('tab', { name: /Документы/ }).click();
+        await expect(page.getByText('Тестовый документ: данные не участвуют в скоринге')).toBeVisible();
+    });
+
     test('сценарий A целиком: анкета и файлы уходят в data-collector', async ({ page }) => {
         await register(page);
         const appPath = editPath(page);
