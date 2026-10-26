@@ -241,7 +241,6 @@ services:
     restart: unless-stopped
 
 volumes:
-  documents:
   pgdata:
   kafkadata:
   documents:
