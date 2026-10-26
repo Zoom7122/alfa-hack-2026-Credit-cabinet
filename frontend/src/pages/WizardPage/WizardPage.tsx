@@ -2,6 +2,7 @@ import { type ReactNode, useEffect } from 'react';
 import { Button } from '@alfalab/core-components/button';
 import { Plate } from '@alfalab/core-components/plate';
 import { Spinner } from '@alfalab/core-components/spinner';
+import { useQuery } from '@tanstack/react-query';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { ApiError } from '../../api/client';
@@ -26,6 +27,7 @@ import { ScoringStep } from './steps/ScoringStep';
 import { SourcesStep } from './steps/SourcesStep';
 import { TermsStep } from './steps/TermsStep';
 import './WizardPage.css';
+import { loadSavedDraft, savedDraftKey, type SavedDraft } from './draftApi';
 
 function WizardShell({ header, nav, children }: { header: ReactNode; nav?: ReactNode; children: ReactNode }) {
     return (
@@ -75,6 +77,12 @@ export function WizardPage({ me }: { me: Me }) {
     const navigate = useNavigate();
     const application = useCollectorApplication(applicationId);
     const products = useProducts();
+    const savedDraft = useQuery({
+        queryKey: savedDraftKey(applicationId ?? ''),
+        queryFn: () => loadSavedDraft(applicationId ?? ''),
+        enabled: application.data?.status === 'DRAFT', retry: false,
+        refetchOnMount: 'always', refetchOnWindowFocus: false,
+    });
 
     if (application.isError && !application.data) {
         const notFound = application.error instanceof ApiError && application.error.status === 404;
@@ -99,8 +107,9 @@ export function WizardPage({ me }: { me: Me }) {
     }
     // анкету принимают один раз — отправленную (в том числе из другой вкладки) показываем статусом
     if (app.status !== 'DRAFT') return <SubmittedRedirect userId={me.id} id={app.id ?? ''} />;
-
-    return <EditWizard key={app.id} userId={me.id} app={app} step={isStepId(step) ? step : undefined} products={products.data ?? []} />;
+    if (savedDraft.isError) return <Plate view='negative' title='Не удалось загрузить анкету'><Button onClick={() => void savedDraft.refetch()}>Повторить</Button></Plate>;
+    if (!savedDraft.data || savedDraft.isFetching) return <Spinner visible={true} preset={48} />;
+    return <EditWizard key={app.id} userId={me.id} app={app} initial={savedDraft.data} step={isStepId(step) ? step : undefined} products={products.data ?? []} />;
 }
 
 /** Анкету уже отправили: локальный черновик, токены и файлы больше не нужны. */
@@ -127,15 +136,10 @@ function snapshotOf(root: string, d: QuestionnaireDraft, secrets: Secrets) {
     return JSON.stringify(source[root] ?? null);
 }
 
-function EditWizard({ userId, app, step, products }: { userId: string; app: CollectorApplication; step?: StepId; products: Product[] }) {
+function EditWizard({ userId, app, initial, step, products }: { userId: string; app: CollectorApplication; initial: SavedDraft; step?: StepId; products: Product[] }) {
     const navigate = useNavigate();
     const id = app.id ?? '';
-    const { amount, term_months } = app.requested ?? {};
-    const draft = useLocalDraft(userId, id, {
-        product_code: app.product_code,
-        requested: amount !== undefined && term_months !== undefined ? { amount, term_months } : undefined,
-        purpose: app.purpose,
-    });
+    const draft = useLocalDraft(userId, id, initial);
     // ошибки 422 последней отправки и значения полей на тот момент; переживают переход между шагами
     const [rejected, setRejected] = useSessionState<Rejected>(serverErrorsKey(userId, id), () => ({ errors: {}, values: {} }));
     const hrefFor = (s: StepId) => `/applications/${id}/edit/${s}`;
@@ -156,7 +160,7 @@ function EditWizard({ userId, app, step, products }: { userId: string; app: Coll
     // ошибку поля убираем, как только поле поменяли: в черновике уже другое значение
     const errors = errorsOf(step, d, draft.secrets, needsPoa);
     const stepServerErrors = Object.fromEntries(Object.entries(serverErrors).filter(([field]) => STEPS.find((s) => s.id === step)?.owns?.(field)));
-    const props: StepProps = { userId, app, product, draft, hrefFor, errors, serverErrors: stepServerErrors, needsPoa, soleProprietor };
+    const props: StepProps = { userId, app, product, products, draft, hrefFor, errors, serverErrors: stepServerErrors, needsPoa, soleProprietor };
 
     const content = {
         company: <CompanyStep mode='edit' app={app} nextHref={hrefFor('terms')} />,
@@ -173,10 +177,10 @@ function EditWizard({ userId, app, step, products }: { userId: string; app: Coll
         <WizardShell
             header={
                 <WizardHeader
-                    status={draft.savedAt ? 'saved' : 'idle'}
+                    status={draft.status}
                     savedAt={draft.savedAt}
                     exitLabel='Сохранить и выйти'
-                    onExit={() => navigate('/')}
+                    onExit={() => void draft.flush().then(() => navigate('/')).catch(() => undefined)}
                 />
             }
             nav={
@@ -190,6 +194,7 @@ function EditWizard({ userId, app, step, products }: { userId: string; app: Coll
                 />
             }
         >
+            {draft.error && <Plate view='negative' title='Не удалось сохранить черновик'>{draft.error.message}<Button onClick={() => void draft.flush().catch(() => undefined)}>Повторить сохранение</Button></Plate>}
             <div key={step}>{content}</div>
         </WizardShell>
     );

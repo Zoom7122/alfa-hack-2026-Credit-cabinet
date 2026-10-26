@@ -4,6 +4,8 @@ import { setupWorker } from 'msw/browser';
 import { collectorBackofficeHandlers } from './collector/backofficeHandlers';
 import { collectorCatalogHandlers } from './collector/catalogHandlers';
 import { collectorHandlers } from './collector/handlers';
+import { collectorDocumentHandlers } from './collector/documentHandlers';
+import { collectorSigningHandlers } from './collector/signingHandlers';
 import { handlers } from './handlers';
 import { signingHandlers } from './signingHandlers';
 import { workflowHandlers, wsHandlers } from './workflowHandlers';
@@ -12,7 +14,7 @@ import { workflowHandlers, wsHandlers } from './workflowHandlers';
 export function createWorker({ api, collector }: { api: boolean; collector: boolean }) {
     const list: (RequestHandler | WebSocketHandler)[] = [
         ...(api ? [...handlers, ...workflowHandlers, ...signingHandlers, ...wsHandlers] : []),
-        ...(collector ? [...collectorHandlers, ...collectorBackofficeHandlers, ...collectorCatalogHandlers] : []),
+        ...(collector ? [...collectorSigningHandlers, ...collectorDocumentHandlers, ...collectorHandlers, ...collectorBackofficeHandlers, ...collectorCatalogHandlers] : []),
     ];
     return setupWorker(...list);
 }

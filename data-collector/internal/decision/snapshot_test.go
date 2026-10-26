@@ -27,12 +27,16 @@ func TestSnapshotConflictAndHashBinding(t *testing.T) {
 	if err := json.Unmarshal([]byte(`{"id":"doc","sha256":"hash","generation":2,"financial_result":{"document_sha256":"hash","scoring_indicators":[{"name":"accounting_revenue","period":"2025","period_kind":"YEAR","amount":"200000.00","eligible":true,"sources":[]}]}}`), &doc); err != nil {
 		t.Fatal(err)
 	}
+	in.DocumentIndicators = []DocumentIndicator{{Name: "accounting_revenue", Period: "2025", PeriodKind: "YEAR", AmountRUB: 200000}}
 	req, _, err := BuildSnapshot(in, "job", "collection", []SnapshotDocument{doc})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(req.InputSnapshot.Diagnostics) != 1 || !req.InputSnapshot.Diagnostics[0].Conflict || req.InputSnapshot.Statements.AnnualReports[0].ProfitAndLoss.Revenue != nil {
 		t.Fatal("conflicting values admitted")
+	}
+	if req.FinancialStatements == nil || req.FinancialStatements.AnnualReports[0].ProfitAndLoss.Revenue != nil {
+		t.Fatal("legacy document overlay replaced the frozen conflict")
 	}
 	doc.SHA256 = "modified"
 	req, _, err = BuildSnapshot(in, "job", "collection", []SnapshotDocument{doc})
@@ -47,11 +51,12 @@ func TestKudirIncomeRemainsSeparate(t *testing.T) {
 	in := Input{Application: domain.Application{Company: domain.Company{ID: "ip", Type: domain.CompanySoleProprietor}}, Now: time.Date(2026, 10, 23, 0, 0, 0, 0, time.UTC)}
 	var doc SnapshotDocument
 	json.Unmarshal([]byte(`{"id":"doc","sha256":"hash","generation":1,"financial_result":{"document_sha256":"hash","scoring_indicators":[{"name":"usn_taxable_income","period":"2025","period_kind":"YEAR","amount":"10000.50","eligible":true,"sources":[]}]}}`), &doc)
-	req, _, err := BuildSnapshot(in, "job", "", []SnapshotDocument{doc})
+	in.DocumentIndicators = []DocumentIndicator{{Name: "usn_taxable_income", Period: "2025", PeriodKind: "YEAR", AmountRUB: 10000}}
+	req, facts, err := BuildSnapshot(in, "job", "", []SnapshotDocument{doc})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(req.InputSnapshot.Indicators) != 1 || len(req.InputSnapshot.Statements.AnnualReports) != 0 || req.Evidence != nil {
+	if len(req.InputSnapshot.Indicators) != 1 || len(req.InputSnapshot.Statements.AnnualReports) != 0 || req.Evidence != nil || facts.DeclaredSource == "DOCUMENT_KUDIR" {
 		t.Fatal("taxable income was used as accounting/cash income")
 	}
 }

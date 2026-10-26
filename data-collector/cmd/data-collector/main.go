@@ -129,12 +129,15 @@ func run(log *slog.Logger) error {
 		httptransport.NewCollectionHandler(collectionSvc, log),
 		httptransport.NewInternalDataHandler(internalDataSvc, log),
 		httptransport.WithAuth(httptransport.NewAuthHandler(authSvc, log)),
+		httptransport.WithDraft(httptransport.NewDraftHandler(service.NewDraftService(applications), log)),
 		httptransport.WithCabinet(httptransport.NewCabinetHandler(cabinetSvc, log)),
 		// каталог продуктов и калькулятор платежа
 		httptransport.WithCatalog(httptransport.NewCatalogHandler(service.NewCatalogService())),
 		// итог для клиента: решение, предложения, вопросы банка и ответы
 		httptransport.WithOutcome(httptransport.NewOutcomeHandler(service.NewOutcomeService(postgres.NewBackofficeRepository(pool),
 			applications, files, 4*time.Hour), service.MaxFiles*maxFileSize+2<<20, log)),
+		httptransport.WithSigning(httptransport.NewSigningHandler(service.NewSigningService(postgres.NewSigningRepository(pool),
+			files, func(key string) (io.ReadCloser, error) { return files.Open(key) }), log)),
 		// рабочее место андеррайтера
 		httptransport.WithBackoffice(httptransport.NewBackofficeHandler(
 			service.NewBackofficeService(postgres.NewBackofficeRepository(pool)), log)),
@@ -142,7 +145,7 @@ func run(log *slog.Logger) error {
 		httptransport.WithEngineHooks(httptransport.NewEngineHandler(
 			service.NewDecisionService(postgres.NewDecisionRepository(pool)), log)),
 		func(_ *gin.Engine, api *gin.RouterGroup) {
-			financial.RegisterForCabinet(api, financial.Repository{Pool: pool, Topic: topic},
+			financial.RegisterForCabinet(api.Group("", httptransport.DocumentAccess(applicationSvc)), financial.Repository{Pool: pool, Topic: topic, DocumentsTopic: documentsTopic},
 				financial.Files{Root: env.String("DOCUMENT_STORAGE_PATH", "/data/documents")})
 		},
 	)

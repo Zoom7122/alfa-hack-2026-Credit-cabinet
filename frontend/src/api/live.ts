@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
+import { API_MOCK_ENABLED } from '../config';
 import { API_BASE_URL } from './client';
 import { queryKeys } from './queries';
 
@@ -24,7 +25,7 @@ export function useLiveUpdates(token: string | null) {
     const queryClient = useQueryClient();
 
     useEffect(() => {
-        if (!token) return;
+        if (!API_MOCK_ENABLED || !token) return;
         let socket: WebSocket | undefined;
         let retry = 0;
         let reconnect: ReturnType<typeof setTimeout> | undefined;

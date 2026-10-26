@@ -178,6 +178,29 @@ export const signingHandlers = [
         return problem(422, 'VALIDATION_FAILED', 'Выберите способ подписи', { errors: [{ field: 'method', message: 'Выберите способ подписи' }] });
     }),
 
+    http.get(url('/applications/:applicationId/documents/:documentId/financial-result'), async ({ request, params }) => {
+        const me = currentUser(request);
+        if (!me) return unauthorized();
+        const app = ownApplication(me, params.applicationId);
+        const doc = app && read().documents.find((d) => d.id === params.documentId && d.application_id === app.id);
+        if (!doc) return problem(404, 'NOT_FOUND', 'Документ не найден');
+        const recognition = toDocument(doc).recognition;
+        if (recognition?.state === 'PROCESSING') return HttpResponse.json({ state: 'PENDING' }, { status: 202 });
+        if (recognition?.state === 'FAILED') return HttpResponse.json({ code: 'PROCESSING_FAILED', title: 'Не удалось распознать документ' }, { status: 422 });
+        return HttpResponse.json({ document_id: doc.id, extracted: recognition?.extracted ?? {} });
+    }),
+
+    http.post(url('/applications/:applicationId/documents/:documentId/signature-verification'), async ({ request, params }) => {
+        const me = currentUser(request);
+        if (!me) return unauthorized();
+        const app = ownApplication(me, params.applicationId);
+        const doc = app && read().documents.find((d) => d.id === params.documentId && d.application_id === app.id);
+        if (!app || !doc) return problem(404, 'NOT_FOUND', 'Документ не найден');
+        const source = signatureSourceOf(doc, read().documents);
+        mutate((db) => { for (const d of db.documents) if (d.id === doc.id || d.id === source?.id) { d.verify_at = Date.now() + 1500; d.recognize_at = Date.now() + 1500; } });
+        return HttpResponse.json({ state: 'PENDING' }, { status: 202 });
+    }),
+
     http.get(url('/applications/:applicationId/documents/:documentId/signature-report'), async ({ request, params }) => {
         await delay(200);
         const me = currentUser(request);

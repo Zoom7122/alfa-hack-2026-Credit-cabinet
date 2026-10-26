@@ -30,6 +30,8 @@ export const COLLECTOR_STATUS: Record<CollectorStatus, { label: string; color: S
     },
     WAITING_FOR_INFO: { label: 'Нужно уточнить', color: 'orange', title: 'Банку нужны дополнительные сведения', subtitle: 'Ответьте на вопросы банка', hint: 'Ответьте на вопросы банка', stage: 'ACTION_REQUIRED' },
     OFFERED: { label: 'Есть предложение', color: 'green', title: 'Банк одобрил кредит', subtitle: 'Посмотрите предложение', hint: 'Посмотрите предложение', stage: 'OFFER' },
+    SIGNING: { label: 'Подписание', color: 'orange', title: 'Договор готов к подписанию', subtitle: 'Ознакомьтесь с договором и подтвердите его кодом', hint: 'Подпишите договор', stage: 'SIGNING' },
+    COMPLETED: { label: 'Оформлен', color: 'green', title: 'Кредит оформлен', subtitle: 'Договор подписан, демонстрационная выдача завершена', hint: 'Договор подписан', stage: 'DONE' },
     REJECTED: { label: 'Отказ', color: 'red', title: 'Банк отказал в кредите', subtitle: 'Причины — ниже', hint: 'Банк отказал', stage: 'CLOSED' },
 };
 

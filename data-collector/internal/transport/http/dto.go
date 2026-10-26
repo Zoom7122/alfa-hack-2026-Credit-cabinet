@@ -220,7 +220,7 @@ type applicationResponse struct {
 	// VERIFYING — данные собраны, ждём проверку подписей, SCORING — оценивает credit-engine,
 	// MANUAL_REVIEW — у андеррайтера, WAITING_FOR_INFO — банк ждёт ответов клиента,
 	// OFFERED — выдано предложение, REJECTED — отказ.
-	Status         string                 `json:"status" enums:"DRAFT,SUBMITTED,ENRICHING,VERIFYING,SCORING,MANUAL_REVIEW,WAITING_FOR_INFO,OFFERED,REJECTED" example:"DRAFT"`
+	Status         string                 `json:"status" enums:"DRAFT,SUBMITTED,ENRICHING,VERIFYING,SCORING,MANUAL_REVIEW,WAITING_FOR_INFO,OFFERED,REJECTED,SIGNING,COMPLETED" example:"DRAFT"`
 	Applicant      applicantResponse      `json:"applicant"`
 	Representative representativeResponse `json:"representative"`
 	ProductCode    string                 `json:"product_code,omitempty" example:"WORKING_CAPITAL"`
@@ -267,6 +267,7 @@ type documentResponse struct {
 	SHA256    string `json:"sha256"`
 	// У открепленной подписи (type=SIGNATURE) — какой документ она подписывает.
 	SignedDocumentID string `json:"signed_document_id,omitempty"`
+	InfoRequestID    string `json:"info_request_id,omitempty"`
 	SignatureState   string `json:"signature_state" enums:"NOT_SIGNED,PENDING,DONE,FAILED"`
 	// Итог проверки подписи (после DONE или FAILED); нет — подпись не проверяли.
 	SignatureVerdict string    `json:"signature_verdict,omitempty" enums:"VALID,VALID_WITH_WARNINGS,INVALID,INDETERMINATE"`
@@ -350,7 +351,7 @@ func toDocumentResponses(docs []domain.Document) []documentResponse {
 	out := make([]documentResponse, 0, len(docs))
 	for _, d := range docs {
 		out = append(out, documentResponse{ID: d.ID, Type: string(d.Type), FileName: d.FileName, MimeType: d.MimeType,
-			SizeBytes: d.SizeBytes, SHA256: d.SHA256, SignedDocumentID: d.SignedDocumentID,
+			SizeBytes: d.SizeBytes, SHA256: d.SHA256, SignedDocumentID: d.SignedDocumentID, InfoRequestID: d.InfoRequestID,
 			SignatureState: string(d.SignatureState), SignatureVerdict: d.SignatureVerdict, RecognitionState: string(d.RecognitionState), UploadedAt: d.UploadedAt})
 	}
 	return out
@@ -470,7 +471,7 @@ type meResponse struct {
 	FullName  string                  `json:"full_name" validate:"required" example:"Ковалёв Игорь Сергеевич"`
 	Roles     []string                `json:"roles" validate:"required" enums:"CLIENT,UNDERWRITER"`
 	Companies []companyAccessResponse `json:"companies" validate:"required"`
-	// Заявки, ждущие подписи пользователя как директора. Подписания в data-collector пока нет — всегда пусто.
+	// Заявки, ждущие демо-подписи директора или самого ИП.
 	PendingSignatures []string `json:"pending_signatures" validate:"required"`
 } //	@name	Me
 
@@ -503,8 +504,12 @@ func toCompanyAccess(cs []domain.CompanyAccess) []companyAccessResponse {
 }
 
 func toMeResponse(u domain.User) meResponse {
+	pending := u.PendingSignatures
+	if pending == nil {
+		pending = []string{}
+	}
 	return meResponse{ID: u.ID, FullName: u.FullName, Roles: []string{string(u.Role)}, Companies: toCompanyAccess(u.Companies),
-		PendingSignatures: []string{}}
+		PendingSignatures: pending}
 }
 
 func toTestUserResponse(u domain.User) testUserResponse {

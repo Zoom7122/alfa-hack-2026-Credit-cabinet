@@ -178,7 +178,8 @@ var (
 	// ErrNotWaitingForInfo — банк не ждёт ответов: заявка не в WAITING_FOR_INFO.
 	ErrNotWaitingForInfo = errors.New("application is not waiting for info")
 	// ErrQuestionClosed — на вопрос уже ответили или его отменили.
-	ErrQuestionClosed = errors.New("info request is not open")
+	ErrQuestionClosed         = errors.New("info request is not open")
+	ErrInvalidAnswerDocuments = errors.New("answer documents are unavailable or belong to another question")
 )
 
 // InfoAnswer — ответ клиента на вопрос банка.
@@ -190,6 +191,7 @@ type InfoAnswer struct {
 	Value         json.RawMessage // значение по типу вопроса; nil — только документы
 	Comment       string
 	Documents     []Document     // приложенные файлы (info_request_id — этот вопрос)
+	DocumentIDs   []string       // документы, загруженные и проверенные до отправки ответа
 	ScoringPatch  map[string]any // поле анкеты scoring → значение, если вопрос его уточняет
 	Now           time.Time
 	ReviewSLA     time.Duration // если вопросы задал андеррайтер — срок его повторного рассмотрения

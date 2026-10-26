@@ -7,6 +7,7 @@ import { ApiError } from '../api/client';
 import { useLiveUpdates } from '../api/live';
 import { queryKeys } from '../api/queries';
 import type { Me } from '../api/types';
+import { API_MOCK_ENABLED } from '../config';
 import { DashboardPage } from '../pages/DashboardPage/DashboardPage';
 import { LoginPage } from '../pages/LoginPage/LoginPage';
 import { NotReadyPage } from '../pages/NotReadyPage/NotReadyPage';
@@ -89,7 +90,9 @@ function ProductsRoute() {
 function ApplicationRoute() {
     const { me } = useOutletContext<AuthContext>();
     const { applicationId } = useParams();
-    return <Lazy>{isCollectorId(applicationId) ? <CollectorApplicationPage /> : <ApplicationPage me={me} />}</Lazy>;
+    if (isCollectorId(applicationId)) return <Lazy><CollectorApplicationPage /></Lazy>;
+    if (!API_MOCK_ENABLED) return <NotReadyPage />;
+    return <Lazy><ApplicationPage me={me} /></Lazy>;
 }
 
 function NewApplicationRoute() {

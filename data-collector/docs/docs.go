@@ -374,6 +374,154 @@ const docTemplate = `{
                 }
             }
         },
+        "/applications/{id}/draft": {
+            "get": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Полная сохранённая анкета черновика, без подстановки отсутствующих полей",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ApplicationDraft"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Сохранить незавершённую анкету в БД без отправки заявки",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Поля и версия черновика",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SaveApplicationDraft"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ApplicationDraft"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/applications/{id}/info-requests": {
             "get": {
                 "description": "input — как отвечать (тип значения и варианты), documents — какие документы приложить.",
@@ -416,7 +564,7 @@ const docTemplate = `{
                         "bearer": []
                     }
                 ],
-                "description": "JSON {value, comment} или multipart/form-data: часть answer с тем же JSON и части files с документами\n(форматы и подписи — как у анкеты). Ответили на все обязательные вопросы — заявка уходит на повторную\nоценку или к специалисту, если вопросы задал он. Отвечает только автор заявки.",
+                "description": "JSON {value, comment} или multipart/form-data: часть answer с тем же JSON и части files с документами\n(форматы и подписи — как у анкеты). Ответили на все обязательные вопросы — заявка уходит на повторную\nПроверенные до ответа вложения передаются в document_ids; загружать те же байты повторно не нужно.\nоценку или к специалисту, если вопросы задал он. Отвечает только автор заявки.",
                 "consumes": [
                     "application/json",
                     "multipart/form-data"
@@ -532,6 +680,83 @@ const docTemplate = `{
                 }
             }
         },
+        "/applications/{id}/offers/{offerId}/accept": {
+            "post": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "description": "OFFERED → SIGNING. Повтор выбора того же предложения возвращает прежнюю сессию. Код виден только подписанту, действует 10 минут; 3 попытки.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "signing"
+                ],
+                "summary": "Выбрать предложение и получить договор с демо-кодом",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "id предложения",
+                        "name": "offerId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/SigningSession"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "410": {
+                        "description": "Gone",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/applications/{id}/questionnaire": {
             "post": {
                 "security": [
@@ -622,6 +847,158 @@ const docTemplate = `{
                     },
                     "422": {
                         "description": "нарушено правило анкеты или файлов: формат, размер, пары подписей, больше 10 файлов",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/signing": {
+            "get": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "description": "Сессия сохраняется в БД; после перезагрузки возвращается тот же код. У других представителей компании код скрыт.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "signing"
+                ],
+                "summary": "Состояние демо-подписания договора",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/SigningSession"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/signing/confirm": {
+            "post": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "description": "Только директор компании или сам ИП. SIGNING → COMPLETED, код стирается. Повтор успешного подтверждения безопасен. Неверный код расходует попытку; 3 ошибки или истечение кода возвращают заявку в OFFERED.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "signing"
+                ],
+                "summary": "Подтвердить договор кодом и завершить учебную выдачу",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Код из интерфейса",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ConfirmSigningRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/SigningSession"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "410": {
+                        "description": "Gone",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
                         "schema": {
                             "$ref": "#/definitions/Problem"
                         }
@@ -1644,7 +2021,9 @@ const docTemplate = `{
                         "MANUAL_REVIEW",
                         "WAITING_FOR_INFO",
                         "OFFERED",
-                        "REJECTED"
+                        "REJECTED",
+                        "SIGNING",
+                        "COMPLETED"
                     ],
                     "example": "DRAFT"
                 },
@@ -1653,6 +2032,20 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
+                }
+            }
+        },
+        "ApplicationDraft": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
                 }
             }
         },
@@ -2523,6 +2916,24 @@ const docTemplate = `{
                 }
             }
         },
+        "ConfirmSigningRequest": {
+            "type": "object",
+            "required": [
+                "code"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "123456"
+                },
+                "method": {
+                    "type": "string",
+                    "enum": [
+                        "SIMPLE_CODE"
+                    ]
+                }
+            }
+        },
         "CounterpartyLookupRequest": {
             "type": "object",
             "required": [
@@ -2605,6 +3016,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string",
                     "example": "doc_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"
+                },
+                "info_request_id": {
+                    "type": "string"
                 },
                 "mime_type": {
                     "type": "string",
@@ -2732,6 +3146,12 @@ const docTemplate = `{
                 "comment": {
                     "type": "string"
                 },
+                "document_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "value": {
                     "description": "Значение по input.type вопроса: число (NUMBER, MONEY), код варианта (CHOICE), строка (TEXT). NONE — не нужно.",
                     "type": "string"
@@ -2841,7 +3261,7 @@ const docTemplate = `{
                     "example": "usr_director_north"
                 },
                 "pending_signatures": {
-                    "description": "Заявки, ждущие подписи пользователя как директора. Подписания в data-collector пока нет — всегда пусто.",
+                    "description": "Заявки, ждущие демо-подписи директора или самого ИП.",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -3279,6 +3699,97 @@ const docTemplate = `{
                 "term_months": {
                     "type": "integer",
                     "example": 24
+                }
+            }
+        },
+        "SaveApplicationDraft": {
+            "type": "object",
+            "required": [
+                "data",
+                "version"
+            ],
+            "properties": {
+                "data": {
+                    "type": "object"
+                },
+                "version": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
+        "SigningSession": {
+            "type": "object",
+            "required": [
+                "attempts_left",
+                "awaiting_me",
+                "code_expires_at",
+                "document_sha256",
+                "documents",
+                "id",
+                "method",
+                "offer_id",
+                "profile",
+                "required_signer",
+                "state"
+            ],
+            "properties": {
+                "attempts_left": {
+                    "type": "integer"
+                },
+                "awaiting_me": {
+                    "type": "boolean"
+                },
+                "code_expires_at": {
+                    "type": "string"
+                },
+                "demo_code": {
+                    "type": "string"
+                },
+                "disbursement": {
+                    "$ref": "#/definitions/domain.MockDisbursement"
+                },
+                "document_sha256": {
+                    "type": "string"
+                },
+                "documents": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Document"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "method": {
+                    "type": "string",
+                    "enum": [
+                        "SIMPLE_CODE"
+                    ]
+                },
+                "offer_id": {
+                    "type": "string"
+                },
+                "profile": {
+                    "type": "string",
+                    "enum": [
+                        "MOCK"
+                    ]
+                },
+                "required_signer": {
+                    "$ref": "#/definitions/httptransport.signingSignerResponse"
+                },
+                "signed_at": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string",
+                    "enum": [
+                        "AWAITING_SIGNER",
+                        "SIGNED",
+                        "FAILED",
+                        "CANCELLED"
+                    ]
                 }
             }
         },
@@ -3816,6 +4327,20 @@ const docTemplate = `{
                 }
             }
         },
+        "domain.MockDisbursement": {
+            "type": "object",
+            "properties": {
+                "account_masked": {
+                    "type": "string"
+                },
+                "amount": {
+                    "type": "integer"
+                },
+                "executed_at": {
+                    "type": "string"
+                }
+            }
+        },
         "domain.Money": {
             "type": "object",
             "properties": {
@@ -3992,6 +4517,21 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "recipient": {
+                    "type": "string"
+                }
+            }
+        },
+        "httptransport.signingSignerResponse": {
+            "type": "object",
+            "required": [
+                "full_name",
+                "id"
+            ],
+            "properties": {
+                "full_name": {
+                    "type": "string"
+                },
+                "id": {
                     "type": "string"
                 }
             }

@@ -16,7 +16,7 @@ import { REGISTRY_TIMEOUT_INN, registry } from '../data';
 import { mockFailure } from '../handlers';
 import { stepMs } from '../workflow';
 import { productByCode, termsErrors } from './catalog';
-import { allAnswered, offerOf, questionsOf, REJECT_REASONS, scoredOutcome } from './outcome';
+import { allAnswered, offersOf, questionsOf, REJECT_REASONS, scoredOutcome } from './outcome';
 import { FAILING_COLLECTION_INN, scenarioByInn } from './scenarios';
 import { mutateCollector, newId, readCollector, type StoredCollectorApp } from './store';
 import { collectorUser, COLLECTOR_TEST_USERS } from './users';
@@ -81,6 +81,8 @@ const canSign = (role: CollectorRole, soleProprietor: boolean) => role === 'DIRE
 
 /** Статус по времени отправки: шаг конвейера — как у остальных моков (флаг credit-cabinet:mock-pipeline-ms). */
 export function statusOf(app: StoredCollectorApp, now = Date.now()): CollectorStatus {
+    if (app.signing?.state === 'SIGNED') return 'COMPLETED';
+    if (app.signing?.state === 'AWAITING_SIGNER') return 'SIGNING';
     if (app.submitted_ms === undefined) return 'DRAFT';
     const elapsed = now - app.submitted_ms;
     if (elapsed < stepMs()) return 'SUBMITTED';
@@ -123,8 +125,8 @@ export function toApplication(app: StoredCollectorApp, withKnown = false): Colle
             already_known: withKnown ? app.already_known : undefined,
         },
         representative: app.representative,
-        product_code: q?.product_code,
-        requested: q?.requested,
+        product_code: q?.product_code ?? app.draft?.product_code,
+        requested: q?.requested ?? app.draft?.requested,
         purpose: q?.purpose,
         documents: app.documents.map((d) => {
             const state = signatureState(app, d);
@@ -209,7 +211,7 @@ export function timelineOf(app: StoredCollectorApp) {
     for (const e of app.review?.events ?? []) {
         if (!e.internal) events.push({ id: e.id, at: e.at, type: e.type, message: e.message, actor_kind: e.actor ? 'EMPLOYEE' : 'SYSTEM' } as (typeof events)[number]);
     }
-    return events.sort((a, b) => b.at.localeCompare(a.at));
+    return [...events, ...(app.signing_events ?? [])].sort((a, b) => b.at.localeCompare(a.at));
 }
 
 /** Системы без входных данных (domain.SkippedSystems) — с причиной. */
@@ -442,7 +444,8 @@ function meOf(user: (typeof COLLECTOR_TEST_USERS)[number]) {
         added.push({ applicant_id: app.company.id, short_name: app.company.name ?? `ИНН ${app.company.inn}`, inn: app.company.inn, role: app.representative.role, can_sign: app.representative.can_sign });
     }
     added.sort((a, b) => a.short_name.localeCompare(b.short_name) || a.applicant_id.localeCompare(b.applicant_id));
-    return { id: user.id, full_name: user.full_name, roles: user.roles, companies: [...user.companies, ...added], pending_signatures: [] };
+    const pending = readCollector().apps.filter((a) => a.signing?.state === 'AWAITING_SIGNER' && a.signing.required_signer.id === user.id).map((a) => a.id);
+    return { id: user.id, full_name: user.full_name, roles: user.roles, companies: [...user.companies, ...added], pending_signatures: pending };
 }
 
 // ---------------------------------------------------------------- обработчики
@@ -567,6 +570,32 @@ export const collectorHandlers = [
         const app = readCollector().apps.find((a) => a.id === params.id);
         if (!app) return notFound('заявка не найдена');
         return HttpResponse.json(toApplication(app));
+    }),
+
+    http.get(url('/applications/:id/draft'), async ({ request, params }) => {
+        const app = readCollector().apps.find((a) => a.id === params.id);
+        if (!app) return notFound('заявка не найдена');
+        const { user } = authenticate(request);
+        if (user?.id !== app.representative.id && (user || isTestUser(app.representative.id))) return problem(403, 'FORBIDDEN', 'Нет доступа');
+        if (app.submitted_ms) return problem(409, 'CONFLICT', 'Анкету уже отправили');
+        return HttpResponse.json({ data: app.draft ?? {}, version: app.draft_version ?? 1, updated_at: app.updated_at });
+    }),
+    http.put(url('/applications/:id/draft'), async ({ request, params }) => {
+        const app = readCollector().apps.find((a) => a.id === params.id);
+        if (!app) return notFound('заявка не найдена');
+        const { user } = authenticate(request);
+        if (user?.id !== app.representative.id && (user || isTestUser(app.representative.id))) return problem(403, 'FORBIDDEN', 'Нет доступа');
+        if (app.submitted_ms) return problem(409, 'CONFLICT', 'Анкету уже отправили');
+        const body = await request.json() as { data: StoredCollectorApp['draft']; version: number };
+        if (body.version !== (app.draft_version ?? 1)) return problem(409, 'CONFLICT', 'Черновик изменён');
+        const stored = mutateCollector((db) => {
+            const target = db.apps.find((a) => a.id === app.id)!;
+            target.draft = body.data;
+            target.draft_version = body.version + 1;
+            target.updated_at = new Date().toISOString();
+            return target;
+        });
+        return HttpResponse.json({ data: stored.draft, version: stored.draft_version, updated_at: stored.updated_at });
     }),
 
     http.post(url('/applications/:id/questionnaire'), async ({ request, params }) => {
@@ -781,13 +810,7 @@ export const collectorHandlers = [
         await delay(150);
         const app = readCollector().apps.find((a) => a.id === params.id);
         if (!app) return notFound('не найдено');
-        const approved = app.review?.decisions.filter((d) => d.action === 'APPROVE').at(-1);
-        if (approved) {
-            return HttpResponse.json({
-                items: (approved.offers ?? []).map((o, i) => ({ id: `ofr_${app.id.slice(4)}_${i}`, state: 'ACTIVE', recommended: i === 0, collateral_required: [], conditions: [], ...o })),
-            });
-        }
-        return HttpResponse.json({ items: statusOf(app) === 'OFFERED' ? [offerOf(app, scoredAt(app))] : [] });
+        return HttpResponse.json({ items: ['OFFERED', 'SIGNING', 'COMPLETED'].includes(statusOf(app)) ? offersOf(app, scoredAt(app)) : [] });
     }),
 
     http.get(url('/applications/:id/info-requests'), async ({ params }) => {
@@ -810,7 +833,7 @@ export const collectorHandlers = [
         if (statusOf(app) !== 'WAITING_FOR_INFO') return problem(409, 'INVALID_TRANSITION', 'Conflict', 'банк сейчас не ждёт ответов по этой заявке');
         if (question.state !== 'OPEN') return problem(409, 'CONFLICT', 'Conflict', 'на этот вопрос уже ответили');
 
-        let answer: { value?: unknown; comment?: string } = {};
+        let answer: { value?: unknown; comment?: string; document_ids?: string[] } = {};
         let files: File[] = [];
         const type = request.headers.get('Content-Type') ?? '';
         try {
@@ -829,7 +852,9 @@ export const collectorHandlers = [
         if ((input.type === 'MONEY' || input.type === 'NUMBER') && (typeof answer.value !== 'number' || answer.value < 0)) {
             return validation(422, 'ответ не прошёл проверку', [{ field: 'value', code: 'invalid_value', message: 'нужно неотрицательное число' }]);
         }
-        if ((question.documents as { required?: boolean } | undefined)?.required && !files.length) {
+        const existing = app.documents.filter((d) => answer.document_ids?.includes(d.id ?? '') && d.info_request_id === question.id);
+        if (existing.length !== (answer.document_ids?.length ?? 0)) return validation(422, 'документ не относится к вопросу', []);
+        if ((question.documents as { required?: boolean } | undefined)?.required && !files.length && !existing.some((d) => d.type !== 'SIGNATURE')) {
             return validation(422, 'ответ не прошёл проверку', [{ field: 'files', code: 'required', message: 'приложите документ' }]);
         }
         const now = Date.now();
@@ -846,7 +871,7 @@ export const collectorHandlers = [
         const updated = mutateCollector((d) => {
             const stored = d.apps.find((a) => a.id === app.id) ?? app;
             stored.documents = [...stored.documents, ...docs];
-            stored.answers = { ...stored.answers, [question.id ?? '']: { value: answer.value, comment: answer.comment, document_ids: docs.map((x) => x.id), at: iso(now) } };
+            stored.answers = { ...stored.answers, [question.id ?? '']: { value: answer.value, comment: answer.comment, document_ids: [...docs.map((x) => x.id), ...existing.map((x) => x.id ?? '')], at: iso(now) } };
             stored.updated_at = iso(now);
             // ответили на все вопросы андеррайтера — заявка снова у него, с новым сроком
             const latest = stored.review?.decisions.at(-1);

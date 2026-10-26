@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { AmountInput } from '@alfalab/core-components/amount-input';
 import { Button } from '@alfalab/core-components/button';
 import { DateInput } from '@alfalab/core-components/date-input';
@@ -24,6 +25,8 @@ type Props = {
     documents: Document[];
     onChange: (answer: AnswerDraft) => void;
     error?: string;
+    onUploadingChange?: (uploading: boolean) => void;
+    children?: ReactNode;
 };
 
 /** Где в распознанном документе лежит значение для поля заявки. */
@@ -35,9 +38,10 @@ const EXTRACTED_PREFIX: Record<string, string> = {
 function recognizedValue(request: InfoRequest, documents: Document[]) {
     const prefix = request.target_field ? EXTRACTED_PREFIX[request.target_field] : undefined;
     if (!prefix) return undefined;
+    const year = request.title.match(/\b20\d{2}\b/)?.[0];
     for (const doc of documents) {
         const extracted = doc.recognition?.state === 'DONE' ? doc.recognition.extracted : undefined;
-        const value = Object.entries(extracted ?? {}).find(([key]) => key.startsWith(prefix))?.[1];
+        const value = Object.entries(extracted ?? {}).find(([key]) => key.startsWith(prefix) && (!year || key === `${prefix}${year}`))?.[1];
         if (typeof value === 'number') return value;
     }
     return undefined;
@@ -125,8 +129,7 @@ export function ValueField({ request, answer, onChange }: Pick<Props, 'request' 
 }
 
 /** Один вопрос банка (экран 08). Формулировки нейтральные — источник расхождения не раскрываем. */
-export function InfoRequestCard({ index, request, applicationId, answer, documents, onChange, error }: Props) {
-    const recognized = recognizedValue(request, documents);
+export function InfoRequestCard({ index, request, applicationId, answer, documents, onChange, error, onUploadingChange, children }: Props) {
     const accepted = request.documents?.accepted_types ?? [];
     const titleId = `info-request-${request.id}`;
     return (
@@ -167,10 +170,12 @@ export function InfoRequestCard({ index, request, applicationId, answer, documen
                     type={accepted[0]}
                     infoRequestId={request.id}
                     documents={documents}
+                    onUploadingChange={onUploadingChange}
                     hint={request.documents?.hint}
                     accept={accepted.includes('POWER_OF_ATTORNEY') ? '.xml,.sig,.p7s,.pdf' : undefined}
-                    renderExtra={() =>
-                        recognized !== undefined &&
+                    renderExtra={(doc) => {
+                        const recognized = recognizedValue(request, [doc]);
+                        return recognized !== undefined &&
                         recognized !== answer.value && (
                             <div className='info-request-card__recognized'>
                                 <Typography.Text view='primary-small'>Распознано: {formatMoney(recognized)}</Typography.Text>
@@ -178,8 +183,8 @@ export function InfoRequestCard({ index, request, applicationId, answer, documen
                                     Подставить
                                 </Button>
                             </div>
-                        )
-                    }
+                        );
+                    }}
                 />
             )}
 
@@ -188,6 +193,7 @@ export function InfoRequestCard({ index, request, applicationId, answer, documen
                     {error}
                 </Plate>
             )}
+            {children}
         </section>
     );
 }

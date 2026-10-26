@@ -32,6 +32,18 @@
     border-radius: var(--border-radius-16);
 }
 
+.collector-signing {
+    align-self: stretch;
+}
+
+.collector-signing__form {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--gap-16);
+    max-width: 520px;
+}
+
 @media (max-width: 599px) {
     .collector-outcome__offers {
         grid-template-columns: minmax(0, 1fr);

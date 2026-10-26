@@ -68,7 +68,7 @@ WHERE a.id = ANY($1)`
 	documentColumns = `
 SELECT application_id, id, type, file_name, mime_type, size_bytes, sha256, storage_key, coalesce(uploaded_by, ''),
        coalesce(signed_document_id, ''), signature_state, coalesce(signature_verdict, ''),
-       coalesce(recognition ->> 'state', ''), uploaded_at
+       coalesce(recognition ->> 'state', ''), uploaded_at, coalesce(info_request_id, '')
 FROM documents`
 
 	selectDocuments = documentColumns + `
@@ -279,7 +279,7 @@ func scanDocument(row pgx.CollectableRow) (domain.Document, error) {
 		docType, signatureState, recognitionState string
 	)
 	err := row.Scan(&d.ApplicationID, &d.ID, &docType, &d.FileName, &d.MimeType, &d.SizeBytes, &d.SHA256, &d.StorageKey,
-		&d.UploadedBy, &d.SignedDocumentID, &signatureState, &d.SignatureVerdict, &recognitionState, &d.UploadedAt)
+		&d.UploadedBy, &d.SignedDocumentID, &signatureState, &d.SignatureVerdict, &recognitionState, &d.UploadedAt, &d.InfoRequestID)
 	d.Type, d.SignatureState = domain.DocumentType(docType), domain.SignatureState(signatureState)
 	d.RecognitionState, d.UploadedAt = domain.RecognitionState(recognitionState), d.UploadedAt.UTC()
 	return d, err
@@ -565,6 +565,20 @@ func (r *ApplicationRepository) AnswerInfoRequest(ctx context.Context, a domain.
 		}
 
 		ids := make([]string, 0, len(a.Documents))
+		if len(a.DocumentIDs) > 0 {
+			rows, err := tx.Query(ctx, `SELECT id FROM documents WHERE id=ANY($1) AND application_id=$2 AND info_request_id=$3 AND deleted_at IS NULL FOR SHARE`, a.DocumentIDs, a.ApplicationID, a.RequestID)
+			if err != nil {
+				return err
+			}
+			existing, err := pgx.CollectRows(rows, pgx.RowTo[string])
+			if err != nil {
+				return err
+			}
+			if len(existing) != len(a.DocumentIDs) {
+				return domain.ErrInvalidAnswerDocuments
+			}
+			ids = append(ids, existing...)
+		}
 		for _, signatures := range []bool{false, true} {
 			for _, d := range a.Documents {
 				if (d.SignedDocumentID != "") != signatures {

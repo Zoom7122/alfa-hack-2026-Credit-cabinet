@@ -9,20 +9,21 @@ import "encoding/json"
 
 // Request — DecisionRequest credit-engine (POST /api/v1/decisions).
 type Request struct {
-	InputSnapshot      *InputSnapshot  `json:"input_snapshot,omitempty"`
-	ModelVersion       *string         `json:"model_version,omitempty"`
-	ApplicationID      string          `json:"application_id"`
-	Borrower           Borrower        `json:"borrower"`
-	FactsDate          *string         `json:"facts_date"`
-	CreditRequest      *CreditRequest  `json:"credit_request"`
-	Need               *Need           `json:"need"`
-	Cash               *Cash           `json:"cash"`
-	MonthlyHistory     []MonthCash     `json:"monthly_history"`
-	FinancialDebtRUB   *int64          `json:"financial_debt_rub"`
-	FutureDebtPayments []DebtPayment   `json:"future_debt_payments"`
-	Scoring            *ScoringInput   `json:"scoring"`
-	Evidence           *Evidence       `json:"evidence"`
-	IPEconomicData     *IPEconomicData `json:"ip_economic_data"`
+	InputSnapshot       *InputSnapshot  `json:"input_snapshot,omitempty"`
+	ModelVersion        *string         `json:"model_version,omitempty"`
+	ApplicationID       string          `json:"application_id"`
+	Borrower            Borrower        `json:"borrower"`
+	FactsDate           *string         `json:"facts_date"`
+	CreditRequest       *CreditRequest  `json:"credit_request"`
+	Need                *Need           `json:"need"`
+	Cash                *Cash           `json:"cash"`
+	MonthlyHistory      []MonthCash     `json:"monthly_history"`
+	FinancialDebtRUB    *int64          `json:"financial_debt_rub"`
+	FutureDebtPayments  []DebtPayment   `json:"future_debt_payments"`
+	Scoring             *ScoringInput   `json:"scoring"`
+	Evidence            *Evidence       `json:"evidence"`
+	IPEconomicData      *IPEconomicData `json:"ip_economic_data"`
+	FinancialStatements *Statements     `json:"financial_statements,omitempty"`
 }
 
 type Borrower struct {

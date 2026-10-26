@@ -72,7 +72,7 @@ var compiledCompatibilityCatalog *modelbindings.Catalog
 var compiledCompatibilityError error
 func compiledCompatibilityEvaluate(e *Evaluator,ctx context.Context,r contracts.DecisionRequest)(Assessment,error){
  // The compatibility bridge compares legacy envelopes. Snapshot protocol has separate tests.
- if r.InputSnapshot!=nil{return e.evaluateCompiled(ctx,r)}
+ if r.InputSnapshot!=nil || r.FinancialStatements!=nil{return e.evaluateCompiled(ctx,r)}
  p,err:=PrepareApplication(r,dateOnly(e.clock.Now()));if err!=nil{return Assessment{},err}
  compiledCompatibilityOnce.Do(func(){compiledCompatibilityCatalog,compiledCompatibilityError=modelbindings.NewDefault()});if compiledCompatibilityError!=nil{return Assessment{},compiledCompatibilityError}
  version,err:=modelbindings.LegacyVersion(r.Borrower.Type);if err!=nil{return Assessment{},err};entry,err:=compiledCompatibilityCatalog.Lookup(version,r.Borrower.Type);if err!=nil{return Assessment{},err}

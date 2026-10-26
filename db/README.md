@@ -4,6 +4,8 @@
 
 Начальная схема (`00001_init.sql`) перенесена из [docs/db-schema.dbml](../docs/db-schema.dbml) и [docs/db-schema.md](../docs/db-schema.md): 13 таблиц, перечисления — `text` + `CHECK` со значениями из `api/openapi.yaml`. `00002_raw_collections.sql` добавляет `raw_collections` — сырые ответы внешних систем, которые собирает data-collector. `00003_collection_tasks.sql` — очередь сбора data-collector: задачи `collection_tasks`, исходящие события `outbox` (transactional outbox → Kafka) и ссылка `raw_collections.task_id` на задачу. `00004_applicants_documents.sql` — регистрация заявителя и документы: новые роли `company_members` (`FINANCE_EMPLOYEE`, `BANKING_EMPLOYEE`), уникальный ИНН клиента в `users`, ссылки `collection_tasks.application_id` и `document_ids`. `00005_signature_reports.sql` — отчёты worker'а проверки подписи: в `signature_reports` файл подписи, sha256 документа и подписи, профиль (`TEST`), статус каждого этапа, итог, причина отказа и уникальный ключ идемпотентности. С этого момента источник правды — миграции; ERD и справочник обновляются вместе с ними.
 
+Миграция `00009_mock_signing.sql` привязывает сессию демо-подписания к документу и его SHA-256, добавляет срок кода и результат учебной выдачи. Сценарий: `OFFERED → SIGNING → COMPLETED`, подтверждение кодом через API data-collector.
+
 ## Запуск
 
 Настройки подключения — в `.env` в корне репозитория (`.env` в git не попадает):
@@ -54,7 +56,7 @@ depends_on:
 
 ## Постоянный скоринговый конвейер
 
-`00009_scoring_dispatch.sql` добавляет `scoring_jobs`, связь решения с заданием,
+`00010_scoring_dispatch.sql` добавляет `scoring_jobs`, связь решения с заданием,
 входящий журнал `credit_event_inbox` и схему `credit_engine_runtime` для операций
 скоринга, банковского состояния, выдач и outbox. Сервисы запускаются после миграции;
 банк инициализируется исходным снимком один раз. Подробности: [scoring-dispatch](../docs/scoring-dispatch.md).

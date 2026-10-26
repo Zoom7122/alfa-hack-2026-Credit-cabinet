@@ -10,6 +10,7 @@ const port = 5179;
 
 export default defineConfig({
     testDir: './e2e',
+    testIgnore: '**/no-mocks.spec.ts',
     fullyParallel: true,
     forbidOnly: Boolean(process.env.CI),
     retries: process.env.CI ? 1 : 0,

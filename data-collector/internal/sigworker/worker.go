@@ -127,7 +127,7 @@ func (w *Worker) Handle(ctx context.Context, value []byte) error {
 
 	units, candidates := plan(docs, inEvent)
 	for _, d := range candidates {
-		u, ok, err := w.embedded(ctx, log, d)
+		u, ok, err := w.embedded(ctx, log, d, ev.VerificationID)
 		if err != nil {
 			return err
 		}
@@ -137,6 +137,7 @@ func (w *Worker) Handle(ctx context.Context, value []byte) error {
 	}
 	p := &party{w: w, applicationID: ev.ApplicationID}
 	for _, u := range units {
+		u.requestID = ev.VerificationID
 		if err := w.process(ctx, log, u, p); err != nil {
 			return err
 		}
@@ -146,6 +147,7 @@ func (w *Worker) Handle(ctx context.Context, value []byte) error {
 
 // unit — одна проверяемая подпись.
 type unit struct {
+	requestID string
 	doc       domain.Document  // подписанный документ; у присоединённой подписи — сам контейнер
 	signature *domain.Document // файл открепленной подписи
 	container signature.Container
@@ -158,6 +160,9 @@ func (u unit) key() string {
 	k := "auto:" + signature.ProfileTest + ":" + u.doc.ID + "@" + u.doc.SHA256
 	if u.signature != nil {
 		k += ":" + u.signature.ID + "@" + u.signature.SHA256
+	}
+	if u.requestID != "" {
+		k += ":request:" + u.requestID
 	}
 	return k
 }
@@ -194,8 +199,8 @@ func plan(docs []domain.Document, inEvent map[string]bool) (units []unit, candid
 }
 
 // embedded читает PDF или XML без открепленной подписи и ищет в нём встроенную подпись.
-func (w *Worker) embedded(ctx context.Context, log *slog.Logger, d domain.Document) (unit, bool, error) {
-	u := unit{doc: d}
+func (w *Worker) embedded(ctx context.Context, log *slog.Logger, d domain.Document, requestID string) (unit, bool, error) {
+	u := unit{doc: d, requestID: requestID}
 	if done, err := w.reportExists(ctx, u.key()); err != nil || done {
 		return u, false, err
 	}

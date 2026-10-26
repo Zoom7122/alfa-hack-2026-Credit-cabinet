@@ -16,10 +16,11 @@ type Props = {
     value: TermsValue;
     onChange: (value: TermsValue) => void;
     size?: 56 | 64;
+    errors?: { amount?: string; term?: string };
 };
 
 /** Пара «сумма + срок» со слайдерами в пределах продукта. */
-export function TermsFields({ product, value, onChange, size = 56 }: Props) {
+export function TermsFields({ product, value, onChange, size = 56, errors }: Props) {
     const { amount, term_months: term } = product;
     const amountStep = amount.max - amount.min > 5_000_000 ? 100_000 : 10_000;
     const amountError =
@@ -41,7 +42,7 @@ export function TermsFields({ product, value, onChange, size = 56 }: Props) {
                 max={amount.max}
                 step={amountStep}
                 steps={[formatCompactMoney(amount.min), formatCompactMoney(amount.max)]}
-                error={amountError}
+                error={errors?.amount ?? amountError}
                 onInputChange={(_, { value: v }) => onChange({ ...value, amount: v })}
                 onSliderChange={({ value: v }) => onChange({ ...value, amount: v })}
                 onBlur={() => value.amount !== '' && onChange({ ...value, amount: clamp(value.amount, amount.min, amount.max) })}
@@ -60,9 +61,10 @@ export function TermsFields({ product, value, onChange, size = 56 }: Props) {
                 max={term.max}
                 step={1}
                 steps={[`${term.min} мес.`, `${term.max} мес.`]}
+                error={errors?.term}
                 onInputChange={(_, { value: v }) => onChange({ ...value, term: v })}
                 onSliderChange={({ value: v }) => onChange({ ...value, term: v })}
-                onBlur={() => onChange({ ...value, term: clamp(value.term === '' ? term.min : value.term, term.min, term.max) })}
+                onBlur={() => value.term !== '' && onChange({ ...value, term: clamp(value.term, term.min, term.max) })}
             />
         </div>
     );

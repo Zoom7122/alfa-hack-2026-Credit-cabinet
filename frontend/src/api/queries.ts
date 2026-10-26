@@ -1,11 +1,14 @@
 import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { API_MOCK_ENABLED } from '../config';
 import { newIdempotencyKey } from '../shared/lib/idempotency';
+import { isCollectorId } from '../shared/lib/collector';
 import { api, ApiError, isUnauthorized, unwrap } from './client';
 import { collector } from './collector/client';
 import { toBoDossier, toBoListItem } from './collector/backoffice';
 import { toProduct } from './collector/catalog';
 import { session } from './session';
+import { documentRequest, loadDocumentResult, type StoredDocument } from './documents';
 import type {
     ApplicantType,
     Application,
@@ -82,23 +85,25 @@ export function useMockLogin() {
 }
 
 /**
- * Профиль: пользователь и компании — у data-collector (там вход). Подписание пока живёт в основном API (моки по
- * openapi.yaml): оттуда — `pending_signatures` для колокольчика и id компаний, на которые завязаны его экраны
- * (совпадение по ИНН). Основной API недоступен — профиль всё равно есть, без подписей.
+ * Профиль и новые подписания — у data-collector. Основной API (моки по openapi.yaml) добавляет
+ * старые демо-подписания для колокольчика и id компаний, на которые завязаны его экраны
+ * (совпадение по ИНН). При выключенных демо-моках основной API не запрашиваем.
  */
 async function loadMe(): Promise<Me> {
     const [live, legacy] = await Promise.all([
         collector.GET('/me').then(unwrap),
-        api
-            .GET('/me')
-            .then(unwrap)
-            .catch(() => undefined),
+        API_MOCK_ENABLED
+            ? api
+                  .GET('/me')
+                  .then(unwrap)
+                  .catch(() => undefined)
+            : undefined,
     ]);
     const legacyByInn = new Map((legacy?.companies ?? []).map((c) => [c.inn, c]));
     const companies = live.companies.map((c) => ({ ...c, applicant_id: legacyByInn.get(c.inn)?.applicant_id ?? c.applicant_id }));
     // компании, привязанные в основном API (экран «Добавить компанию»), — тоже в профиле
     for (const c of legacy?.companies ?? []) if (!companies.some((x) => x.inn === c.inn)) companies.push(c);
-    return { ...live, companies, pending_signatures: legacy?.pending_signatures ?? live.pending_signatures };
+    return { ...live, companies, pending_signatures: [...new Set([...(live.pending_signatures ?? []), ...(legacy?.pending_signatures ?? [])])] };
 }
 
 export function useMe(enabled = true) {
@@ -163,6 +168,7 @@ export function useApplicants() {
     return useQuery({
         queryKey: queryKeys.applicants,
         queryFn: async () => unwrap(await api.GET('/applicants')).items,
+        enabled: API_MOCK_ENABLED,
     });
 }
 
@@ -176,14 +182,14 @@ export function useApplications(params: { applicantId?: string; status?: Applica
                     params: { query: { applicant_id: params.applicantId, status: params.status, limit: 100 } },
                 }),
             ).items,
-        enabled: Boolean(params.applicantId),
+        enabled: API_MOCK_ENABLED && Boolean(params.applicantId),
     });
 }
 
 /** Лёгкие статусы заявок (вопросы банка, кто подписывает), собранные в Map по id заявки. */
 export function useApplicationStatuses(applications: ApplicationSummary[]) {
     return useQueries({
-        queries: applications.map((app) => ({
+        queries: (API_MOCK_ENABLED ? applications : []).map((app) => ({
             queryKey: queryKeys.applicationStatus(app.id),
             queryFn: async () =>
                 unwrap(await api.GET('/applications/{applicationId}/status', { params: { path: { applicationId: app.id } } })),
@@ -286,9 +292,11 @@ const isRecognizing = (doc: Document) => RECOGNIZING.has(doc.recognition?.state 
 export function useDocuments(applicationId: string | undefined) {
     return useQuery({
         queryKey: queryKeys.documents(applicationId ?? ''),
-        queryFn: async () =>
-            unwrap(await api.GET('/applications/{applicationId}/documents', { params: { path: { applicationId: applicationId ?? '' } } }))
-                .items,
+        queryFn: async () => {
+            const id = applicationId ?? '';
+            const { items } = await documentRequest<{ items: StoredDocument[] }>(id);
+            return Promise.all(items.map((doc) => loadDocumentResult(id, doc)));
+        },
         enabled: Boolean(applicationId),
         refetchInterval: (query) => (query.state.data?.some(isRecognizing) ? 1500 : false),
     });
@@ -314,6 +322,7 @@ export function useUploadDocument(applicationId: string) {
             form.append('type', type);
             if (infoRequestId) form.append('info_request_id', infoRequestId);
             if (signedDocumentId) form.append('signed_document_id', signedDocumentId);
+            if (isCollectorId(applicationId)) return documentRequest<Document>(applicationId, '', { method: 'POST', body: form });
             return unwrap(
                 await api.POST('/applications/{applicationId}/documents', {
                     params: { path: { applicationId }, header: { 'Idempotency-Key': newIdempotencyKey() } },
@@ -330,13 +339,26 @@ export function useUploadDocument(applicationId: string) {
 export function useDeleteDocument(applicationId: string) {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (documentId: string) =>
-            unwrap(
+        mutationFn: async (documentId: string) => {
+            if (isCollectorId(applicationId)) return documentRequest<void>(applicationId, `/${encodeURIComponent(documentId)}`, { method: 'DELETE' });
+            return unwrap(
                 await api.DELETE('/applications/{applicationId}/documents/{documentId}', {
                     params: { path: { applicationId, documentId } },
                 }),
-            ),
+            );
+        },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.documents(applicationId) }),
+    });
+}
+
+export function useReverifyDocument(applicationId: string) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (documentId: string) => documentRequest(applicationId, `/${encodeURIComponent(documentId)}/signature-verification`, { method: 'POST' }),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ predicate: queryKeys.anyOf(applicationId) });
+            await queryClient.invalidateQueries({ queryKey: ['collector', 'application', applicationId] });
+        },
     });
 }
 

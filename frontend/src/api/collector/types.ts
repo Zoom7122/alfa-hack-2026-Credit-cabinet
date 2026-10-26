@@ -4,7 +4,7 @@ type Schemas = components['schemas'];
 
 export type CollectorApplication = Schemas['Application'];
 export type CollectorApplicant = Schemas['Applicant'];
-export type CollectorDocument = Schemas['Document'];
+export type CollectorDocument = Schemas['Document'] & { info_request_id?: string; generation?: number };
 export type CollectionTask = Schemas['CollectionTask'];
 export type CollectionSource = Schemas['CollectionSource'];
 export type CollectorSystem = NonNullable<CollectionSource['source']>;
@@ -12,6 +12,7 @@ export type CollectorStatus = NonNullable<CollectorApplication['status']>;
 export type CollectorRole = Schemas['RepresentativeInput']['role'];
 export type CollectorDecision = Schemas['ClientDecision'];
 export type CollectorOffer = Schemas['Offer'];
+export type CollectorSigningSession = Schemas['SigningSession'];
 export type CollectorInfoRequest = Schemas['InfoRequest'];
 export type RegisterInput = Schemas['RegisterApplicantRequest'];
 export type QuestionnaireSubmitted = Schemas['QuestionnaireSubmitted'];

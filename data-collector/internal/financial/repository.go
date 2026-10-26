@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	jet "github.com/go-jet/jet/v2/postgres"
@@ -11,6 +12,8 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/domain"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/events"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/generated/financial/model"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/generated/financial/table"
 )
@@ -20,8 +23,9 @@ var ErrUnsupported = errors.New("unsupported financial document context")
 var ErrConflict = errors.New("document cannot be changed in current application state")
 
 type Repository struct {
-	Pool  *pgxpool.Pool
-	Topic string
+	Pool           *pgxpool.Pool
+	Topic          string
+	DocumentsTopic string
 }
 
 // Use the connection's search_path (public in production, isolated schemas in tests).
@@ -87,6 +91,7 @@ func document(m model.Documents) Document {
 	return Document{ID: m.ID, ApplicationID: m.ApplicationID, Type: m.Type, FileName: m.FileName, MIME: m.MimeType,
 		Size: m.SizeBytes, SHA256: m.Sha256, StorageKey: m.StorageKey, SignedDocumentID: value(m.SignedDocumentID),
 		Generation: int(m.FinancialGeneration), UploadedAt: m.UploadedAt, Origin: "CLIENT_UPLOAD",
+		InfoRequestID: value(m.InfoRequestID), Recognition: json.RawMessage(value(m.Recognition)),
 		Signatures: SignatureSummary{State: m.SignatureState, Verdict: value(m.SignatureVerdict)}}
 }
 func (r Repository) Get(ctx context.Context, app, id string) (Document, error) {
@@ -104,7 +109,7 @@ func (r Repository) List(ctx context.Context, app string) ([]Document, error) {
 	}
 	return out, nil
 }
-func applicantContext(typ, inn, form string) (Applicant, error) {
+func applicantContext(typ, inn, form string, registry ...string) (Applicant, error) {
 	var fields struct {
 		Context struct {
 			TaxRegime string `json:"tax_regime"`
@@ -114,30 +119,52 @@ func applicantContext(typ, inn, form string) (Applicant, error) {
 	if err := json.Unmarshal([]byte(form), &fields); err != nil {
 		return Applicant{}, err
 	}
+	// Cabinet applications have a collected registry card; use its legal name when the parser context was not set explicitly.
+	if typ == "LEGAL_ENTITY" && fields.Context.LegalForm == "" && len(registry) > 0 && registry[0] != "" {
+		var card struct {
+			FullName string `json:"full_name"`
+		}
+		if err := json.Unmarshal([]byte(registry[0]), &card); err != nil {
+			return Applicant{}, err
+		}
+		name := strings.ToUpper(strings.TrimSpace(card.FullName))
+		if strings.HasPrefix(name, "ООО ") || strings.HasPrefix(name, "ООО«") || strings.HasPrefix(name, "ООО\"") || strings.HasPrefix(name, "ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ ") {
+			fields.Context.LegalForm = "OOO"
+		}
+	}
 	return Applicant{Type: typ, INN: inn, TaxRegime: fields.Context.TaxRegime, LegalForm: fields.Context.LegalForm}, nil
 }
 func applicant(ctx context.Context, tx pgx.Tx, app string, editable bool) (Applicant, error) {
-	type row struct{ Type, INN, Form, Status string }
-	m, err := queryOne[row](ctx, tx, jet.SELECT(companies.Type, companies.Inn, applications.Form, applications.Status).
+	type row struct {
+		Type, INN, Form, Status string
+		Registry                *string
+	}
+	m, err := queryOne[row](ctx, tx, jet.SELECT(companies.Type, companies.Inn, applications.Form, applications.Status, companies.Registry).
 		FROM(applications.INNER_JOIN(companies, companies.ID.EQ(applications.CompanyID))).WHERE(applications.ID.EQ(jet.String(app))).FOR(jet.SHARE().OF(applications, companies)))
 	if err != nil {
 		return Applicant{}, notFound(err)
 	}
-	a, err := applicantContext(m.Type, m.INN, m.Form)
+	a, err := applicantContext(m.Type, m.INN, m.Form, value(m.Registry))
 	if err != nil {
 		return a, err
 	}
 	if editable && m.Status != "DRAFT" && m.Status != "WAITING_FOR_INFO" {
 		return a, ErrConflict
 	}
-	if (a.Type == "SOLE_PROPRIETOR" && a.TaxRegime == "USN_INCOME") || (a.Type == "LEGAL_ENTITY" && a.LegalForm == "OOO") {
-		return a, nil
-	}
-	return a, ErrUnsupported
+	return a, nil
+}
+func isFinancial(typ string) bool { return typ == "FINANCIAL_STATEMENTS" || typ == "TAX_RETURN" }
+func supportsFinancial(a Applicant, typ string) bool {
+	return (a.Type == "SOLE_PROPRIETOR" && a.TaxRegime == "USN_INCOME" && typ == "TAX_RETURN") ||
+		(a.Type == "LEGAL_ENTITY" && a.LegalForm == "OOO" && typ == "FINANCIAL_STATEMENTS")
 }
 func insertDocument(ctx context.Context, tx pgx.Tx, d Document) error {
-	m := model.Documents{ID: d.ID, ApplicationID: d.ApplicationID, Type: d.Type, FileName: d.FileName, MimeType: d.MIME, SizeBytes: d.Size, Sha256: d.SHA256, StorageKey: d.StorageKey, SignedDocumentID: nullable(d.SignedDocumentID)}
-	_, err := execute(ctx, tx, documents.INSERT(documents.ID, documents.ApplicationID, documents.Type, documents.FileName, documents.MimeType, documents.SizeBytes, documents.Sha256, documents.StorageKey, documents.SignedDocumentID).MODEL(m))
+	state := d.Signatures.State
+	if state == "" {
+		state = "NOT_SIGNED"
+	}
+	m := model.Documents{ID: d.ID, ApplicationID: d.ApplicationID, Type: d.Type, FileName: d.FileName, MimeType: d.MIME, SizeBytes: d.Size, Sha256: d.SHA256, StorageKey: d.StorageKey, SignedDocumentID: nullable(d.SignedDocumentID), InfoRequestID: nullable(d.InfoRequestID), Recognition: nullable(`{"state":"NOT_APPLICABLE"}`), SignatureState: state}
+	_, err := execute(ctx, tx, documents.INSERT(documents.ID, documents.ApplicationID, documents.Type, documents.FileName, documents.MimeType, documents.SizeBytes, documents.Sha256, documents.StorageKey, documents.SignedDocumentID, documents.InfoRequestID, documents.Recognition, documents.SignatureState).MODEL(m))
 	return err
 }
 func (r Repository) enqueue(ctx context.Context, tx pgx.Tx, d Document, a Applicant) error {
@@ -155,6 +182,9 @@ func (r Repository) enqueue(ctx context.Context, tx pgx.Tx, d Document, a Applic
 	ids := []string{}
 	for _, s := range sigs {
 		ids = append(ids, s.ID)
+	}
+	if _, err := execute(ctx, tx, documents.UPDATE().SET(documents.SignatureState.SET(jet.String("PENDING")), documents.SignatureVerdict.SET(jet.StringExp(jet.NULL))).WHERE(documents.SignedDocumentID.EQ(jet.String(d.ID)).AND(documents.DeletedAt.IS_NULL()))); err != nil {
+		return err
 	}
 	ab, _ := json.Marshal(a)
 	sb, _ := json.Marshal(ids)
@@ -183,11 +213,21 @@ func (r Repository) Upload(ctx context.Context, d Document, sigs []Document) err
 			if err != nil {
 				return err
 			}
-			if target.Type != "FINANCIAL_STATEMENTS" && target.Type != "TAX_RETURN" {
+			if target.Type == "SIGNATURE" || target.InfoRequestID != d.InfoRequestID {
 				return ErrUnsupported
 			}
-		} else if (a.Type == "SOLE_PROPRIETOR" && d.Type != "TAX_RETURN") || (a.Type == "LEGAL_ENTITY" && d.Type != "FINANCIAL_STATEMENTS") {
+		}
+		if isFinancial(target.Type) && !supportsFinancial(a, target.Type) {
 			return ErrUnsupported
+		}
+		if d.InfoRequestID != "" {
+			var count int
+			if err := tx.QueryRow(ctx, `SELECT count(*) FROM info_requests WHERE id=$1 AND application_id=$2 AND status='OPEN'`, d.InfoRequestID, d.ApplicationID).Scan(&count); err != nil {
+				return err
+			}
+			if count != 1 {
+				return ErrConflict
+			}
 		}
 		if err = insertDocument(ctx, tx, d); err != nil {
 			return err
@@ -200,7 +240,10 @@ func (r Repository) Upload(ctx context.Context, d Document, sigs []Document) err
 				return err
 			}
 		}
-		return r.enqueue(ctx, tx, target, a)
+		if isFinancial(target.Type) {
+			return r.enqueue(ctx, tx, target, a)
+		}
+		return r.enqueueSignature(ctx, tx, target, a, newID("upload_"))
 	})
 }
 func (r Repository) Retry(ctx context.Context, app, id string) error {
@@ -213,25 +256,117 @@ func (r Repository) Retry(ctx context.Context, app, id string) error {
 		if err != nil {
 			return err
 		}
-		if d.Type != "FINANCIAL_STATEMENTS" && d.Type != "TAX_RETURN" {
-			return ErrUnsupported
+		if d.Type == "SIGNATURE" {
+			d, err = lockedDocument(ctx, tx, app, d.SignedDocumentID)
+			if err != nil {
+				return err
+			}
 		}
-		return r.enqueue(ctx, tx, d, a)
+		if isFinancial(d.Type) {
+			if !supportsFinancial(a, d.Type) {
+				return ErrUnsupported
+			}
+			return r.enqueue(ctx, tx, d, a)
+		}
+		return r.enqueueSignature(ctx, tx, d, a, newID("verify_"))
+	})
+}
+
+// Generic attachments (including powers of attorney) use the signature worker, without financial parsing.
+func (r Repository) enqueueSignature(ctx context.Context, tx pgx.Tx, d Document, a Applicant, requestID string) error {
+	rows, err := queryMany[model.Documents](ctx, tx, documents.SELECT(documents.AllColumns).WHERE(
+		documents.ApplicationID.EQ(jet.String(d.ApplicationID)).AND(documents.DeletedAt.IS_NULL()).AND(
+			documents.ID.EQ(jet.String(d.ID)).OR(documents.SignedDocumentID.EQ(jet.String(d.ID))))))
+	if err != nil {
+		return err
+	}
+	docs := make([]domain.Document, 0, len(rows))
+	hasSignature := len(rows) > 1 || (d.Signatures.State != "" && d.Signatures.State != "NOT_SIGNED") || strings.EqualFold(d.MIME, "application/pkcs7-signature")
+	for _, row := range rows {
+		docs = append(docs, domain.Document{ID: row.ID, ApplicationID: row.ApplicationID, Type: domain.DocumentType(row.Type),
+			FileName: row.FileName, MimeType: row.MimeType, SizeBytes: row.SizeBytes, SHA256: row.Sha256,
+			StorageKey: row.StorageKey, SignedDocumentID: value(row.SignedDocumentID)})
+	}
+	if hasSignature {
+		if _, err := execute(ctx, tx, documents.UPDATE().SET(documents.SignatureState.SET(jet.String("PENDING")), documents.SignatureVerdict.SET(jet.StringExp(jet.NULL))).WHERE(
+			documents.ApplicationID.EQ(jet.String(d.ApplicationID)).AND(documents.DeletedAt.IS_NULL()).AND(documents.ID.EQ(jet.String(d.ID)).OR(documents.SignedDocumentID.EQ(jet.String(d.ID)))))); err != nil {
+			return err
+		}
+	}
+	ev := events.NewDocumentsSubmitted(d.ApplicationID, a.INN, docs, time.Now().UTC())
+	ev.VerificationID = requestID
+	raw, err := json.Marshal(ev)
+	if err != nil {
+		return err
+	}
+	topic := r.DocumentsTopic
+	if topic == "" {
+		topic = events.DocumentsTopic
+	}
+	_, err = execute(ctx, tx, outboxTable.INSERT(outboxTable.Topic, outboxTable.Key, outboxTable.Payload).MODEL(model.Outbox{Topic: topic, Key: d.ApplicationID, Payload: string(raw)}))
+	return err
+}
+
+func (r Repository) Delete(ctx context.Context, app, id string) error {
+	return pgx.BeginFunc(ctx, r.Pool, func(tx pgx.Tx) error {
+		a, err := applicant(ctx, tx, app, true)
+		if err != nil {
+			return err
+		}
+		d, err := lockedDocument(ctx, tx, app, id)
+		if err != nil {
+			return err
+		}
+		if d.InfoRequestID != "" {
+			var status string
+			if err := tx.QueryRow(ctx, `SELECT status FROM info_requests WHERE id=$1 AND application_id=$2`, d.InfoRequestID, app).Scan(&status); err != nil {
+				return err
+			}
+			if status != "OPEN" {
+				return ErrConflict
+			}
+		} else {
+			var status string
+			if err := tx.QueryRow(ctx, `SELECT status FROM applications WHERE id=$1`, app).Scan(&status); err != nil {
+				return err
+			}
+			if status != "DRAFT" {
+				return ErrConflict
+			}
+		}
+		_, err = execute(ctx, tx, documents.UPDATE().SET(documents.DeletedAt.SET(jet.NOW())).WHERE(
+			documents.ApplicationID.EQ(jet.String(app)).AND(documents.ID.EQ(jet.String(id)).OR(documents.SignedDocumentID.EQ(jet.String(id))))))
+		if err != nil || d.Type != "SIGNATURE" {
+			return err
+		}
+		target, err := lockedDocument(ctx, tx, app, d.SignedDocumentID)
+		if err != nil {
+			return err
+		}
+		if isFinancial(target.Type) {
+			return r.enqueue(ctx, tx, target, a)
+		}
+		if _, err = execute(ctx, tx, documents.UPDATE().SET(documents.SignatureState.SET(jet.String("NOT_SIGNED")), documents.SignatureVerdict.SET(jet.StringExp(jet.NULL))).WHERE(documents.ID.EQ(jet.String(target.ID)))); err != nil {
+			return err
+		}
+		target.Signatures = SignatureSummary{State: "NOT_SIGNED"}
+		return r.enqueueSignature(ctx, tx, target, a, newID("verify_"))
 	})
 }
 func (r Repository) Result(ctx context.Context, app, id string) (json.RawMessage, error) {
 	type row struct {
 		Result                            *string
 		Snapshot, Type, INN, Form, Status string
+		Registry                          *string
 	}
-	m, err := queryOne[row](ctx, r.Pool, jet.SELECT(results.Result, jobs.Applicant, companies.Type, companies.Inn, applications.Form, jobs.Status).
+	m, err := queryOne[row](ctx, r.Pool, jet.SELECT(results.Result, jobs.Applicant, companies.Type, companies.Inn, applications.Form, jobs.Status, companies.Registry).
 		FROM(documents.INNER_JOIN(jobs, jobs.DocumentID.EQ(documents.ID).AND(jobs.Generation.EQ(documents.FinancialGeneration))).
 			LEFT_JOIN(results, results.JobID.EQ(jobs.ID)).INNER_JOIN(applications, applications.ID.EQ(documents.ApplicationID)).INNER_JOIN(companies, companies.ID.EQ(applications.CompanyID))).
 		WHERE(documents.ApplicationID.EQ(jet.String(app)).AND(documents.ID.EQ(jet.String(id))).AND(documents.DeletedAt.IS_NULL())))
 	if err != nil {
 		return nil, notFound(err)
 	}
-	current, err := applicantContext(m.Type, m.INN, m.Form)
+	current, err := applicantContext(m.Type, m.INN, m.Form, value(m.Registry))
 	if err != nil {
 		return nil, err
 	}
@@ -296,7 +431,7 @@ func (r Repository) Claim(ctx context.Context, id string, maxAttempts int, lease
 			return e
 		}
 		if m.Status == "FAILED" {
-			_, e = execute(ctx, tx, documents.UPDATE().SET(documents.SignatureState.SET(jet.String("FAILED"))).WHERE(documents.ID.EQ(jet.String(m.DocumentID)).AND(documents.FinancialGeneration.EQ(jet.Int32(m.Generation)))))
+			e = setProcessedState(ctx, tx, m.DocumentID, int(m.Generation), "FAILED", "")
 			if e != nil {
 				return e
 			}
@@ -355,8 +490,7 @@ func (r Repository) Complete(ctx context.Context, j Job, result Result) error {
 		if err != nil {
 			return err
 		}
-		_, err = execute(ctx, tx, documents.UPDATE().SET(documents.SignatureState.SET(jet.String("DONE")), documents.SignatureVerdict.SET(jet.String(result.Signature.Verdict))).WHERE(documents.ID.EQ(jet.String(j.DocumentID)).AND(documents.FinancialGeneration.EQ(jet.Int(int64(j.Generation))))))
-		return err
+		return setProcessedState(ctx, tx, j.DocumentID, j.Generation, "DONE", result.Signature.Verdict)
 	})
 }
 func (r Repository) Fail(ctx context.Context, j Job, reason string) error {
@@ -368,7 +502,18 @@ func (r Repository) Fail(ctx context.Context, j Job, reason string) error {
 		if tag.RowsAffected() != 1 {
 			return ErrJobNotRunning
 		}
-		_, err = execute(ctx, tx, documents.UPDATE().SET(documents.SignatureState.SET(jet.String("FAILED"))).WHERE(documents.ID.EQ(jet.String(j.DocumentID)).AND(documents.FinancialGeneration.EQ(jet.Int(int64(j.Generation))))))
-		return err
+		return setProcessedState(ctx, tx, j.DocumentID, j.Generation, "FAILED", "")
 	})
+}
+
+func setProcessedState(ctx context.Context, tx pgx.Tx, documentID string, generation int, state, verdict string) error {
+	parent := table.Documents.FromSchema("").AS("current_document")
+	current := jet.EXISTS(parent.SELECT(parent.ID).WHERE(parent.ID.EQ(jet.String(documentID)).AND(parent.FinancialGeneration.EQ(jet.Int(int64(generation)))).AND(parent.DeletedAt.IS_NULL())))
+	v := jet.StringExp(jet.NULL)
+	if verdict != "" {
+		v = jet.String(verdict)
+	}
+	_, err := execute(ctx, tx, documents.UPDATE().SET(documents.SignatureState.SET(jet.String(state)), documents.SignatureVerdict.SET(v)).WHERE(
+		documents.DeletedAt.IS_NULL().AND(documents.ID.EQ(jet.String(documentID)).OR(documents.SignedDocumentID.EQ(jet.String(documentID)))).AND(current)))
+	return err
 }

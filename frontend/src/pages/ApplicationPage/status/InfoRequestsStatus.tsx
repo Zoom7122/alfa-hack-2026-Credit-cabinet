@@ -24,6 +24,7 @@ export function InfoRequestsStatus({ status }: { status: ApplicationStatusView }
     const [drafts, setDrafts] = useState<Record<string, AnswerDraft>>({});
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [sending, setSending] = useState(false);
+    const [uploading, setUploading] = useState<Record<string, boolean>>({});
     const keys = useRef<Record<string, string>>({});
 
     const open = (requests.data ?? []).filter((r) => r.state === 'OPEN');
@@ -78,6 +79,7 @@ export function InfoRequestsStatus({ status }: { status: ApplicationStatusView }
 
             {requests.isLoading && <Skeleton visible={true} className='info-requests-status__skeleton' />}
             {requests.isError && <Plate view='negative' title='Не удалось загрузить вопросы банка' />}
+            {documents.isError && <Plate view='negative' title='Не удалось загрузить результаты проверки документов'>{documents.error.message}</Plate>}
 
             {open.map((r, i) => (
                 <InfoRequestCard
@@ -89,6 +91,7 @@ export function InfoRequestsStatus({ status }: { status: ApplicationStatusView }
                     documents={docsOf(r.id)}
                     onChange={(next) => setDrafts((prev) => ({ ...prev, [r.id]: next }))}
                     error={errors[r.id]}
+                    onUploadingChange={(busy) => setUploading((prev) => prev[r.id] === busy ? prev : { ...prev, [r.id]: busy })}
                 />
             ))}
 
@@ -99,7 +102,7 @@ export function InfoRequestsStatus({ status }: { status: ApplicationStatusView }
                         size={56}
                         onClick={send}
                         loading={sending}
-                        disabled={missingRequired || !ready.length || !status.allowed_actions.includes('ANSWER_INFO_REQUEST')}
+                        disabled={documents.isError || Object.values(uploading).some(Boolean) || missingRequired || !ready.length || !status.allowed_actions.includes('ANSWER_INFO_REQUEST')}
                     >
                         Отправить ответы
                     </Button>

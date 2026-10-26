@@ -7,7 +7,7 @@ COPY package.json package-lock.json .npmrc ./
 RUN npm ci --ignore-scripts --no-audit --no-fund
 
 COPY . .
-# true — ответы API отдаёт MSW в браузере (бэкенда пока нет); false — ходить в настоящий /api
+# true — демо-экраны API работают через MSW; false — отключить их и запросы к /api/v1
 ARG VITE_API_MOCK=true
 ENV VITE_API_MOCK=$VITE_API_MOCK
 # true — ответы data-collector тоже отдаёт MSW; false — ходить в живой сервис через /collector

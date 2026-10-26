@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { expect, type Page, test } from '@playwright/test';
 
 import { COLLECTOR_LIVE, expectPath, MOCK_ONLY, seedToken, setMockFailures } from './helpers';
+import type { SavedDraft } from '../src/pages/WizardPage/draftTypes';
 
 /* Анкета на API data-collector (в тестах — его MSW-моки, src/mocks/collector). */
 
@@ -75,6 +76,13 @@ async function toReview(page: Page) {
 type CollectorAppView = { status: string; documents: { file_name: string; type: string; signed_document_id?: string }[] };
 const collectorApp = (page: Page, id: string) =>
     page.evaluate(async (appId) => (await (await fetch(`/collector/api/v1/applications/${appId}`)).json()) as CollectorAppView, id);
+const collectorDraft = (page: Page, id: string) => page.evaluate(async (appId) => {
+    const token = localStorage.getItem('credit-cabinet:token');
+    const response = await fetch(`/collector/api/v1/applications/${appId}/draft`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!response.ok) throw new Error(`draft: ${response.status}`);
+    return await response.json() as SavedDraft;
+}, id);
+const waitForDraftSaved = (page: Page) => expect(page.locator('.wizard-header__status')).toContainText('Черновик сохранён');
 
 test.beforeEach(async ({ page }) => {
     // представитель компании сценария A: «Северный ветер» уже в его профиле директором — так же и у живого сервиса,
@@ -184,11 +192,8 @@ test.describe('Анкета — шаги', () => {
         await expect(page.getByLabel('Образование')).toHaveCount(0);
         await next(page);
         await expect(page).toHaveURL(/\/edit\/sources$/);
-        const draft = await page.evaluate(
-            (id) => Object.entries(localStorage).find(([k]) => k.startsWith('credit-cabinet:questionnaire:') && k.endsWith(id))?.[1],
-            appId,
-        );
-        expect(JSON.parse(draft ?? '{}').scoring).toEqual({ max_annual_rate: 26.5, max_acceptable_term_months: 36, need_evidence: 'VERIFIED_ESTIMATE', experience_years: 9 });
+        await expect.poll(async () => (await collectorDraft(page, appId)).data.scoring)
+            .toEqual({ max_annual_rate: 26.5, max_acceptable_term_months: 36, need_evidence: 'VERIFIED_ESTIMATE', experience_years: 9 });
     });
 
     test('БИК, VIN и кадастровый номер — проверка формата', async ({ page }) => {
@@ -216,6 +221,7 @@ test.describe('Анкета — шаги', () => {
     test('черновик и файлы переживают перезагрузку', async ({ page }) => {
         await next(page);
         await fillBorrower(page);
+        await waitForDraftSaved(page);
         await page.reload();
         await expect(page.getByLabel('Возраст, лет')).toHaveValue('42');
         await expect(page.getByLabel('Дата рождения')).toHaveValue('19.07.1984');
@@ -259,6 +265,8 @@ test.describe('Анкета — отправка', () => {
         await page.getByText('Согласие компании на запрос кредитной истории в БКИ', { exact: true }).click();
         await page.getByText('Согласие руководителя на запрос его кредитной истории', { exact: true }).click();
         await page.getByText('Согласие на получение налоговой отчётности', { exact: true }).click();
+        await page.getByText('Декларации: прибыль, НДС, УСН', { exact: true }).click();
+        await page.getByText('Сальдо единого налогового счёта', { exact: true }).click();
         await expect(skipped).not.toContainText('кредитную историю');
         // директор подписывает сам — МЧД не нужна
         await expect(page.getByLabel('Номер МЧД')).toHaveCount(0);
@@ -362,6 +370,7 @@ test.describe('Анкета — надёжность', () => {
         expect((await stored()).local).not.toContain('secret-ofd-token');
         expect((await stored()).session).toContain('secret-ofd-token');
 
+        await waitForDraftSaved(page);
         await page.goto(`${editPath(page)}/edit/review`);
         let posts = 0;
         page.on('request', (r) => {

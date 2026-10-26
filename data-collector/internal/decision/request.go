@@ -13,30 +13,32 @@ import (
 
 // Input — всё, из чего собирается запрос на оценку.
 type Input struct {
-	Statements     *Statements
-	Application    domain.Application
-	Age            int
-	MaritalStatus  domain.MaritalStatus
-	Children       int
-	Scoring        *domain.ScoringAnswers
-	Collect        domain.CollectInput // руководитель, согласия, МЧД
-	Systems        map[domain.System]json.RawMessage
-	FactsDate      time.Time // когда закончился сбор
-	Now            time.Time // дата оценки: от неё движок отсчитывает 12 месяцев истории и 36 — графика
-	ForgedDocument bool      // подпись документа не прошла проверку целостности
+	Statements         *Statements
+	Application        domain.Application
+	Age                int
+	MaritalStatus      domain.MaritalStatus
+	Children           int
+	Scoring            *domain.ScoringAnswers
+	Collect            domain.CollectInput // руководитель, согласия, МЧД
+	Systems            map[domain.System]json.RawMessage
+	FactsDate          time.Time           // когда закончился сбор
+	Now                time.Time           // дата оценки: от неё движок отсчитывает 12 месяцев истории и 36 — графика
+	ForgedDocument     bool                // подпись документа не прошла проверку целостности
+	DocumentIndicators []DocumentIndicator // current admitted document values
 }
 
 // Facts — что посчитано из данных: для находок (Findings) и досье андеррайтера.
 type Facts struct {
-	AnnualReceipts    int64  // операционные поступления за 12 месяцев, ₽
-	DeclaredRevenue   int64  // выручка последнего года из деклараций или БФО, ₽ без НДС
-	DeclaredSource    string // TAX_REPORTS, FNS_BFO
-	HistoryMonths     int
-	StatementYears    int
-	DebtCounterparts  []string // кредиторы из выписки (погашения, лизинг)
-	BureauCreditors   []string // кредиторы из БКИ
-	DirectorInEGRUL   *bool    // ИНН руководителя из анкеты есть среди руководителей ЕГРЮЛ
-	AuthorityVerified bool
+	AnnualReceipts     int64  // операционные поступления за 12 месяцев, ₽
+	DeclaredRevenue    int64  // выручка последнего года из деклараций или БФО, ₽ без НДС
+	DeclaredSource     string // TAX_REPORTS, FNS_BFO
+	HistoryMonths      int
+	StatementYears     int
+	DebtCounterparts   []string // кредиторы из выписки (погашения, лизинг)
+	BureauCreditors    []string // кредиторы из БКИ
+	DirectorInEGRUL    *bool    // ИНН руководителя из анкеты есть среди руководителей ЕГРЮЛ
+	AuthorityVerified  bool
+	DocumentIndicators []DocumentIndicator `json:"document_indicators,omitempty"`
 }
 
 // purposes — цели кабинета, которые движок считает развитием бизнеса; остальные идут к сотруднику.
@@ -138,15 +140,42 @@ func Build(in Input) (Request, Facts) {
 
 	// подтверждение поступлений: выручка из деклараций, иначе — из бухотчётности
 	declared, source, prevDeclared := declaredRevenue(tax, f, lastYear)
+	statements, _ := StatementsFromFNS(in.Systems[domain.SystemFNS], app.Company.ID, []int{lastYear - 1, lastYear})
+	documentRevenue := false
+	if in.Statements != nil {
+		statements = *in.Statements
+		if !ip {
+			req.FinancialStatements = &statements
+		}
+	} else if ip {
+		if income, doc := documentIncome(in.DocumentIndicators, lastYear); doc != nil {
+			declared, source, documentRevenue = income, "DOCUMENT_KUDIR", true
+			facts.DocumentIndicators = append(facts.DocumentIndicators, *doc)
+		}
+		if income, doc := documentIncome(in.DocumentIndicators, lastYear-1); doc != nil {
+			prevDeclared = income
+			facts.DocumentIndicators = append(facts.DocumentIndicators, *doc)
+		}
+	} else {
+		statements, facts.DocumentIndicators = applyDocumentStatements(statements, in.DocumentIndicators, lastYear)
+		if len(facts.DocumentIndicators) > 0 {
+			req.FinancialStatements = &statements
+		}
+		for _, doc := range facts.DocumentIndicators {
+			if doc.Name == "accounting_revenue" && doc.Period == strconv.Itoa(lastYear) {
+				declared, source, documentRevenue = doc.AmountRUB, "DOCUMENT_GIRBO", true
+			}
+		}
+	}
 	facts.DeclaredRevenue, facts.DeclaredSource = declared, source
-	vat := !ip && (source == "FNS_BFO" || hasTax && tax.Report.TaxRegime.Current == "OSN")
+	vat := !ip && (source == "FNS_BFO" || source == "DOCUMENT_GIRBO" || hasTax && tax.Report.TaxRegime.Current == "OSN")
 	gross := func(v int64) int64 {
 		if vat {
 			return v * 120 / 100
 		}
 		return v
 	}
-	if len(history) == 12 && declared > 0 {
+	if len(history) == 12 && (declared > 0 || documentRevenue) {
 		confirmed := min(receipts, gross(declared))
 		req.Evidence = &Evidence{ConfirmedReceiptsRUB: ptr(confirmed), UnexplainedDifferenceRUB: ptr(receipts - confirmed)}
 		if ip {
@@ -221,10 +250,6 @@ func Build(in Input) (Request, Facts) {
 	risk.ConsentsVerified = ptr(consents)
 	risk.BureauReceived = ptr(report != nil)
 	risk.DebtsComplete = ptr(report != nil && (core.Loans != nil || !hasCore))
-	statements, _ := StatementsFromFNS(in.Systems[domain.SystemFNS], app.Company.ID, []int{lastYear - 1, lastYear})
-	if in.Statements != nil {
-		statements = *in.Statements
-	}
 	facts.StatementYears = len(statements.AnnualReports)
 	docsComplete := len(history) == 12 && (ip || facts.StatementYears == 2)
 	risk.DocumentsComplete = ptr(docsComplete)
@@ -267,7 +292,7 @@ func Build(in Input) (Request, Facts) {
 		})
 		evidence := "NONE"
 		switch {
-		case source == "TAX_REPORTS":
+		case source == "TAX_REPORTS" || source == "DOCUMENT_KUDIR":
 			evidence = "VERIFIED"
 		case docs:
 			evidence = "DOCUMENTS_PENDING_CROSSCHECK"
@@ -307,13 +332,18 @@ func Build(in Input) (Request, Facts) {
 		le.LiquidatedOrExcluded = ptr(!*risk.Active || f.PB != nil && f.PB.Liquidated || hasFed && fed.CompanyMessages != nil && fed.CompanyMessages.Summary.Liquidation)
 	}
 	if facts.StatementYears > 0 {
-		// аудит обязателен при выручке больше 800 млн или активах больше 400 млн (тыс. руб. в БФО)
-		last := statements.AnnualReports[len(statements.AnnualReports)-1]
+		// Documents are in RUB; the supplier may return THOUSAND_RUB.
+		last := rubReport(statements.AnnualReports[len(statements.AnnualReports)-1])
 		opinion := "NOT_REQUIRED"
-		if last.ProfitAndLoss != nil && last.ProfitAndLoss.Revenue != nil && last.ProfitAndLoss.Unit != nil && (*last.ProfitAndLoss.Revenue > 800_000 && *last.ProfitAndLoss.Unit == "THOUSAND_RUB" || *last.ProfitAndLoss.Revenue > 800_000_000 && *last.ProfitAndLoss.Unit == "RUB") || last.Balance != nil && last.Balance.TotalAssets != nil && last.Balance.Unit != nil && (*last.Balance.TotalAssets > 400_000 && *last.Balance.Unit == "THOUSAND_RUB" || *last.Balance.TotalAssets > 400_000_000 && *last.Balance.Unit == "RUB") {
+		if last.ProfitAndLoss.Revenue == nil || last.Balance.TotalAssets == nil {
+			// Partial documents cannot establish whether an audit is required.
+			le.AuditorOpinion = nil
+		} else if *last.ProfitAndLoss.Revenue > 800_000_000 || *last.Balance.TotalAssets > 400_000_000 {
 			opinion = "REQUIRED_MISSING"
+			le.AuditorOpinion = &opinion
+		} else {
+			le.AuditorOpinion = &opinion
 		}
-		le.AuditorOpinion = &opinion
 	}
 	req.Scoring = &ScoringInput{LegalEntity: le}
 	return req, facts

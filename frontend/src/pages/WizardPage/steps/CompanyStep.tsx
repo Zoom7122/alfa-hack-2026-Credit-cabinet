@@ -17,7 +17,7 @@ import { isInn } from '../../../shared/lib/inn';
 import { useDebouncedValue } from '../../../shared/lib/useDebouncedValue';
 import { FormCard } from '../../../shared/ui/FormCard/FormCard';
 import { StepLayout } from '../components/StepLayout';
-import { emptyDraft, readDraft, writeDraft } from '../draft';
+import { loadSavedDraft, saveDraft } from '../draftApi';
 import './CompanyStep.css';
 
 type CreateProps = {
@@ -143,6 +143,8 @@ function CreateCompanyStep({ me, productCode, requested, purpose }: CreateProps)
     const register = useRegister();
     const [inn, setInn] = useState('');
     const [name, setName] = useState('');
+    const [draftError, setDraftError] = useState<string>();
+    const [opening, setOpening] = useState(false);
     // выбор роли — для конкретного ИНН: сменили ИНН — выбирать заново
     const [chosen, setChosen] = useState<{ inn: string; role: CollectorRole }>();
 
@@ -169,11 +171,21 @@ function CreateCompanyStep({ me, productCode, requested, purpose }: CreateProps)
     const canContinue = Boolean(validInn && role && !liquidating);
 
     /** В черновик — продукт, сумма и цель, которые только что выбрали в подборе (даже если черновик уже был). */
-    const openDraft = (id: string) => {
-        const choice = { product_code: productCode, ...(requested && { requested }), ...(purpose && { purpose: { code: purpose } }) };
-        const existing = readDraft(me.id, id);
-        writeDraft(me.id, id, existing ? { ...existing, ...choice, purpose: purpose ? { ...existing.purpose, code: purpose } : existing.purpose } : emptyDraft(choice));
-        navigate(`/applications/${id}/edit/terms`, { replace: true });
+    const openDraft = async (id: string) => {
+        setOpening(true);
+        setDraftError(undefined);
+        try {
+            const choice = { product_code: productCode, ...(requested && { requested }) };
+            const existing = await loadSavedDraft(id);
+            await saveDraft(id, {
+                ...existing.data,
+                ...choice,
+                purpose: purpose ? { ...existing.data.purpose, code: purpose } : existing.data.purpose,
+            }, existing.version);
+            navigate(`/applications/${id}/edit/terms`, { replace: true });
+        } finally {
+            setOpening(false);
+        }
     };
 
     const submit = () => {
@@ -182,7 +194,7 @@ function CreateCompanyStep({ me, productCode, requested, purpose }: CreateProps)
         // и по той же компании возвращает его прежний черновик — правки в нём сохраняем
         register.mutate(
             { representative: { full_name: me.full_name, role }, company: { inn: validInn, name: shownName || undefined } },
-            { onSuccess: (app) => openDraft(app.id ?? '') },
+            { onSuccess: (app) => { void openDraft(app.id ?? '').catch((error: unknown) => setDraftError(error instanceof Error ? error.message : 'Не удалось сохранить черновик')); } },
         );
     };
 
@@ -193,8 +205,8 @@ function CreateCompanyStep({ me, productCode, requested, purpose }: CreateProps)
             title='От чьего имени подаёте заявку'
             subtitle='Введите ИНН — остальное о компании соберём сами'
             onNext={submit}
-            nextDisabled={!canContinue}
-            nextLoading={register.isPending}
+            nextDisabled={!canContinue || opening}
+            nextLoading={register.isPending || opening}
             hint={!canContinue && validInn && !role ? 'Укажите вашу роль в компании' : undefined}
         >
             <FormCard>
@@ -249,6 +261,7 @@ function CreateCompanyStep({ me, productCode, requested, purpose }: CreateProps)
                     {register.error.message}
                 </Plate>
             )}
+            {draftError && <Plate view='negative' title='Не удалось сохранить черновик'>{draftError}</Plate>}
         </StepLayout>
     );
 }

@@ -1156,6 +1156,17 @@
               }
             ]
           },
+          "financial_statements": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatementsResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional application-scoped financial statements from verified documents. For LEGAL_ENTITY only; borrower_id must match borrower.id. Takes precedence over the statements supplier; the same completeness, period, unit and reconciliation checks apply."
+          },
           "future_debt_payments": {
             "anyOf": [
               {
@@ -3050,7 +3061,7 @@
   "info": {
     "description": "REST contracts for scoring, bank operations and administrative events. Models and supplier schemas are generated from checked definitions. Loan rates are percentages: 1 = 1%, 100 = 100%; money input is integer RUB.",
     "title": "Credit MVP internal contracts",
-    "version": "2.0.1"
+    "version": "2.0.2"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -3586,5 +3597,5 @@
       "version": "legal-v2"
     }
   ],
-  "x-scoring-release": "2.0.1"
+  "x-scoring-release": "2.0.2"
 }

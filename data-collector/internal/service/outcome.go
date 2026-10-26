@@ -42,9 +42,10 @@ type ClientDecision struct {
 
 // AnswerInput — ответ на вопрос банка.
 type AnswerInput struct {
-	Value   json.RawMessage
-	Comment string
-	Files   []storage.Staged
+	DocumentIDs []string
+	Value       json.RawMessage
+	Comment     string
+	Files       []storage.Staged
 }
 
 // OutcomeService — итог для клиента: решение, предложения, вопросы банка и ответы на них.
@@ -217,7 +218,24 @@ func (s *OutcomeService) Answer(ctx context.Context, actorID, appID, requestID s
 			add("value", "required", "обязательное поле")
 		}
 	}
-	if q.Documents != nil && q.Documents.Required && len(in.Files) == 0 {
+	seen := make(map[string]bool)
+	hasDocument := false
+	for _, id := range in.DocumentIDs {
+		i := slices.IndexFunc(app.Documents, func(d domain.Document) bool { return d.ID == id && d.InfoRequestID == requestID })
+		if seen[id] || i < 0 {
+			add("document_ids", "invalid_document", "документ не найден или относится к другому вопросу")
+			continue
+		}
+		seen[id] = true
+		doc := app.Documents[i]
+		if doc.Type != domain.DocSignature {
+			hasDocument = true
+			if q.Documents != nil && len(q.Documents.AcceptedTypes) > 0 && !slices.Contains(q.Documents.AcceptedTypes, string(doc.Type)) {
+				add("document_ids", "invalid_type", "этот тип документа не подходит к вопросу")
+			}
+		}
+	}
+	if q.Documents != nil && q.Documents.Required && len(in.Files) == 0 && !hasDocument {
 		add("files", "required", "приложите документ")
 	}
 	if len(fields) > 0 {
@@ -251,11 +269,15 @@ func (s *OutcomeService) Answer(ctx context.Context, actorID, appID, requestID s
 	}
 	next, ok, err := s.apps.AnswerInfoRequest(ctx, domain.InfoAnswer{ApplicationID: app.ID, RequestID: requestID,
 		ActorID: app.Representative.UserID, CompanyINN: app.Company.INN, Value: value, Comment: comment, Documents: docs,
+		DocumentIDs:  in.DocumentIDs,
 		ScoringPatch: patch, Now: now, ReviewSLA: s.reviewSLA})
 	if err != nil || !ok {
 		s.files.Remove(keys...)
 	}
 	if err != nil {
+		if errors.Is(err, domain.ErrInvalidAnswerDocuments) {
+			return "", &ValidationError{Fields: []FieldError{{Field: "document_ids", Code: "invalid_document", Message: "документ удалён или относится к другому вопросу"}}}
+		}
 		return "", err
 	}
 	if !ok {

@@ -24,7 +24,7 @@ export function StageBar({ stages, clientStage }: Props) {
                 const state = current && attention ? 'attention' : stage.state.toLowerCase();
                 return (
                     <li
-                        key={stage.code}
+                        key={`${stage.code}:${stage.title}`}
                         className={`stage-bar__stage stage-bar__stage_state_${state}`}
                         aria-current={current ? 'step' : undefined}
                     >

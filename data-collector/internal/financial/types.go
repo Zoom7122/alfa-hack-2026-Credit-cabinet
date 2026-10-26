@@ -34,6 +34,8 @@ type Document struct {
 	SHA256           string           `json:"sha256"`
 	StorageKey       string           `json:"-"`
 	SignedDocumentID string           `json:"signed_document_id,omitempty"`
+	InfoRequestID    string           `json:"info_request_id,omitempty"`
+	Recognition      json.RawMessage  `json:"recognition,omitempty"`
 	Generation       int              `json:"generation"`
 	UploadedAt       time.Time        `json:"uploaded_at"`
 }

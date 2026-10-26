@@ -67,6 +67,7 @@ type infoRequestsResponse struct {
 } //	@name	InfoRequests
 
 type answerRequest struct {
+	DocumentIDs []string `json:"document_ids,omitempty"`
 	// Значение по input.type вопроса: число (NUMBER, MONEY), код варианта (CHOICE), строка (TEXT). NONE — не нужно.
 	Value   json.RawMessage `json:"value" swaggertype:"string"`
 	Comment string          `json:"comment"`
@@ -162,6 +163,7 @@ func toInfoRequests(items []domain.InfoRequestRecord) []boInfoRequestResponse {
 //	@Summary		Ответ на вопрос банка
 //	@Description	JSON {value, comment} или multipart/form-data: часть answer с тем же JSON и части files с документами
 //	@Description	(форматы и подписи — как у анкеты). Ответили на все обязательные вопросы — заявка уходит на повторную
+//	@Description	Проверенные до ответа вложения передаются в document_ids; загружать те же байты повторно не нужно.
 //	@Description	оценку или к специалисту, если вопросы задал он. Отвечает только автор заявки.
 //	@Tags			applications
 //	@Accept			json
@@ -206,7 +208,7 @@ func (h *OutcomeHandler) answer(c *gin.Context) {
 		actor = user.ID
 	}
 	status, err := h.svc.Answer(c.Request.Context(), actor, c.Param("id"), c.Param("requestId"),
-		service.AnswerInput{Value: req.Value, Comment: req.Comment, Files: files})
+		service.AnswerInput{Value: req.Value, Comment: req.Comment, Files: files, DocumentIDs: req.DocumentIDs})
 	if err != nil {
 		h.fail(c, "answer info request", err)
 		return

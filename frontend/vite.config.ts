@@ -1,8 +1,7 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
 
-// Без бэкенда запросы /api перехватывает MSW (src/mocks). С бэкендом (VITE_API_MOCK=false)
-// dev-сервер проксирует /api на API_PROXY_TARGET.
+// Демо-запросы /api перехватывает MSW (src/mocks); при VITE_API_MOCK=false фронт их не делает.
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');
     return {

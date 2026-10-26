@@ -38,6 +38,9 @@ func (r *ApplicationRepository) seedTestApplications(ctx context.Context, seeds 
 				return err
 			}
 			if exists {
+				if err := upgradeTestApplicationForm(ctx, tx, seed, id, now); err != nil {
+					return err
+				}
 				continue
 			}
 			if err := r.seedTestApplication(ctx, tx, seed, id, now); err != nil {
@@ -85,7 +88,7 @@ func (r *ApplicationRepository) seedTestApplication(ctx context.Context, tx pgx.
 	if _, err := tx.Exec(ctx, insertMemberKeepRole, userID, companyID, string(role), domain.CanSign(role, domain.CompanyType(companyType))); err != nil {
 		return err
 	}
-	product, ok := domain.ProductByCode(seed.Product)
+	_, ok = domain.ProductByCode(seed.Product)
 	if !ok {
 		return fmt.Errorf("unknown test product %q", seed.Product)
 	}
@@ -99,14 +102,19 @@ func (r *ApplicationRepository) seedTestApplication(ctx context.Context, tx pgx.
 	if seed.Status == domain.ApplicationManualReview {
 		deadline = now.Add(4 * time.Hour)
 	}
-	form, err := json.Marshal(map[string]any{
-		"product_code": seed.Product,
-		"requested":    map[string]any{"amount": seed.Amount, "term_months": seed.Term},
-		"purpose":      map[string]any{"code": product.Purposes[0], "description": "Тестовая заявка для демонстрации кабинета"},
-		"questionnaire": map[string]any{"id": strings.Replace(id, "app_", "qst_", 1), "age": 42,
-			"marital_status": "MARRIED", "children_count": 2, "created_at": created,
-			"collect": map[string]any{"inn": c.INN}},
-	})
+	form, err := testApplicationForm(seed, id, now)
+	if err != nil {
+		return err
+	}
+	var initial map[string]json.RawMessage
+	if err := json.Unmarshal(form, &initial); err != nil {
+		return err
+	}
+	initial["draft"], err = draftFromForm(form)
+	if err != nil {
+		return err
+	}
+	form, err = json.Marshal(initial)
 	if err != nil {
 		return err
 	}
@@ -128,8 +136,12 @@ func (r *ApplicationRepository) seedTestApplication(ctx context.Context, tx pgx.
 		return err
 	}
 	if seed.Status == domain.ApplicationSubmitted {
+		var record formRecord
+		if err := json.Unmarshal(form, &record); err != nil {
+			return err
+		}
 		task := domain.CollectionTask{ID: strings.Replace(id, "app_", "tsk_", 1), ApplicationID: id,
-			QuestionnaireID: strings.Replace(id, "app_", "qst_", 1), Input: domain.CollectInput{INN: c.INN}, CreatedAt: now}
+			QuestionnaireID: record.Questionnaire.ID, Input: fromRequestRecord(record.Questionnaire.Collect, nil), CreatedAt: now}
 		skipped := domain.SkippedSystems(task.Input)
 		for _, system := range domain.Systems {
 			if _, ok := skipped[system]; ok {

@@ -336,15 +336,19 @@ npx -p @dbml/cli@3.14.1 dbml2sql docs/db-schema.dbml --postgres > /dev/null
 | `id` | text | | PK, `sgn_<ULID>` |
 | `application_id` | text | | FK → `applications`; partial UK `(application_id) where status = 'AWAITING_SIGNER'` |
 | `offer_id` | text | | FK → `offers` |
-| `signer_id` | text | | FK → `users`, директор компании |
-| `method` | text | ✔ | `SIMPLE_CODE`, `QUALIFIED_SIGNATURE`. Выбирается на `signing/start` |
+| `signer_id` | text | | FK → `users`, директор компании или сам ИП |
+| `method` | text | ✔ | Серверный демо-сценарий — `SIMPLE_CODE`, фиксируется при выборе предложения; `QUALIFIED_SIGNATURE` зарезервирован схемой |
 | `status` | text | | `AWAITING_SIGNER`, `SIGNED`, `FAILED`, `CANCELLED` |
 | `code` | text | ✔ | код ПЭП, только мок-режим (показывается в UI) |
 | `attempts_left` | smallint | | |
 | `signed_at` | timestamptz | ✔ | |
+| `document_id` | text | ✔ | FK → `documents`, договор выбранного предложения |
+| `document_sha256` | text | ✔ | SHA-256 байтов договора, привязанных к подтверждению |
+| `code_expires_at` | timestamptz | ✔ | срок кода: 10 минут после создания сессии |
+| `disbursement` | jsonb | ✔ | учебная выдача: сумма, демонстрационный счёт, время |
 | `created_at` | timestamptz | | |
 
-Для КЭП отчёт проверки — `signature_reports` документа-договора. Выдача кредита имитируется: переход в COMPLETED и событие `DISBURSED` с суммой и маской счёта в `payload`.
+Серверное демо-подписание реализовано в data-collector: код виден только подписанту, после успеха стирается. Подтверждение и переход в `COMPLETED` записываются одной транзакцией с событиями `sign.confirmed` и `disbursement.simulated`. Это отдельное подтверждение кодом: криптографические отчёты `signature_reports` для него не создаются.
 
 ## Вне схемы
 

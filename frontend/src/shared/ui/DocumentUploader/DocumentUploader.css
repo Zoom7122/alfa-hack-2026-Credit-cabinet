@@ -31,6 +31,9 @@
     background: var(--color-light-neutral-100);
 }
 
+.document-uploader__verification { display: flex; flex-direction: column; gap: var(--gap-8); }
+.document-uploader__actions { display: flex; flex-wrap: wrap; gap: var(--gap-8); }
+
 @media (max-width: 599px) {
     .document-uploader__zone {
         padding: var(--gap-16);

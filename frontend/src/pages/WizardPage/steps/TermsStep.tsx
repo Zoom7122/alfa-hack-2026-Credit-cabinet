@@ -1,60 +1,32 @@
-import { useEffect, useState } from 'react';
-import { Button } from '@alfalab/core-components/button';
-import { Plate } from '@alfalab/core-components/plate';
+import { Input } from '@alfalab/core-components/input';
 import { Select } from '@alfalab/core-components/select';
 import { Textarea } from '@alfalab/core-components/textarea';
-import { Link } from 'react-router-dom';
 
 import type { CollectorPurpose } from '../../../api/collector/types';
 import { useCalculation } from '../../../api/queries';
 import { PURPOSE_LABELS, PURPOSES } from '../../../shared/lib/dictionaries';
-import { fitTerms, type TermsValue, validTerms } from '../../../shared/lib/terms';
+import { type TermsValue, validTerms } from '../../../shared/lib/terms';
 import { FormCard } from '../../../shared/ui/FormCard/FormCard';
 import { PaymentEstimate } from '../../../shared/ui/PaymentEstimate/PaymentEstimate';
 import { TermsFields } from '../../../shared/ui/TermsFields/TermsFields';
 import { StepLayout } from '../components/StepLayout';
 import { type StepProps, useStepGate } from '../stepProps';
 
-export function TermsStep({ product, draft, hrefFor, errors, serverErrors }: StepProps) {
+export function TermsStep({ product, products, draft, hrefFor, errors, serverErrors }: StepProps) {
     const d = draft.value;
-    const [terms, setTerms] = useState<TermsValue>(() => {
-        const stored: TermsValue = { amount: d.requested?.amount ?? '', term: d.requested?.term_months ?? '' };
-        return product ? fitTerms(product, stored) : stored;
-    });
+    const terms: TermsValue = { amount: d.requested?.amount ?? '', term: d.requested?.term_months ?? '' };
     const valid = validTerms(product, terms);
     const calculation = useCalculation(product?.code, valid);
     const gate = useStepGate(errors, serverErrors, hrefFor('borrower'));
 
-    // слайдеры показывают сумму и срок подогнанными под продукт — их и сохраняем (один раз при открытии)
-    const [fitOnOpen] = useState(() => {
-        const fitted = validTerms(product, terms);
-        return fitted && (fitted.amount !== d.requested?.amount || fitted.term_months !== d.requested?.term_months) ? fitted : undefined;
-    });
-    const { update } = draft;
-    useEffect(() => {
-        if (fitOnOpen) update({ requested: fitOnOpen });
-    }, [fitOnOpen, update]);
-
     const changeTerms = (next: TermsValue) => {
-        setTerms(next);
-        draft.update({ requested: validTerms(product, next) });
+        draft.update({ requested: {
+            ...(next.amount !== '' && { amount: next.amount }),
+            ...(next.term !== '' && { term_months: next.term }),
+        } });
     };
 
-    // каталог продуктов — пока из моков; цели data-collector совпадают со справочником кабинета
     const purposes = (product?.purposes?.length ? product.purposes : PURPOSES) as CollectorPurpose[];
-
-    // каталог не загрузился или такого продукта больше нет — без диапазонов суммы и срока шаг не заполнить
-    if (!product) {
-        return (
-            <StepLayout title='Сумма, срок и цель' backHref={hrefFor('company')}>
-                <Plate view='negative' title='Не нашли продукт этой заявки'>
-                    <Button Component={Link} href='/products' view='secondary' size={40}>
-                        Выбрать продукт
-                    </Button>
-                </Plate>
-            </StepLayout>
-        );
-    }
 
     return (
         <StepLayout
@@ -65,8 +37,17 @@ export function TermsStep({ product, draft, hrefFor, errors, serverErrors }: Ste
             hint={gate.hint}
         >
             <FormCard>
-                <TermsFields product={product} value={terms} onChange={changeTerms} />
-                <PaymentEstimate payment={valid && calculation.data?.monthly_payment_from} rate={product.rate_annual_from} loading={calculation.isFetching} />
+                <Select label='Кредитный продукт' block={true} size={56}
+                    options={products.map((p) => ({ key: p.code, content: p.name }))} selected={product?.code ?? null}
+                    onChange={({ selected }) => selected && draft.update((prev) => ({ product_code: selected.key,
+                        purpose: { ...prev.purpose, code: undefined },
+                    }))} error={gate.errorOf('product_code')} />
+                {product ? <TermsFields product={product} value={terms} onChange={changeTerms}
+                    errors={{ amount: gate.errorOf('requested.amount'), term: gate.errorOf('requested.term_months') }} /> : <>
+                    <Input label='Сумма кредита' value='' disabled={true} block={true} size={56} hint='Сначала выберите кредитный продукт' />
+                    <Input label='Срок' value='' disabled={true} block={true} size={56} />
+                </>}
+                {product && <PaymentEstimate payment={valid && calculation.data?.monthly_payment_from} rate={product.rate_annual_from} loading={calculation.isFetching} />}
             </FormCard>
 
             <FormCard title='На что нужны деньги'>

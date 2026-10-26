@@ -56,11 +56,12 @@ func NewCollectionRequested(t domain.CollectionTask) CollectionRequestedEvent {
 // и проверяет документы с подписью (signature_state = PENDING) и PDF/XML со встроенной;
 // worker OCR — с recognition_state = PENDING.
 type DocumentsSubmittedEvent struct {
-	Event         string        `json:"event"` // DocumentsSubmitted
-	ApplicationID string        `json:"application_id"`
-	CompanyINN    string        `json:"company_inn"`
-	Documents     []DocumentRef `json:"documents"`
-	CreatedAt     time.Time     `json:"created_at"`
+	VerificationID string        `json:"verification_id,omitempty"`
+	Event          string        `json:"event"` // DocumentsSubmitted
+	ApplicationID  string        `json:"application_id"`
+	CompanyINN     string        `json:"company_inn"`
+	Documents      []DocumentRef `json:"documents"`
+	CreatedAt      time.Time     `json:"created_at"`
 }
 
 // DocumentRef — документ в событии.

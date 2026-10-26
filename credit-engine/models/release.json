@@ -1,10 +1,10 @@
 {
   "format_version": 1,
   "generator_version": "1",
-  "version": "2.0.1",
-  "previous_version": "2.0.0",
-  "previous_sha256": "85cc3bffbad2dca094250e26986c8a692360bf3d6cbe52ef6adce4d3b1520570",
-  "notes": "Durable scoring snapshots and dispatch protocol; scoring models unchanged.",
+  "version": "2.0.2",
+  "previous_version": "2.0.1",
+  "previous_sha256": "f7dab89bcb2c71f6e816d89da865202317189b2e61faf8bb4f543e5a1239bb9d",
+  "notes": "Merge application financial statements with durable scoring input snapshots",
   "models": [
     {
       "id": "ip",
@@ -28,17 +28,17 @@
   "files": [
     {
       "path": "contracts/openapi.json",
-      "sha256": "3e803780fbb9e8938fb26762a8f45bb33bf13c15ec499ac8821f0ea6de7f81b7",
-      "size": 89145
+      "sha256": "e89407d61886ad652f05af97034662aa9b6f7d63f6aaf10bbbb063aac672b23b",
+      "size": 89672
     },
     {
       "path": "contracts/scoring_facts.openapi.json",
-      "sha256": "02bf393816f0f0fcf04ce0d48fd374a07c1ff2e6fdbf27577f492377ba3a690a",
+      "sha256": "173ff116c9115e466bd4f0727c88c1c4958ec6c7b472e5bb95a2387981c6a3a5",
       "size": 3568
     },
     {
       "path": "docs/02_inputs_and_scoring.md",
-      "sha256": "e94b68e67a8f55da10d88f52e38bf6da03d789f5e933495b1d9931b07cd19b25",
+      "sha256": "c956d122b3e3f4e71b98825da5969894bb1c89b0f4e0381b8b0cc496dfeb04a4",
       "size": 230859
     },
     {
@@ -58,8 +58,8 @@
     },
     {
       "path": "models/changes.md",
-      "sha256": "217cff200f609ea89bc39ec30910b250dd9dbf7399143d1d0b9cdb9a8660976b",
-      "size": 878
+      "sha256": "18ffe52bcfde052cee4f78bba915490da563fdfdb358558ef379e2082f2b70ab",
+      "size": 879
     },
     {
       "path": "models/ip-v2.json",

@@ -229,6 +229,49 @@ services:
       - credit-engine-bank
     restart: unless-stopped
 
+  # Отдельная схема credit_engine_admin в общей БД: миграции до старта конструктора.
+  credit-engine-admin-migrate:
+    build: ./credit-engine
+    entrypoint: ["/admin-migrate"]
+    command: ["up"]
+    environment:
+      ADMIN_DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: "no"
+
+  # Конструктор скоринга: http://localhost:${ADMIN_PORT:-8084}, вход задан в .env.
+  credit-engine-admin:
+    build: ./credit-engine
+    entrypoint: ["/admin-service"]
+    environment:
+      ADMIN_ADDR: ":8084"
+      ADMIN_DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?set ADMIN_PASSWORD_HASH in .env (see .env.example)}
+      ADMIN_EVENTS_TOKEN: ${ADMIN_EVENTS_TOKEN:?set ADMIN_EVENTS_TOKEN in .env (see .env.example)}
+      ADMIN_PUBLIC_ORIGIN: ${ADMIN_PUBLIC_ORIGIN:-http://localhost:${ADMIN_PORT:-8084}}
+      ADMIN_COOKIE_SECURE: ${ADMIN_COOKIE_SECURE:-false}
+      ADMIN_SCORING_URL: http://credit-engine-scoring:8082
+      ADMIN_SCORING_TIMEOUT: 2s
+      ADMIN_REQUEST_TIMEOUT: 30s
+      HTTP_WRITE_TIMEOUT: 45s
+    ports:
+      - "127.0.0.1:${ADMIN_PORT:-8084}:8084"
+    depends_on:
+      credit-engine-admin-migrate:
+        condition: service_completed_successfully
+      credit-engine-scoring:
+        condition: service_started
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+
   # Эмулятор внешних систем: свой префикс на каждую систему (список — mock-api/README.md)
   # и старый /bank/v1, который вызывает data-collector.
   mock-api:
@@ -240,14 +283,14 @@ services:
     restart: unless-stopped
 
   # Кабинет клиента и рабочее место банка: http://localhost:${FRONTEND_PORT:-3000}
-  # Пока API нет, данные отдают моки MSW в браузере (FRONTEND_API_MOCK=true).
-  # Когда появится сервис API, поставить FRONTEND_API_MOCK=false и указать его адрес в FRONTEND_API_UPSTREAM.
+  # FRONTEND_API_MOCK=false выключает демо-экраны и запросы к отсутствующему /api/v1.
+  # FRONTEND_COLLECTOR_MOCK=false направляет запросы кабинета в живой data-collector.
   frontend:
     build:
       context: ./frontend
       args:
         VITE_API_MOCK: ${FRONTEND_API_MOCK:-true}
-        # false — анкета и статус сбора идут в живой data-collector
+        # false — все запросы data-collector идут в живой сервис
         VITE_COLLECTOR_MOCK: ${FRONTEND_COLLECTOR_MOCK:-true}
     environment:
       API_UPSTREAM: ${FRONTEND_API_UPSTREAM:-http://api:8080}

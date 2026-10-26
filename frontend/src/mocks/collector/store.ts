@@ -1,4 +1,5 @@
-import type { CollectorDocument, CollectorRole, QuestionnaireInput } from '../../api/collector/types';
+import type { CollectorDocument, CollectorRole, CollectorSigningSession, QuestionnaireInput } from '../../api/collector/types';
+import type { SavedDraft } from '../../pages/WizardPage/draftTypes';
 
 /* Состояние мока data-collector: заявки, документы, задачи на сбор. Переживает перезагрузку, как и остальные моки. */
 
@@ -10,6 +11,8 @@ export type StoredCollectorApp = {
     already_known: boolean;
     created_at: string;
     updated_at: string;
+    draft?: SavedDraft['data'];
+    draft_version?: number;
     /** Время отправки анкеты (мс) — от него считаются SUBMITTED → ENRICHING → VERIFYING. */
     submitted_ms?: number;
     questionnaire?: Omit<QuestionnaireInput, 'marketplace_tokens' | 'ofd_token'> & {
@@ -24,6 +27,9 @@ export type StoredCollectorApp = {
     answers?: Record<string, { value?: unknown; comment?: string; document_ids: string[]; at: string }>;
     /** Ручное рассмотрение: исполнитель, версия заявки, решения андеррайтера, служебный журнал. */
     review?: StoredReview;
+    signing?: CollectorSigningSession;
+    signing_contract?: string;
+    signing_events?: { id: string; at: string; type: string; message: string; actor_kind: 'CLIENT' | 'SYSTEM' }[];
 };
 
 export type StoredQuestion = { id: string; title: string; description?: string; required: boolean; input: unknown; documents?: unknown; created_at: string };
