@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import type { CollectorDocument } from '../../api/collector/types';
 import type { Document, DocumentType } from '../../api/types';
 import { isTestDocument, TEST_DOCUMENT_SHA256 } from '../../shared/lib/testDocument';
+import { mockFailure } from '../handlers';
 import { authenticate, problem, toApplication, url } from './handlers';
 import { mutateCollector, newId, readCollector, type StoredCollectorApp } from './store';
 
@@ -27,6 +28,8 @@ export const collectorDocumentHandlers = [
         return HttpResponse.json({ items: app.documents.map((doc) => view(app, doc)) });
     }),
     http.post(url('/applications/:id/documents'), async ({ request, params }) => {
+        const failure = mockFailure(request);
+        if (failure) return failure;
         const app = readCollector().apps.find((a) => a.id === params.id);
         if (!app) return problem(404, 'NOT_FOUND', 'Заявка не найдена');
         const { user } = authenticate(request);

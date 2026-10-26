@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 import { expect, type Page, test } from '@playwright/test';
 
-import { COLLECTOR_LIVE, expectPath, MOCK_ONLY, seedToken, setPipelineStep, USERS } from './helpers';
+import { COLLECTOR_LIVE, expectPath, MOCK_ONLY, seedToken, setMockFailures, setPipelineStep, USERS } from './helpers';
 
 /* Заявка data-collector после отправки анкеты: статус сбора, итог по системам, документы, главная. */
 
@@ -254,5 +254,59 @@ test.describe('итог оценки', () => {
         await expect(page.getByRole('tabpanel')).toContainText('Ответы отправлены банку');
         await page.goto(`/applications/${id}?tab=documents`);
         await expect(page.getByRole('table')).toContainText('statement.pdf');
+    });
+
+    test('коллега видит вопросы и автора, но не может загрузить документы или отправить ответ', async ({ page }) => {
+        await setPipelineStep(page, 300);
+        const id = await createApplication(page, { inn: '779900010202', as: USERS.ipSmirnova.id });
+        // The viewer also belongs to this company, but did not author this application.
+        await createApplication(page, { inn: '779900010202', submit: false });
+        await page.goto(`/applications/${id}`);
+        const questions = page.getByRole('region', { name: 'Вопросы банка' });
+        await expect(questions.getByText('Ответить может только автор заявки')).toBeVisible({ timeout: 10_000 });
+        await expect(questions).toContainText(USERS.ipSmirnova.name);
+        await expect(questions.getByRole('heading', { level: 3 })).toHaveCount(2);
+        await expect(questions.locator('input[type="file"]')).toHaveCount(0);
+        await expect(questions.getByRole('button', { name: 'Добавить тестовый PDF' })).toHaveCount(0);
+        await expect(questions.getByRole('button', { name: 'Отправить ответ' })).toHaveCount(0);
+        await questions.getByRole('button', { name: 'Сменить пользователя' }).click();
+        await expectPath(page, '/login');
+    });
+
+    test('автор прикладывает тестовый PDF к вопросу банка и отправляет ответ', async ({ page }) => {
+        await setPipelineStep(page, 300);
+        const id = await createApplication(page, { inn: '779900010202', as: USERS.ipSmirnova.id });
+        await seedToken(page, 'ipSmirnova');
+        await page.goto(`/applications/${id}`);
+        const questions = page.getByRole('region', { name: 'Вопросы банка' });
+        const cash = questions.getByRole('region', { name: /Свободные деньги/ });
+        await cash.getByLabel('Ответ').fill('20000');
+        await cash.getByRole('button', { name: 'Отправить ответ' }).click();
+        await expect(questions.getByRole('heading', { level: 3 })).toHaveCount(1);
+        const statement = questions.getByRole('region', { name: /Выписка по счетам/ });
+        const uploaded = page.waitForResponse((response) => response.request().method() === 'POST' && response.url().endsWith(`/applications/${id}/documents`));
+        await statement.getByRole('button', { name: 'Добавить тестовый PDF' }).click();
+        const response = await uploaded;
+        expect(response.status()).toBe(201);
+        const doc = await response.json() as { id: string; is_test: boolean; info_request_id: string };
+        expect(doc.is_test).toBe(true);
+        expect(doc.info_request_id).toBeTruthy();
+        await expect(statement).toContainText('Тестовый документ: данные не участвуют в скоринге');
+        await statement.getByRole('button', { name: 'Отправить ответ' }).click();
+        await expect(page.getByRole('heading', { level: 2, name: 'Заявку рассматривает кредитный специалист' })).toBeVisible({ timeout: 10_000 });
+    });
+
+    test('отказ в доступе при загрузке объясняет необходимость войти от имени автора', async ({ page }) => {
+        test.skip(COLLECTOR_LIVE, MOCK_ONLY);
+        await setPipelineStep(page, 300);
+        const id = await createApplication(page, { inn: '779900010202', as: USERS.ipSmirnova.id });
+        await seedToken(page, 'ipSmirnova');
+        await page.goto(`/applications/${id}`);
+        const statement = page.getByRole('region', { name: /Выписка по счетам/ });
+        await expect(statement).toBeVisible({ timeout: 10_000 });
+        await setMockFailures(page, [{ method: 'POST', path: '/documents', status: 403, times: 1 }]);
+        await statement.getByRole('button', { name: 'Добавить тестовый PDF' }).click();
+        await expect(statement).toContainText('Загружать документы может только автор заявки. Войдите под его учётной записью.');
+        await expect(statement.getByRole('button', { name: 'Отправить ответ' })).toBeDisabled();
     });
 });

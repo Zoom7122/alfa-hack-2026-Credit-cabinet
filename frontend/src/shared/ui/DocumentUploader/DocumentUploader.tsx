@@ -7,6 +7,7 @@ import { Plate } from '@alfalab/core-components/plate';
 import { Typography } from '@alfalab/core-components/typography';
 
 import { useDeleteDocument, useUploadDocument } from '../../../api/queries';
+import { ApiError } from '../../../api/client';
 import type { Document, DocumentType } from '../../../api/types';
 import { formatDate, formatFileSize } from '../../lib/format';
 import { createTestDocument, TEST_DOCUMENT_NOTICE } from '../../lib/testDocument';
@@ -15,6 +16,10 @@ import './DocumentUploader.css';
 
 const ACCEPT = '.pdf,.docx,.xlsx,.jpg,.jpeg,.png,.sig,.p7s';
 const DEFAULT_HINT = 'PDF, DOCX, XLSX, JPG, PNG · до 20 МБ';
+
+const uploadError = (error: unknown) => error instanceof ApiError && error.status === 403
+    ? 'Загружать документы может только автор заявки. Войдите под его учётной записью.'
+    : 'Не удалось загрузить документы';
 
 type Upload = { key: string; name: string; size: number; error?: string };
 
@@ -122,8 +127,8 @@ export function DocumentUploader({
                         t.done();
                         return doc;
                     })
-                    .catch(() => {
-                        t.fail();
+                    .catch((error: unknown) => {
+                        t.fail(uploadError(error));
                         return undefined;
                     });
             }),
@@ -146,7 +151,7 @@ export function DocumentUploader({
             upload
                 .mutateAsync({ file, type: 'SIGNATURE', infoRequestId, signedDocumentId: target.id })
                 .then(t.done)
-                .catch(() => t.fail());
+                .catch((error: unknown) => t.fail(uploadError(error)));
         }
     };
 

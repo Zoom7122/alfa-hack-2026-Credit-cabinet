@@ -70,7 +70,7 @@ func TestTestPDFAcceptedWithoutContextAndNeverQueued(t *testing.T) {
 			t.Fatalf("sample blocks scoring or queued processing: jobs=%d outbox=%d pending=%d", jobs, outbox, pending)
 		}
 	}
-	for _, typ := range []string{"FINANCIAL_STATEMENTS", "TAX_RETURN", "BANK_STATEMENT", "OTHER"} {
+	for _, typ := range []string{"FINANCIAL_STATEMENTS", "TAX_RETURN", "BANK_STATEMENT", "POWER_OF_ATTORNEY", "OTHER"} {
 		doc, response := upload(typ, "renamed-"+typ+".pdf", "", testdocument.PDF())
 		if response.Code != 201 || !doc.IsTest || doc.Generation != 0 || doc.Signatures.State != "NOT_SIGNED" || doc.SHA256 != testdocument.SHA256 {
 			t.Fatalf("sample not accepted: %d %s", response.Code, response.Body.String())

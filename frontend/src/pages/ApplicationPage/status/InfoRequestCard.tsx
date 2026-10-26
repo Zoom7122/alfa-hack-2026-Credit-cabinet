@@ -26,6 +26,7 @@ type Props = {
     answer: AnswerDraft;
     documents: Document[];
     onChange: (answer: AnswerDraft) => void;
+    editable?: boolean;
     error?: string;
     onUploadingChange?: (uploading: boolean) => void;
     children?: ReactNode;
@@ -135,7 +136,7 @@ export function ValueField({ request, answer, onChange }: Pick<Props, 'request' 
 }
 
 /** Один вопрос банка (экран 08). Формулировки нейтральные — источник расхождения не раскрываем. */
-export function InfoRequestCard({ index, request, applicationId, answer, documents, onChange, error, onUploadingChange, children }: Props) {
+export function InfoRequestCard({ index, request, applicationId, answer, documents, onChange, editable = true, error, onUploadingChange, children }: Props) {
     const accepted = request.documents?.accepted_types ?? [];
     const titleId = `info-request-${request.id}`;
     const examples = request.required ? testAnswers(request) : undefined;
@@ -162,7 +163,7 @@ export function InfoRequestCard({ index, request, applicationId, answer, documen
                 {fields.map((field) => <li key={field}>{capitalize(field)}</li>)}
             </ul>}
 
-            {request.input.type !== 'NONE' && (
+            {editable && request.input.type !== 'NONE' && (
                 <div className='info-request-card__fields'>
                     {examples ? <TestField label={answerLabel(request)} value={answer.value} values={examples}
                         onChange={(value) => onChange({ ...answer, value })}>{input}</TestField> : input}
@@ -183,12 +184,13 @@ export function InfoRequestCard({ index, request, applicationId, answer, documen
                     type={accepted[0]}
                     infoRequestId={request.id}
                     documents={documents}
+                    editable={editable}
                     onUploadingChange={onUploadingChange}
                     hint={request.documents?.hint}
                     accept={accepted.includes('POWER_OF_ATTORNEY') ? '.xml,.sig,.p7s,.pdf' : undefined}
                     renderExtra={(doc) => {
                         const recognized = recognizedValue(request, [doc]);
-                        return recognized !== undefined &&
+                        return editable && recognized !== undefined &&
                         recognized !== answer.value && (
                             <div className='info-request-card__recognized'>
                                 <Typography.Text view='primary-small'>Распознано: {formatMoney(recognized)}</Typography.Text>

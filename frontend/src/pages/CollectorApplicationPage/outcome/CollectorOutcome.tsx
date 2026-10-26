@@ -2,12 +2,13 @@ import { Button } from '@alfalab/core-components/button';
 import { Plate } from '@alfalab/core-components/plate';
 import { Skeleton } from '@alfalab/core-components/skeleton';
 import { Typography } from '@alfalab/core-components/typography';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 
 import { useCollectorDecision, useCollectorInfoRequests, useCollectorOffers } from '../../../api/collector/queries';
 import { useAcceptCollectorOffer } from '../../../api/collector/signing';
 import type { CollectorApplication, CollectorOffer } from '../../../api/collector/types';
 import type { Offer } from '../../../api/types';
+import { type AuthContext, useLogout } from '../../../app/useAuth';
 import { formatIsoDate, formatMoney, formatMonths } from '../../../shared/lib/format';
 import { OfferCard } from '../../ApplicationPage/status/OfferCard';
 import { CollectorQuestion } from './CollectorQuestion';
@@ -46,6 +47,8 @@ const asOffer = (o: CollectorOffer, app: CollectorApplication): Offer => {
 
 /** Итог оценки для клиента: предложение, отказ с причинами или вопросы банка. */
 export function CollectorOutcome({ app }: { app: CollectorApplication }) {
+    const { me } = useOutletContext<AuthContext>();
+    const logout = useLogout();
     const id = app.id ?? '';
     const status = app.status;
     const offers = useCollectorOffers(id, status === 'OFFERED');
@@ -117,6 +120,7 @@ export function CollectorOutcome({ app }: { app: CollectorApplication }) {
     }
 
     if (status === 'WAITING_FOR_INFO') {
+        const editable = Boolean(app.representative?.id && app.representative.id === me.id);
         const items = questions.data ?? [];
         const open = items.filter((q) => q.state === 'OPEN');
         const answered = items.filter((q) => q.state === 'ANSWERED');
@@ -126,12 +130,18 @@ export function CollectorOutcome({ app }: { app: CollectorApplication }) {
                     Вопросы банка
                 </Typography.Title>
                 <Typography.Text view='primary-medium' color='secondary'>
-                    Ответьте на обязательные вопросы — после этого банк продолжит рассмотрение.
+                    {editable ? 'Ответьте на обязательные вопросы — после этого банк продолжит рассмотрение.' : 'Вы можете просмотреть вопросы банка и приложенные документы.'}
                 </Typography.Text>
+                {!editable && <Plate view='common' title='Ответить может только автор заявки'>
+                    <Typography.Text tag='p' view='primary-small'>
+                        Загрузить документы и отправить ответы может {app.representative?.full_name || 'автор заявки'}. Войдите под его учётной записью.
+                    </Typography.Text>
+                    <Button view='secondary' size={40} onClick={logout}>Сменить пользователя</Button>
+                </Plate>}
                 {questions.isPending && <Skeleton visible={true} className='collector-outcome__skeleton' />}
                 {questions.isError && <Plate view='negative' title='Не удалось загрузить вопросы' />}
                 {open.map((q, i) => (
-                    <CollectorQuestion key={q.id} applicationId={id} question={q} index={i + 1} />
+                    <CollectorQuestion key={q.id} applicationId={id} question={q} index={i + 1} editable={editable} />
                 ))}
                 {answered.length > 0 && (
                     <Typography.Text view='primary-small' color='secondary'>
