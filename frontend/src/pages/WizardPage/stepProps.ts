@@ -10,6 +10,7 @@ export type StepProps = {
     userId: string;
     app: CollectorApplication;
     product?: Product;
+    products: Product[];
     draft: Draft;
     hrefFor: (step: StepId) => string;
     /** Ошибки шага по нашим проверкам (те же правила, что у data-collector). */

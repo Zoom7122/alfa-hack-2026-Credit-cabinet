@@ -7,8 +7,7 @@ import { Logo } from '../../../shared/ui/Logo/Logo';
 import { VisuallyHidden } from '../../../shared/ui/VisuallyHidden/VisuallyHidden';
 import './WizardHeader.css';
 
-/** Черновик хранится в браузере — сохраняется сразу, ошибок сети у него нет. */
-type DraftStatus = 'idle' | 'saved';
+type DraftStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 type Props = {
     status?: DraftStatus;
@@ -19,6 +18,8 @@ type Props = {
 
 function statusText(status: DraftStatus | undefined, savedAt: string | undefined) {
     switch (status) {
+        case 'saving': return 'Сохраняем черновик…';
+        case 'error': return 'Черновик не сохранён — повторите попытку';
         case 'saved':
             return savedAt ? `✓ Черновик сохранён в ${formatTime(savedAt)}` : '✓ Черновик сохранён';
         case 'idle':

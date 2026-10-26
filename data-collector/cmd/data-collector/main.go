@@ -129,6 +129,7 @@ func run(log *slog.Logger) error {
 		httptransport.NewCollectionHandler(collectionSvc, log),
 		httptransport.NewInternalDataHandler(internalDataSvc, log),
 		httptransport.WithAuth(httptransport.NewAuthHandler(authSvc, log)),
+		httptransport.WithDraft(httptransport.NewDraftHandler(service.NewDraftService(applications), log)),
 		httptransport.WithCabinet(httptransport.NewCabinetHandler(cabinetSvc, log)),
 		// каталог продуктов и калькулятор платежа
 		httptransport.WithCatalog(httptransport.NewCatalogHandler(service.NewCatalogService())),

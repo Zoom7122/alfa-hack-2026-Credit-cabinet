@@ -1,70 +1,44 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
-import type {
-    CollectorDocumentType,
-    CollectorPurpose,
-    MaritalStatus,
-    Marketplace,
-    QuestionnaireInput,
-    ScoringAnswers,
-    TaxScope,
-} from '../../api/collector/types';
+import type { Marketplace, QuestionnaireInput } from '../../api/collector/types';
 import { deleteFile, listFileKeys } from './fileStore';
+import { saveDraft, savedDraftKey } from './draftApi';
+import type { DraftInput, FileEntry, QuestionnaireDraft, SavedDraft } from './draftTypes';
+export type { DirectorDraft, FileEntry, QuestionnaireDraft } from './draftTypes';
 
 /*
- * Черновик анкеты. PATCH у data-collector нет: всё, что вводит клиент, живёт в браузере до отправки анкеты
- * (POST /applications/{id}/questionnaire — один раз). Токены маркетплейсов и ОФД — отдельно, только во вкладке.
+ * Поля анкеты сохраняются в БД через /draft. До отправки файлы — в IndexedDB,
+ * токены маркетплейсов и ОФД — отдельно, только во вкладке.
  */
-
-export type FileEntry = {
-    /** Ключ содержимого в IndexedDB (fileStore). */
-    key: string;
-    name: string;
-    size: number;
-    /** Тип документа; у открепленной подписи (.sig, .p7s) — нет, она всегда SIGNATURE. */
-    type?: CollectorDocumentType;
-};
-
-export type DirectorDraft = { inn: string; last_name: string; first_name: string; middle_name: string; birth_date: string };
-
-export type QuestionnaireDraft = {
-    product_code?: string;
-    requested?: { amount: number; term_months: number };
-    purpose?: { code?: CollectorPurpose; description?: string };
-    age?: number;
-    marital_status?: MaritalStatus;
-    children_count?: number;
-    /** false — руководителя не указываем: data-collector не запросит данные физлица. */
-    with_director: boolean;
-    director: DirectorDraft;
-    other_bank_biks: string[];
-    collateral: { cadastral_numbers: string[]; vins: string[]; serials: string[] };
-    files: FileEntry[];
-    /** Время, когда клиент дал согласие (signed_at); нет — согласия нет. */
-    consents: { bki_company?: string; bki_person?: string; tax?: string };
-    tax_scope: TaxScope[];
-    poa_number: string;
-    representative_inn: string;
-    /** Ответы для оценки банком; чего нет — банк спросит после оценки. */
-    scoring: ScoringAnswers;
-};
 
 export type Secrets = { marketplace_tokens: Partial<Record<Marketplace, string>>; ofd_token: string };
 
-const EMPTY_DIRECTOR: DirectorDraft = { inn: '', last_name: '', first_name: '', middle_name: '', birth_date: '' };
-
-export const emptyDraft = (init: Partial<QuestionnaireDraft> = {}): QuestionnaireDraft => ({
-    with_director: true,
-    director: EMPTY_DIRECTOR,
-    other_bank_biks: [],
-    collateral: { cadastral_numbers: [], vins: [], serials: [] },
-    files: [],
-    consents: {},
-    tax_scope: ['DECLARATIONS', 'ENS_BALANCE'],
-    poa_number: '',
-    representative_inn: '',
-    scoring: {},
+export const emptyDraft = (init: DraftInput = {}): QuestionnaireDraft => ({
     ...init,
+    age: init.age ?? undefined,
+    marital_status: init.marital_status ?? undefined,
+    children_count: init.children_count ?? undefined,
+    with_director: init.with_director ?? true,
+    director: {
+        inn: init.director?.inn ?? '',
+        last_name: init.director?.last_name ?? '',
+        first_name: init.director?.first_name ?? '',
+        middle_name: init.director?.middle_name ?? '',
+        birth_date: init.director?.birth_date ?? '',
+    },
+    other_bank_biks: init.other_bank_biks ?? [],
+    collateral: {
+        cadastral_numbers: init.collateral?.cadastral_numbers ?? [],
+        vins: init.collateral?.vins ?? [],
+        serials: init.collateral?.serials ?? [],
+    },
+    files: init.files ?? [],
+    consents: init.consents ?? {},
+    tax_scope: init.tax_scope ?? [],
+    poa_number: init.poa_number ?? '',
+    representative_inn: init.representative_inn ?? '',
+    scoring: init.scoring ?? {},
 });
 
 /* Ключи — по пользователю кабинета и заявке: в одном браузере могут работать разные пользователи. */
@@ -96,7 +70,7 @@ export const readDraft = (userId: string, id: string) => {
     const stored = readJson<Partial<QuestionnaireDraft>>(() => localStorage, draftKey(userId, id));
     return stored ? emptyDraft(stored) : undefined;
 };
-export const writeDraft = (userId: string, id: string, draft: QuestionnaireDraft | undefined) =>
+export const writeDraft = (userId: string, id: string, draft: Partial<QuestionnaireDraft> | undefined) =>
     writeJson(() => localStorage, draftKey(userId, id), draft);
 const readSecrets = (userId: string, id: string): Secrets =>
     readJson<Secrets>(() => sessionStorage, secretsKey(userId, id)) ?? { marketplace_tokens: {}, ofd_token: '' };
@@ -120,7 +94,7 @@ function keysWith(storage: () => Storage, prefix: string) {
     }
 }
 
-/** При выходе: токены маркетплейсов и ОФД из вкладки — сразу. Черновики остаются, чтобы не терять заполненное. */
+/** При выходе токены маркетплейсов и ОФД удаляем из вкладки. */
 export function forgetSecrets() {
     for (const key of keysWith(() => sessionStorage, SECRETS_PREFIX)) writeJson(() => sessionStorage, key, undefined);
 }
@@ -140,33 +114,70 @@ export type Draft = {
     secrets: Secrets;
     updateSecrets: (patch: Partial<Secrets>) => void;
     savedAt?: string;
+    status: 'idle' | 'saving' | 'saved' | 'error';
+    error?: Error;
+    flush: () => Promise<void>;
 };
 
-/** Условия из API — начальные значения; локальные правки имеют приоритет и сразу пишутся в браузер. */
-export function useLocalDraft(userId: string, applicationId: string, initial: Partial<QuestionnaireDraft> = {}): Draft {
-    const [value, setValue] = useState(() => {
-        const stored = readDraft(userId, applicationId);
-        return emptyDraft({
-            ...initial,
-            ...stored,
-            product_code: stored?.product_code ?? initial.product_code,
-            requested: stored?.requested ?? initial.requested,
-            purpose: { ...initial.purpose, ...stored?.purpose },
-        });
-    });
+/** При открытии поля берутся только из БД. Локально остаются лишь ещё не отправленные файлы. */
+export function useLocalDraft(userId: string, applicationId: string, initial: SavedDraft): Draft {
+    const queryClient = useQueryClient();
+    const [value, setValue] = useState(() => emptyDraft({ ...initial.data, files: readDraft(userId, applicationId)?.files ?? [] }));
     const [secrets, setSecrets] = useState(() => readSecrets(userId, applicationId));
     const [savedAt, setSavedAt] = useState<string>();
+    const [status, setStatus] = useState<Draft['status']>('idle');
+    const [error, setError] = useState<Error>();
+    const latest = useRef(value);
+    const version = useRef(initial.version);
+    const serialize = (draft: QuestionnaireDraft) => {
+        const fields: Partial<QuestionnaireDraft> = { ...draft };
+        delete fields.files;
+        return JSON.stringify(fields);
+    };
+    const saved = useRef(serialize(value));
+    const running = useRef<Promise<void> | undefined>(undefined);
+
+    const flush = useCallback(async () => {
+        if (running.current) return running.current;
+        const job = (async () => {
+            try {
+                while (serialize(latest.current) !== saved.current) {
+                    setStatus('saving');
+                    const snapshot = serialize(latest.current);
+                    const result = await saveDraft(applicationId, JSON.parse(snapshot) as SavedDraft['data'], version.current);
+                    version.current = result.version;
+                    saved.current = snapshot;
+                    setSavedAt(result.updated_at);
+                    setError(undefined);
+                    setStatus('saved');
+                    queryClient.setQueryData(savedDraftKey(applicationId), result);
+                    void queryClient.invalidateQueries({ queryKey: ['collector', 'applications'] });
+                }
+            } catch (cause) {
+                setError(cause instanceof Error ? cause : new Error('Не удалось сохранить анкету'));
+                setStatus('error');
+                throw cause;
+            }
+        })();
+        running.current = job;
+        try { await job; } finally { running.current = undefined; }
+    }, [applicationId, queryClient]);
 
     const update = useCallback<Draft['update']>(
-        (patch) =>
-            setValue((prev) => {
-                const next = { ...prev, ...(typeof patch === 'function' ? patch(prev) : patch) };
-                writeDraft(userId, applicationId, next);
-                setSavedAt(new Date().toISOString());
-                return next;
-            }),
+        (patch) => {
+            const next = { ...latest.current, ...(typeof patch === 'function' ? patch(latest.current) : patch) };
+            latest.current = next;
+            setValue(next);
+            writeDraft(userId, applicationId, { files: next.files });
+            if (serialize(next) !== saved.current) setStatus('saving');
+        },
         [userId, applicationId],
     );
+    useEffect(() => {
+        const timer = setTimeout(() => void flush().catch(() => undefined), 300);
+        return () => clearTimeout(timer);
+    }, [value, flush]);
+    useEffect(() => () => { void flush().catch(() => undefined); }, [flush]);
     const updateSecrets = useCallback(
         (patch: Partial<Secrets>) =>
             setSecrets((prev) => {
@@ -176,7 +187,7 @@ export function useLocalDraft(userId: string, applicationId: string, initial: Pa
             }),
         [userId, applicationId],
     );
-    return { value, update, secrets, updateSecrets, savedAt };
+    return { value, update, secrets, updateSecrets, savedAt, status, error, flush };
 }
 
 // ---------------------------------------------------------------- проверки (как у data-collector)
@@ -211,7 +222,9 @@ function validDate(value: string) {
 
 export function termsErrors(d: QuestionnaireDraft): Errors {
     const e: Errors = {};
-    if (!d.requested) e.requested = 'Укажите сумму и срок';
+    if (!d.product_code) e.product_code = 'Выберите кредитный продукт';
+    if (!d.requested?.amount || d.requested.amount < 0) e['requested.amount'] = 'Укажите сумму кредита';
+    if (!d.requested?.term_months || d.requested.term_months < 0) e['requested.term_months'] = 'Укажите срок кредита';
     if (!d.purpose?.code) e['purpose.code'] = 'Выберите цель кредита';
     if ((d.purpose?.description?.length ?? 0) > 2000) e['purpose.description'] = 'Не длиннее 2000 символов';
     return e;
@@ -323,10 +336,10 @@ export function scoringErrors(d: QuestionnaireDraft): Errors {
     const e: Errors = {};
     const s = d.scoring ?? {};
     if (s.max_annual_rate !== undefined && (s.max_annual_rate <= 0 || s.max_annual_rate > 100)) e['scoring.max_annual_rate'] = 'Ставка — от 0 до 100 % годовых';
-    if (s.min_acceptable_amount !== undefined && d.requested && s.min_acceptable_amount > d.requested.amount) {
+    if (s.min_acceptable_amount !== undefined && d.requested?.amount !== undefined && s.min_acceptable_amount > d.requested.amount) {
         e['scoring.min_acceptable_amount'] = 'Не больше запрошенной суммы';
     }
-    if (s.max_acceptable_term_months !== undefined && d.requested && s.max_acceptable_term_months < d.requested.term_months) {
+    if (s.max_acceptable_term_months !== undefined && d.requested?.term_months !== undefined && s.max_acceptable_term_months < d.requested.term_months) {
         e['scoring.max_acceptable_term_months'] = 'Не меньше запрошенного срока';
     }
     if (s.max_acceptable_term_months !== undefined && s.max_acceptable_term_months > 120) e['scoring.max_acceptable_term_months'] = 'Не больше 120 месяцев';
@@ -370,7 +383,8 @@ export function toQuestionnaire(d: QuestionnaireDraft, s: Secrets, number: strin
         marital_status: d.marital_status ?? 'SINGLE',
         children_count: d.children_count ?? 0,
         product_code: d.product_code,
-        requested: d.requested,
+        requested: d.requested?.amount !== undefined && d.requested.term_months !== undefined
+            ? { amount: d.requested.amount, term_months: d.requested.term_months } : undefined,
         purpose: d.purpose?.code ? { code: d.purpose.code, description: d.purpose.description?.trim() || undefined } : undefined,
         documents: d.files.filter((f) => !isDetachedSignature(f, d.files)).map((f) => ({ file_name: f.name, type: f.type ?? 'OTHER' })),
         director,

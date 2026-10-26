@@ -1,4 +1,5 @@
 import type { CollectorDocument, CollectorRole, QuestionnaireInput } from '../../api/collector/types';
+import type { SavedDraft } from '../../pages/WizardPage/draftTypes';
 
 /* Состояние мока data-collector: заявки, документы, задачи на сбор. Переживает перезагрузку, как и остальные моки. */
 
@@ -10,6 +11,8 @@ export type StoredCollectorApp = {
     already_known: boolean;
     created_at: string;
     updated_at: string;
+    draft?: SavedDraft['data'];
+    draft_version?: number;
     /** Время отправки анкеты (мс) — от него считаются SUBMITTED → ENRICHING → VERIFYING. */
     submitted_ms?: number;
     questionnaire?: Omit<QuestionnaireInput, 'marketplace_tokens' | 'ofd_token'> & {

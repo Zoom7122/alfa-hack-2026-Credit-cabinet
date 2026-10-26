@@ -87,6 +87,7 @@ export function ReviewStep({ userId, app, draft, hrefFor, errors, serverErrors, 
         setTried(true);
         if (blocking.length || Object.keys(errors).length) return;
         setReading(true);
+        try { await draft.flush(); } catch { setReading(false); return; }
         // файлы — из браузера, в том же порядке, что в списке: по индексу data-collector укажет, какой файл не прошёл
         const files: SubmitFile[] = [];
         const lost: string[] = [];
@@ -208,8 +209,8 @@ export function ReviewStep({ userId, app, draft, hrefFor, errors, serverErrors, 
                     title='Сумма, срок и цель'
                     editHref={hrefFor('terms')}
                     rows={[
-                        ['Сумма', d.requested && formatMoney(d.requested.amount)],
-                        ['Срок', d.requested && formatMonths(d.requested.term_months)],
+                        ['Сумма', d.requested?.amount !== undefined && formatMoney(d.requested.amount)],
+                        ['Срок', d.requested?.term_months !== undefined && formatMonths(d.requested.term_months)],
                         ['Цель', d.purpose?.code && PURPOSE_LABELS[d.purpose.code]],
                     ]}
                 />

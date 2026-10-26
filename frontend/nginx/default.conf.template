@@ -66,6 +66,12 @@ server {
         include /etc/nginx/snippets/collector-proxy.conf;
     }
 
+    location ~ ^/collector/api/v1/applications/[A-Za-z0-9_]+/draft$ {
+        limit_except GET PUT { deny all; }
+        include /etc/nginx/snippets/collector-proxy.conf;
+        client_max_body_size 128k;
+    }
+
     location ~ ^/collector/api/v1/(auth/mock-login|counterparty/lookup|applications/[A-Za-z0-9_]+/questionnaire|applications/[A-Za-z0-9_]+/info-requests/[A-Za-z0-9_]+/answer|backoffice/applications/[A-Za-z0-9_]+/(assign|decision)|products/[A-Z_]+/calculate)$ {
         limit_except POST { deny all; }
         include /etc/nginx/snippets/collector-proxy.conf;

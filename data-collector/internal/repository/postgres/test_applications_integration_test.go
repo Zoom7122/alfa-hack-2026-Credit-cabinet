@@ -122,7 +122,7 @@ func TestIntegrationSeedTestApplications(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT skipped_sources FROM collection_tasks WHERE application_id = $1`, testApplicationID(150)).Scan(&skipped); err != nil {
 		t.Fatal(err)
 	}
-	expectedSkips := domain.SkippedSystems(domain.CollectInput{INN: testCompanies["beta"].INN})
+	expectedSkips := map[domain.System]bool{domain.SystemEGRN: true, domain.SystemOpenBanking: true, domain.SystemMarketplaces: true, domain.SystemOFD: true}
 	if len(skipped) != len(expectedSkips) {
 		t.Fatalf("systems without input must be skipped: %v", skipped)
 	}
@@ -130,6 +130,17 @@ func TestIntegrationSeedTestApplications(t *testing.T) {
 		if _, ok := expectedSkips[domain.System(system)]; !ok {
 			t.Fatalf("unexpected skipped system: %s", system)
 		}
+	}
+	var requestJSON []byte
+	if err := pool.QueryRow(ctx, `SELECT request FROM collection_tasks WHERE application_id=$1`, testApplicationID(150)).Scan(&requestJSON); err != nil {
+		t.Fatal(err)
+	}
+	var collect requestRecord
+	if err := json.Unmarshal(requestJSON, &collect); err != nil {
+		t.Fatal(err)
+	}
+	if collect.Director == nil || collect.Director.LastName != "Зуев" || collect.Consents.BKICompany == nil || collect.Consents.Tax == nil {
+		t.Fatalf("collection task must use the persisted test questionnaire: %s", requestJSON)
 	}
 	var ogrn, registry string
 	if err := pool.QueryRow(ctx, `SELECT ogrn, registry ->> 'full_name' FROM companies WHERE inn = '7701234567'`).Scan(&ogrn, &registry); err != nil || ogrn != "existing-ogrn" || registry != "Сохранённые реквизиты" {

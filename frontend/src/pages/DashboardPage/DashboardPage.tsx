@@ -13,7 +13,6 @@ import type { ApplicationStatusView, ApplicationSummary, CompanyAccess, Me } fro
 import { COLLECTION_FAILED, COLLECTOR_STATUS, collectorSummary } from '../../shared/lib/collector';
 import { ACTIVE_STAGES, STAGES_WITH_TASKS } from '../../shared/lib/dictionaries';
 import { formatDay, pluralize, splitName } from '../../shared/lib/format';
-import { readDraft } from '../WizardPage/draft';
 import { ApplicationRow } from './components/ApplicationRow';
 import { CompanyCard } from './components/CompanyCard';
 import { TaskCard, type Task } from './components/TaskCard';
@@ -68,7 +67,7 @@ export function DashboardPage({ me, company }: Props) {
 
     // черновики анкеты теперь в data-collector — демо-черновики моков не показываем
     const all = (applications.data ?? []).filter((a) => a.client_stage !== 'FILLING');
-    const fromCollector = collectorItems.map((app) => ({ app, summary: collectorSummary(app, app.id ? readDraft(me.id, app.id) : undefined) }));
+    const fromCollector = collectorItems.map((app) => ({ app, summary: collectorSummary(app) }));
     const active = all.filter((a) => ACTIVE_STAGES.includes(a.client_stage));
     const closed = all.filter((a) => !ACTIVE_STAGES.includes(a.client_stage));
     const shownCollector = fromCollector.filter(({ summary }) => ACTIVE_STAGES.includes(summary.client_stage) === (filter === 'active'));

@@ -143,6 +143,15 @@ definitions:
       updated_at:
         type: string
     type: object
+  ApplicationDraft:
+    properties:
+      data:
+        type: object
+      updated_at:
+        type: string
+      version:
+        type: integer
+    type: object
   Applications:
     properties:
       items:
@@ -1295,6 +1304,17 @@ definitions:
         example: 24
         type: integer
     type: object
+  SaveApplicationDraft:
+    properties:
+      data:
+        type: object
+      version:
+        minimum: 1
+        type: integer
+    required:
+    - data
+    - version
+    type: object
   SourceResult:
     properties:
       duration_ms:
@@ -2112,6 +2132,102 @@ paths:
       security:
       - bearer: []
       summary: Отчёт проверки электронной подписи
+      tags:
+      - applications
+  /applications/{id}/draft:
+    get:
+      parameters:
+      - description: id заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApplicationDraft'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
+      summary: Полная сохранённая анкета черновика, без подстановки отсутствующих
+        полей
+      tags:
+      - applications
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: id заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Поля и версия черновика
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SaveApplicationDraft'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApplicationDraft'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/Problem'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
+      summary: Сохранить незавершённую анкету в БД без отправки заявки
       tags:
       - applications
   /applications/{id}/info-requests:

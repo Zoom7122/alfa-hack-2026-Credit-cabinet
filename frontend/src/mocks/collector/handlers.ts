@@ -123,8 +123,8 @@ export function toApplication(app: StoredCollectorApp, withKnown = false): Colle
             already_known: withKnown ? app.already_known : undefined,
         },
         representative: app.representative,
-        product_code: q?.product_code,
-        requested: q?.requested,
+        product_code: q?.product_code ?? app.draft?.product_code,
+        requested: q?.requested ?? app.draft?.requested,
         purpose: q?.purpose,
         documents: app.documents.map((d) => {
             const state = signatureState(app, d);
@@ -567,6 +567,32 @@ export const collectorHandlers = [
         const app = readCollector().apps.find((a) => a.id === params.id);
         if (!app) return notFound('заявка не найдена');
         return HttpResponse.json(toApplication(app));
+    }),
+
+    http.get(url('/applications/:id/draft'), async ({ request, params }) => {
+        const app = readCollector().apps.find((a) => a.id === params.id);
+        if (!app) return notFound('заявка не найдена');
+        const { user } = authenticate(request);
+        if (user?.id !== app.representative.id && (user || isTestUser(app.representative.id))) return problem(403, 'FORBIDDEN', 'Нет доступа');
+        if (app.submitted_ms) return problem(409, 'CONFLICT', 'Анкету уже отправили');
+        return HttpResponse.json({ data: app.draft ?? {}, version: app.draft_version ?? 1, updated_at: app.updated_at });
+    }),
+    http.put(url('/applications/:id/draft'), async ({ request, params }) => {
+        const app = readCollector().apps.find((a) => a.id === params.id);
+        if (!app) return notFound('заявка не найдена');
+        const { user } = authenticate(request);
+        if (user?.id !== app.representative.id && (user || isTestUser(app.representative.id))) return problem(403, 'FORBIDDEN', 'Нет доступа');
+        if (app.submitted_ms) return problem(409, 'CONFLICT', 'Анкету уже отправили');
+        const body = await request.json() as { data: StoredCollectorApp['draft']; version: number };
+        if (body.version !== (app.draft_version ?? 1)) return problem(409, 'CONFLICT', 'Черновик изменён');
+        const stored = mutateCollector((db) => {
+            const target = db.apps.find((a) => a.id === app.id)!;
+            target.draft = body.data;
+            target.draft_version = body.version + 1;
+            target.updated_at = new Date().toISOString();
+            return target;
+        });
+        return HttpResponse.json({ data: stored.draft, version: stored.draft_version, updated_at: stored.updated_at });
     }),
 
     http.post(url('/applications/:id/questionnaire'), async ({ request, params }) => {
