@@ -130,7 +130,12 @@ function snapshotOf(root: string, d: QuestionnaireDraft, secrets: Secrets) {
 function EditWizard({ userId, app, step, products }: { userId: string; app: CollectorApplication; step?: StepId; products: Product[] }) {
     const navigate = useNavigate();
     const id = app.id ?? '';
-    const draft = useLocalDraft(userId, id);
+    const { amount, term_months } = app.requested ?? {};
+    const draft = useLocalDraft(userId, id, {
+        product_code: app.product_code,
+        requested: amount !== undefined && term_months !== undefined ? { amount, term_months } : undefined,
+        purpose: app.purpose,
+    });
     // ошибки 422 последней отправки и значения полей на тот момент; переживают переход между шагами
     const [rejected, setRejected] = useSessionState<Rejected>(serverErrorsKey(userId, id), () => ({ errors: {}, values: {} }));
     const hrefFor = (s: StepId) => `/applications/${id}/edit/${s}`;

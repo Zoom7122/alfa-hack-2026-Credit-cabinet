@@ -142,9 +142,18 @@ export type Draft = {
     savedAt?: string;
 };
 
-/** Черновик заявки: правки сразу пишутся в браузер. */
-export function useLocalDraft(userId: string, applicationId: string): Draft {
-    const [value, setValue] = useState(() => readDraft(userId, applicationId) ?? emptyDraft());
+/** Условия из API — начальные значения; локальные правки имеют приоритет и сразу пишутся в браузер. */
+export function useLocalDraft(userId: string, applicationId: string, initial: Partial<QuestionnaireDraft> = {}): Draft {
+    const [value, setValue] = useState(() => {
+        const stored = readDraft(userId, applicationId);
+        return emptyDraft({
+            ...initial,
+            ...stored,
+            product_code: stored?.product_code ?? initial.product_code,
+            requested: stored?.requested ?? initial.requested,
+            purpose: { ...initial.purpose, ...stored?.purpose },
+        });
+    });
     const [secrets, setSecrets] = useState(() => readSecrets(userId, applicationId));
     const [savedAt, setSavedAt] = useState<string>();
 
