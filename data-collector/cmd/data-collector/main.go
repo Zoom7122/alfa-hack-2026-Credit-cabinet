@@ -120,6 +120,15 @@ func run(log *slog.Logger) error {
 		httptransport.NewInternalDataHandler(internalDataSvc, log),
 		httptransport.WithAuth(httptransport.NewAuthHandler(authSvc, log)),
 		httptransport.WithCabinet(httptransport.NewCabinetHandler(cabinetSvc, log)),
+		// итог для клиента: решение, предложения, вопросы банка и ответы
+		httptransport.WithOutcome(httptransport.NewOutcomeHandler(service.NewOutcomeService(postgres.NewBackofficeRepository(pool),
+			applications, files, 4*time.Hour), service.MaxFiles*maxFileSize+2<<20, log)),
+		// рабочее место андеррайтера
+		httptransport.WithBackoffice(httptransport.NewBackofficeHandler(
+			service.NewBackofficeService(postgres.NewBackofficeRepository(pool)), log)),
+		// поставщик Б и МС3 для credit-engine
+		httptransport.WithEngineHooks(httptransport.NewEngineHandler(
+			service.NewDecisionService(postgres.NewDecisionRepository(pool), nil, service.DecisionConfig{}), log)),
 	)
 
 	srv := &http.Server{

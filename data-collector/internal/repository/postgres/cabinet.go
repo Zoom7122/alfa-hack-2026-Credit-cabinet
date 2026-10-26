@@ -30,9 +30,11 @@ ORDER BY a.created_at DESC, a.id DESC
 LIMIT $5`
 
 	selectEvents = `
-SELECT id, created_at, type, coalesce(from_status, ''), coalesce(to_status, ''), coalesce(actor_id, ''), coalesce(message, '')
-FROM application_events WHERE application_id = $1
-ORDER BY id`
+SELECT e.id, e.created_at, e.type, coalesce(e.from_status, ''), coalesce(e.to_status, ''), coalesce(e.actor_id, ''),
+       coalesce(u.role, ''), coalesce(e.message, ''), e.payload
+FROM application_events e LEFT JOIN users u ON u.id = e.actor_id
+WHERE e.application_id = $1
+ORDER BY e.id`
 
 	// отчёт по документу или по его открепленной подписи, последний по времени проверки
 	selectLatestReport = `
@@ -101,12 +103,12 @@ func (r *CabinetRepository) Events(ctx context.Context, applicationID string) ([
 	}
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.ApplicationEvent, error) {
 		var (
-			e        domain.ApplicationEvent
-			from, to string
-			at       time.Time
+			e              domain.ApplicationEvent
+			from, to, role string
+			at             time.Time
 		)
-		err := row.Scan(&e.ID, &at, &e.Type, &from, &to, &e.ActorID, &e.Message)
-		e.At, e.From, e.To = at.UTC(), domain.ApplicationStatus(from), domain.ApplicationStatus(to)
+		err := row.Scan(&e.ID, &at, &e.Type, &from, &to, &e.ActorID, &role, &e.Message, &e.Payload)
+		e.At, e.From, e.To, e.ActorRole = at.UTC(), domain.ApplicationStatus(from), domain.ApplicationStatus(to), domain.UserRole(role)
 		return e, err
 	})
 }

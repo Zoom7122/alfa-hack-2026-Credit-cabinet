@@ -18,12 +18,13 @@ test.describe('Вход под тестовым пользователем', () 
         await expect(page.getByRole('button', { name: 'Войти как Петров П. П.' })).toBeEnabled();
     });
 
-    test('вкладка «Сотрудник банка» показывает только андеррайтера', async ({ page }) => {
+    test('вкладка «Сотрудник банка» показывает только андеррайтеров', async ({ page }) => {
         await page.goto('/login');
         await page.getByText('Сотрудник банка', { exact: true }).click();
         const personas = page.getByRole('radio');
-        await expect(personas).toHaveCount(1);
+        await expect(personas).toHaveCount(2);
         await expect(personas.first()).toContainText(USERS.underwriter.name);
+        await expect(personas.nth(1)).toContainText(USERS.orlov.name);
     });
 
     test('стрелки переключают выбор и фокус (radiogroup)', async ({ page }) => {

@@ -23,7 +23,7 @@ export function SourcesStep({ draft, hrefFor, errors, serverErrors }: StepProps)
         <StepLayout
             title='Счета и площадки'
             subtitle='Необязательно, но чем больше источников, тем точнее решение и выше сумма'
-            backHref={hrefFor('borrower')}
+            backHref={hrefFor('scoring')}
             onNext={gate.onNext}
             hint={gate.hint}
         >

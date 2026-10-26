@@ -47,6 +47,13 @@ export const COLLECTOR_TEST_USERS: TestUser[] = [
         companies: [],
     },
     {
+        id: 'usr_underwriter_orlov',
+        full_name: 'Орлов Дмитрий Андреевич',
+        roles: ['UNDERWRITER'],
+        persona: 'Второй андеррайтер: заявку, которую он взял, Соколова решить не может',
+        companies: [],
+    },
+    {
         id: 'usr_director_north',
         full_name: 'Ковалёв Игорь Сергеевич',
         roles: ['CLIENT'],

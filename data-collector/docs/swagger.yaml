@@ -123,12 +123,19 @@ definitions:
       status:
         description: |-
           DRAFT — создана при регистрации, SUBMITTED — анкета отправлена, ENRICHING — идёт сбор данных,
-          VERIFYING — данные собраны.
+          VERIFYING — данные собраны, ждём проверку подписей, SCORING — оценивает credit-engine,
+          MANUAL_REVIEW — у андеррайтера, WAITING_FOR_INFO — банк ждёт ответов клиента,
+          OFFERED — выдано предложение, REJECTED — отказ.
         enum:
         - DRAFT
         - SUBMITTED
         - ENRICHING
         - VERIFYING
+        - SCORING
+        - MANUAL_REVIEW
+        - WAITING_FOR_INFO
+        - OFFERED
+        - REJECTED
         example: DRAFT
         type: string
       submitted_at:
@@ -144,6 +151,439 @@ definitions:
         type: array
     required:
     - items
+    type: object
+  BoApplicant:
+    properties:
+      bank_relationship:
+        additionalProperties: {}
+        type: object
+      credit_history:
+        additionalProperties: {}
+        type: object
+      director_name:
+        type: string
+      enforcement:
+        additionalProperties: {}
+        type: object
+      financial_statements:
+        items:
+          $ref: '#/definitions/decision.YearFigures'
+        type: array
+      full_name:
+        type: string
+      id:
+        type: string
+      inn:
+        type: string
+      kpp:
+        type: string
+      litigation:
+        additionalProperties: {}
+        type: object
+      ogrn:
+        type: string
+      okved:
+        type: string
+      region:
+        type: string
+      registration_date:
+        type: string
+      risk_flags:
+        items:
+          type: string
+        type: array
+      short_name:
+        type: string
+      terminated_on:
+        type: string
+      type:
+        type: string
+    type: object
+  BoApplicantRef:
+    properties:
+      id:
+        type: string
+      inn:
+        type: string
+      short_name:
+        type: string
+      type:
+        enum:
+        - LEGAL_ENTITY
+        - SOLE_PROPRIETOR
+        type: string
+    type: object
+  BoApplicationListItem:
+    properties:
+      applicant:
+        $ref: '#/definitions/BoApplicantRef'
+      assignee:
+        $ref: '#/definitions/UserRef'
+      degraded_sources:
+        description: системы, ответившие с ошибкой или частично
+        items:
+          type: string
+        type: array
+      grade:
+        enum:
+        - A
+        - B
+        - C
+        - D
+        type: string
+      id:
+        type: string
+      manual_review_reasons:
+        description: Причины ручного рассмотрения от credit-engine — только у MANUAL_REVIEW.
+        items:
+          type: string
+        type: array
+      number:
+        type: string
+      product_code:
+        type: string
+      requested:
+        $ref: '#/definitions/RequestedTerms'
+      score:
+        type: integer
+      sla_due_at:
+        type: string
+      status:
+        type: string
+      submitted_at:
+        type: string
+      version:
+        type: integer
+    type: object
+  BoDecisionInput:
+    properties:
+      action:
+        enum:
+        - APPROVE
+        - REJECT
+        - REQUEST_INFO
+        type: string
+      client_reasons:
+        items:
+          $ref: '#/definitions/ClientReason'
+        type: array
+      expert_adjustments:
+        items:
+          $ref: '#/definitions/ExpertAdjustment'
+        type: array
+      info_requests:
+        items:
+          $ref: '#/definitions/InfoRequestInput'
+        type: array
+      internal_comment:
+        type: string
+      offers:
+        items:
+          $ref: '#/definitions/OfferInput'
+        type: array
+    required:
+    - action
+    type: object
+  BoDossier:
+    properties:
+      applicant:
+        $ref: '#/definitions/BoApplicant'
+      application:
+        $ref: '#/definitions/Application'
+      assignee:
+        $ref: '#/definitions/UserRef'
+      engine_decision:
+        $ref: '#/definitions/BoEngineDecision'
+      findings:
+        items:
+          $ref: '#/definitions/BoFinding'
+        type: array
+      info_requests:
+        items:
+          $ref: '#/definitions/InfoRequest'
+        type: array
+      offers:
+        items:
+          $ref: '#/definitions/Offer'
+        type: array
+      other_applications:
+        items:
+          $ref: '#/definitions/BoApplicationListItem'
+        type: array
+      score:
+        $ref: '#/definitions/BoScore'
+      sla_due_at:
+        type: string
+      sources:
+        items:
+          $ref: '#/definitions/BoSource'
+        type: array
+      timeline:
+        items:
+          $ref: '#/definitions/BoTimelineEvent'
+        type: array
+      underwriter_decision:
+        $ref: '#/definitions/BoUnderwriterDecision'
+      version:
+        description: для If-Match решения
+        type: integer
+    type: object
+  BoEngineDecision:
+    properties:
+      engine_status:
+        enum:
+        - APPROVED
+        - REJECTED
+        - UNDER_REVIEW
+        - NEED_INFO
+        type: string
+      outcome:
+        description: 'Итог движка для заявки: APPROVED, REJECTED, MANUAL_REVIEW, NEED_INFO.'
+        type: string
+      proposed_terms:
+        $ref: '#/definitions/BoTerms'
+      reasons:
+        items:
+          $ref: '#/definitions/BoEngineReason'
+        type: array
+      review_reason:
+        enum:
+        - BORROWER
+        - BANK
+        type: string
+    type: object
+  BoEngineReason:
+    properties:
+      code:
+        type: string
+      fields:
+        items:
+          type: string
+        type: array
+      message:
+        type: string
+    type: object
+  BoFinding:
+    properties:
+      code:
+        type: string
+      declared_value:
+        type: string
+      found_value:
+        type: string
+      material:
+        type: boolean
+      message:
+        type: string
+      severity:
+        enum:
+        - INFO
+        - WARN
+        - STOP
+        type: string
+      source:
+        type: string
+    type: object
+  BoQueue:
+    properties:
+      counters:
+        $ref: '#/definitions/BoQueueCounters'
+      items:
+        items:
+          $ref: '#/definitions/BoApplicationListItem'
+        type: array
+      next_cursor:
+        description: Курсор следующей страницы; null — страниц больше нет.
+        type: string
+    type: object
+  BoQueueCounters:
+    properties:
+      due_today:
+        type: integer
+      manual_review:
+        type: integer
+      mine:
+        type: integer
+      waiting_for_info:
+        type: integer
+    type: object
+  BoScore:
+    properties:
+      computed_at:
+        type: string
+      engine:
+        enum:
+        - SCORECARD
+        type: string
+      factors:
+        items:
+          $ref: '#/definitions/BoScoreFactor'
+        type: array
+      grade:
+        enum:
+        - A
+        - B
+        - C
+        - D
+        type: string
+      model_version:
+        type: string
+      raw_total:
+        type: number
+      total:
+        type: integer
+    type: object
+  BoScoreFactor:
+    properties:
+      answer:
+        type: string
+      code:
+        type: string
+      max_points:
+        type: integer
+      part:
+        enum:
+        - QUESTIONNAIRE
+        - ECONOMICS
+        type: string
+      points:
+        type: number
+      title:
+        type: string
+      value:
+        type: number
+    type: object
+  BoSource:
+    properties:
+      calls:
+        type: integer
+      code:
+        description: 'система data-collector: CORE_BANKING, FNS, BKI, …'
+        type: string
+      criticality:
+        enum:
+        - CRITICAL
+        - NORMAL
+        type: string
+      duration_ms:
+        type: integer
+      failed_calls:
+        type: integer
+      fetched_at:
+        type: string
+      reason:
+        type: string
+      state:
+        enum:
+        - DONE
+        - PARTIAL
+        - FAILED
+        - SKIPPED
+        type: string
+    type: object
+  BoTerms:
+    properties:
+      amount:
+        type: integer
+      confirmed:
+        description: условия подтверждены движком и банком (APPROVED)
+        type: boolean
+      monthly_payment:
+        type: integer
+      rate_annual:
+        type: number
+      term_months:
+        type: integer
+    type: object
+  BoTimelineEvent:
+    properties:
+      actor:
+        allOf:
+        - $ref: '#/definitions/UserRef'
+        description: сотрудник банка
+      actor_kind:
+        enum:
+        - CLIENT
+        - SYSTEM
+        - EMPLOYEE
+        type: string
+      at:
+        type: string
+      from_status:
+        type: string
+      id:
+        type: string
+      internal:
+        description: 'служебное: клиенту не показывается'
+        type: boolean
+      message:
+        example: Данные о компании собраны
+        type: string
+      to_status:
+        type: string
+      type:
+        description: |-
+          Тип события модуля: application.created, application.submitted, enrich.started, enrich.completed, enrich.failed,
+          document.signatures_verified.
+        example: enrich.completed
+        type: string
+    required:
+    - actor_kind
+    - at
+    - id
+    - message
+    - type
+    type: object
+  BoUnderwriterDecision:
+    properties:
+      comment:
+        type: string
+      decided_at:
+        type: string
+      decided_by:
+        $ref: '#/definitions/UserRef'
+      outcome:
+        enum:
+        - APPROVED
+        - APPROVED_WITH_CHANGES
+        - REJECTED
+        - NEED_INFO
+        type: string
+    type: object
+  ClientDecision:
+    properties:
+      decided_at:
+        type: string
+      decided_by:
+        enum:
+        - ENGINE
+        - EMPLOYEE
+        type: string
+      outcome:
+        enum:
+        - APPROVED
+        - APPROVED_WITH_CHANGES
+        - REJECTED
+        - MANUAL_REVIEW
+        - NEED_INFO
+        type: string
+      reapply_after:
+        description: когда можно подать заявку снова
+        type: string
+      reasons:
+        description: Причины отказа для клиента — без баллов и внутренних проверок.
+        items:
+          $ref: '#/definitions/domain.ClientReason'
+        type: array
+    type: object
+  ClientReason:
+    properties:
+      code:
+        type: string
+      description:
+        type: string
+      title:
+        type: string
     type: object
   CollectionSource:
     properties:
@@ -394,6 +834,94 @@ definitions:
       uploaded_at:
         type: string
     type: object
+  ExpertAdjustment:
+    properties:
+      code:
+        type: string
+      comment:
+        type: string
+      points:
+        type: integer
+    type: object
+  InfoRequest:
+    properties:
+      answer:
+        type: object
+      answered_at:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      documents:
+        type: object
+      due_at:
+        type: string
+      id:
+        type: string
+      input:
+        type: object
+      required:
+        type: boolean
+      source:
+        enum:
+        - credit-engine
+        - underwriter
+        type: string
+      state:
+        enum:
+        - OPEN
+        - ANSWERED
+        - CANCELLED
+        type: string
+      target_field:
+        type: string
+      title:
+        type: string
+    type: object
+  InfoRequestAnswerInput:
+    properties:
+      comment:
+        type: string
+      value:
+        description: 'Значение по input.type вопроса: число (NUMBER, MONEY), код варианта
+          (CHOICE), строка (TEXT). NONE — не нужно.'
+        type: string
+    type: object
+  InfoRequestAnswered:
+    properties:
+      info_requests:
+        items:
+          $ref: '#/definitions/InfoRequest'
+        type: array
+      status:
+        description: |-
+          Статус заявки после ответа: WAITING_FOR_INFO — есть ещё вопросы; VERIFYING — повторная оценка;
+          MANUAL_REVIEW — вопросы задал специалист, заявка вернулась к нему.
+        type: string
+    type: object
+  InfoRequestInput:
+    properties:
+      description:
+        type: string
+      documents:
+        type: object
+      input:
+        type: object
+      required:
+        type: boolean
+      target_field:
+        type: string
+      title:
+        type: string
+    type: object
+  InfoRequests:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/InfoRequest'
+        type: array
+    type: object
   InternalData:
     properties:
       accounts:
@@ -464,6 +992,83 @@ definitions:
     required:
     - token
     - user
+    type: object
+  Offer:
+    properties:
+      amount:
+        type: integer
+      collateral_required:
+        items:
+          type: string
+        type: array
+      conditions:
+        items:
+          type: string
+        type: array
+      guarantee_required:
+        type: boolean
+      id:
+        type: string
+      kind:
+        enum:
+        - REQUESTED
+        - ALTERNATIVE
+        - RETENTION
+        type: string
+      monthly_payment:
+        type: integer
+      product_code:
+        type: string
+      rate_annual:
+        type: number
+      recommended:
+        type: boolean
+      state:
+        enum:
+        - ACTIVE
+        - ACCEPTED
+        - WITHDRAWN
+        - EXPIRED
+        type: string
+      term_months:
+        type: integer
+      valid_until:
+        type: string
+    type: object
+  OfferInput:
+    properties:
+      amount:
+        type: integer
+      collateral_required:
+        items:
+          type: string
+        type: array
+      conditions:
+        items:
+          type: string
+        type: array
+      guarantee_required:
+        type: boolean
+      kind:
+        enum:
+        - REQUESTED
+        - ALTERNATIVE
+        type: string
+      product_code:
+        type: string
+      rate_annual:
+        type: number
+      term_months:
+        type: integer
+      valid_days:
+        type: integer
+    type: object
+  Offers:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/Offer'
+        type: array
     type: object
   Problem:
     properties:
@@ -679,6 +1284,7 @@ definitions:
         enum:
         - CLIENT
         - SYSTEM
+        - EMPLOYEE
         type: string
       at:
         type: string
@@ -703,6 +1309,28 @@ definitions:
     - id
     - message
     - type
+    type: object
+  UserRef:
+    properties:
+      full_name:
+        example: Соколова Мария Игоревна
+        type: string
+      id:
+        example: usr_underwriter_sokolova
+        type: string
+    type: object
+  decision.YearFigures:
+    properties:
+      equity:
+        type: integer
+      net_profit:
+        type: integer
+      revenue:
+        type: integer
+      total_assets:
+        type: integer
+      year:
+        type: integer
     type: object
   domain.Account:
     properties:
@@ -840,6 +1468,15 @@ definitions:
         items:
           $ref: '#/definitions/domain.UnpaidDocument'
         type: array
+    type: object
+  domain.ClientReason:
+    properties:
+      code:
+        type: string
+      description:
+        type: string
+      title:
+        type: string
     type: object
   domain.CounterpartyAccount:
     properties:
@@ -1236,7 +1873,7 @@ paths:
         in: query
         name: company_id
         type: string
-      - description: 'статусы через запятую: DRAFT,SUBMITTED,ENRICHING,VERIFYING'
+      - description: 'статусы через запятую: DRAFT,SUBMITTED,ENRICHING,VERIFYING,SCORING,MANUAL_REVIEW,WAITING_FOR_INFO,OFFERED,REJECTED'
         in: query
         name: status
         type: string
@@ -1297,6 +1934,30 @@ paths:
       security:
       - bearer: []
       summary: Заявка
+      tags:
+      - applications
+  /applications/{id}/decision:
+    get:
+      description: 'Итог оценки (движка или специалиста) для клиента: причины отказа
+        и когда можно подать снова.'
+      parameters:
+      - description: id заявки (app_…)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ClientDecision'
+        "404":
+          description: заявки нет или её ещё не оценили
+          schema:
+            $ref: '#/definitions/Problem'
+      summary: Решение по заявке
       tags:
       - applications
   /applications/{id}/documents/{documentId}/content:
@@ -1367,6 +2028,113 @@ paths:
       security:
       - bearer: []
       summary: Отчёт проверки электронной подписи
+      tags:
+      - applications
+  /applications/{id}/info-requests:
+    get:
+      description: input — как отвечать (тип значения и варианты), documents — какие
+        документы приложить.
+      parameters:
+      - description: id заявки (app_…)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/InfoRequests'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Problem'
+      summary: Вопросы банка по заявке
+      tags:
+      - applications
+  /applications/{id}/info-requests/{requestId}/answer:
+    post:
+      consumes:
+      - application/json
+      - multipart/form-data
+      description: |-
+        JSON {value, comment} или multipart/form-data: часть answer с тем же JSON и части files с документами
+        (форматы и подписи — как у анкеты). Ответили на все обязательные вопросы — заявка уходит на повторную
+        оценку или к специалисту, если вопросы задал он. Отвечает только автор заявки.
+      parameters:
+      - description: id заявки (app_…)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: id вопроса (ir_…)
+        in: path
+        name: requestId
+        required: true
+        type: string
+      - description: ответ (для JSON)
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/InfoRequestAnswerInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/InfoRequestAnswered'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Problem'
+        "401":
+          description: заявка тестового пользователя — нужен его токен
+          schema:
+            $ref: '#/definitions/Problem'
+        "403":
+          description: отвечает не автор заявки
+          schema:
+            $ref: '#/definitions/Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Problem'
+        "409":
+          description: банк не ждёт ответов или на вопрос уже ответили
+          schema:
+            $ref: '#/definitions/Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
+      summary: Ответ на вопрос банка
+      tags:
+      - applications
+  /applications/{id}/offers:
+    get:
+      parameters:
+      - description: id заявки (app_…)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Offers'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Problem'
+      summary: Предложения банка по заявке
       tags:
       - applications
   /applications/{id}/questionnaire:
@@ -1784,6 +2552,224 @@ paths:
       summary: Список синтетических пользователей для входа
       tags:
       - auth
+  /backoffice/applications:
+    get:
+      description: |-
+        Заявки после отправки анкеты: сначала ручное рассмотрение по сроку, затем остальные — свежие сверху.
+        counters — счётчики над очередью (без учёта фильтров). Курсор — смещение следующей страницы.
+      parameters:
+      - description: статусы через запятую, например MANUAL_REVIEW,WAITING_FOR_INFO
+        in: query
+        name: status
+        type: string
+      - description: me — мои, none — без исполнителя, или id андеррайтера
+        in: query
+        name: assignee
+        type: string
+      - description: до 100, по умолчанию 50
+        in: query
+        name: limit
+        type: integer
+      - description: next_cursor прошлой страницы
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/BoQueue'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Problem'
+        "403":
+          description: не андеррайтер
+          schema:
+            $ref: '#/definitions/Problem'
+        "422":
+          description: неизвестный статус
+          schema:
+            $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
+      summary: Очередь андеррайтера
+      tags:
+      - backoffice
+  /backoffice/applications/{id}:
+    get:
+      description: |-
+        Заявка с версией (для If-Match решения), исполнителем и сроком, компания по собранным данным,
+        итог сбора по системам, находки, скоринг и решение credit-engine, предложения, вопросы клиенту,
+        другие заявки компании и журнал со служебными событиями. ETag — версия заявки.
+      parameters:
+      - description: id заявки (app_…)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/BoDossier'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
+      summary: Досье заявки
+      tags:
+      - backoffice
+  /backoffice/applications/{id}/assign:
+    post:
+      parameters:
+      - description: id заявки (app_…)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/BoApplicationListItem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Problem'
+        "409":
+          description: не на ручном рассмотрении (INVALID_TRANSITION) или уже у другого
+            (CONFLICT)
+          schema:
+            $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
+      summary: Взять заявку в работу
+      tags:
+      - backoffice
+  /backoffice/applications/{id}/decision:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        APPROVE — предложения клиенту (offers; пусто — условия, предложенные credit-engine), статус OFFERED.
+        REJECT — отказ с причинами для клиента (client_reasons), повторно — через 30 дней, статус REJECTED.
+        REQUEST_INFO — вопросы клиенту (info_requests), срок ответа 5 дней, статус WAITING_FOR_INFO.
+        expert_adjustments и internal_comment — в журнал, клиенту не видны. Заявка без исполнителя
+        закрепляется за андеррайтером. Повтор с тем же Idempotency-Key ничего не меняет.
+      parameters:
+      - description: id заявки (app_…)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: версия заявки из досье
+        in: header
+        name: If-Match
+        type: string
+      - description: ключ повтора
+        in: header
+        name: Idempotency-Key
+        type: string
+      - description: решение
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/BoDecisionInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/BoDossier'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Problem'
+        "409":
+          description: не на ручном рассмотрении или у другого андеррайтера
+          schema:
+            $ref: '#/definitions/Problem'
+        "412":
+          description: заявка изменилась (If-Match)
+          schema:
+            $ref: '#/definitions/Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/Problem'
+      security:
+      - bearer: []
+      summary: Решение андеррайтера
+      tags:
+      - backoffice
+  /borrowers/{id}/statements:
+    get:
+      description: 'Два годовых комплекта из ГИР БО последнего сбора: баланс и ОФР
+        в тыс. руб. id — компания (apl_…).'
+      parameters:
+      - description: id компании (apl_…)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: годы через запятую
+        in: query
+        name: years
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: StatementsResponse credit-engine
+          schema:
+            type: object
+        "404":
+          description: по компании не было сбора
+          schema:
+            $ref: '#/definitions/Problem'
+      summary: Бухотчётность компании для credit-engine (поставщик Б)
+      tags:
+      - credit-engine
   /check-mock:
     get:
       description: |-
@@ -1896,6 +2882,32 @@ paths:
       summary: Реквизиты компании по ИНН
       tags:
       - cabinet
+  /credit-events:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: AdminEvent credit-engine
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: EventAck
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Problem'
+      summary: 'Событие credit-engine (МС3): выдача, ручное рассмотрение, проблема
+        банка'
+      tags:
+      - credit-engine
   /me:
     get:
       description: 'Пользователь по токену `Authorization: Bearer mock.<user_id>`

@@ -53,6 +53,9 @@ async function createApplication(page: Page, { submit = true, inn = '7799000012'
     );
 }
 
+/** Заголовок статуса после сбора: «данные собраны» (мок) или итог оценки (живой сервис). */
+const AFTER_COLLECTION = /Данные о компании собраны|Банк оценивает заявку|Банку нужны|Банк одобрил|Банк отказал|кредитный специалист/;
+
 test.beforeEach(async ({ page }) => {
     // директор «Северного ветра»: компания сценария A уже в профиле — так же и у живого сервиса
     await seedToken(page, 'northDirector');
@@ -64,8 +67,9 @@ test('статус сбора доходит до «данные собраны�
     await page.goto(`/applications/${id}`);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Оборотный кредит · 5 000 000 ₽');
     const stages = page.getByRole('list', { name: 'Этапы заявки' });
-    await expect(page.getByRole('heading', { level: 2, name: 'Данные о компании собраны' })).toBeVisible({ timeout: 10_000 });
-    await expect(stages.getByRole('listitem').filter({ hasText: 'Проверка банком' })).toHaveAttribute('aria-current', 'step');
+    // после сбора живой сервис сразу отдаёт заявку на оценку — дальше статус уже итоговый
+    await expect(page.getByRole('heading', { level: 2, name: AFTER_COLLECTION })).toBeVisible({ timeout: 10_000 });
+    await expect(stages.getByRole('listitem').filter({ hasText: /Проверка банком|Решение/ }).and(page.locator('[aria-current="step"]'))).toHaveCount(1);
 
     // название и ОГРН — из ЕГРЮЛ после сбора
     const company = page.getByRole('region', { name: 'Компания' });
@@ -94,7 +98,7 @@ test('главная: заявка и черновик data-collector в «Мо�
     const rows = page.getByRole('region', { name: 'Мои заявки' }).getByRole('link');
     // строки — по ссылкам: у живого сервиса в списке есть и заявки коллег по компании
     const submittedRow = page.locator(`a[href="/applications/${submitted}"]`);
-    await expect(submittedRow).toContainText('Данные собраны', { timeout: 10_000 });
+    await expect(submittedRow).toContainText(/Данные собраны|На рассмотрении|Нужно уточнить|Есть предложение|Отказ/, { timeout: 10_000 });
     await expect(submittedRow).toContainText('Оборотный кредит · 5 000 000 ₽');
     await expect(rows.first()).toBeVisible();
     // список — с сервера (заявки компании, в том числе коллег), строка черновика ведёт в анкету
@@ -189,4 +193,61 @@ test('черновик коллеги не виден и не отправляе
         return r.status;
     }, colleagueDraft);
     expect(status).toBe(403);
+});
+
+test.describe('итог оценки', () => {
+    // итог зависит от полной анкеты и ответов для оценки — в моке он задан по сценарию mock-api
+    test.skip(COLLECTOR_LIVE, MOCK_ONLY);
+
+    test('одобрено: предложение банка без выбора и подписания', async ({ page }) => {
+        await setPipelineStep(page, 300);
+        const id = await createApplication(page);
+        await page.goto(`/applications/${id}`);
+        await expect(page.getByRole('heading', { level: 2, name: 'Банк одобрил кредит' })).toBeVisible({ timeout: 10_000 });
+        const offer = page.getByRole('region', { name: 'Предложение банка' }).getByRole('article');
+        await expect(offer).toContainText('2 030 000 ₽');
+        await expect(offer).toContainText('20,75');
+        await expect(offer.getByRole('button', { name: 'Выбрать' })).toHaveCount(0);
+        await expect(page.getByText('Подписание договора онлайн появится позже', { exact: false })).toBeVisible();
+    });
+
+    test('отказ: причины и когда подать снова', async ({ page }) => {
+        await setPipelineStep(page, 300);
+        const id = await createApplication(page, { inn: '7799000037' });
+        await page.goto(`/applications/${id}`);
+        const reasons = page.getByRole('region', { name: 'Почему банк отказал' });
+        await expect(reasons).toContainText('Подтверждено банкротство заёмщика', { timeout: 10_000 });
+        await expect(reasons).toContainText(/Подать новую заявку можно с \d{2}\.\d{2}\.\d{4}/);
+        await expect(reasons.getByRole('link', { name: 'Подобрать другой кредит' })).toHaveAttribute('href', '/products');
+        await page.goto('/');
+        await page.getByRole('button', { name: /Завершённые/ }).click();
+        await expect(page.locator(`a[href="/applications/${id}"]`)).toContainText('Отказ');
+    });
+
+    test('нужно уточнить: ответы на вопросы — и к специалисту', async ({ page }) => {
+        await setPipelineStep(page, 300);
+        const id = await createApplication(page, { inn: '779900010202', as: USERS.ipSmirnova.id });
+        await seedToken(page, 'ipSmirnova');
+        await page.goto(`/applications/${id}`);
+        const questions = page.getByRole('region', { name: 'Вопросы банка' });
+        await expect(questions.getByRole('heading', { level: 3 })).toHaveCount(2, { timeout: 10_000 });
+
+        const cash = questions.getByRole('region', { name: /Свободные деньги/ });
+        await expect(cash.getByRole('button', { name: 'Отправить ответ' })).toBeDisabled();
+        await cash.getByLabel('Ответ').fill('20000');
+        await cash.getByRole('button', { name: 'Отправить ответ' }).click();
+        await expect(questions.getByRole('heading', { level: 3 })).toHaveCount(1);
+        await expect(questions).toContainText('Уже ответили: Свободные деньги');
+
+        const statement = questions.getByRole('region', { name: /Выписка по счетам/ });
+        await expect(statement.getByRole('button', { name: 'Отправить ответ' })).toBeDisabled();
+        await statement.locator('input[type="file"]').setInputFiles({ name: 'statement.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4') });
+        await statement.getByRole('button', { name: 'Отправить ответ' }).click();
+        await expect(page.getByRole('heading', { level: 2, name: 'Заявку рассматривает кредитный специалист' })).toBeVisible({ timeout: 10_000 });
+
+        await page.goto(`/applications/${id}?tab=history`);
+        await expect(page.getByRole('tabpanel')).toContainText('Ответы отправлены банку');
+        await page.goto(`/applications/${id}?tab=documents`);
+        await expect(page.getByRole('table')).toContainText('statement.pdf');
+    });
 });

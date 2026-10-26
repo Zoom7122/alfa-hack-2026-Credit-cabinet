@@ -1,13 +1,11 @@
-import { Button } from '@alfalab/core-components/button';
 import { Plate } from '@alfalab/core-components/plate';
 import { Status } from '@alfalab/core-components/status';
 import { Table } from '@alfalab/core-components/table';
 import { Typography } from '@alfalab/core-components/typography';
 import { Link } from 'react-router-dom';
 
-import { useBoRefreshSource } from '../../../api/queries';
 import type { BoDossier, Finding, Offer, SourceResult } from '../../../api/types';
-import { BO_STATUS_BADGES, SOURCE_LABELS, SOURCE_MODE_LABELS, SOURCE_STATE_LABELS } from '../../../shared/lib/backoffice';
+import { BO_STATUS_BADGES, SOURCE_MODE_LABELS, SOURCE_STATE_LABELS, sourceLabel } from '../../../shared/lib/backoffice';
 import { COLLATERAL_LABELS, fieldLabel } from '../../../shared/lib/dictionaries';
 import { formatCompactMoney, formatMoney, formatMonths, formatRate, formatUpdated } from '../../../shared/lib/format';
 import { InfoCard } from '../../../shared/ui/InfoCard/InfoCard';
@@ -29,6 +27,10 @@ function formatValue(value: unknown, field: string | null | undefined): string {
 
 const FINDING_TITLES: Record<string, string> = {
     ENFORCEMENT_PROCEEDINGS: 'Исп. производства',
+    REVENUE_MISMATCH: 'Выручка',
+    UNDECLARED_DEBT: 'Долги вне кредитной истории',
+    DIRECTOR_MISMATCH: 'Руководитель',
+    NO_POA: 'Полномочия представителя',
 };
 
 const findingTitle = (f: Finding) => (f.field ? capitalize(fieldLabel(f.field)) : (FINDING_TITLES[f.code] ?? f.message));
@@ -58,6 +60,11 @@ function FindingsCard({ findings }: { findings: Finding[] }) {
                             <Table.TRow key={`${f.code}:${f.field ?? ''}`}>
                                 <Table.TCell>
                                     <Typography.Text view='primary-small'>{findingTitle(f)}</Typography.Text>
+                                    {f.message && f.message !== findingTitle(f) && (
+                                        <Typography.Text tag='div' view='primary-small' color='secondary'>
+                                            {f.message}
+                                        </Typography.Text>
+                                    )}
                                 </Table.TCell>
                                 <Table.TCell>
                                     <Typography.Text view='primary-small'>{formatValue(f.declared_value, f.field)}</Typography.Text>
@@ -68,7 +75,7 @@ function FindingsCard({ findings }: { findings: Finding[] }) {
                                     </Typography.Text>
                                 </Table.TCell>
                                 <Table.TCell>
-                                    <Typography.Text view='primary-small'>{f.source ? SOURCE_LABELS[f.source] : '—'}</Typography.Text>
+                                    <Typography.Text view='primary-small'>{sourceLabel(f.source)}</Typography.Text>
                                 </Table.TCell>
                                 <Table.TCell>
                                     <Status view='muted-alt' color={f.material ? 'red' : 'grey'} size={24} uppercase={false}>
@@ -89,9 +96,8 @@ function FindingsCard({ findings }: { findings: Finding[] }) {
     );
 }
 
-/** Правая колонка: источник — точка состояния, когда и откуда; упавший можно перезапросить. */
-function SourcesCard({ applicationId, sources }: { applicationId: string; sources: SourceResult[] }) {
-    const refresh = useBoRefreshSource(applicationId);
+/** Правая колонка: источник — точка состояния, когда и откуда. */
+function SourcesCard({ sources }: { sources: SourceResult[] }) {
     return (
         <InfoCard title='Источники данных'>
             <ul className='overview__sources'>
@@ -99,31 +105,20 @@ function SourcesCard({ applicationId, sources }: { applicationId: string; source
                     <li key={s.code} className='overview__source'>
                         <span className={`overview__dot overview__dot_state_${s.state.toLowerCase()}`} aria-hidden='true' />
                         <Typography.Text view='primary-small' className='overview__source-name'>
-                            {SOURCE_LABELS[s.code]}
+                            {sourceLabel(s.code)}
                         </Typography.Text>
-                        {s.state === 'FAILED' ? (
-                            <Button
-                                view='text'
-                                size={32}
-                                onClick={() => refresh.mutate(s.code)}
-                                loading={refresh.isPending && refresh.variables === s.code}
-                                aria-label={`Перезапросить ${SOURCE_LABELS[s.code]}`}
-                            >
-                                Перезапросить
-                            </Button>
-                        ) : (
-                            <Typography.Text view='primary-small' color='secondary'>
-                                {s.state === 'DONE'
-                                    ? [s.mode && SOURCE_MODE_LABELS[s.mode], s.fetched_at && formatUpdated(s.fetched_at)].filter(Boolean).join(' · ')
-                                    : s.state === 'SKIPPED'
-                                      ? (s.skip_reason ?? SOURCE_STATE_LABELS.SKIPPED)
-                                      : SOURCE_STATE_LABELS[s.state]}
-                            </Typography.Text>
-                        )}
+                        <Typography.Text view='primary-small' color='secondary'>
+                            {s.state === 'DONE'
+                                ? [s.mode && SOURCE_MODE_LABELS[s.mode], s.error, s.fetched_at && formatUpdated(s.fetched_at)].filter(Boolean).join(' · ')
+                                : s.state === 'SKIPPED'
+                                  ? (s.skip_reason ?? SOURCE_STATE_LABELS.SKIPPED)
+                                  : s.state === 'FAILED'
+                                    ? (s.error ?? SOURCE_STATE_LABELS.FAILED)
+                                    : SOURCE_STATE_LABELS[s.state]}
+                        </Typography.Text>
                     </li>
                 ))}
             </ul>
-            {refresh.error && <Plate view='negative' title='Не удалось перезапросить источник' />}
         </InfoCard>
     );
 }
@@ -207,7 +202,7 @@ export function OverviewTab({ dossier }: { dossier: BoDossier }) {
                         <OfferList offers={proposed} />
                     </InfoCard>
                 )}
-                <SourcesCard applicationId={app.id} sources={dossier.sources} />
+                <SourcesCard sources={dossier.sources} />
                 {dossier.other_applications && dossier.other_applications.length > 0 && (
                     <InfoCard title='Другие заявки компании'>
                         <ul className='overview__others'>

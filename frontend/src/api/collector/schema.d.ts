@@ -241,7 +241,7 @@ export interface paths {
                 query?: {
                     /** @description только эта компания (apl_…) */
                     company_id?: string;
-                    /** @description статусы через запятую: DRAFT,SUBMITTED,ENRICHING,VERIFYING */
+                    /** @description статусы через запятую: DRAFT,SUBMITTED,ENRICHING,VERIFYING,SCORING,MANUAL_REVIEW,WAITING_FOR_INFO,OFFERED,REJECTED */
                     status?: string;
                     /** @description true — только заявки, оформленные самим пользователем */
                     mine?: boolean;
@@ -342,6 +342,57 @@ export interface paths {
                 };
                 /** @description Internal Server Error */
                 500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Решение по заявке
+         * @description Итог оценки (движка или специалиста) для клиента: причины отказа и когда можно подать снова.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description id заявки (app_…) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ClientDecision"];
+                    };
+                };
+                /** @description заявки нет или её ещё не оценили */
+                404: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -464,6 +515,211 @@ export interface paths {
                 };
                 /** @description Internal Server Error */
                 500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/info-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Вопросы банка по заявке
+         * @description input — как отвечать (тип значения и варианты), documents — какие документы приложить.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description id заявки (app_…) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["InfoRequests"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/info-requests/{requestId}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ответ на вопрос банка
+         * @description JSON {value, comment} или multipart/form-data: часть answer с тем же JSON и части files с документами
+         *     (форматы и подписи — как у анкеты). Ответили на все обязательные вопросы — заявка уходит на повторную
+         *     оценку или к специалисту, если вопросы задал он. Отвечает только автор заявки.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description id заявки (app_…) */
+                    id: string;
+                    /** @description id вопроса (ir_…) */
+                    requestId: string;
+                };
+                cookie?: never;
+            };
+            /** @description ответ (для JSON) */
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["InfoRequestAnswerInput"];
+                    "multipart/form-data": components["schemas"]["InfoRequestAnswerInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["InfoRequestAnswered"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description заявка тестового пользователя — нужен его токен */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description отвечает не автор заявки */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description банк не ждёт ответов или на вопрос уже ответили */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/offers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Предложения банка по заявке */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description id заявки (app_…) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Offers"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1036,6 +1292,401 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/backoffice/applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Очередь андеррайтера
+         * @description Заявки после отправки анкеты: сначала ручное рассмотрение по сроку, затем остальные — свежие сверху.
+         *     counters — счётчики над очередью (без учёта фильтров). Курсор — смещение следующей страницы.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description статусы через запятую, например MANUAL_REVIEW,WAITING_FOR_INFO */
+                    status?: string;
+                    /** @description me — мои, none — без исполнителя, или id андеррайтера */
+                    assignee?: string;
+                    /** @description до 100, по умолчанию 50 */
+                    limit?: number;
+                    /** @description next_cursor прошлой страницы */
+                    cursor?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BoQueue"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description не андеррайтер */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description неизвестный статус */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/backoffice/applications/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Досье заявки
+         * @description Заявка с версией (для If-Match решения), исполнителем и сроком, компания по собранным данным,
+         *     итог сбора по системам, находки, скоринг и решение credit-engine, предложения, вопросы клиенту,
+         *     другие заявки компании и журнал со служебными событиями. ETag — версия заявки.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description id заявки (app_…) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BoDossier"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/backoffice/applications/{id}/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Взять заявку в работу */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description id заявки (app_…) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BoApplicationListItem"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description не на ручном рассмотрении (INVALID_TRANSITION) или уже у другого (CONFLICT) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/backoffice/applications/{id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Решение андеррайтера
+         * @description APPROVE — предложения клиенту (offers; пусто — условия, предложенные credit-engine), статус OFFERED.
+         *     REJECT — отказ с причинами для клиента (client_reasons), повторно — через 30 дней, статус REJECTED.
+         *     REQUEST_INFO — вопросы клиенту (info_requests), срок ответа 5 дней, статус WAITING_FOR_INFO.
+         *     expert_adjustments и internal_comment — в журнал, клиенту не видны. Заявка без исполнителя
+         *     закрепляется за андеррайтером. Повтор с тем же Idempotency-Key ничего не меняет.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description версия заявки из досье */
+                    "If-Match"?: string;
+                    /** @description ключ повтора */
+                    "Idempotency-Key"?: string;
+                };
+                path: {
+                    /** @description id заявки (app_…) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            /** @description решение */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BoDecisionInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BoDossier"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description не на ручном рассмотрении или у другого андеррайтера */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description заявка изменилась (If-Match) */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/borrowers/{id}/statements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Бухотчётность компании для credit-engine (поставщик Б)
+         * @description Два годовых комплекта из ГИР БО последнего сбора: баланс и ОФР в тыс. руб. id — компания (apl_…).
+         */
+        get: {
+            parameters: {
+                query: {
+                    /** @description годы через запятую */
+                    years: string;
+                };
+                header?: never;
+                path: {
+                    /** @description id компании (apl_…) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description StatementsResponse credit-engine */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": Record<string, never>;
+                    };
+                };
+                /** @description по компании не было сбора */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/check-mock": {
         parameters: {
             query?: never;
@@ -1261,6 +1912,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/credit-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Событие credit-engine (МС3): выдача, ручное рассмотрение, проблема банка */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description AdminEvent credit-engine */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+            responses: {
+                /** @description EventAck */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": Record<string, never>;
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me": {
         parameters: {
             query?: never;
@@ -1388,16 +2089,220 @@ export interface components {
             requested?: components["schemas"]["RequestedTerms"];
             /**
              * @description DRAFT — создана при регистрации, SUBMITTED — анкета отправлена, ENRICHING — идёт сбор данных,
-             *     VERIFYING — данные собраны.
+             *     VERIFYING — данные собраны, ждём проверку подписей, SCORING — оценивает credit-engine,
+             *     MANUAL_REVIEW — у андеррайтера, WAITING_FOR_INFO — банк ждёт ответов клиента,
+             *     OFFERED — выдано предложение, REJECTED — отказ.
              * @example DRAFT
              * @enum {string}
              */
-            status?: "DRAFT" | "SUBMITTED" | "ENRICHING" | "VERIFYING";
+            status?: "DRAFT" | "SUBMITTED" | "ENRICHING" | "VERIFYING" | "SCORING" | "MANUAL_REVIEW" | "WAITING_FOR_INFO" | "OFFERED" | "REJECTED";
             submitted_at?: string;
             updated_at?: string;
         };
         Applications: {
             items: components["schemas"]["Application"][];
+        };
+        BoApplicant: {
+            bank_relationship?: {
+                [key: string]: unknown;
+            };
+            credit_history?: {
+                [key: string]: unknown;
+            };
+            director_name?: string;
+            enforcement?: {
+                [key: string]: unknown;
+            };
+            financial_statements?: components["schemas"]["decision.YearFigures"][];
+            full_name?: string;
+            id?: string;
+            inn?: string;
+            kpp?: string;
+            litigation?: {
+                [key: string]: unknown;
+            };
+            ogrn?: string;
+            okved?: string;
+            region?: string;
+            registration_date?: string;
+            risk_flags?: string[];
+            short_name?: string;
+            terminated_on?: string;
+            type?: string;
+        };
+        BoApplicantRef: {
+            id?: string;
+            inn?: string;
+            short_name?: string;
+            /** @enum {string} */
+            type?: "LEGAL_ENTITY" | "SOLE_PROPRIETOR";
+        };
+        BoApplicationListItem: {
+            applicant?: components["schemas"]["BoApplicantRef"];
+            assignee?: components["schemas"]["UserRef"];
+            /** @description системы, ответившие с ошибкой или частично */
+            degraded_sources?: string[];
+            /** @enum {string} */
+            grade?: "A" | "B" | "C" | "D";
+            id?: string;
+            /** @description Причины ручного рассмотрения от credit-engine — только у MANUAL_REVIEW. */
+            manual_review_reasons?: string[];
+            number?: string;
+            product_code?: string;
+            requested?: components["schemas"]["RequestedTerms"];
+            score?: number;
+            sla_due_at?: string;
+            status?: string;
+            submitted_at?: string;
+            version?: number;
+        };
+        BoDecisionInput: {
+            /** @enum {string} */
+            action: "APPROVE" | "REJECT" | "REQUEST_INFO";
+            client_reasons?: components["schemas"]["ClientReason"][];
+            expert_adjustments?: components["schemas"]["ExpertAdjustment"][];
+            info_requests?: components["schemas"]["InfoRequestInput"][];
+            internal_comment?: string;
+            offers?: components["schemas"]["OfferInput"][];
+        };
+        BoDossier: {
+            applicant?: components["schemas"]["BoApplicant"];
+            application?: components["schemas"]["Application"];
+            assignee?: components["schemas"]["UserRef"];
+            engine_decision?: components["schemas"]["BoEngineDecision"];
+            findings?: components["schemas"]["BoFinding"][];
+            info_requests?: components["schemas"]["InfoRequest"][];
+            offers?: components["schemas"]["Offer"][];
+            other_applications?: components["schemas"]["BoApplicationListItem"][];
+            score?: components["schemas"]["BoScore"];
+            sla_due_at?: string;
+            sources?: components["schemas"]["BoSource"][];
+            timeline?: components["schemas"]["BoTimelineEvent"][];
+            underwriter_decision?: components["schemas"]["BoUnderwriterDecision"];
+            /** @description для If-Match решения */
+            version?: number;
+        };
+        BoEngineDecision: {
+            /** @enum {string} */
+            engine_status?: "APPROVED" | "REJECTED" | "UNDER_REVIEW" | "NEED_INFO";
+            /** @description Итог движка для заявки: APPROVED, REJECTED, MANUAL_REVIEW, NEED_INFO. */
+            outcome?: string;
+            proposed_terms?: components["schemas"]["BoTerms"];
+            reasons?: components["schemas"]["BoEngineReason"][];
+            /** @enum {string} */
+            review_reason?: "BORROWER" | "BANK";
+        };
+        BoEngineReason: {
+            code?: string;
+            fields?: string[];
+            message?: string;
+        };
+        BoFinding: {
+            code?: string;
+            declared_value?: string;
+            found_value?: string;
+            material?: boolean;
+            message?: string;
+            /** @enum {string} */
+            severity?: "INFO" | "WARN" | "STOP";
+            source?: string;
+        };
+        BoQueue: {
+            counters?: components["schemas"]["BoQueueCounters"];
+            items?: components["schemas"]["BoApplicationListItem"][];
+            /** @description Курсор следующей страницы; null — страниц больше нет. */
+            next_cursor?: string;
+        };
+        BoQueueCounters: {
+            due_today?: number;
+            manual_review?: number;
+            mine?: number;
+            waiting_for_info?: number;
+        };
+        BoScore: {
+            computed_at?: string;
+            /** @enum {string} */
+            engine?: "SCORECARD";
+            factors?: components["schemas"]["BoScoreFactor"][];
+            /** @enum {string} */
+            grade?: "A" | "B" | "C" | "D";
+            model_version?: string;
+            raw_total?: number;
+            total?: number;
+        };
+        BoScoreFactor: {
+            answer?: string;
+            code?: string;
+            max_points?: number;
+            /** @enum {string} */
+            part?: "QUESTIONNAIRE" | "ECONOMICS";
+            points?: number;
+            title?: string;
+            value?: number;
+        };
+        BoSource: {
+            calls?: number;
+            /** @description система data-collector: CORE_BANKING, FNS, BKI, … */
+            code?: string;
+            /** @enum {string} */
+            criticality?: "CRITICAL" | "NORMAL";
+            duration_ms?: number;
+            failed_calls?: number;
+            fetched_at?: string;
+            reason?: string;
+            /** @enum {string} */
+            state?: "DONE" | "PARTIAL" | "FAILED" | "SKIPPED";
+        };
+        BoTerms: {
+            amount?: number;
+            /** @description условия подтверждены движком и банком (APPROVED) */
+            confirmed?: boolean;
+            monthly_payment?: number;
+            rate_annual?: number;
+            term_months?: number;
+        };
+        BoTimelineEvent: {
+            /** @description сотрудник банка */
+            actor?: components["schemas"]["UserRef"];
+            /** @enum {string} */
+            actor_kind: "CLIENT" | "SYSTEM" | "EMPLOYEE";
+            at: string;
+            from_status?: string;
+            id: string;
+            /** @description служебное: клиенту не показывается */
+            internal?: boolean;
+            /** @example Данные о компании собраны */
+            message: string;
+            to_status?: string;
+            /**
+             * @description Тип события модуля: application.created, application.submitted, enrich.started, enrich.completed, enrich.failed,
+             *     document.signatures_verified.
+             * @example enrich.completed
+             */
+            type: string;
+        };
+        BoUnderwriterDecision: {
+            comment?: string;
+            decided_at?: string;
+            decided_by?: components["schemas"]["UserRef"];
+            /** @enum {string} */
+            outcome?: "APPROVED" | "APPROVED_WITH_CHANGES" | "REJECTED" | "NEED_INFO";
+        };
+        ClientDecision: {
+            decided_at?: string;
+            /** @enum {string} */
+            decided_by?: "ENGINE" | "EMPLOYEE";
+            /** @enum {string} */
+            outcome?: "APPROVED" | "APPROVED_WITH_CHANGES" | "REJECTED" | "MANUAL_REVIEW" | "NEED_INFO";
+            /** @description когда можно подать заявку снова */
+            reapply_after?: string;
+            /** @description Причины отказа для клиента — без баллов и внутренних проверок. */
+            reasons?: components["schemas"]["domain.ClientReason"][];
+        };
+        ClientReason: {
+            code?: string;
+            description?: string;
+            title?: string;
         };
         CollectionSource: {
             calls?: number;
@@ -1526,6 +2431,52 @@ export interface components {
             type?: string;
             uploaded_at?: string;
         };
+        ExpertAdjustment: {
+            code?: string;
+            comment?: string;
+            points?: number;
+        };
+        InfoRequest: {
+            answer?: Record<string, never>;
+            answered_at?: string;
+            created_at?: string;
+            description?: string;
+            documents?: Record<string, never>;
+            due_at?: string;
+            id?: string;
+            input?: Record<string, never>;
+            required?: boolean;
+            /** @enum {string} */
+            source?: "credit-engine" | "underwriter";
+            /** @enum {string} */
+            state?: "OPEN" | "ANSWERED" | "CANCELLED";
+            target_field?: string;
+            title?: string;
+        };
+        InfoRequestAnswerInput: {
+            comment?: string;
+            /** @description Значение по input.type вопроса: число (NUMBER, MONEY), код варианта (CHOICE), строка (TEXT). NONE — не нужно. */
+            value?: string;
+        };
+        InfoRequestAnswered: {
+            info_requests?: components["schemas"]["InfoRequest"][];
+            /**
+             * @description Статус заявки после ответа: WAITING_FOR_INFO — есть ещё вопросы; VERIFYING — повторная оценка;
+             *     MANUAL_REVIEW — вопросы задал специалист, заявка вернулась к нему.
+             */
+            status?: string;
+        };
+        InfoRequestInput: {
+            description?: string;
+            documents?: Record<string, never>;
+            input?: Record<string, never>;
+            required?: boolean;
+            target_field?: string;
+            title?: string;
+        };
+        InfoRequests: {
+            items?: components["schemas"]["InfoRequest"][];
+        };
         InternalData: {
             accounts?: components["schemas"]["domain.AccountsReport"];
             acquiring?: components["schemas"]["domain.AcquiringReport"];
@@ -1556,6 +2507,38 @@ export interface components {
              */
             token: string;
             user: components["schemas"]["Me"];
+        };
+        Offer: {
+            amount?: number;
+            collateral_required?: string[];
+            conditions?: string[];
+            guarantee_required?: boolean;
+            id?: string;
+            /** @enum {string} */
+            kind?: "REQUESTED" | "ALTERNATIVE" | "RETENTION";
+            monthly_payment?: number;
+            product_code?: string;
+            rate_annual?: number;
+            recommended?: boolean;
+            /** @enum {string} */
+            state?: "ACTIVE" | "ACCEPTED" | "WITHDRAWN" | "EXPIRED";
+            term_months?: number;
+            valid_until?: string;
+        };
+        OfferInput: {
+            amount?: number;
+            collateral_required?: string[];
+            conditions?: string[];
+            guarantee_required?: boolean;
+            /** @enum {string} */
+            kind?: "REQUESTED" | "ALTERNATIVE";
+            product_code?: string;
+            rate_annual?: number;
+            term_months?: number;
+            valid_days?: number;
+        };
+        Offers: {
+            items?: components["schemas"]["Offer"][];
         };
         Problem: {
             code?: string;
@@ -1657,7 +2640,7 @@ export interface components {
         };
         TimelineEvent: {
             /** @enum {string} */
-            actor_kind: "CLIENT" | "SYSTEM";
+            actor_kind: "CLIENT" | "SYSTEM" | "EMPLOYEE";
             at: string;
             from_status?: string;
             id: string;
@@ -1670,6 +2653,19 @@ export interface components {
              * @example enrich.completed
              */
             type: string;
+        };
+        UserRef: {
+            /** @example Соколова Мария Игоревна */
+            full_name?: string;
+            /** @example usr_underwriter_sokolova */
+            id?: string;
+        };
+        "decision.YearFigures": {
+            equity?: number;
+            net_profit?: number;
+            revenue?: number;
+            total_assets?: number;
+            year?: number;
         };
         "domain.Account": {
             AccountDetails?: components["schemas"]["domain.AccountDetails"][];
@@ -1736,6 +2732,11 @@ export interface components {
             suspensions?: components["schemas"]["domain.AccountRestriction"][];
             totalUnpaid?: string;
             unpaidDocuments?: components["schemas"]["domain.UnpaidDocument"][];
+        };
+        "domain.ClientReason": {
+            code?: string;
+            description?: string;
+            title?: string;
         };
         "domain.CounterpartyAccount": {
             identification?: string;

@@ -13,6 +13,8 @@ export const USERS = {
     northDirector: { id: 'usr_director_north', name: 'Ковалёв Игорь Сергеевич' },
     northAccountant: { id: 'usr_accountant_north', name: 'Литвинова Марина Олеговна' },
     ipSmirnova: { id: 'usr_ip_smirnova', name: 'Смирнова Анна Викторовна' },
+    stroyresurs: { id: 'usr_director_stroyresurs', name: 'Орлов Денис Павлович' },
+    orlov: { id: 'usr_underwriter_orlov', name: 'Орлов Дмитрий Андреевич' },
 } as const;
 
 export type UserKey = keyof typeof USERS;

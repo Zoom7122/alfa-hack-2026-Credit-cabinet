@@ -408,6 +408,46 @@ type formRecord struct {
 	Requested     *requestedRecord    `json:"requested,omitempty"`
 	Purpose       *purposeRecord      `json:"purpose,omitempty"`
 	Questionnaire questionnaireRecord `json:"questionnaire"`
+	Scoring       *scoringRecord      `json:"scoring,omitempty"`
+}
+
+// scoringRecord — ответы для credit-engine (domain.ScoringAnswers) в applications.form.
+type scoringRecord struct {
+	MaxAnnualRate           *float64 `json:"max_annual_rate,omitempty"`
+	MinAcceptableAmount     *int64   `json:"min_acceptable_amount,omitempty"`
+	MaxAcceptableTermMonths *int     `json:"max_acceptable_term_months,omitempty"`
+	NeedCost                *int64   `json:"need_cost,omitempty"`
+	OwnContribution         *int64   `json:"own_contribution,omitempty"`
+	FreeCash                *int64   `json:"free_cash,omitempty"`
+	MinimumCash             *int64   `json:"minimum_cash,omitempty"`
+	NeedEvidence            string   `json:"need_evidence,omitempty"`
+	ExperienceYears         *int     `json:"experience_years,omitempty"`
+	PrimaryIncomeSource     string   `json:"primary_income_source,omitempty"`
+	Qualification           string   `json:"qualification,omitempty"`
+	TotalExperienceMonths   *int     `json:"total_experience_months,omitempty"`
+	NetMonthlyIncome        *int64   `json:"net_monthly_income,omitempty"`
+	CarClass                string   `json:"car_class,omitempty"`
+	EducationLevel          string   `json:"education_level,omitempty"`
+	RealEstateStatus        string   `json:"real_estate_status,omitempty"`
+	BusinessLocation        string   `json:"business_location,omitempty"`
+	LocationStabilityMonths *int     `json:"location_stability_months,omitempty"`
+	BuyerContracts          string   `json:"buyer_contracts,omitempty"`
+}
+
+func toScoringRecord(sc *domain.ScoringAnswers) *scoringRecord {
+	if sc == nil {
+		return nil
+	}
+	r := scoringRecord(*sc)
+	return &r
+}
+
+func (r *scoringRecord) toDomain() *domain.ScoringAnswers {
+	if r == nil {
+		return nil
+	}
+	sc := domain.ScoringAnswers(*r)
+	return &sc
 }
 
 type requestedRecord struct {
@@ -442,6 +482,7 @@ func toFormRecord(sub domain.Submission) formRecord {
 	if p := sub.Purpose; p != nil {
 		rec.Purpose = &purposeRecord{Code: p.Code, Description: p.Description}
 	}
+	rec.Scoring = toScoringRecord(sub.Scoring)
 	return rec
 }
 
@@ -463,4 +504,129 @@ func toRegistryRecord(c domain.CompanyCard) registryRecord {
 	return registryRecord{INN: c.INN, ApplicantType: string(c.Type), OGRN: c.OGRN, KPP: c.KPP, FullName: c.FullName,
 		ShortName: c.ShortName, RegistrationDate: c.RegistrationDate, DirectorName: c.DirectorName, Region: c.Region,
 		TerminatedOn: c.TerminatedOn}
+}
+
+const (
+	lockInfoRequestSQL = `
+SELECT status, coalesce(question ->> 'source', '') FROM info_requests WHERE id = $1 AND application_id = $2 FOR UPDATE`
+
+	insertAnswerDocumentSQL = `
+INSERT INTO documents (id, application_id, type, file_name, mime_type, size_bytes, sha256, storage_key, uploaded_by,
+                       signed_document_id, recognition, signature_state, uploaded_at, info_request_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`
+
+	answerInfoRequestSQL = `UPDATE info_requests SET status = 'ANSWERED', answer = $2, answered_at = $3 WHERE id = $1`
+
+	patchScoringSQL = `
+UPDATE applications SET form = jsonb_set(form, '{scoring}', coalesce(form -> 'scoring', '{}'::jsonb) || $2::jsonb, true),
+       updated_at = now()
+WHERE id = $1`
+
+	openRequiredSQL = `SELECT count(*) FROM info_requests WHERE application_id = $1 AND status = 'OPEN' AND required`
+
+	cancelOptionalSQL = `UPDATE info_requests SET status = 'CANCELLED' WHERE application_id = $1 AND status = 'OPEN'`
+
+	infoProvidedSQL = `
+UPDATE applications SET status = $2, deadline_at = $3, version = version + 1, updated_at = now() WHERE id = $1`
+)
+
+// AnswerInfoRequest одной транзакцией принимает ответ клиента: документы, ответ, уточнение анкеты.
+// Ответили на все обязательные вопросы — заявка возвращается: к андеррайтеру (MANUAL_REVIEW со сроком),
+// если вопросы задал он, иначе на повторную оценку (VERIFYING). Возвращает статус после ответа;
+// false — заявки или вопроса нет; domain.ErrNotWaitingForInfo, domain.ErrQuestionClosed.
+func (r *ApplicationRepository) AnswerInfoRequest(ctx context.Context, a domain.InfoAnswer) (domain.ApplicationStatus, bool, error) {
+	var (
+		next  domain.ApplicationStatus
+		found bool
+	)
+	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
+		var status string
+		err := tx.QueryRow(ctx, lockApplication, a.ApplicationID).Scan(&status)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("lock application: %w", err)
+		}
+		var qStatus, source string
+		err = tx.QueryRow(ctx, lockInfoRequestSQL, a.RequestID, a.ApplicationID).Scan(&qStatus, &source)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("lock info request: %w", err)
+		}
+		found = true
+		switch {
+		case status != string(domain.ApplicationWaitingForInfo):
+			return domain.ErrNotWaitingForInfo
+		case qStatus != "OPEN":
+			return domain.ErrQuestionClosed
+		}
+
+		ids := make([]string, 0, len(a.Documents))
+		for _, signatures := range []bool{false, true} {
+			for _, d := range a.Documents {
+				if (d.SignedDocumentID != "") != signatures {
+					continue
+				}
+				recognition, _ := json.Marshal(map[string]string{"state": string(d.RecognitionState)})
+				if _, err := tx.Exec(ctx, insertAnswerDocumentSQL, d.ID, d.ApplicationID, string(d.Type), d.FileName, d.MimeType,
+					d.SizeBytes, d.SHA256, d.StorageKey, nullString(d.UploadedBy), nullString(d.SignedDocumentID),
+					string(recognition), string(d.SignatureState), d.UploadedAt, a.RequestID); err != nil {
+					return fmt.Errorf("insert document %s: %w", d.FileName, err)
+				}
+				ids = append(ids, d.ID)
+			}
+		}
+		answer := map[string]any{"document_ids": ids}
+		if len(a.Value) > 0 {
+			answer["value"] = a.Value
+		}
+		if a.Comment != "" {
+			answer["comment"] = a.Comment
+		}
+		b, _ := json.Marshal(answer)
+		if _, err := tx.Exec(ctx, answerInfoRequestSQL, a.RequestID, string(b), a.Now); err != nil {
+			return fmt.Errorf("answer info request: %w", err)
+		}
+		if len(a.ScoringPatch) > 0 {
+			patch, _ := json.Marshal(a.ScoringPatch)
+			if _, err := tx.Exec(ctx, patchScoringSQL, a.ApplicationID, string(patch)); err != nil {
+				return fmt.Errorf("patch scoring answers: %w", err)
+			}
+		}
+
+		var open int
+		if err := tx.QueryRow(ctx, openRequiredSQL, a.ApplicationID).Scan(&open); err != nil {
+			return fmt.Errorf("count open questions: %w", err)
+		}
+		next = domain.ApplicationWaitingForInfo
+		if open == 0 {
+			var deadline any
+			next = domain.ApplicationVerifying
+			if source == "underwriter" {
+				next, deadline = domain.ApplicationManualReview, a.Now.Add(a.ReviewSLA)
+			}
+			if _, err := tx.Exec(ctx, cancelOptionalSQL, a.ApplicationID); err != nil {
+				return fmt.Errorf("cancel optional questions: %w", err)
+			}
+			if _, err := tx.Exec(ctx, infoProvidedSQL, a.ApplicationID, string(next), deadline); err != nil {
+				return fmt.Errorf("return application: %w", err)
+			}
+			if err := insertEvent(ctx, tx, appEvent{ApplicationID: a.ApplicationID, Type: "info.provided", From: domain.ApplicationWaitingForInfo,
+				To: next, ActorID: a.ActorID, Message: "Ответы отправлены банку"}); err != nil {
+				return err
+			}
+		} else if err := insertEvent(ctx, tx, appEvent{ApplicationID: a.ApplicationID, Type: "info.answered", ActorID: a.ActorID,
+			Payload: map[string]string{"info_request_id": a.RequestID}}); err != nil {
+			return err
+		}
+		if len(a.Documents) == 0 {
+			return nil
+		}
+		return insertOutbox(ctx, tx, r.documentsTopic, a.ApplicationID,
+			events.NewDocumentsSubmitted(a.ApplicationID, a.CompanyINN, a.Documents, a.Now))
+	})
+	return next, found, err
 }

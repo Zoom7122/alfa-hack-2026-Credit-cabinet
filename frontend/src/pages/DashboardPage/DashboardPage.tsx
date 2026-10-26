@@ -71,8 +71,7 @@ export function DashboardPage({ me, company }: Props) {
     const fromCollector = collectorItems.map((app) => ({ app, summary: collectorSummary(app, app.id ? readDraft(me.id, app.id) : undefined) }));
     const active = all.filter((a) => ACTIVE_STAGES.includes(a.client_stage));
     const closed = all.filter((a) => !ACTIVE_STAGES.includes(a.client_stage));
-    // у data-collector все заявки пока активные: дальше VERIFYING он статусы не ведёт
-    const shownCollector = filter === 'active' ? fromCollector : [];
+    const shownCollector = fromCollector.filter(({ summary }) => ACTIVE_STAGES.includes(summary.client_stage) === (filter === 'active'));
     const shown = filter === 'active' ? active : closed;
 
     const statuses = useApplicationStatuses(all.filter((a) => STAGES_WITH_TASKS.includes(a.client_stage)));
@@ -85,9 +84,10 @@ export function DashboardPage({ me, company }: Props) {
     const applicant = profile?.ogrn ? profile : (legacy ?? profile);
     const { first, middle } = splitName(me.full_name);
 
+    const collectorActive = fromCollector.filter(({ summary }) => ACTIVE_STAGES.includes(summary.client_stage)).length;
     const filters: { id: Filter; label: string }[] = [
-        { id: 'active', label: `Активные · ${active.length + fromCollector.length}` },
-        { id: 'closed', label: `Завершённые · ${closed.length}` },
+        { id: 'active', label: `Активные · ${active.length + collectorActive}` },
+        { id: 'closed', label: `Завершённые · ${closed.length + fromCollector.length - collectorActive}` },
     ];
 
     return (

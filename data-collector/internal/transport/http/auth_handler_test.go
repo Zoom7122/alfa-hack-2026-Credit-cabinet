@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/service"
 )
 
 type companyAccessBody struct {
@@ -43,7 +45,7 @@ func TestTestUsers(t *testing.T) {
 	resp := decode[struct {
 		Items []meBody `json:"items"`
 	}](t, w.Body.Bytes())
-	if len(resp.Items) != 11 {
+	if len(resp.Items) != len(service.TestUsers) {
 		t.Fatalf("test users: %d", len(resp.Items))
 	}
 	// порядок — как в service.TestUsers: первые — персонажи моков фронта

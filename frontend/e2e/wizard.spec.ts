@@ -65,6 +65,7 @@ async function toReview(page: Page) {
     await next(page); // сумма и цель пришли из калькулятора
     await fillBorrower(page);
     await next(page);
+    await next(page); // для оценки — необязательно
     await next(page); // счета и площадки
     await next(page); // залог
     await next(page); // документы
@@ -161,13 +162,40 @@ test.describe('Анкета — шаги', () => {
         await expect(page.getByText('Возраст — от 18 до 100 лет')).toBeVisible();
         await page.getByLabel('Возраст, лет').fill('30');
         await next(page);
+        await expect(page).toHaveURL(/\/edit\/scoring$/);
+    });
+
+    test('«Для оценки»: ответы для скоринга проверяются и уходят в черновик', async ({ page }) => {
+        const appId = editPath(page).split('/').pop() ?? '';
+        await next(page);
+        await fillBorrower(page);
+        await next(page);
+        await expect(page.getByRole('heading', { level: 1, name: 'Для оценки' })).toBeVisible();
+        await page.getByLabel('Максимальная ставка, % годовых').fill('150');
+        await page.getByLabel('Максимальный срок, мес.').fill('12');
+        await next(page);
+        await expect(page.getByText('Ставка — от 0 до 100 % годовых')).toBeVisible();
+        await expect(page.getByText('Не меньше запрошенного срока')).toBeVisible();
+        await page.getByLabel('Максимальная ставка, % годовых').fill('26,5');
+        await page.getByLabel('Максимальный срок, мес.').fill('36');
+        await openSelect(page, 'Чем подтверждена стоимость', 'Коммерческие предложения или смета');
+        await page.getByLabel('Опыт руководителя в этом бизнесе, лет').fill('9');
+        // у юрлица вопросов о предпринимателе нет
+        await expect(page.getByLabel('Образование')).toHaveCount(0);
+        await next(page);
         await expect(page).toHaveURL(/\/edit\/sources$/);
+        const draft = await page.evaluate(
+            (id) => Object.entries(localStorage).find(([k]) => k.startsWith('credit-cabinet:questionnaire:') && k.endsWith(id))?.[1],
+            appId,
+        );
+        expect(JSON.parse(draft ?? '{}').scoring).toEqual({ max_annual_rate: 26.5, max_acceptable_term_months: 36, need_evidence: 'VERIFIED_ESTIMATE', experience_years: 9 });
     });
 
     test('БИК, VIN и кадастровый номер — проверка формата', async ({ page }) => {
         await next(page);
         await fillBorrower(page);
         await next(page);
+        await next(page); // для оценки — необязательно
         await page.getByRole('button', { name: 'Добавить банк' }).click();
         await page.getByRole('textbox', { name: 'БИК банка 1' }).fill('1234');
         await next(page);
@@ -216,6 +244,7 @@ test.describe('Анкета — отправка', () => {
         await next(page);
         await fillBorrower(page);
         await next(page);
+        await next(page); // для оценки — необязательно
         await page.getByRole('button', { name: 'Добавить банк' }).click();
         await page.getByRole('textbox', { name: 'БИК банка 1' }).fill('044525225');
         await page.getByLabel('Токен оператора фискальных данных (ОФД)').fill('demo-ofd-token');
@@ -235,10 +264,10 @@ test.describe('Анкета — отправка', () => {
         await expect(page.getByLabel('Номер МЧД')).toHaveCount(0);
         await page.getByRole('button', { name: 'Отправить заявку' }).click();
         await expectPath(page, appPath);
-        await expect(page.getByRole('heading', { level: 2, name: /Заявка принята|Собираем данные о компании|Данные о компании собраны/ })).toBeVisible();
+        await expect(page.getByRole('heading', { level: 2, name: /Заявка принята|Собираем данные о компании|Данные о компании собраны|Банк оценивает заявку|Банку нужны|Банк одобрил|Банк отказал|кредитный специалист/ })).toBeVisible();
 
         const app = await collectorApp(page, appId);
-        expect(['SUBMITTED', 'ENRICHING', 'VERIFYING']).toContain(app.status);
+        expect(['SUBMITTED', 'ENRICHING', 'VERIFYING', 'SCORING', 'MANUAL_REVIEW', 'WAITING_FOR_INFO', 'OFFERED', 'REJECTED']).toContain(app.status);
         expect(app.documents.map((d) => [d.file_name, d.type])).toEqual([
             ['balance.pdf', 'FINANCIAL_STATEMENTS'],
             ['balance.pdf.sig', 'SIGNATURE'],
@@ -327,6 +356,7 @@ test.describe('Анкета — надёжность', () => {
         await next(page);
         await fillBorrower(page);
         await next(page);
+        await next(page); // для оценки — необязательно
         await page.getByLabel('Токен оператора фискальных данных (ОФД)').fill('secret-ofd-token');
         const stored = () => page.evaluate(() => ({ local: JSON.stringify(localStorage), session: JSON.stringify(sessionStorage) }));
         expect((await stored()).local).not.toContain('secret-ofd-token');

@@ -92,7 +92,7 @@ func (h *CabinetHandler) applicants(c *gin.Context) {
 //	@Produce		json
 //	@Security		bearer
 //	@Param			company_id	query		string	false	"только эта компания (apl_…)"
-//	@Param			status		query		string	false	"статусы через запятую: DRAFT,SUBMITTED,ENRICHING,VERIFYING"
+//	@Param			status		query		string	false	"статусы через запятую: DRAFT,SUBMITTED,ENRICHING,VERIFYING,SCORING,MANUAL_REVIEW,WAITING_FOR_INFO,OFFERED,REJECTED"
 //	@Param			mine		query		bool	false	"true — только заявки, оформленные самим пользователем"
 //	@Success		200			{object}	applicationsResponse
 //	@Failure		401			{object}	problem	"нет или неверный токен"
@@ -113,7 +113,7 @@ func (h *CabinetHandler) applications(c *gin.Context) {
 		st := domain.ApplicationStatus(s)
 		if !st.Valid() {
 			writeProblem(c, validationProblem(http.StatusUnprocessableEntity, "неизвестный статус",
-				[]problemField{{Field: "status", Code: "invalid_value", Message: "допустимые значения: DRAFT, SUBMITTED, ENRICHING, VERIFYING"}}))
+				[]problemField{{Field: "status", Code: "invalid_value", Message: "допустимые значения: " + statusList()}}))
 			return
 		}
 		statuses = append(statuses, st)
@@ -283,4 +283,12 @@ func (h *CabinetHandler) fail(c *gin.Context, op string, err error, notFound str
 func (h *CabinetHandler) internal(c *gin.Context, op string, err error) {
 	h.log.ErrorContext(c.Request.Context(), op, "err", err)
 	writeProblem(c, internalProblem())
+}
+
+func statusList() string {
+	names := make([]string, len(domain.ApplicationStatuses))
+	for i, s := range domain.ApplicationStatuses {
+		names[i] = string(s)
+	}
+	return strings.Join(names, ", ")
 }

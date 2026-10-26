@@ -73,7 +73,45 @@ type questionnaireRequest struct {
 	// Номер МЧД, если заявку подаёт представитель, и его ИНН.
 	POANumber         string `json:"poa_number" example:"0f5a2c1e-7b3d-4e8a-9c21-6d4b8e0a1f37"`
 	RepresentativeINN string `json:"representative_inn" example:"779900010333"`
+	// Ответы для оценки credit-engine, которых нет в собранных данных. Чего нет — банк спросит позже.
+	Scoring *scoringRequest `json:"scoring"`
 } //	@name	QuestionnaireRequest
+
+// scoringRequest — ответы для credit-engine (коды — как в его контракте). Поля «только ИП» юрлицу не нужны.
+type scoringRequest struct {
+	MaxAnnualRate           *float64 `json:"max_annual_rate" example:"24"`
+	MinAcceptableAmount     *int64   `json:"min_acceptable_amount" example:"3000000"`
+	MaxAcceptableTermMonths *int     `json:"max_acceptable_term_months" example:"36"`
+	NeedCost                *int64   `json:"need_cost" example:"6000000"`
+	OwnContribution         *int64   `json:"own_contribution" example:"1000000"`
+	FreeCash                *int64   `json:"free_cash" example:"400000"`
+	MinimumCash             *int64   `json:"minimum_cash" example:"100000"`
+	NeedEvidence            string   `json:"need_evidence" enums:"CONTRACT_AND_COST,VERIFIED_ESTIMATE,ORAL_ONLY"`
+	ExperienceYears         *int     `json:"experience_years" example:"9"`
+	PrimaryIncomeSource     string   `json:"primary_income_source" enums:"BUSINESS,PUBLIC_EMPLOYMENT,PRIVATE_EMPLOYMENT,PENSION,SELF_EMPLOYED_OR_GPH,NONE"`
+	Qualification           string   `json:"qualification" enums:"NONE,SUPPORT,SPECIALIST,MANAGER_OR_HIGHLY_QUALIFIED"`
+	TotalExperienceMonths   *int     `json:"total_experience_months"`
+	NetMonthlyIncome        *int64   `json:"net_monthly_income"`
+	CarClass                string   `json:"car_class" enums:"NONE,ECONOMY,COMFORT,PREMIUM"`
+	EducationLevel          string   `json:"education_level" enums:"BELOW_GENERAL,GENERAL,VOCATIONAL,HIGHER,ACADEMIC_DEGREE"`
+	RealEstateStatus        string   `json:"real_estate_status" enums:"UNENCUMBERED_WHOLE,UNENCUMBERED_SHARE,ENCUMBERED_ONLY,NONE"`
+	BusinessLocation        string   `json:"business_location" enums:"VERIFIED_PHYSICAL,VERIFIED_ONLINE_OR_MOBILE,UNVERIFIED"`
+	LocationStabilityMonths *int     `json:"location_stability_months"`
+	BuyerContracts          string   `json:"buyer_contracts" enums:"ACTIVE_AND_PERFORMED,REPEAT_ORDERS,PLANS_ONLY"`
+} //	@name	ScoringAnswers
+
+func (r *scoringRequest) toDomain() *domain.ScoringAnswers {
+	if r == nil {
+		return nil
+	}
+	return &domain.ScoringAnswers{MaxAnnualRate: r.MaxAnnualRate, MinAcceptableAmount: r.MinAcceptableAmount,
+		MaxAcceptableTermMonths: r.MaxAcceptableTermMonths, NeedCost: r.NeedCost, OwnContribution: r.OwnContribution,
+		FreeCash: r.FreeCash, MinimumCash: r.MinimumCash, NeedEvidence: r.NeedEvidence, ExperienceYears: r.ExperienceYears,
+		PrimaryIncomeSource: r.PrimaryIncomeSource, Qualification: r.Qualification, TotalExperienceMonths: r.TotalExperienceMonths,
+		NetMonthlyIncome: r.NetMonthlyIncome, CarClass: r.CarClass, EducationLevel: r.EducationLevel,
+		RealEstateStatus: r.RealEstateStatus, BusinessLocation: r.BusinessLocation,
+		LocationStabilityMonths: r.LocationStabilityMonths, BuyerContracts: r.BuyerContracts}
+}
 
 type personRequest struct {
 	INN        string `json:"inn" example:"779900010139"`
@@ -129,6 +167,7 @@ func (r questionnaireRequest) toSubmitInput(files []storage.Staged) service.Subm
 		ChildrenCount: *r.ChildrenCount,
 		Company:       r.toCollectInput(),
 		ProductCode:   r.ProductCode,
+		Scoring:       r.Scoring.toDomain(),
 		Files:         files,
 	}
 	if q := r.Requested; q != nil {
@@ -178,8 +217,10 @@ type applicationResponse struct {
 	ID     string `json:"id" example:"app_01JB8Z5X0G6Q9T4V2W8Y3K7M1N"`
 	Number string `json:"number" example:"A-2026-000001"`
 	// DRAFT — создана при регистрации, SUBMITTED — анкета отправлена, ENRICHING — идёт сбор данных,
-	// VERIFYING — данные собраны.
-	Status         string                 `json:"status" enums:"DRAFT,SUBMITTED,ENRICHING,VERIFYING" example:"DRAFT"`
+	// VERIFYING — данные собраны, ждём проверку подписей, SCORING — оценивает credit-engine,
+	// MANUAL_REVIEW — у андеррайтера, WAITING_FOR_INFO — банк ждёт ответов клиента,
+	// OFFERED — выдано предложение, REJECTED — отказ.
+	Status         string                 `json:"status" enums:"DRAFT,SUBMITTED,ENRICHING,VERIFYING,SCORING,MANUAL_REVIEW,WAITING_FOR_INFO,OFFERED,REJECTED" example:"DRAFT"`
 	Applicant      applicantResponse      `json:"applicant"`
 	Representative representativeResponse `json:"representative"`
 	ProductCode    string                 `json:"product_code,omitempty" example:"WORKING_CAPITAL"`
@@ -507,7 +548,7 @@ type timelineEventResponse struct {
 	Message    string `json:"message" validate:"required" example:"Данные о компании собраны"`
 	FromStatus string `json:"from_status,omitempty"`
 	ToStatus   string `json:"to_status,omitempty"`
-	ActorKind  string `json:"actor_kind" validate:"required" enums:"CLIENT,SYSTEM"`
+	ActorKind  string `json:"actor_kind" validate:"required" enums:"CLIENT,SYSTEM,EMPLOYEE"`
 } //	@name	TimelineEvent
 
 type timelineResponse struct {
@@ -568,6 +609,7 @@ var eventMessages = map[string]string{
 	"enrich.completed":             "Данные о компании собраны",
 	"enrich.failed":                "Сбор данных о компании не удался",
 	"document.signatures_verified": "Проверили электронную подпись документа",
+	"scoring.started":              "Банк оценивает заявку",
 }
 
 func toTimelineEvent(e domain.ApplicationEvent) (timelineEventResponse, bool) {
@@ -578,12 +620,19 @@ func toTimelineEvent(e domain.ApplicationEvent) (timelineEventResponse, bool) {
 	if msg == "" {
 		return timelineEventResponse{}, false
 	}
-	actor := "SYSTEM"
-	if e.ActorID != "" {
-		actor = "CLIENT"
-	}
 	return timelineEventResponse{ID: e.ID, At: e.At, Type: e.Type, Message: msg, FromStatus: string(e.From),
-		ToStatus: string(e.To), ActorKind: actor}, true
+		ToStatus: string(e.To), ActorKind: actorKind(e)}, true
+}
+
+// actorKind — кто автор события: клиент, сотрудник банка или система.
+func actorKind(e domain.ApplicationEvent) string {
+	switch {
+	case e.ActorRole == domain.UserUnderwriter:
+		return "EMPLOYEE"
+	case e.ActorID != "":
+		return "CLIENT"
+	}
+	return "SYSTEM"
 }
 
 // sortByOrder — компании в порядке профиля пользователя; которых нет в профиле — в конце.

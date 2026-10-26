@@ -23,19 +23,20 @@ import { SummaryList } from '../../shared/ui/SummaryList/SummaryList';
 import { VisuallyHidden } from '../../shared/ui/VisuallyHidden/VisuallyHidden';
 import { StageBar } from '../ApplicationPage/components/StageBar';
 import { CollectionCard } from './components/CollectionCard';
+import { CollectorOutcome } from './outcome/CollectorOutcome';
 import { CollectorDocumentsTab } from './tabs/CollectorDocumentsTab';
 import './CollectorApplicationPage.css';
 
-/** Этапы, которые видны по data-collector: анкета → сбор данных → проверка банком (дальше сервисов пока нет). */
+const COLLECTING = new Set(['SUBMITTED', 'ENRICHING']);
+const DECIDED = new Set(['WAITING_FOR_INFO', 'OFFERED', 'REJECTED']);
+
+/** Этапы заявки data-collector: анкета → сбор данных → проверка банком (оценка, специалист) → решение. */
 function stagesOf(app: CollectorApplication, failed: boolean): StageItem[] {
-    const collected = app.status === 'VERIFYING' && !failed;
-    const step = (code: ClientStage, title: string, state: StageItem['state']): StageItem => ({ code, title, state });
-    return [
-        step('FILLING', 'Анкета', 'DONE'),
-        step('REVIEW', 'Сбор данных', collected ? 'DONE' : 'CURRENT'),
-        step('OFFER', 'Проверка банком', collected ? 'CURRENT' : 'UPCOMING'),
-        step('DONE', 'Решение', 'UPCOMING'),
-    ];
+    const status = app.status ?? 'SUBMITTED';
+    const current = failed || COLLECTING.has(status) ? 1 : DECIDED.has(status) ? 3 : 2;
+    const state = (i: number): StageItem['state'] => (i < current ? 'DONE' : i === current ? 'CURRENT' : 'UPCOMING');
+    const step = (code: ClientStage, title: string, i: number): StageItem => ({ code, title, state: state(i) });
+    return [step('FILLING', 'Анкета', 0), step('REVIEW', 'Сбор данных', 1), step('OFFER', 'Проверка банком', 2), step('DONE', 'Решение', 3)];
 }
 
 const rowsOf = (items: [string, ReactNode][]) => items.filter(([, value]) => value).map(([label, value]) => ({ label, value }));
@@ -128,6 +129,7 @@ export function CollectorApplicationPage() {
                                     </Typography.Text>
                                 </div>
                             </FormCard>
+                            <CollectorOutcome app={app} />
                             <CollectionCard taskId={app.collection_task_id} />
                         </div>
 
@@ -140,7 +142,7 @@ export function CollectorApplicationPage() {
                                         ['ИНН', company?.inn],
                                         [
                                             company?.type === 'SOLE_PROPRIETOR' ? 'ОГРНИП' : 'ОГРН',
-                                            company?.ogrn ?? (app.status === 'VERIFYING' ? 'нет в ЕГРЮЛ' : 'после сбора данных'),
+                                            company?.ogrn ?? (COLLECTING.has(app.status ?? '') ? 'после сбора данных' : 'нет в ЕГРЮЛ'),
                                         ],
                                     ])}
                                 />

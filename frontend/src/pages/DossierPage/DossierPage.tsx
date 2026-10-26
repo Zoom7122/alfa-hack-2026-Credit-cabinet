@@ -8,7 +8,7 @@ import { Typography } from '@alfalab/core-components/typography';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import { ApiError } from '../../api/client';
-import { useBoAssign, useBoDecide, useBoDossier, useBoQueue, useProducts } from '../../api/queries';
+import { useBoAssign, useBoDecide, useBoDossier, useProducts } from '../../api/queries';
 import type { Me } from '../../api/types';
 import { BO_STATUS_BADGES, GRADE_COLORS, slaLeft } from '../../shared/lib/backoffice';
 import { formatMoney, formatMonths, shortName } from '../../shared/lib/format';
@@ -36,7 +36,6 @@ export function DossierPage({ me }: { me: Me }) {
     const tabParam = params.get('tab');
     const tab: TabId = isTab(tabParam) ? tabParam : 'overview';
     const dossier = useBoDossier(applicationId);
-    const queue = useBoQueue();
     const products = useProducts();
     const assign = useBoAssign();
     // мутация решения живёт здесь: её ошибка (409) должна пережить закрытие панели
@@ -66,9 +65,7 @@ export function DossierPage({ me }: { me: Me }) {
     }
 
     const app = data.application;
-    // исполнитель и SLA — в элементе очереди (BoApplicationListItem), в досье их нет
-    const item = queue.data?.find((i) => i.id === app.id);
-    const assignee = item?.assignee;
+    const assignee = data.assignee;
     const mine = assignee?.id === me.id;
     const manual = app.status === 'MANUAL_REVIEW';
     const foreign = Boolean(assignee) && !mine;
@@ -76,7 +73,7 @@ export function DossierPage({ me }: { me: Me }) {
     if (decision && (!manual || foreign)) setDecision(undefined);
     const status = BO_STATUS_BADGES[app.status];
     const grade = data.score?.grade;
-    const sla = manual ? slaLeft(item?.sla_due_at, now) : undefined;
+    const sla = manual ? slaLeft(data.sla_due_at, now) : undefined;
     const productName = products.data?.find((p) => p.code === app.product_code)?.name ?? app.product_code;
     const meta = [
         app.number,
@@ -108,7 +105,7 @@ export function DossierPage({ me }: { me: Me }) {
 
     const content: Record<TabId, ReactNode> = {
         overview: <OverviewTab dossier={data} />,
-        sources: <SourcesTab applicationId={app.id} sources={data.sources} />,
+        sources: <SourcesTab sources={data.sources} />,
         scoring: <ScoringTab score={data.score} />,
         documents: <BoDocumentsTab documents={data.documents ?? []} />,
         requests: <InfoRequestsTab requests={data.info_requests ?? []} />,

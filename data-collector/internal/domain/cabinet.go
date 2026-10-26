@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // Что кабинет клиента читает о своих компаниях и заявках: профиль компании, журнал заявки.
 
@@ -24,7 +27,10 @@ type ApplicationEvent struct {
 	From    ApplicationStatus
 	To      ApplicationStatus
 	ActorID string // пусто — система
-	Message string // пусто — текста для клиента нет
+	// ActorRole — роль автора: CLIENT или UNDERWRITER; пусто — система.
+	ActorRole UserRole
+	Message   string          // пусто — текста для клиента нет
+	Payload   json.RawMessage // подробности события (служебные: комментарий, поправка к скорингу)
 }
 
 // ApplicationFilter — какие заявки отдаёт список кабинета. Черновики коллег в список не попадают никогда:

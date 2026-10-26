@@ -46,7 +46,8 @@ function recognizedValue(request: InfoRequest, documents: Document[]) {
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 
-function ValueField({ request, answer, onChange }: Pick<Props, 'request' | 'answer' | 'onChange'>) {
+/** Поле значения ответа по типу вопроса. */
+export function ValueField({ request, answer, onChange }: Pick<Props, 'request' | 'answer' | 'onChange'>) {
     const label = request.target_field ? capitalize(fieldLabel(request.target_field)) : 'Ответ';
     const set = (value: AnswerDraft['value']) => onChange({ ...answer, value });
     switch (request.input.type) {

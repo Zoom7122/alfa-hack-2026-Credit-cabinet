@@ -14,10 +14,15 @@ export const collectorKeys = {
     timeline: (id: string) => ['collector', 'timeline', id] as const,
     signatureReport: (appId: string, docId: string, state: string) => ['collector', 'signature-report', appId, docId, state] as const,
     lookup: (inn: string) => ['collector', 'lookup', inn] as const,
+    decision: (id: string) => ['collector', 'decision', id] as const,
+    offers: (id: string) => ['collector', 'offers', id] as const,
+    infoRequests: (id: string) => ['collector', 'info-requests', id] as const,
 };
 
 const POLL_MS = 2_000;
 const IN_PROGRESS = new Set(['SUBMITTED', 'ENRICHING']);
+/** После сбора заявку оценивает банк: VERIFYING → SCORING → итог. */
+const SCORING = new Set(['VERIFYING', 'SCORING']);
 /** Сбор идёт минуты; дольше — значит, завис: дальше не опрашиваем. */
 const MAX_POLL_MS = 30 * 60_000;
 
@@ -28,9 +33,9 @@ const MAX_POLL_MS = 30 * 60_000;
 function shouldPoll(app: CollectorApplication | undefined, queryClient: QueryClient) {
     if (!app) return false;
     const recent = !app.submitted_at || Date.now() - new Date(app.submitted_at).getTime() < MAX_POLL_MS;
-    // подпись worker проверяет и после сбора — ждём итог по документам
-    if (app.status === 'VERIFYING') return recent && Boolean(app.documents?.some((d) => d.signature_state === 'PENDING'));
-    if (!IN_PROGRESS.has(app.status ?? '')) return false;
+    // после сбора ждём оценку банка; подписи worker проверяет и в итоговых статусах
+    if (SCORING.has(app.status ?? '')) return recent;
+    if (!IN_PROGRESS.has(app.status ?? '')) return recent && Boolean(app.documents?.some((d) => d.signature_state === 'PENDING'));
     const task = app.collection_task_id ? queryClient.getQueryData<CollectionTask>(collectorKeys.collection(app.collection_task_id)) : undefined;
     if (task?.status === 'FAILED' || task?.status === 'COMPLETED') return task.status === 'COMPLETED';
     return recent;
@@ -194,5 +199,59 @@ export function useCollectionsOf(apps: CollectorApplication[]) {
             staleTime: 30_000,
         })),
         combine: (results) => new Map(results.flatMap((r) => (r.data?.id ? [[r.data.id, r.data] as const] : []))),
+    });
+}
+
+/** Итог по заявке для клиента: причины отказа, когда подать снова. 404 — ещё не оценили. */
+export function useCollectorDecision(id: string, enabled: boolean) {
+    return useQuery({
+        queryKey: collectorKeys.decision(id),
+        queryFn: async () => unwrap(await collector.GET('/applications/{id}/decision', { params: { path: { id } } })),
+        enabled,
+        retry: false,
+    });
+}
+
+/** Предложения банка по заявке. */
+export function useCollectorOffers(id: string, enabled: boolean) {
+    return useQuery({
+        queryKey: collectorKeys.offers(id),
+        queryFn: async () => unwrap(await collector.GET('/applications/{id}/offers', { params: { path: { id } } })).items,
+        enabled,
+    });
+}
+
+/** Вопросы банка по заявке. */
+export function useCollectorInfoRequests(id: string, enabled: boolean) {
+    return useQuery({
+        queryKey: collectorKeys.infoRequests(id),
+        queryFn: async () => unwrap(await collector.GET('/applications/{id}/info-requests', { params: { path: { id } } })).items,
+        enabled,
+    });
+}
+
+/** Ответ на вопрос банка: значение, комментарий и файлы одним multipart. */
+export function useAnswerInfoRequest(applicationId: string) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ requestId, value, comment, files }: { requestId: string; value?: unknown; comment?: string; files: File[] }) => {
+            const form = new FormData();
+            form.append('answer', JSON.stringify({ value, comment: comment?.trim() || undefined }));
+            for (const f of files) form.append('files', f, f.name);
+            return unwrap(
+                await collector.POST('/applications/{id}/info-requests/{requestId}/answer', {
+                    params: { path: { id: applicationId, requestId } },
+                    // без body openapi-fetch не вызывает bodySerializer — тело заменит FormData
+                    body: {},
+                    bodySerializer: () => form,
+                }),
+            );
+        },
+        onSuccess: (res) => {
+            if (res.info_requests) queryClient.setQueryData(collectorKeys.infoRequests(applicationId), res.info_requests);
+            // ответили на всё — заявка уходит дальше: перечитываем статус
+            void queryClient.invalidateQueries({ queryKey: collectorKeys.application(applicationId) });
+            void queryClient.invalidateQueries({ queryKey: collectorKeys.timeline(applicationId) });
+        },
     });
 }

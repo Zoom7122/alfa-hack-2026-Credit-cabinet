@@ -20,6 +20,11 @@ export function ScoreCard({ score }: { score: ScoreResult }) {
                     {score.total}
                 </Typography.Title>
             </div>
+            {score.factors.length === 0 && (
+                <Typography.Text view='primary-small' color='secondary'>
+                    Разбивки по критериям нет: заявку оценили до того, как движок стал её присылать
+                </Typography.Text>
+            )}
             <ul className='score-card__factors' aria-label='Признаки скоринга'>
                 {score.factors.map((f) => (
                     <li key={f.code} className='score-card__factor'>

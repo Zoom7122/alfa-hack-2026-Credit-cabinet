@@ -40,7 +40,7 @@ GET /applications/{id}, /collections/{id} ──▶ статус заявки и
 
 ## Бинари
 
-Один модуль и один Docker-образ, четыре бинаря:
+Один модуль и один Docker-образ, пять бинарей:
 
 | Бинарь | Пакет | Что делает |
 |---|---|---|
@@ -48,6 +48,7 @@ GET /applications/{id}, /collections/{id} ──▶ статус заявки и
 | `data-collector-publisher` | `cmd/outbox-publisher` | переносит события из `outbox` в Kafka (оба топика). Несколько реплик безопасны: события блокируются `FOR UPDATE SKIP LOCKED` |
 | `data-collector-worker` | `cmd/worker` | читает топик задач в consumer group `data-collector-worker`, опрашивает системы, пишет результат. Реплики делят партиции топика |
 | `data-collector-signature-worker` | `cmd/signature-worker` | читает топик документов в consumer group `data-collector-signature-worker`, проверяет подписи и пишет отчёты в `signature_reports`. Реплики делят партиции топика |
+| `data-collector-decision-worker` | `cmd/decision-worker` | оценка после сбора: берёт заявки `VERIFYING` из Postgres (`FOR UPDATE SKIP LOCKED`), собирает запрос в credit-engine, пишет итог (см. «Оценка заявки») |
 
 Топики создают publisher и worker'ы при старте (`KAFKA_TOPIC_PARTITIONS` партиций). Новая группа читает топик с начала, так что задачи, созданные до первого запуска worker'а, не теряются.
 
@@ -240,6 +241,13 @@ curl -s -X POST localhost:8081/api/v1/applicants -H 'Authorization: Bearer mock.
 | `poa_number`, `representative_inn` | МЧД представителя, если заявку подаёт не директор | доверенности ищутся только по ИНН компании |
 
 Токены передаются внешним системам в заголовках. В `applications.form`, `raw_collections`, журнал запросов, Kafka и ответ API они не попадают. Пока задача не завершена, они лежат в `collection_tasks.secrets`, потом стираются.
+
+#### Ответы для оценки (`scoring`, необязательно)
+
+То, чего нет в собранных данных и что нужно credit-engine; коды — как в `credit-engine/contracts/contract.go`. Чего нет — банк спросит после оценки (вопрос в `info_requests`). Неверный код или отрицательное число — `422` с полем `scoring.<поле>`.
+
+- общие: `max_annual_rate` (% годовых, 0–100), `min_acceptable_amount`, `max_acceptable_term_months`, `need_cost`, `own_contribution`, `free_cash`, `minimum_cash`, `need_evidence` (`CONTRACT_AND_COST`, `VERIFIED_ESTIMATE`, `ORAL_ONLY`), `experience_years`;
+- только ИП: `primary_income_source`, `qualification`, `total_experience_months`, `net_monthly_income`, `car_class`, `education_level`, `real_estate_status`, `business_location`, `location_stability_months`, `buyer_contracts`.
 
 #### Файлы
 
@@ -464,6 +472,63 @@ curl -s 'localhost:8081/api/v1/check-mock?inn=7701234567'
 ### `GET /healthz`
 
 Проверка, что сервис поднят.
+
+## Итог для клиента: решение, предложения, вопросы банка
+
+- `GET /applications/{id}/decision` — итог оценки (движка или специалиста): `outcome`, причины отказа для клиента (`reasons`), `reapply_after` — когда подать снова (через 30 дней после отказа), `decided_by` (`ENGINE`/`EMPLOYEE`). `404` — ещё не оценили.
+- `GET /applications/{id}/offers` — предложения (`offers`).
+- `GET /applications/{id}/info-requests` — вопросы банка: `input` — как отвечать (`MONEY`, `NUMBER`, `CHOICE` с `options`, `TEXT`, `NONE`) и `scoring_field` — какое поле анкеты `scoring` уточняет ответ; `documents` — какие документы приложить; `source` — `credit-engine` или `underwriter`; срок ответа — 5 дней.
+- `POST /applications/{id}/info-requests/{requestId}/answer` — ответ: JSON `{value, comment}` или multipart (часть `answer` с тем же JSON и части `files`; форматы и подписи — как у анкеты). Отвечает только автор заявки (`403`, без токена у тестового пользователя — `401`). Ошибки: `409` — банк не ждёт ответов или на вопрос уже ответили, `422` — значение не того типа или нет обязательного документа. Значение с `scoring_field` дописывается в анкету. Ответили на все обязательные вопросы — необязательные отменяются, и заявка уходит дальше: вопросы движка — на повторную оценку (`VERIFYING`), вопросы специалиста — обратно к нему (`MANUAL_REVIEW`, новый срок, тот же исполнитель). При повторной оценке темы, на которые клиент уже ответил, не спрашиваются; если других вопросов не осталось — заявка уходит специалисту.
+
+Вопросы движка строятся по полям, которых ему не хватило (`internal/decision/outcome.go`, `questionTopics`): числа и варианты уточняют анкету, документы (выписка, отчётность, МЧД) — прикладываются файлом.
+
+## Рабочее место андеррайтера (`/api/v1/backoffice/*`)
+
+Экраны 16–18 кабинета. Все ручки — только для андеррайтера (`role = UNDERWRITER`; тестовые — `usr_underwriter_sokolova`, `usr_underwriter_orlov`): без токена — `401`, с токеном клиента — `403`.
+
+- `GET /backoffice/applications?status=MANUAL_REVIEW,WAITING_FOR_INFO&assignee=me|none|<id>&limit=&cursor=` — очередь: сначала ручное рассмотрение по сроку (`sla_due_at` = `applications.deadline_at`), затем остальные — свежие сверху; черновиков нет. В строке — грейд и баллы, причины ручного рассмотрения от credit-engine, системы со сбоем при сборе, исполнитель. `counters` — ручных всего, моих, со сроком сегодня, ждут клиента (без учёта фильтров). `next_cursor` — смещение следующей страницы (до 100 строк).
+- `GET /backoffice/applications/{id}` — досье: заявка, `version` (и `ETag`), исполнитель и срок; компания по собранным данным (ЕГРЮЛ, бухотчётность по годам в ₽, кредитная история, взыскания, суды, отношения с банком, флаги риска); итог сбора по 19 системам (критичные — АБС, ФНС, БКИ, комплаенс, Федресурс); находки; скоринг credit-engine по критериям с баллами (`score.factors`); решение движка (`engine_decision`: итог, основание рассмотрения, причины, предложенные условия); решение андеррайтера; предложения; вопросы клиенту; другие заявки компании; журнал со служебными событиями (`internal: true` — клиенту не виден, `actor` — сотрудник банка).
+- `POST /backoffice/applications/{id}/assign` — взять в работу: только `MANUAL_REVIEW` (иначе `409 INVALID_TRANSITION`), заявку другого — `409 CONFLICT`; повтор своим — без изменений.
+- `POST /backoffice/applications/{id}/decision` (`If-Match: <version>`, `Idempotency-Key`):
+  - `APPROVE` — `offers` (до 3; пусто — условия, предложенные движком), старые предложения отзываются, `OFFERED`; итог `APPROVED` или `APPROVED_WITH_CHANGES`, если условия отличаются от запрошенных;
+  - `REJECT` — `client_reasons` (обязательно), повторно — через 30 дней, `REJECTED`;
+  - `REQUEST_INFO` — `info_requests` (обязательно), срок ответа 5 дней, `WAITING_FOR_INFO`;
+  - `expert_adjustments` и `internal_comment` — в журнал (служебные), клиенту не видны.
+  Заявка без исполнителя закрепляется за андеррайтером. Ошибки: `409` (не на рассмотрении, у другого), `412 VERSION_CONFLICT` (версия устарела), `422` (поля). Повтор с тем же `Idempotency-Key` возвращает досье без второго решения (`decision_requests`, миграция 00006). Решение пишется в `decisions.outcome`/`decided_by`/`comment` поверх строки оценки движка; в журнал — `uw.decision` с текстом для клиента.
+
+Перезапрос одной системы (`…/sources/{code}/refresh` из `openapi.yaml`) не сделан.
+
+## Оценка заявки (`data-collector-decision-worker` + credit-engine)
+
+После сбора заявку оценивает credit-engine (`../credit-engine`, в compose — `credit-engine-scoring` :8082 и `credit-engine-bank`). data-collector для него — три участника из `credit-engine/docs/05_integration.md`:
+- **отправитель А** — `internal/decision`: `DecisionRequest` из анкеты (в том числе блока `scoring`) и `raw_collections`;
+- **поставщик Б** — `GET /api/v1/borrowers/{id}/statements?years=` (id компании `apl_…`): баланс и ОФР из ГИР БО последнего сбора, тыс. руб.;
+- **МС3** — `POST /api/v1/credit-events`: события МС2 (выдача, ручное рассмотрение, проблема банка) в журнал заявки как `credit_engine.*`, повтор по `event_id` не пишется.
+Обе ручки внутренние: nginx кабинета их не пропускает.
+
+Конвейер: `VERIFYING` (подписи проверены или ждали дольше `DECISION_SIGNATURE_WAIT`) → `SCORING` → итог одной транзакцией — строка `decisions` (грейд, баллы, ответ движка, находки), и по статусу движка:
+
+| Ответ движка | Статус заявки | Что ещё пишется |
+|---|---|---|
+| `APPROVED` | `OFFERED` | предложение в `offers` (срок действия `OFFER_VALIDITY`) |
+| `REJECTED` | `REJECTED` | причины в `decisions.client_reasons` |
+| `NEED_INFO` | `WAITING_FOR_INFO` | вопросы клиенту в `info_requests` — по темам полей, которых не хватило |
+| `UNDER_REVIEW` | `MANUAL_REVIEW` | срок `deadline_at` = сейчас + `REVIEW_SLA`; условия движка (если есть) — в `decisions.details.proposed_offer` |
+
+Откуда поля запроса (`internal/decision/request.go`):
+- денежный поток за 12 месяцев — обороты АБС, разложенные по назначениям платежей выписки: займы и свои переводы не выручка, погашения и лизинг — долг, ЕНП — налоги, зарплата и аренда — постоянные, остальное — переменные;
+- долг и график на 36 месяцев — БКИ; кредитная история, просрочки, обращения за 90 дней — БКИ и наши кредиты;
+- возраст бизнеса, активность, ликвидация, руководитель, недостоверность, ОКВЭД — ЕГРЮЛ и «Прозрачный бизнес»; банкротство — Федресурс и КАД; споры и взыскания — ФССП и КАД (существенно — больше 10 % среднемесячных поступлений); ограничения счетов — АБС и блокировки ФНС; санкции — комплаенс; налоговый долг — ЕНС;
+- подтверждение выручки — декларации, иначе БФО (у ООО на ОСН — с НДС);
+- полномочия — руководитель по ЕГРЮЛ, сам ИП или действующая МЧД на представителя;
+- ответы клиента (ставка, границы суммы и срока, потребность, свободные деньги, опыт; у ИП — доход, образование и т. п.) — блок `scoring` анкеты.
+Чего в данных нет, уходит `null`: движок отвечает `NEED_INFO`, и клиент получает вопрос.
+
+Дата оценки — `DEMO_EVALUATION_DATE` (в compose `2026-10-22`, «сегодня» mock-api), одна и та же у worker'а и МС1: от неё считаются 12 месяцев истории и 36 месяцев графика.
+
+Переменные worker'а: `SCORING_URL` (`http://localhost:8082`), `SCORING_TIMEOUT` (`20s`), `DECISION_POLL_INTERVAL` (`2s`), `DECISION_SIGNATURE_WAIT` (`2m`), `DECISION_STALE` (`2m` — когда брошенную оценку берут заново), `REVIEW_SLA` (`4h`), `OFFER_VALIDITY` (`336h`), `DEMO_EVALUATION_DATE`.
+
+Сценарии mock-api на живом стеке (ответы для оценки — как в `examples`, минимальная сумма 30 % от запрошенной): A — `OFFERED` (2,03 млн на 36 мес. под 20,75 %), B — `MANUAL_REVIEW` (8+ кредитных обращений за 90 дней), C — `REJECTED` (банкротство, просрочка 30+), D — `WAITING_FOR_INFO` (у ИП 2 месяца истории счёта), E — `WAITING_FOR_INFO` (финансовый сотрудник без МЧД); после ответов клиента (выписка, МЧД) обе уходят специалисту: документы движок сам не читает.
 
 ## Проверка подписи (`data-collector-signature-worker`)
 

@@ -15,25 +15,26 @@ import {
 import { REGISTRY_TIMEOUT_INN, registry } from '../data';
 import { mockFailure } from '../handlers';
 import { stepMs } from '../workflow';
+import { allAnswered, offerOf, questionsOf, REJECT_REASONS, scoredOutcome } from './outcome';
 import { FAILING_COLLECTION_INN, scenarioByInn } from './scenarios';
 import { mutateCollector, newId, readCollector, type StoredCollectorApp } from './store';
 import { collectorUser, COLLECTOR_TEST_USERS } from './users';
 
 /* Мок data-collector по его swagger и README: регистрация, анкета с файлами, статус заявки, итог сбора. */
 
-const url = (path: string) => `${COLLECTOR_BASE_URL}${path}`;
+export const url = (path: string) => `${COLLECTOR_BASE_URL}${path}`;
 
 type Field = { field: string; code: string; message: string };
 
-function problem(status: number, code: string, title: string, detail?: string, errors?: Field[]) {
+export function problem(status: number, code: string, title: string, detail?: string, errors?: Field[]) {
     return HttpResponse.json(
         { type: `https://errors.credit-cabinet.local/${code.toLowerCase().replace(/_/g, '-')}`, title, status, code, detail, errors },
         { status, headers: { 'Content-Type': 'application/problem+json' } },
     );
 }
 
-const validation = (status: 400 | 422, detail: string, errors: Field[]) => problem(status, 'VALIDATION_FAILED', 'Ошибка в данных', detail, errors);
-const notFound = (detail: string) => problem(404, 'NOT_FOUND', 'Не найдено', detail);
+export const validation = (status: 400 | 422, detail: string, errors: Field[]) => problem(status, 'VALIDATION_FAILED', 'Ошибка в данных', detail, errors);
+export const notFound = (detail: string) => problem(404, 'NOT_FOUND', 'Не найдено', detail);
 const isTestUser = (id: string | undefined) => COLLECTOR_TEST_USERS.some((u) => u.id === id);
 /** Content-Disposition как у Go (mime.FormatMediaType): не-ASCII имя — через filename*. */
 function attachment(name: string) {
@@ -74,24 +75,39 @@ const SYSTEMS: CollectorSystem[] = [
 
 const extOf = (name: string) => name.split('.').pop()?.toLowerCase() ?? '';
 const isSignature = (name: string) => /\.(sig|p7s)$/i.test(name);
-const iso = (ms: number) => new Date(ms).toISOString();
+export const iso = (ms: number) => new Date(ms).toISOString();
 const canSign = (role: CollectorRole, soleProprietor: boolean) => role === 'DIRECTOR' || (soleProprietor && role === 'OWNER');
 
 /** Статус по времени отправки: шаг конвейера — как у остальных моков (флаг credit-cabinet:mock-pipeline-ms). */
-function statusOf(app: StoredCollectorApp, now = Date.now()): CollectorStatus {
+export function statusOf(app: StoredCollectorApp, now = Date.now()): CollectorStatus {
     if (app.submitted_ms === undefined) return 'DRAFT';
     const elapsed = now - app.submitted_ms;
     if (elapsed < stepMs()) return 'SUBMITTED';
     // сбор не удался — заявка так и остаётся в ENRICHING, в журнале enrich.failed
     if (elapsed < 2 * stepMs() || app.company.inn === FAILING_COLLECTION_INN) return 'ENRICHING';
-    return 'VERIFYING';
+    // ещё шаг — оценка credit-engine, дальше итог по сценарию; на вопросы ответили — к специалисту
+    if (elapsed < 3 * stepMs()) return 'VERIFYING';
+    // решение андеррайтера — поверх итога движка
+    const latest = app.review?.decisions.at(-1);
+    if (latest?.action === 'APPROVE') return 'OFFERED';
+    if (latest?.action === 'REJECT') return 'REJECTED';
+    if (latest?.action === 'REQUEST_INFO') return latest.questions?.every((q) => app.answers?.[q.id]) ? 'MANUAL_REVIEW' : 'WAITING_FOR_INFO';
+    const outcome = scoredOutcome(app.company.inn);
+    if (outcome === 'WAITING_FOR_INFO' && allAnswered(app, scoredAt(app))) return 'MANUAL_REVIEW';
+    return outcome;
 }
 
-function toApplication(app: StoredCollectorApp, withKnown = false): CollectorApplication {
+/** Сбор завершён: VERIFYING и всё после оценки. */
+const isCollected = (status: CollectorStatus) => !['DRAFT', 'SUBMITTED', 'ENRICHING'].includes(status);
+
+/** Когда заявку оценили (мс). */
+export const scoredAt = (app: StoredCollectorApp) => (app.submitted_ms ?? 0) + 3 * stepMs();
+
+export function toApplication(app: StoredCollectorApp, withKnown = false): CollectorApplication {
     const status = statusOf(app);
     const scenario = scenarioByInn(app.company.inn);
     // после сбора имя и ОГРН компании — из ЕГРЮЛ, и для всех её заявок (компания одна на ИНН)
-    const collected = scenario && readCollector().apps.some((a) => a.company.inn === app.company.inn && statusOf(a) === 'VERIFYING');
+    const collected = scenario && readCollector().apps.some((a) => a.company.inn === app.company.inn && isCollected(statusOf(a)));
     const q = app.questionnaire;
     return {
         id: app.id,
@@ -157,7 +173,7 @@ function signatureReport(app: StoredCollectorApp, requested: CollectorDocument) 
 }
 
 /** Журнал заявки — как application_events у data-collector. */
-function timelineOf(app: StoredCollectorApp) {
+export function timelineOf(app: StoredCollectorApp) {
     const events: { id: string; at: string; type: string; message: string; actor_kind: 'CLIENT' | 'SYSTEM' }[] = [
         { id: 'evt_1', at: app.created_at, type: 'application.created', message: 'Заявка создана', actor_kind: 'CLIENT' },
     ];
@@ -165,16 +181,34 @@ function timelineOf(app: StoredCollectorApp) {
     if (app.submitted_ms !== undefined) {
         events.push({ id: 'evt_2', at: iso(app.submitted_ms), type: 'application.submitted', message: 'Заявка отправлена на рассмотрение', actor_kind: 'CLIENT' });
     }
-    if (status === 'ENRICHING' || status === 'VERIFYING') {
+    if (status === 'ENRICHING' || isCollected(status)) {
         events.push({ id: 'evt_3', at: iso((app.submitted_ms ?? 0) + stepMs()), type: 'enrich.started', message: 'Начали собирать данные о компании', actor_kind: 'SYSTEM' });
     }
-    if (status === 'VERIFYING') {
+    if (isCollected(status)) {
         events.push({ id: 'evt_4', at: iso((app.submitted_ms ?? 0) + 2 * stepMs()), type: 'enrich.completed', message: 'Данные о компании собраны', actor_kind: 'SYSTEM' });
+    }
+    const scored: Record<string, string> = {
+        OFFERED: 'Банк одобрил кредит — посмотрите предложение',
+        REJECTED: 'Банк отказал в кредите',
+        WAITING_FOR_INFO: 'Банку нужны дополнительные сведения',
+        MANUAL_REVIEW: 'Заявку рассматривает кредитный специалист',
+    };
+    if (['OFFERED', 'REJECTED', 'WAITING_FOR_INFO', 'MANUAL_REVIEW'].includes(status)) {
+        const message = scored[scoredOutcome(app.company.inn)] ?? 'Заявку рассматривает кредитный специалист';
+        events.push({ id: 'evt_5', at: iso(scoredAt(app)), type: 'scoring.completed', message, actor_kind: 'SYSTEM' });
+    }
+    const answers = Object.values(app.answers ?? {});
+    if (status === 'MANUAL_REVIEW' && answers.length) {
+        const last = answers.map((a) => a.at).sort().at(-1) ?? iso(Date.now());
+        events.push({ id: 'evt_6', at: last, type: 'info.provided', message: 'Ответы отправлены банку', actor_kind: 'CLIENT' });
     }
     if (toTask(app).status === 'FAILED') {
         events.push({ id: 'evt_4', at: iso((app.submitted_ms ?? 0) + 2 * stepMs()), type: 'enrich.failed', message: 'Сбор данных о компании не удался', actor_kind: 'SYSTEM' });
     }
-    return events.reverse();
+    for (const e of app.review?.events ?? []) {
+        if (!e.internal) events.push({ id: e.id, at: e.at, type: e.type, message: e.message, actor_kind: e.actor ? 'EMPLOYEE' : 'SYSTEM' } as (typeof events)[number]);
+    }
+    return events.sort((a, b) => b.at.localeCompare(a.at));
 }
 
 /** Системы без входных данных (domain.SkippedSystems) — с причиной. */
@@ -193,7 +227,7 @@ function skippedSystems(q: NonNullable<StoredCollectorApp['questionnaire']>): Pa
     return skipped;
 }
 
-function toTask(app: StoredCollectorApp, now = Date.now()): CollectionTask {
+export function toTask(app: StoredCollectorApp, now = Date.now()): CollectionTask {
     const q = app.questionnaire;
     const start = app.submitted_ms ?? now;
     const skipped = q ? skippedSystems(q) : {};
@@ -276,6 +310,12 @@ function validateQuestionnaire(q: QuestionnaireInput, inn: string): Field[] {
     col.serials?.forEach((s, i) => (!s || s.length > 64) && add(`collateral.serials[${i}]`, 'invalid_format', 'заводской номер — от 1 до 64 символов'));
     if (q.poa_number && !UUID.test(q.poa_number)) add('poa_number', 'invalid_format', 'номер МЧД — UUID');
     if (q.representative_inn && !PERSON_INN.test(q.representative_inn)) add('representative_inn', 'invalid_format', 'ИНН физлица — 12 цифр');
+    // ответы для credit-engine — как validateScoring у data-collector
+    const sc = q.scoring ?? {};
+    if (sc.max_annual_rate !== undefined && (sc.max_annual_rate <= 0 || sc.max_annual_rate > 100)) add('scoring.max_annual_rate', 'out_of_range', 'ставка от 0 до 100 % годовых');
+    for (const [field, value] of Object.entries(sc)) {
+        if (typeof value === 'number' && value < 0) add(`scoring.${field}`, 'out_of_range', 'не может быть отрицательным');
+    }
     return errors;
 }
 
@@ -363,10 +403,10 @@ function buildDocuments(files: File[], specs: QuestionnaireInput['documents'], t
 
 // ---------------------------------------------------------------- вход (мок-логин, как у data-collector)
 
-const unauthorized = (detail: string) => problem(401, 'UNAUTHORIZED', 'Unauthorized', detail);
+export const unauthorized = (detail: string) => problem(401, 'UNAUTHORIZED', 'Unauthorized', detail);
 
 /** Пользователь по `Authorization: Bearer mock.<user_id>`. Без заголовка — анонимно; неверный токен — 401. */
-function authenticate(request: Request) {
+export function authenticate(request: Request) {
     const header = request.headers.get('Authorization');
     if (!header) return { user: undefined };
     // схема — без учёта регистра, как у data-collector
@@ -607,7 +647,7 @@ export const collectorHandlers = [
         const items = meOf(user).companies.map((c) => {
             // реквизиты — после сбора по компании (как companies.registry у data-collector)
             const scenario = scenarioByInn(c.inn);
-            const collected = scenario && readCollector().apps.some((a) => a.company.inn === c.inn && statusOf(a) === 'VERIFYING');
+            const collected = scenario && readCollector().apps.some((a) => a.company.inn === c.inn && isCollected(statusOf(a)));
             const prefill = registry.find((r) => r.inn === c.inn);
             return {
                 id: c.applicant_id,
@@ -708,5 +748,108 @@ export const collectorHandlers = [
             registry_status: found.registry_status === 'ACTIVE' || !found.registry_status ? 'ACTIVE' : 'LIQUIDATED',
             already_known: readCollector().apps.some((a) => a.company.inn === inn) || COLLECTOR_TEST_USERS.some((u) => u.companies.some((c) => c.inn === inn)),
         });
+    }),
+
+    http.get(url('/applications/:id/decision'), async ({ params }) => {
+        await delay(150);
+        const app = readCollector().apps.find((a) => a.id === params.id);
+        if (!app) return notFound('не найдено');
+        const status = statusOf(app);
+        if (!['OFFERED', 'REJECTED', 'WAITING_FOR_INFO', 'MANUAL_REVIEW'].includes(status)) return notFound('заявку ещё не оценили');
+        const uw = app.review?.decisions.at(-1);
+        if (uw) {
+            return HttpResponse.json({ outcome: uw.outcome, reasons: uw.reasons ?? [], reapply_after: uw.reapply_after ?? null, decided_at: uw.at, decided_by: 'EMPLOYEE' });
+        }
+        const outcome = status === 'OFFERED' ? 'APPROVED' : status === 'REJECTED' ? 'REJECTED' : status === 'WAITING_FOR_INFO' ? 'NEED_INFO' : 'MANUAL_REVIEW';
+        const at = scoredAt(app);
+        return HttpResponse.json({
+            outcome,
+            reasons: status === 'REJECTED' ? REJECT_REASONS : [],
+            reapply_after: status === 'REJECTED' ? iso(at + 30 * 86_400_000).slice(0, 10) : null,
+            decided_at: iso(at),
+            decided_by: 'ENGINE',
+        });
+    }),
+
+    http.get(url('/applications/:id/offers'), async ({ params }) => {
+        await delay(150);
+        const app = readCollector().apps.find((a) => a.id === params.id);
+        if (!app) return notFound('не найдено');
+        const approved = app.review?.decisions.filter((d) => d.action === 'APPROVE').at(-1);
+        if (approved) {
+            return HttpResponse.json({
+                items: (approved.offers ?? []).map((o, i) => ({ id: `ofr_${app.id.slice(4)}_${i}`, state: 'ACTIVE', recommended: i === 0, collateral_required: [], conditions: [], ...o })),
+            });
+        }
+        return HttpResponse.json({ items: statusOf(app) === 'OFFERED' ? [offerOf(app, scoredAt(app))] : [] });
+    }),
+
+    http.get(url('/applications/:id/info-requests'), async ({ params }) => {
+        await delay(150);
+        const app = readCollector().apps.find((a) => a.id === params.id);
+        if (!app) return notFound('не найдено');
+        const decided = !['DRAFT', 'SUBMITTED', 'ENRICHING', 'VERIFYING'].includes(statusOf(app));
+        return HttpResponse.json({ items: decided ? questionsOf(app, scoredAt(app)) : [] });
+    }),
+
+    http.post(url('/applications/:id/info-requests/:requestId/answer'), async ({ request, params }) => {
+        await delay(400);
+        const app = readCollector().apps.find((a) => a.id === params.id);
+        if (!app) return notFound('не найдено');
+        const { user } = authenticate(request);
+        if (user && user.id !== app.representative.id) return problem(403, 'FORBIDDEN', 'Forbidden', 'на вопросы банка отвечает тот, кто оформил заявку');
+        if (!user && isTestUser(app.representative.id)) return unauthorized('заявка оформлена тестовым пользователем — нужен его токен');
+        const question = questionsOf(app, scoredAt(app)).find((q) => q.id === params.requestId);
+        if (!question) return notFound('не найдено');
+        if (statusOf(app) !== 'WAITING_FOR_INFO') return problem(409, 'INVALID_TRANSITION', 'Conflict', 'банк сейчас не ждёт ответов по этой заявке');
+        if (question.state !== 'OPEN') return problem(409, 'CONFLICT', 'Conflict', 'на этот вопрос уже ответили');
+
+        let answer: { value?: unknown; comment?: string } = {};
+        let files: File[] = [];
+        const type = request.headers.get('Content-Type') ?? '';
+        try {
+            if (type.startsWith('multipart/form-data')) {
+                const form = await request.formData();
+                const part = form.get('answer');
+                if (typeof part === 'string') answer = JSON.parse(part) as typeof answer;
+                files = form.getAll('files').filter((f): f is File => f instanceof File);
+            } else {
+                answer = (await request.json()) as typeof answer;
+            }
+        } catch {
+            return validation(400, 'часть answer — JSON {value, comment}', []);
+        }
+        const input = question.input as { type?: string };
+        if ((input.type === 'MONEY' || input.type === 'NUMBER') && (typeof answer.value !== 'number' || answer.value < 0)) {
+            return validation(422, 'ответ не прошёл проверку', [{ field: 'value', code: 'invalid_value', message: 'нужно неотрицательное число' }]);
+        }
+        if ((question.documents as { required?: boolean } | undefined)?.required && !files.length) {
+            return validation(422, 'ответ не прошёл проверку', [{ field: 'files', code: 'required', message: 'приложите документ' }]);
+        }
+        const now = Date.now();
+        const docs = files.map((f) => ({
+            id: newId('doc'),
+            type: 'BANK_STATEMENT' as const,
+            file_name: f.name,
+            mime_type: MIME[extOf(f.name)] ?? 'application/octet-stream',
+            size_bytes: f.size,
+            signature_state: 'NOT_SIGNED' as const,
+            recognition_state: RECOGNIZABLE.has(extOf(f.name)) ? ('PENDING' as const) : ('NOT_APPLICABLE' as const),
+            uploaded_at: iso(now),
+        }));
+        const updated = mutateCollector((d) => {
+            const stored = d.apps.find((a) => a.id === app.id) ?? app;
+            stored.documents = [...stored.documents, ...docs];
+            stored.answers = { ...stored.answers, [question.id ?? '']: { value: answer.value, comment: answer.comment, document_ids: docs.map((x) => x.id), at: iso(now) } };
+            stored.updated_at = iso(now);
+            // ответили на все вопросы андеррайтера — заявка снова у него, с новым сроком
+            const latest = stored.review?.decisions.at(-1);
+            if (stored.review && latest?.action === 'REQUEST_INFO' && latest.questions?.every((q) => stored.answers?.[q.id])) {
+                stored.review.deadline = iso(now + 4 * 3_600_000);
+                stored.review.version += 1;
+            }
+            return stored;
+        });
+        return HttpResponse.json({ status: statusOf(updated), info_requests: questionsOf(updated, scoredAt(updated)) });
     }),
 ];

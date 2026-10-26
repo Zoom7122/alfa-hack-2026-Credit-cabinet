@@ -149,7 +149,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "статусы через запятую: DRAFT,SUBMITTED,ENRICHING,VERIFYING",
+                        "description": "статусы через запятую: DRAFT,SUBMITTED,ENRICHING,VERIFYING,SCORING,MANUAL_REVIEW,WAITING_FOR_INFO,OFFERED,REJECTED",
                         "name": "status",
                         "in": "query"
                     },
@@ -227,6 +227,41 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/decision": {
+            "get": {
+                "description": "Итог оценки (движка или специалиста) для клиента: причины отказа и когда можно подать снова.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Решение по заявке",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки (app_…)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ClientDecision"
+                        }
+                    },
+                    "404": {
+                        "description": "заявки нет или её ещё не оценили",
                         "schema": {
                             "$ref": "#/definitions/Problem"
                         }
@@ -332,6 +367,164 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/info-requests": {
+            "get": {
+                "description": "input — как отвечать (тип значения и варианты), documents — какие документы приложить.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Вопросы банка по заявке",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки (app_…)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/InfoRequests"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/info-requests/{requestId}/answer": {
+            "post": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "description": "JSON {value, comment} или multipart/form-data: часть answer с тем же JSON и части files с документами\n(форматы и подписи — как у анкеты). Ответили на все обязательные вопросы — заявка уходит на повторную\nоценку или к специалисту, если вопросы задал он. Отвечает только автор заявки.",
+                "consumes": [
+                    "application/json",
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Ответ на вопрос банка",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки (app_…)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "id вопроса (ir_…)",
+                        "name": "requestId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "ответ (для JSON)",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/InfoRequestAnswerInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/InfoRequestAnswered"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "заявка тестового пользователя — нужен его токен",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "отвечает не автор заявки",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "банк не ждёт ответов или на вопрос уже ответили",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/offers": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Предложения банка по заявке",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки (app_…)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/Offers"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/Problem"
                         }
@@ -566,6 +759,326 @@ const docTemplate = `{
                 }
             }
         },
+        "/backoffice/applications": {
+            "get": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "description": "Заявки после отправки анкеты: сначала ручное рассмотрение по сроку, затем остальные — свежие сверху.\ncounters — счётчики над очередью (без учёта фильтров). Курсор — смещение следующей страницы.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "backoffice"
+                ],
+                "summary": "Очередь андеррайтера",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "статусы через запятую, например MANUAL_REVIEW,WAITING_FOR_INFO",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "me — мои, none — без исполнителя, или id андеррайтера",
+                        "name": "assignee",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "до 100, по умолчанию 50",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "next_cursor прошлой страницы",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/BoQueue"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "не андеррайтер",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "неизвестный статус",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/backoffice/applications/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "description": "Заявка с версией (для If-Match решения), исполнителем и сроком, компания по собранным данным,\nитог сбора по системам, находки, скоринг и решение credit-engine, предложения, вопросы клиенту,\nдругие заявки компании и журнал со служебными событиями. ETag — версия заявки.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "backoffice"
+                ],
+                "summary": "Досье заявки",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки (app_…)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/BoDossier"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/backoffice/applications/{id}/assign": {
+            "post": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "backoffice"
+                ],
+                "summary": "Взять заявку в работу",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки (app_…)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/BoApplicationListItem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "не на ручном рассмотрении (INVALID_TRANSITION) или уже у другого (CONFLICT)",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/backoffice/applications/{id}/decision": {
+            "post": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "description": "APPROVE — предложения клиенту (offers; пусто — условия, предложенные credit-engine), статус OFFERED.\nREJECT — отказ с причинами для клиента (client_reasons), повторно — через 30 дней, статус REJECTED.\nREQUEST_INFO — вопросы клиенту (info_requests), срок ответа 5 дней, статус WAITING_FOR_INFO.\nexpert_adjustments и internal_comment — в журнал, клиенту не видны. Заявка без исполнителя\nзакрепляется за андеррайтером. Повтор с тем же Idempotency-Key ничего не меняет.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "backoffice"
+                ],
+                "summary": "Решение андеррайтера",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки (app_…)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "версия заявки из досье",
+                        "name": "If-Match",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "ключ повтора",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "description": "решение",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/BoDecisionInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/BoDossier"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "не на ручном рассмотрении или у другого андеррайтера",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "412": {
+                        "description": "заявка изменилась (If-Match)",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/borrowers/{id}/statements": {
+            "get": {
+                "description": "Два годовых комплекта из ГИР БО последнего сбора: баланс и ОФР в тыс. руб. id — компания (apl_…).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "credit-engine"
+                ],
+                "summary": "Бухотчётность компании для credit-engine (поставщик Б)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id компании (apl_…)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "годы через запятую",
+                        "name": "years",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "StatementsResponse credit-engine",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "404": {
+                        "description": "по компании не было сбора",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/check-mock": {
             "get": {
                 "description": "Параллельно опрашивает 5 систем банка (эмулятор mock-api) и возвращает их ответы как есть.\nСекция системы, которая не ответила, — null; причина — в sources.",
@@ -722,6 +1235,45 @@ const docTemplate = `{
                     },
                     "504": {
                         "description": "реестр не ответил: таймаут, сбой или капча (UPSTREAM_TIMEOUT)",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/credit-events": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "credit-engine"
+                ],
+                "summary": "Событие credit-engine (МС3): выдача, ручное рассмотрение, проблема банка",
+                "parameters": [
+                    {
+                        "description": "AdminEvent credit-engine",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "EventAck",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/Problem"
                         }
@@ -932,13 +1484,18 @@ const docTemplate = `{
                     "$ref": "#/definitions/RequestedTerms"
                 },
                 "status": {
-                    "description": "DRAFT — создана при регистрации, SUBMITTED — анкета отправлена, ENRICHING — идёт сбор данных,\nVERIFYING — данные собраны.",
+                    "description": "DRAFT — создана при регистрации, SUBMITTED — анкета отправлена, ENRICHING — идёт сбор данных,\nVERIFYING — данные собраны, ждём проверку подписей, SCORING — оценивает credit-engine,\nMANUAL_REVIEW — у андеррайтера, WAITING_FOR_INFO — банк ждёт ответов клиента,\nOFFERED — выдано предложение, REJECTED — отказ.",
                     "type": "string",
                     "enum": [
                         "DRAFT",
                         "SUBMITTED",
                         "ENRICHING",
-                        "VERIFYING"
+                        "VERIFYING",
+                        "SCORING",
+                        "MANUAL_REVIEW",
+                        "WAITING_FOR_INFO",
+                        "OFFERED",
+                        "REJECTED"
                     ],
                     "example": "DRAFT"
                 },
@@ -961,6 +1518,638 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/Application"
                     }
+                }
+            }
+        },
+        "BoApplicant": {
+            "type": "object",
+            "properties": {
+                "bank_relationship": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "credit_history": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "director_name": {
+                    "type": "string"
+                },
+                "enforcement": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "financial_statements": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/decision.YearFigures"
+                    }
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "inn": {
+                    "type": "string"
+                },
+                "kpp": {
+                    "type": "string"
+                },
+                "litigation": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "ogrn": {
+                    "type": "string"
+                },
+                "okved": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "registration_date": {
+                    "type": "string"
+                },
+                "risk_flags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "short_name": {
+                    "type": "string"
+                },
+                "terminated_on": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "BoApplicantRef": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "inn": {
+                    "type": "string"
+                },
+                "short_name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "LEGAL_ENTITY",
+                        "SOLE_PROPRIETOR"
+                    ]
+                }
+            }
+        },
+        "BoApplicationListItem": {
+            "type": "object",
+            "properties": {
+                "applicant": {
+                    "$ref": "#/definitions/BoApplicantRef"
+                },
+                "assignee": {
+                    "$ref": "#/definitions/UserRef"
+                },
+                "degraded_sources": {
+                    "description": "системы, ответившие с ошибкой или частично",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "grade": {
+                    "type": "string",
+                    "enum": [
+                        "A",
+                        "B",
+                        "C",
+                        "D"
+                    ]
+                },
+                "id": {
+                    "type": "string"
+                },
+                "manual_review_reasons": {
+                    "description": "Причины ручного рассмотрения от credit-engine — только у MANUAL_REVIEW.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "number": {
+                    "type": "string"
+                },
+                "product_code": {
+                    "type": "string"
+                },
+                "requested": {
+                    "$ref": "#/definitions/RequestedTerms"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "sla_due_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "submitted_at": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "BoDecisionInput": {
+            "type": "object",
+            "required": [
+                "action"
+            ],
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "enum": [
+                        "APPROVE",
+                        "REJECT",
+                        "REQUEST_INFO"
+                    ]
+                },
+                "client_reasons": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ClientReason"
+                    }
+                },
+                "expert_adjustments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ExpertAdjustment"
+                    }
+                },
+                "info_requests": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/InfoRequestInput"
+                    }
+                },
+                "internal_comment": {
+                    "type": "string"
+                },
+                "offers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OfferInput"
+                    }
+                }
+            }
+        },
+        "BoDossier": {
+            "type": "object",
+            "properties": {
+                "applicant": {
+                    "$ref": "#/definitions/BoApplicant"
+                },
+                "application": {
+                    "$ref": "#/definitions/Application"
+                },
+                "assignee": {
+                    "$ref": "#/definitions/UserRef"
+                },
+                "engine_decision": {
+                    "$ref": "#/definitions/BoEngineDecision"
+                },
+                "findings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/BoFinding"
+                    }
+                },
+                "info_requests": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/InfoRequest"
+                    }
+                },
+                "offers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Offer"
+                    }
+                },
+                "other_applications": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/BoApplicationListItem"
+                    }
+                },
+                "score": {
+                    "$ref": "#/definitions/BoScore"
+                },
+                "sla_due_at": {
+                    "type": "string"
+                },
+                "sources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/BoSource"
+                    }
+                },
+                "timeline": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/BoTimelineEvent"
+                    }
+                },
+                "underwriter_decision": {
+                    "$ref": "#/definitions/BoUnderwriterDecision"
+                },
+                "version": {
+                    "description": "для If-Match решения",
+                    "type": "integer"
+                }
+            }
+        },
+        "BoEngineDecision": {
+            "type": "object",
+            "properties": {
+                "engine_status": {
+                    "type": "string",
+                    "enum": [
+                        "APPROVED",
+                        "REJECTED",
+                        "UNDER_REVIEW",
+                        "NEED_INFO"
+                    ]
+                },
+                "outcome": {
+                    "description": "Итог движка для заявки: APPROVED, REJECTED, MANUAL_REVIEW, NEED_INFO.",
+                    "type": "string"
+                },
+                "proposed_terms": {
+                    "$ref": "#/definitions/BoTerms"
+                },
+                "reasons": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/BoEngineReason"
+                    }
+                },
+                "review_reason": {
+                    "type": "string",
+                    "enum": [
+                        "BORROWER",
+                        "BANK"
+                    ]
+                }
+            }
+        },
+        "BoEngineReason": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "BoFinding": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "declared_value": {
+                    "type": "string"
+                },
+                "found_value": {
+                    "type": "string"
+                },
+                "material": {
+                    "type": "boolean"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "severity": {
+                    "type": "string",
+                    "enum": [
+                        "INFO",
+                        "WARN",
+                        "STOP"
+                    ]
+                },
+                "source": {
+                    "type": "string"
+                }
+            }
+        },
+        "BoQueue": {
+            "type": "object",
+            "properties": {
+                "counters": {
+                    "$ref": "#/definitions/BoQueueCounters"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/BoApplicationListItem"
+                    }
+                },
+                "next_cursor": {
+                    "description": "Курсор следующей страницы; null — страниц больше нет.",
+                    "type": "string"
+                }
+            }
+        },
+        "BoQueueCounters": {
+            "type": "object",
+            "properties": {
+                "due_today": {
+                    "type": "integer"
+                },
+                "manual_review": {
+                    "type": "integer"
+                },
+                "mine": {
+                    "type": "integer"
+                },
+                "waiting_for_info": {
+                    "type": "integer"
+                }
+            }
+        },
+        "BoScore": {
+            "type": "object",
+            "properties": {
+                "computed_at": {
+                    "type": "string"
+                },
+                "engine": {
+                    "type": "string",
+                    "enum": [
+                        "SCORECARD"
+                    ]
+                },
+                "factors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/BoScoreFactor"
+                    }
+                },
+                "grade": {
+                    "type": "string",
+                    "enum": [
+                        "A",
+                        "B",
+                        "C",
+                        "D"
+                    ]
+                },
+                "model_version": {
+                    "type": "string"
+                },
+                "raw_total": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "BoScoreFactor": {
+            "type": "object",
+            "properties": {
+                "answer": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "max_points": {
+                    "type": "integer"
+                },
+                "part": {
+                    "type": "string",
+                    "enum": [
+                        "QUESTIONNAIRE",
+                        "ECONOMICS"
+                    ]
+                },
+                "points": {
+                    "type": "number"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
+                }
+            }
+        },
+        "BoSource": {
+            "type": "object",
+            "properties": {
+                "calls": {
+                    "type": "integer"
+                },
+                "code": {
+                    "description": "система data-collector: CORE_BANKING, FNS, BKI, …",
+                    "type": "string"
+                },
+                "criticality": {
+                    "type": "string",
+                    "enum": [
+                        "CRITICAL",
+                        "NORMAL"
+                    ]
+                },
+                "duration_ms": {
+                    "type": "integer"
+                },
+                "failed_calls": {
+                    "type": "integer"
+                },
+                "fetched_at": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string",
+                    "enum": [
+                        "DONE",
+                        "PARTIAL",
+                        "FAILED",
+                        "SKIPPED"
+                    ]
+                }
+            }
+        },
+        "BoTerms": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "confirmed": {
+                    "description": "условия подтверждены движком и банком (APPROVED)",
+                    "type": "boolean"
+                },
+                "monthly_payment": {
+                    "type": "integer"
+                },
+                "rate_annual": {
+                    "type": "number"
+                },
+                "term_months": {
+                    "type": "integer"
+                }
+            }
+        },
+        "BoTimelineEvent": {
+            "type": "object",
+            "required": [
+                "actor_kind",
+                "at",
+                "id",
+                "message",
+                "type"
+            ],
+            "properties": {
+                "actor": {
+                    "description": "сотрудник банка",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/UserRef"
+                        }
+                    ]
+                },
+                "actor_kind": {
+                    "type": "string",
+                    "enum": [
+                        "CLIENT",
+                        "SYSTEM",
+                        "EMPLOYEE"
+                    ]
+                },
+                "at": {
+                    "type": "string"
+                },
+                "from_status": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "internal": {
+                    "description": "служебное: клиенту не показывается",
+                    "type": "boolean"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Данные о компании собраны"
+                },
+                "to_status": {
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Тип события модуля: application.created, application.submitted, enrich.started, enrich.completed, enrich.failed,\ndocument.signatures_verified.",
+                    "type": "string",
+                    "example": "enrich.completed"
+                }
+            }
+        },
+        "BoUnderwriterDecision": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "type": "string"
+                },
+                "decided_at": {
+                    "type": "string"
+                },
+                "decided_by": {
+                    "$ref": "#/definitions/UserRef"
+                },
+                "outcome": {
+                    "type": "string",
+                    "enum": [
+                        "APPROVED",
+                        "APPROVED_WITH_CHANGES",
+                        "REJECTED",
+                        "NEED_INFO"
+                    ]
+                }
+            }
+        },
+        "ClientDecision": {
+            "type": "object",
+            "properties": {
+                "decided_at": {
+                    "type": "string"
+                },
+                "decided_by": {
+                    "type": "string",
+                    "enum": [
+                        "ENGINE",
+                        "EMPLOYEE"
+                    ]
+                },
+                "outcome": {
+                    "type": "string",
+                    "enum": [
+                        "APPROVED",
+                        "APPROVED_WITH_CHANGES",
+                        "REJECTED",
+                        "MANUAL_REVIEW",
+                        "NEED_INFO"
+                    ]
+                },
+                "reapply_after": {
+                    "description": "когда можно подать заявку снова",
+                    "type": "string"
+                },
+                "reasons": {
+                    "description": "Причины отказа для клиента — без баллов и внутренних проверок.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.ClientReason"
+                    }
+                }
+            }
+        },
+        "ClientReason": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         },
@@ -1288,6 +2477,134 @@ const docTemplate = `{
                 }
             }
         },
+        "ExpertAdjustment": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "comment": {
+                    "type": "string"
+                },
+                "points": {
+                    "type": "integer"
+                }
+            }
+        },
+        "InfoRequest": {
+            "type": "object",
+            "properties": {
+                "answer": {
+                    "type": "object"
+                },
+                "answered_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "documents": {
+                    "type": "object"
+                },
+                "due_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "input": {
+                    "type": "object"
+                },
+                "required": {
+                    "type": "boolean"
+                },
+                "source": {
+                    "type": "string",
+                    "enum": [
+                        "credit-engine",
+                        "underwriter"
+                    ]
+                },
+                "state": {
+                    "type": "string",
+                    "enum": [
+                        "OPEN",
+                        "ANSWERED",
+                        "CANCELLED"
+                    ]
+                },
+                "target_field": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "InfoRequestAnswerInput": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "type": "string"
+                },
+                "value": {
+                    "description": "Значение по input.type вопроса: число (NUMBER, MONEY), код варианта (CHOICE), строка (TEXT). NONE — не нужно.",
+                    "type": "string"
+                }
+            }
+        },
+        "InfoRequestAnswered": {
+            "type": "object",
+            "properties": {
+                "info_requests": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/InfoRequest"
+                    }
+                },
+                "status": {
+                    "description": "Статус заявки после ответа: WAITING_FOR_INFO — есть ещё вопросы; VERIFYING — повторная оценка;\nMANUAL_REVIEW — вопросы задал специалист, заявка вернулась к нему.",
+                    "type": "string"
+                }
+            }
+        },
+        "InfoRequestInput": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "documents": {
+                    "type": "object"
+                },
+                "input": {
+                    "type": "object"
+                },
+                "required": {
+                    "type": "boolean"
+                },
+                "target_field": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "InfoRequests": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/InfoRequest"
+                    }
+                }
+            }
+        },
         "InternalData": {
             "type": "object",
             "properties": {
@@ -1386,6 +2703,120 @@ const docTemplate = `{
                 },
                 "user": {
                     "$ref": "#/definitions/Me"
+                }
+            }
+        },
+        "Offer": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "collateral_required": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "conditions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "guarantee_required": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "REQUESTED",
+                        "ALTERNATIVE",
+                        "RETENTION"
+                    ]
+                },
+                "monthly_payment": {
+                    "type": "integer"
+                },
+                "product_code": {
+                    "type": "string"
+                },
+                "rate_annual": {
+                    "type": "number"
+                },
+                "recommended": {
+                    "type": "boolean"
+                },
+                "state": {
+                    "type": "string",
+                    "enum": [
+                        "ACTIVE",
+                        "ACCEPTED",
+                        "WITHDRAWN",
+                        "EXPIRED"
+                    ]
+                },
+                "term_months": {
+                    "type": "integer"
+                },
+                "valid_until": {
+                    "type": "string"
+                }
+            }
+        },
+        "OfferInput": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "collateral_required": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "conditions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "guarantee_required": {
+                    "type": "boolean"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "REQUESTED",
+                        "ALTERNATIVE"
+                    ]
+                },
+                "product_code": {
+                    "type": "string"
+                },
+                "rate_annual": {
+                    "type": "number"
+                },
+                "term_months": {
+                    "type": "integer"
+                },
+                "valid_days": {
+                    "type": "integer"
+                }
+            }
+        },
+        "Offers": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Offer"
+                    }
                 }
             }
         },
@@ -1690,7 +3121,8 @@ const docTemplate = `{
                     "type": "string",
                     "enum": [
                         "CLIENT",
-                        "SYSTEM"
+                        "SYSTEM",
+                        "EMPLOYEE"
                     ]
                 },
                 "at": {
@@ -1713,6 +3145,39 @@ const docTemplate = `{
                     "description": "Тип события модуля: application.created, application.submitted, enrich.started, enrich.completed, enrich.failed,\ndocument.signatures_verified.",
                     "type": "string",
                     "example": "enrich.completed"
+                }
+            }
+        },
+        "UserRef": {
+            "type": "object",
+            "properties": {
+                "full_name": {
+                    "type": "string",
+                    "example": "Соколова Мария Игоревна"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "usr_underwriter_sokolova"
+                }
+            }
+        },
+        "decision.YearFigures": {
+            "type": "object",
+            "properties": {
+                "equity": {
+                    "type": "integer"
+                },
+                "net_profit": {
+                    "type": "integer"
+                },
+                "revenue": {
+                    "type": "integer"
+                },
+                "total_assets": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "integer"
                 }
             }
         },
@@ -1922,6 +3387,20 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/domain.UnpaidDocument"
                     }
+                }
+            }
+        },
+        "domain.ClientReason": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         },

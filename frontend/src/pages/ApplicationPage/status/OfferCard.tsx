@@ -12,7 +12,8 @@ type Props = {
     /** Предложение «как запросили» — с ним сравниваем альтернативы для бейджа. */
     base?: Offer;
     guarantorNames: string[];
-    onChoose: () => void;
+    /** Нет — карточка только для просмотра (заявки data-collector: выбора и подписания пока нет). */
+    onChoose?: () => void;
     loading?: boolean;
     disabled?: boolean;
 };
@@ -98,18 +99,20 @@ export function OfferCard({ offer, base, guarantorNames, onChoose, loading, disa
                     )}
                 </ul>
             )}
-            <Button
-                view={offer.recommended ? 'primary' : 'secondary'}
-                size={56}
-                block={true}
-                className='offer-card__choose'
-                onClick={onChoose}
-                loading={loading}
-                disabled={disabled}
-                aria-describedby={titleId}
-            >
-                Выбрать
-            </Button>
+            {onChoose && (
+                <Button
+                    view={offer.recommended ? 'primary' : 'secondary'}
+                    size={56}
+                    block={true}
+                    className='offer-card__choose'
+                    onClick={onChoose}
+                    loading={loading}
+                    disabled={disabled}
+                    aria-describedby={titleId}
+                >
+                    Выбрать
+                </Button>
+            )}
         </article>
     );
 }

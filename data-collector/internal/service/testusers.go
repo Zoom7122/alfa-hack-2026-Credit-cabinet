@@ -34,6 +34,10 @@ var TestUsers = []domain.TestUserSeed{
 		Persona: "Андеррайтер: очередь ручного рассмотрения, досье и решение по заявке",
 	},
 	{
+		ID: "usr_underwriter_orlov", FullName: "Орлов Дмитрий Андреевич", Role: domain.UserUnderwriter,
+		Persona: "Второй андеррайтер: заявку, которую он взял, Соколова решить не может",
+	},
+	{
 		ID: "usr_director_north", FullName: "Ковалёв Игорь Сергеевич", Role: domain.UserClient,
 		Persona:   "Сценарий A: директор ООО «Северный ветер», опт продуктов — живой сбор данных, ожидается одобрение",
 		Companies: []domain.TestCompanySeed{{ID: "apl_north_wind", INN: "7799000012", Name: "ООО «Северный ветер»", Role: domain.RoleDirector}},
