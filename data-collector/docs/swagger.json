@@ -1,8 +1,8 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "Сбор данных о заёмщике для скоринга: заявитель и компания, анкета с документами и сырые ответы\nвсех внешних систем (эмулятор mock-api). Сначала регистрация (POST /applicants → черновик заявки),\nзатем анкета с файлами (POST /applications/{id}/questionnaire). Сбор асинхронный: анкета ставит\nзадачу в очередь (outbox → Kafka), системы опрашивает worker.\nВход — мок-логином, как в api/openapi.yaml: GET /auth/test-users → POST /auth/mock-login → токен\n`mock.\u003cuser_id\u003e` в `Authorization: Bearer …`. С токеном регистрация идёт от имени пользователя; без него — анонимно.\nОшибки — RFC 9457 (`application/problem+json`).",
-        "title": "data-collector API",
+        "description": "Действующий backend кредитного кабинета: вход, компании, каталог, черновики и анкеты,\nсбор данных через outbox/Kafka, документы и подписи TEST, результаты скоринга, вопросы банка,\nпредложения, демо-подписание кодом и рабочее место андеррайтера. Внешние системы — локальный mock-api.\nGET /auth/test-users → POST /auth/mock-login → Authorization: Bearer mock.\u003cuser_id\u003e.\nРегистрация допускает анонимный режим; черновики и изменения заявки проверяют её автора.\nСлужебные /borrowers/{id}/statements, /credit-events и /check-mock доступны напрямую на 8081,\nно не через nginx кабинета. WebSocket, PATCH заявки и КЭП договора backend не реализует.\nБольшинство ошибок — RFC 9457 (application/problem+json); ошибки multipart загрузки документов\nмогут содержать только code. Версия черновика передаётся в JSON, не в If-Match.\nOpenAPI 3: api/openapi.yaml; справочник и ограничения: docs/api.md.",
+        "title": "Credit Cabinet Backend / data-collector API",
         "contact": {},
         "version": "0.2"
     },
@@ -262,6 +262,310 @@
                 }
             }
         },
+        "/applications/{id}/documents": {
+            "get": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "description": "Автор, представитель компании или андеррайтер; для анонимной заявки допускается запрос без токена.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "documents"
+                ],
+                "summary": "Документы заявки с состояниями обработки",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "description": "Один file, обязательный type. Изменяет вложения только автор заявки в DRAFT или WAITING_FOR_INFO. Для отдельной SIGNATURE нужен signed_document_id; signatures тогда не передаются. Каждый файл до 20 МиБ. Ошибки разбора multipart возвращают JSON только с code; ошибки репозитория — Problem.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "documents"
+                ],
+                "summary": "Загрузить документ и до двух откреплённых подписей",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Оригинал или отдельная подпись",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Тип документа из DocumentType",
+                        "name": "type",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "file"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "До двух подписей к file",
+                        "name": "signatures",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Оригинал для отдельной SIGNATURE",
+                        "name": "signed_document_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Вопрос банка, к которому относится вложение",
+                        "name": "info_request_id",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/financial.Document"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/documents/{documentId}": {
+            "get": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "documents"
+                ],
+                "summary": "Карточка документа",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "id документа",
+                        "name": "documentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/financial.Document"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "description": "Только автор: в DRAFT либо в WAITING_FOR_INFO для документа открытого вопроса банка. Вместе с оригиналом удаляются его подписи.",
+                "tags": [
+                    "documents"
+                ],
+                "summary": "Удалить документ и связанные подписи",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "id документа",
+                        "name": "documentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Удалено, без тела"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/applications/{id}/documents/{documentId}/content": {
             "get": {
                 "security": [
@@ -314,6 +618,77 @@
                 }
             }
         },
+        "/applications/{id}/documents/{documentId}/financial-result": {
+            "get": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "description": "202 state=PENDING означает, что сохранённого результата ещё нет. 200 содержит поколения, извлечённые показатели, диагностику и результат проверки подписи.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "documents"
+                ],
+                "summary": "Результат разбора и проверки финансового документа",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "id документа",
+                        "name": "documentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/financial.Result"
+                        }
+                    },
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/financial.processingPendingResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/applications/{id}/documents/{documentId}/signature-report": {
             "get": {
                 "security": [
@@ -321,7 +696,7 @@
                         "bearer": []
                     }
                 ],
-                "description": "Последний отчёт worker'а подписи по документу или его открепленной подписи (signature_reports.report):\nитог (decision, verdict), этапы проверки с причинами, подписант, сертификат, время подписи, политика.",
+                "description": "Последний отчёт worker'а подписи по документу или его открепленной подписи (signature_reports.report):\nитог (decision, verdict), этапы проверки с причинами, подписант, сертификат, время подписи, политика.\nУ финансового обработчика сохраняется financial.SignatureReport с массивом signatures и raw-отчётом; OpenAPI 3 описывает оба варианта.",
                 "produces": [
                     "application/json"
                 ],
@@ -347,9 +722,9 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "отчёт (signature.Report)",
+                        "description": "OK",
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/httptransport.signatureReportResponse"
                         }
                     },
                     "404": {
@@ -362,6 +737,83 @@
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/documents/{documentId}/signature-verification": {
+            "post": {
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "description": "Создаёт новое поколение обработки, сохраняет исходные байты. Доступ и допустимый статус проверяются как при изменении вложений.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "documents"
+                ],
+                "summary": "Поставить повторную обработку документа и проверки подписи",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "id документа",
+                        "name": "documentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/financial.Document"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/financial.documentErrorResponse"
                         }
                     }
                 }
@@ -394,7 +846,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApplicationDraft"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/ApplicationDraft"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/httptransport.draftFields"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -459,7 +923,19 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SaveApplicationDraft"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/SaveApplicationDraft"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/httptransport.draftFields"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 ],
@@ -467,7 +943,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApplicationDraft"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/ApplicationDraft"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/httptransport.draftFields"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -757,7 +1245,7 @@
                         "bearer": []
                     }
                 ],
-                "description": "Анкета переводит заявку DRAFT → SUBMITTED и ставит задачу на сбор. Worker опрашивает моки\n(заявка ENRICHING, задача RUNNING) и сохраняет ответы (VERIFYING, задача COMPLETED). Следить —\nGET /applications/{id} или GET /collections/{id} из заголовка Location. Анкета по заявке\nотправляется один раз (повтор — 409); для нового сбора зарегистрируйте заявителя ещё раз — будет новый черновик.\n\n**Из Swagger UI:** Try it out → id заявки из ответа POST /applicants → в questionnaire уже подставлена\nанкета сценария A (заявка на ИНН 7799000012; анкеты других сценариев — ниже) → Execute.\nФайлы — в files через Add item: по одному полю на файл.\n\n**Анкета** (часть questionnaire, JSON; ИНН компании берётся из заявки): обязательны age, marital_status,\nchildren_count; product_code, requested, purpose пишутся в заявку. Без остальных данных система\nне опрашивается и попадает в skipped_sources: consents.bki_company и bki_person — БКИ, consents.tax —\nналоговая отчётность, director — Госуслуги и проверки руководителя, other_bank_biks — мультибанкинг,\nmarketplace_tokens — маркетплейсы, ofd_token — ОФД, collateral.cadastral_numbers — ЕГРН.\n\n**Файлы** (части files): до 10, считая подписи, каждый до 20 МБ: pdf, docx, xlsx, jpg, png, xml,\nподписи sig и p7s. Файл приходит целым или парой «документ + открепленная подпись»: balance.pdf +\nbalance.pdf.sig (или balance.sig); подпись без пары — присоединённая (документ внутри). Тип файла —\nв documents анкеты: `[{\"file_name\": \"balance.pdf\", \"type\": \"FINANCIAL_STATEMENTS\"}]`, без него — OTHER.\nБез файлов анкету можно прислать и как application/json. Одной транзакцией пишутся документы, анкета,\nзадача на сбор и события в outbox (о задаче и о документах — для будущих worker'ов подписи и OCR).\n\n**Примеры анкет** — сценарии mock-api A–E (`examples/scenario-X.json`). Заявку регистрируйте примером того же сценария из POST /applicants: данные в моках привязаны к компании.\n\n**A** — ООО «Северный ветер», ИНН 7799000012, опт продуктов — ожидается OFFERED. В documents указан тип файла: приложите в files `balance.pdf` и подпись `balance.pdf.sig` из `examples/files` или уберите documents.\n\n```json\n{\n  \"age\": 42,\n  \"marital_status\": \"MARRIED\",\n  \"children_count\": 2,\n  \"product_code\": \"WORKING_CAPITAL\",\n  \"requested\": {\n    \"amount\": 5000000,\n    \"term_months\": 24\n  },\n  \"purpose\": {\n    \"code\": \"WORKING_CAPITAL\",\n    \"description\": \"Закупка товара под сезон\"\n  },\n  \"documents\": [\n    {\n      \"file_name\": \"balance.pdf\",\n      \"type\": \"FINANCIAL_STATEMENTS\"\n    }\n  ],\n  \"director\": {\n    \"inn\": \"779900010139\",\n    \"last_name\": \"Ковалёв\",\n    \"first_name\": \"Игорь\",\n    \"middle_name\": \"Сергеевич\",\n    \"birth_date\": \"1984-07-19\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000781\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000782\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000781\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  },\n  \"other_bank_biks\": [\n    \"044525225\"\n  ],\n  \"ofd_token\": \"demo-ofd-token\",\n  \"poa_number\": \"0f5a2c1e-7b3d-4e8a-9c21-6d4b8e0a1f37\",\n  \"representative_inn\": \"779900010333\"\n}\n```\n\n**B** — ООО «Стройресурс», ИНН 7799000020, стройка — OFFERED, но меньше сумма или дольше срок.\n\n```json\n{\n  \"age\": 47,\n  \"marital_status\": \"MARRIED\",\n  \"children_count\": 3,\n  \"director\": {\n    \"inn\": \"779900020136\",\n    \"last_name\": \"Орлов\",\n    \"first_name\": \"Денис\",\n    \"middle_name\": \"Павлович\",\n    \"birth_date\": \"1979-02-11\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000801\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000802\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000801\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  },\n  \"other_bank_biks\": [\n    \"044525777\",\n    \"044525650\"\n  ],\n  \"collateral\": {\n    \"cadastral_numbers\": [\n      \"50:21:0110203:845\",\n      \"50:21:0110203:412\"\n    ],\n    \"vins\": [\n      \"XTC652005N1498213\"\n    ],\n    \"serials\": [\n      \"JCB3CX2023118457\"\n    ]\n  }\n}\n```\n\n**C** — ООО «Альтаир», ИНН 7799000037, опт — REJECTED.\n\n```json\n{\n  \"age\": 37,\n  \"marital_status\": \"DIVORCED\",\n  \"children_count\": 1,\n  \"director\": {\n    \"inn\": \"779900030147\",\n    \"last_name\": \"Белов\",\n    \"first_name\": \"Артём\",\n    \"middle_name\": \"Николаевич\",\n    \"birth_date\": \"1988-11-03\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000821\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000822\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000821\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  }\n}\n```\n\n**D** — ИП Смирнова А. В., ИНН 779900010202, интернет-торговля — WAITING_FOR_INFO.\n\n```json\n{\n  \"age\": 33,\n  \"marital_status\": \"SINGLE\",\n  \"children_count\": 0,\n  \"director\": {\n    \"inn\": \"779900010202\",\n    \"last_name\": \"Смирнова\",\n    \"first_name\": \"Анна\",\n    \"middle_name\": \"Викторовна\",\n    \"birth_date\": \"1993-05-27\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000841\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000842\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000841\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  },\n  \"marketplace_tokens\": {\n    \"wildberries\": \"demo-wb-token\",\n    \"ozon\": \"demo-ozon-token\"\n  }\n}\n```\n\n**E** — ООО «Техно-Сервис», ИНН 7799000044, ремонт оборудования — MANUAL_REVIEW.\n\n```json\n{\n  \"age\": 45,\n  \"marital_status\": \"MARRIED\",\n  \"children_count\": 2,\n  \"director\": {\n    \"inn\": \"779900040158\",\n    \"last_name\": \"Зайцева\",\n    \"first_name\": \"Ольга\",\n    \"middle_name\": \"Михайловна\",\n    \"birth_date\": \"1981-09-14\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000861\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000862\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000861\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  }\n}\n```\n",
+                "description": "Анкета переводит заявку DRAFT → SUBMITTED и ставит задачу на сбор. Worker опрашивает моки\n(заявка ENRICHING, задача RUNNING) и сохраняет ответы (VERIFYING, задача COMPLETED). Следить —\nGET /applications/{id} или GET /collections/{id} из заголовка Location. Анкета по заявке\nотправляется один раз (повтор — 409); для нового сбора зарегистрируйте заявителя ещё раз — будет новый черновик.\n\n**Из Swagger UI:** Try it out → id заявки из ответа POST /applicants → в questionnaire уже подставлена\nанкета сценария A (заявка на ИНН 7799000012; анкеты других сценариев — ниже) → Execute.\nФайлы — в files через Add item: по одному полю на файл.\n\n**Анкета** (часть questionnaire, JSON; ИНН компании берётся из заявки): обязательны age, marital_status,\nchildren_count; product_code, requested, purpose пишутся в заявку. Без остальных данных система\nне опрашивается и попадает в skipped_sources: consents.bki_company и bki_person — БКИ, consents.tax —\nналоговая отчётность, director — Госуслуги и проверки руководителя, other_bank_biks — мультибанкинг,\nmarketplace_tokens — маркетплейсы, ofd_token — ОФД, collateral.cadastral_numbers — ЕГРН.\n\n**Файлы** (части files): до 10, считая подписи, каждый до 20 МБ: pdf, docx, xlsx, jpg, png, xml,\nподписи sig и p7s. Файл приходит целым или парой «документ + открепленная подпись»: balance.pdf +\nbalance.pdf.sig (или balance.sig); подпись без пары — присоединённая (документ внутри). Тип файла —\nв documents анкеты: `[{\"file_name\": \"balance.pdf\", \"type\": \"FINANCIAL_STATEMENTS\"}]`, без него — OTHER.\nБез файлов анкету можно прислать и как application/json. Одной транзакцией пишутся документы, анкета,\nзадача на сбор и события в outbox. Подписи проверяет signature-worker, финансовые документы — worker сбора;\nразбор выполняется по текстовому слою и таблицам, OCR сканов не поддерживается.\n\n**Примеры анкет** — сценарии mock-api A–E (`examples/scenario-X.json`). Заявку регистрируйте примером того же сценария из POST /applicants: данные в моках привязаны к компании.\n\n**A** — ООО «Северный ветер», ИНН 7799000012, опт продуктов — ожидается OFFERED. В documents указан тип файла: приложите в files `balance.pdf` и подпись `balance.pdf.sig` из `examples/files` или уберите documents.\n\n```json\n{\n  \"age\": 42,\n  \"marital_status\": \"MARRIED\",\n  \"children_count\": 2,\n  \"product_code\": \"WORKING_CAPITAL\",\n  \"requested\": {\n    \"amount\": 5000000,\n    \"term_months\": 24\n  },\n  \"purpose\": {\n    \"code\": \"WORKING_CAPITAL\",\n    \"description\": \"Закупка товара под сезон\"\n  },\n  \"documents\": [\n    {\n      \"file_name\": \"balance.pdf\",\n      \"type\": \"FINANCIAL_STATEMENTS\"\n    }\n  ],\n  \"director\": {\n    \"inn\": \"779900010139\",\n    \"last_name\": \"Ковалёв\",\n    \"first_name\": \"Игорь\",\n    \"middle_name\": \"Сергеевич\",\n    \"birth_date\": \"1984-07-19\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000781\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000782\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000781\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  },\n  \"other_bank_biks\": [\n    \"044525225\"\n  ],\n  \"ofd_token\": \"demo-ofd-token\",\n  \"poa_number\": \"0f5a2c1e-7b3d-4e8a-9c21-6d4b8e0a1f37\",\n  \"representative_inn\": \"779900010333\"\n}\n```\n\n**B** — ООО «Стройресурс», ИНН 7799000020, стройка — OFFERED, но меньше сумма или дольше срок.\n\n```json\n{\n  \"age\": 47,\n  \"marital_status\": \"MARRIED\",\n  \"children_count\": 3,\n  \"director\": {\n    \"inn\": \"779900020136\",\n    \"last_name\": \"Орлов\",\n    \"first_name\": \"Денис\",\n    \"middle_name\": \"Павлович\",\n    \"birth_date\": \"1979-02-11\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000801\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000802\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000801\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  },\n  \"other_bank_biks\": [\n    \"044525777\",\n    \"044525650\"\n  ],\n  \"collateral\": {\n    \"cadastral_numbers\": [\n      \"50:21:0110203:845\",\n      \"50:21:0110203:412\"\n    ],\n    \"vins\": [\n      \"XTC652005N1498213\"\n    ],\n    \"serials\": [\n      \"JCB3CX2023118457\"\n    ]\n  }\n}\n```\n\n**C** — ООО «Альтаир», ИНН 7799000037, опт — REJECTED.\n\n```json\n{\n  \"age\": 37,\n  \"marital_status\": \"DIVORCED\",\n  \"children_count\": 1,\n  \"director\": {\n    \"inn\": \"779900030147\",\n    \"last_name\": \"Белов\",\n    \"first_name\": \"Артём\",\n    \"middle_name\": \"Николаевич\",\n    \"birth_date\": \"1988-11-03\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000821\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000822\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000821\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  }\n}\n```\n\n**D** — ИП Смирнова А. В., ИНН 779900010202, интернет-торговля — WAITING_FOR_INFO.\n\n```json\n{\n  \"age\": 33,\n  \"marital_status\": \"SINGLE\",\n  \"children_count\": 0,\n  \"director\": {\n    \"inn\": \"779900010202\",\n    \"last_name\": \"Смирнова\",\n    \"first_name\": \"Анна\",\n    \"middle_name\": \"Викторовна\",\n    \"birth_date\": \"1993-05-27\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000841\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000842\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000841\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  },\n  \"marketplace_tokens\": {\n    \"wildberries\": \"demo-wb-token\",\n    \"ozon\": \"demo-ozon-token\"\n  }\n}\n```\n\n**E** — ООО «Техно-Сервис», ИНН 7799000044, ремонт оборудования — MANUAL_REVIEW.\n\n```json\n{\n  \"age\": 45,\n  \"marital_status\": \"MARRIED\",\n  \"children_count\": 2,\n  \"director\": {\n    \"inn\": \"779900040158\",\n    \"last_name\": \"Зайцева\",\n    \"first_name\": \"Ольга\",\n    \"middle_name\": \"Михайловна\",\n    \"birth_date\": \"1981-09-14\"\n  },\n  \"consents\": {\n    \"bki_company\": {\n      \"id\": \"CNS-2026-000861\",\n      \"signed_at\": \"2026-10-21T14:02:11Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"bki_person\": {\n      \"id\": \"CNS-2026-000862\",\n      \"signed_at\": \"2026-10-21T14:02:40Z\",\n      \"valid_until\": \"2027-04-21\"\n    },\n    \"tax\": {\n      \"id\": \"TAX-CNS-2026-000861\",\n      \"signed_at\": \"2026-10-21T14:03:02Z\",\n      \"valid_until\": \"2027-04-21\",\n      \"scope\": [\n        \"DECLARATIONS\",\n        \"ENS_BALANCE\"\n      ]\n    }\n  }\n}\n```\n",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -810,6 +1298,18 @@
                     },
                     "400": {
                         "description": "битый JSON или multipart, нет обязательного поля (age, marital_status, children_count) или неверный тип",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "нужен токен автора заявки",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "нужен токен автора заявки",
                         "schema": {
                             "$ref": "#/definitions/Problem"
                         }
@@ -1429,19 +1929,24 @@
                         "type": "string",
                         "description": "годы через запятую",
                         "name": "years",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "StatementsResponse credit-engine",
+                        "description": "OK",
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/decision.Statements"
                         }
                     },
                     "404": {
                         "description": "по компании не было сбора",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/Problem"
                         }
@@ -1626,24 +2131,30 @@
                 "summary": "Событие credit-engine (МС3): выдача, ручное рассмотрение, проблема банка",
                 "parameters": [
                     {
-                        "description": "AdminEvent credit-engine",
+                        "description": "Событие с обязательным event_id",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/decision.CreditEvent"
                         }
                     }
                 ],
                 "responses": {
                     "202": {
-                        "description": "EventAck",
+                        "description": "Accepted",
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/httptransport.creditEventAck"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/Problem"
                         }
@@ -2721,6 +3232,41 @@
                 }
             }
         },
+        "Collateral": {
+            "type": "object",
+            "properties": {
+                "cadastral_numbers": {
+                    "description": "недвижимость → ЕГРН",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "50:21:0110203:845"
+                    ]
+                },
+                "serials": {
+                    "description": "техника → реестр залогов",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "JCB3CX2023118457"
+                    ]
+                },
+                "vins": {
+                    "description": "транспорт → реестр залогов",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "XTC652005N1498213"
+                    ]
+                }
+            }
+        },
         "CollectionSource": {
             "type": "object",
             "properties": {
@@ -2927,6 +3473,63 @@
                 }
             }
         },
+        "Consent": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "CNS-2026-000781"
+                },
+                "scope": {
+                    "description": "только у consents.tax",
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "DECLARATIONS",
+                            "ENS_BALANCE"
+                        ]
+                    }
+                },
+                "signed_at": {
+                    "type": "string",
+                    "example": "2026-10-21T14:02:11Z"
+                },
+                "valid_until": {
+                    "type": "string",
+                    "example": "2027-04-21"
+                }
+            }
+        },
+        "Consents": {
+            "type": "object",
+            "properties": {
+                "bki_company": {
+                    "description": "компании на запрос в БКИ",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/Consent"
+                        }
+                    ]
+                },
+                "bki_person": {
+                    "description": "руководителя на запрос в БКИ",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/Consent"
+                        }
+                    ]
+                },
+                "tax": {
+                    "description": "на налоговую отчётность",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/Consent"
+                        }
+                    ]
+                }
+            }
+        },
         "CounterpartyLookupRequest": {
             "type": "object",
             "required": [
@@ -3066,6 +3669,34 @@
                 },
                 "uploaded_at": {
                     "type": "string"
+                }
+            }
+        },
+        "DocumentSpec": {
+            "type": "object",
+            "properties": {
+                "file_name": {
+                    "type": "string",
+                    "example": "balance.pdf"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "FINANCIAL_STATEMENTS",
+                        "TAX_RETURN",
+                        "BANK_STATEMENT",
+                        "MANAGEMENT_REPORT",
+                        "CHARTER",
+                        "POWER_OF_ATTORNEY",
+                        "DIRECTOR_PASSPORT",
+                        "COLLATERAL_TITLE",
+                        "EGRN_EXTRACT",
+                        "LEASE_AGREEMENT",
+                        "CONTRACT_WITH_CUSTOMER",
+                        "LOAN_AGREEMENT_DRAFT",
+                        "OTHER"
+                    ],
+                    "example": "FINANCIAL_STATEMENTS"
                 }
             }
         },
@@ -3418,6 +4049,31 @@
                 }
             }
         },
+        "Person": {
+            "type": "object",
+            "properties": {
+                "birth_date": {
+                    "type": "string",
+                    "example": "1984-07-19"
+                },
+                "first_name": {
+                    "type": "string",
+                    "example": "Игорь"
+                },
+                "inn": {
+                    "type": "string",
+                    "example": "779900010139"
+                },
+                "last_name": {
+                    "type": "string",
+                    "example": "Ковалёв"
+                },
+                "middle_name": {
+                    "type": "string",
+                    "example": "Сергеевич"
+                }
+            }
+        },
         "Problem": {
             "type": "object",
             "properties": {
@@ -3578,6 +4234,109 @@
                 }
             }
         },
+        "QuestionnaireRequest": {
+            "type": "object",
+            "required": [
+                "age",
+                "children_count",
+                "marital_status"
+            ],
+            "properties": {
+                "age": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 18,
+                    "example": 42
+                },
+                "children_count": {
+                    "type": "integer",
+                    "maximum": 20,
+                    "minimum": 0,
+                    "example": 2
+                },
+                "collateral": {
+                    "$ref": "#/definitions/Collateral"
+                },
+                "consents": {
+                    "$ref": "#/definitions/Consents"
+                },
+                "director": {
+                    "description": "Руководитель; у ИП — сам предприниматель. Без него не запрашиваются данные физлица:\nБКИ, ФССП, Федресурс, Госуслуги, дисквалификация, санкции.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/Person"
+                        }
+                    ]
+                },
+                "documents": {
+                    "description": "Тип документа по имени файла из files. Не указан — OTHER (позже тип определит распознавание).",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/DocumentSpec"
+                    }
+                },
+                "marital_status": {
+                    "type": "string",
+                    "enum": [
+                        "SINGLE",
+                        "MARRIED",
+                        "DIVORCED",
+                        "DIVORCED_MULTIPLE"
+                    ],
+                    "example": "MARRIED"
+                },
+                "marketplace_tokens": {
+                    "description": "Токены продавца: {\"wildberries\": \"…\", \"ozon\": \"…\"}. Мок принимает любой непустой токен (кроме начинающегося с invalid).",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "ofd_token": {
+                    "description": "Токен оператора фискальных данных (онлайн-кассы).",
+                    "type": "string",
+                    "example": "demo-ofd-token"
+                },
+                "other_bank_biks": {
+                    "description": "БИК банков, где у клиента ещё есть счета: мультибанкинг и блокировки ФНС.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "044525225"
+                    ]
+                },
+                "poa_number": {
+                    "description": "Номер МЧД, если заявку подаёт представитель, и его ИНН.",
+                    "type": "string",
+                    "example": "0f5a2c1e-7b3d-4e8a-9c21-6d4b8e0a1f37"
+                },
+                "product_code": {
+                    "description": "Продукт, сумма и срок, цель кредита — пишутся в заявку.",
+                    "type": "string",
+                    "example": "WORKING_CAPITAL"
+                },
+                "purpose": {
+                    "$ref": "#/definitions/Purpose"
+                },
+                "representative_inn": {
+                    "type": "string",
+                    "example": "779900010333"
+                },
+                "requested": {
+                    "$ref": "#/definitions/RequestedTerms"
+                },
+                "scoring": {
+                    "description": "Ответы для оценки credit-engine, которых нет в собранных данных. Чего нет — банк спросит позже.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ScoringAnswers"
+                        }
+                    ]
+                }
+            }
+        },
         "QuestionnaireSubmitted": {
             "type": "object",
             "properties": {
@@ -3711,6 +4470,124 @@
                 "version": {
                     "type": "integer",
                     "minimum": 1
+                }
+            }
+        },
+        "ScoringAnswers": {
+            "type": "object",
+            "properties": {
+                "business_location": {
+                    "type": "string",
+                    "enum": [
+                        "VERIFIED_PHYSICAL",
+                        "VERIFIED_ONLINE_OR_MOBILE",
+                        "UNVERIFIED"
+                    ]
+                },
+                "buyer_contracts": {
+                    "type": "string",
+                    "enum": [
+                        "ACTIVE_AND_PERFORMED",
+                        "REPEAT_ORDERS",
+                        "PLANS_ONLY"
+                    ]
+                },
+                "car_class": {
+                    "type": "string",
+                    "enum": [
+                        "NONE",
+                        "ECONOMY",
+                        "COMFORT",
+                        "PREMIUM"
+                    ]
+                },
+                "education_level": {
+                    "type": "string",
+                    "enum": [
+                        "BELOW_GENERAL",
+                        "GENERAL",
+                        "VOCATIONAL",
+                        "HIGHER",
+                        "ACADEMIC_DEGREE"
+                    ]
+                },
+                "experience_years": {
+                    "type": "integer",
+                    "example": 9
+                },
+                "free_cash": {
+                    "type": "integer",
+                    "example": 400000
+                },
+                "location_stability_months": {
+                    "type": "integer"
+                },
+                "max_acceptable_term_months": {
+                    "type": "integer",
+                    "example": 36
+                },
+                "max_annual_rate": {
+                    "type": "number",
+                    "example": 24
+                },
+                "min_acceptable_amount": {
+                    "type": "integer",
+                    "example": 3000000
+                },
+                "minimum_cash": {
+                    "type": "integer",
+                    "example": 100000
+                },
+                "need_cost": {
+                    "type": "integer",
+                    "example": 6000000
+                },
+                "need_evidence": {
+                    "type": "string",
+                    "enum": [
+                        "CONTRACT_AND_COST",
+                        "VERIFIED_ESTIMATE",
+                        "ORAL_ONLY"
+                    ]
+                },
+                "net_monthly_income": {
+                    "type": "integer"
+                },
+                "own_contribution": {
+                    "type": "integer",
+                    "example": 1000000
+                },
+                "primary_income_source": {
+                    "type": "string",
+                    "enum": [
+                        "BUSINESS",
+                        "PUBLIC_EMPLOYMENT",
+                        "PRIVATE_EMPLOYMENT",
+                        "PENSION",
+                        "SELF_EMPLOYED_OR_GPH",
+                        "NONE"
+                    ]
+                },
+                "qualification": {
+                    "type": "string",
+                    "enum": [
+                        "NONE",
+                        "SUPPORT",
+                        "SPECIALIST",
+                        "MANAGER_OR_HIGHLY_QUALIFIED"
+                    ]
+                },
+                "real_estate_status": {
+                    "type": "string",
+                    "enum": [
+                        "UNENCUMBERED_WHOLE",
+                        "UNENCUMBERED_SHARE",
+                        "ENCUMBERED_ONLY",
+                        "NONE"
+                    ]
+                },
+                "total_experience_months": {
+                    "type": "integer"
                 }
             }
         },
@@ -3936,6 +4813,301 @@
                 "id": {
                     "type": "string",
                     "example": "usr_underwriter_sokolova"
+                }
+            }
+        },
+        "decision.AnnualReport": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "$ref": "#/definitions/decision.Balance"
+                },
+                "period_end": {
+                    "type": "string"
+                },
+                "profit_and_loss": {
+                    "$ref": "#/definitions/decision.ProfitAndLoss"
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "decision.Balance": {
+            "type": "object",
+            "properties": {
+                "additional_capital": {
+                    "description": "1350 — Добавочный капитал",
+                    "type": "integer"
+                },
+                "cash_and_equivalents": {
+                    "description": "1250 — Деньги и денежные эквиваленты",
+                    "type": "integer"
+                },
+                "charter_capital": {
+                    "description": "1310 — Уставный капитал",
+                    "type": "integer"
+                },
+                "current_assets": {
+                    "description": "1200 — Итого оборотные активы",
+                    "type": "integer"
+                },
+                "current_liabilities": {
+                    "description": "1500 — Итого краткосрочные обязательства",
+                    "type": "integer"
+                },
+                "deferred_income": {
+                    "description": "1530 — Доходы будущих периодов",
+                    "type": "integer"
+                },
+                "deferred_tax_assets": {
+                    "description": "1180 — Отложенные налоговые активы",
+                    "type": "integer"
+                },
+                "deferred_tax_liabilities": {
+                    "description": "1420 — Отложенные налоговые обязательства",
+                    "type": "integer"
+                },
+                "equity": {
+                    "description": "1300 — Итого капитал и резервы",
+                    "type": "integer"
+                },
+                "fixed_assets": {
+                    "description": "1150 — Основные средства",
+                    "type": "integer"
+                },
+                "income_bearing_tangible_investments": {
+                    "description": "1160 — Доходные вложения в материальные ценности",
+                    "type": "integer"
+                },
+                "intangible_assets": {
+                    "description": "1110 — Нематериальные активы",
+                    "type": "integer"
+                },
+                "intangible_exploration_assets": {
+                    "description": "1130 — Нематериальные поисковые активы",
+                    "type": "integer"
+                },
+                "inventories": {
+                    "description": "1210 — Запасы",
+                    "type": "integer"
+                },
+                "long_term_borrowings": {
+                    "description": "1410 — Долгосрочные заёмные средства",
+                    "type": "integer"
+                },
+                "long_term_financial_investments": {
+                    "description": "1170 — Долгосрочные финансовые вложения",
+                    "type": "integer"
+                },
+                "long_term_liabilities": {
+                    "description": "1400 — Итого долгосрочные обязательства",
+                    "type": "integer"
+                },
+                "long_term_provisions": {
+                    "description": "1430 — Долгосрочные оценочные обязательства",
+                    "type": "integer"
+                },
+                "non_current_assets": {
+                    "description": "1100 — Итого внеоборотные активы",
+                    "type": "integer"
+                },
+                "other_current_assets": {
+                    "description": "1260 — Прочие оборотные активы",
+                    "type": "integer"
+                },
+                "other_long_term_liabilities": {
+                    "description": "1450 — Прочие долгосрочные обязательства",
+                    "type": "integer"
+                },
+                "other_non_current_assets": {
+                    "description": "1190 — Прочие внеоборотные активы",
+                    "type": "integer"
+                },
+                "other_short_term_liabilities": {
+                    "description": "1550 — Прочие краткосрочные обязательства",
+                    "type": "integer"
+                },
+                "payables": {
+                    "description": "1520 — Кредиторская задолженность",
+                    "type": "integer"
+                },
+                "receivables": {
+                    "description": "1230 — Дебиторская задолженность",
+                    "type": "integer"
+                },
+                "research_and_development": {
+                    "description": "1120 — Результаты исследований и разработок",
+                    "type": "integer"
+                },
+                "reserve_capital": {
+                    "description": "1360 — Резервный капитал",
+                    "type": "integer"
+                },
+                "retained_earnings": {
+                    "description": "1370 — Нераспределённая прибыль / непокрытый убыток",
+                    "type": "integer"
+                },
+                "revaluation_reserve": {
+                    "description": "1340 — Переоценка внеоборотных активов",
+                    "type": "integer"
+                },
+                "short_term_borrowings": {
+                    "description": "1510 — Краткосрочные заёмные средства",
+                    "type": "integer"
+                },
+                "short_term_financial_investments": {
+                    "description": "1240 — Краткосрочные финансовые вложения",
+                    "type": "integer"
+                },
+                "short_term_provisions": {
+                    "description": "1540 — Краткосрочные оценочные обязательства",
+                    "type": "integer"
+                },
+                "tangible_exploration_assets": {
+                    "description": "1140 — Материальные поисковые активы",
+                    "type": "integer"
+                },
+                "total_assets": {
+                    "description": "1600 — Баланс: актив",
+                    "type": "integer"
+                },
+                "total_equity_and_liabilities": {
+                    "description": "1700 — Баланс: пассив",
+                    "type": "integer"
+                },
+                "treasury_shares": {
+                    "description": "1320 — Собственные выкупленные акции: вычитаемая величина",
+                    "type": "integer"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "vat_on_acquired_assets": {
+                    "description": "1220 — НДС по приобретённым ценностям",
+                    "type": "integer"
+                }
+            }
+        },
+        "decision.CreditEvent": {
+            "type": "object",
+            "properties": {
+                "application_id": {
+                    "type": "string"
+                },
+                "event_id": {
+                    "type": "string"
+                },
+                "kind": {
+                    "description": "LOAN_ISSUED, BORROWER_REVIEW, BANK_REVIEW",
+                    "type": "string"
+                },
+                "loan_id": {
+                    "type": "string"
+                },
+                "occurred_at": {
+                    "type": "string"
+                },
+                "reasons": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/decision.Reason"
+                    }
+                }
+            }
+        },
+        "decision.ProfitAndLoss": {
+            "type": "object",
+            "properties": {
+                "administrative_expenses": {
+                    "description": "2220 — Управленческие расходы",
+                    "type": "integer"
+                },
+                "cost_of_sales": {
+                    "description": "2120 — Себестоимость продаж",
+                    "type": "integer"
+                },
+                "gross_profit": {
+                    "description": "2100 — Валовая прибыль / убыток",
+                    "type": "integer"
+                },
+                "income_tax": {
+                    "description": "2410 — Налог на прибыль: расход положительный, доход отрицательный",
+                    "type": "integer"
+                },
+                "interest_payable": {
+                    "description": "2330 — Проценты к уплате",
+                    "type": "integer"
+                },
+                "interest_receivable": {
+                    "description": "2320 — Проценты к получению",
+                    "type": "integer"
+                },
+                "net_profit": {
+                    "description": "2400 — Чистая прибыль / убыток",
+                    "type": "integer"
+                },
+                "other_expenses": {
+                    "description": "2350 — Прочие расходы",
+                    "type": "integer"
+                },
+                "other_income": {
+                    "description": "2340 — Прочие доходы",
+                    "type": "integer"
+                },
+                "participation_income": {
+                    "description": "2310 — Доходы от участия в других организациях",
+                    "type": "integer"
+                },
+                "profit_before_tax": {
+                    "description": "2300 — Прибыль / убыток до налогообложения",
+                    "type": "integer"
+                },
+                "revenue": {
+                    "description": "2110 — Выручка без НДС и акцизов",
+                    "type": "integer"
+                },
+                "sales_profit": {
+                    "description": "2200 — Прибыль / убыток от продаж",
+                    "type": "integer"
+                },
+                "selling_expenses": {
+                    "description": "2210 — Коммерческие расходы",
+                    "type": "integer"
+                },
+                "unit": {
+                    "type": "string"
+                }
+            }
+        },
+        "decision.Reason": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "decision.Statements": {
+            "type": "object",
+            "properties": {
+                "annual_reports": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/decision.AnnualReport"
+                    }
+                },
+                "borrower_id": {
+                    "type": "string"
                 }
             }
         },
@@ -4309,6 +5481,60 @@
                 }
             }
         },
+        "domain.DocumentType": {
+            "type": "string",
+            "enum": [
+                "FINANCIAL_STATEMENTS",
+                "TAX_RETURN",
+                "BANK_STATEMENT",
+                "MANAGEMENT_REPORT",
+                "CHARTER",
+                "POWER_OF_ATTORNEY",
+                "DIRECTOR_PASSPORT",
+                "COLLATERAL_TITLE",
+                "EGRN_EXTRACT",
+                "LEASE_AGREEMENT",
+                "CONTRACT_WITH_CUSTOMER",
+                "LOAN_AGREEMENT_DRAFT",
+                "SIGNATURE",
+                "OTHER"
+            ],
+            "x-enum-comments": {
+                "DocSignature": "открепленная подпись к другому документу"
+            },
+            "x-enum-descriptions": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "открепленная подпись к другому документу",
+                ""
+            ],
+            "x-enum-varnames": [
+                "DocFinancialStatements",
+                "DocTaxReturn",
+                "DocBankStatement",
+                "DocManagementReport",
+                "DocCharter",
+                "DocPowerOfAttorney",
+                "DocDirectorPassport",
+                "DocCollateralTitle",
+                "DocEGRNExtract",
+                "DocLeaseAgreement",
+                "DocContractWithCustomer",
+                "DocLoanAgreementDraft",
+                "DocSignature",
+                "DocOther"
+            ]
+        },
         "domain.Merchant": {
             "type": "object",
             "properties": {
@@ -4517,6 +5743,588 @@
                 }
             }
         },
+        "domain.VerificationStatus": {
+            "type": "string",
+            "enum": [
+                "VERIFIED",
+                "INVALID",
+                "INDETERMINATE",
+                "NOT_REQUIRED"
+            ],
+            "x-enum-comments": {
+                "VerificationIndeterminate": "вывод сделать нельзя: формат не поддержан, нет данных или файла",
+                "VerificationInvalid": "этап не пройден: подпись не годится для этого документа",
+                "VerificationNotRequired": "этап не нужен по правилам банка для этого типа документа",
+                "VerificationVerified": "этап пройден"
+            },
+            "x-enum-descriptions": [
+                "этап пройден",
+                "этап не пройден: подпись не годится для этого документа",
+                "вывод сделать нельзя: формат не поддержан, нет данных или файла",
+                "этап не нужен по правилам банка для этого типа документа"
+            ],
+            "x-enum-varnames": [
+                "VerificationVerified",
+                "VerificationInvalid",
+                "VerificationIndeterminate",
+                "VerificationNotRequired"
+            ]
+        },
+        "financial.Diagnostic": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "indicators": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "period": {
+                    "type": "string"
+                },
+                "severity": {
+                    "type": "string"
+                },
+                "sources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/financial.Source"
+                    }
+                }
+            }
+        },
+        "financial.Document": {
+            "type": "object",
+            "properties": {
+                "application_id": {
+                    "type": "string"
+                },
+                "file_name": {
+                    "type": "string"
+                },
+                "generation": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "info_request_id": {
+                    "type": "string"
+                },
+                "is_test": {
+                    "type": "boolean"
+                },
+                "mime_type": {
+                    "type": "string"
+                },
+                "origin": {
+                    "type": "string"
+                },
+                "recognition": {
+                    "type": "object"
+                },
+                "sha256": {
+                    "type": "string"
+                },
+                "signatures": {
+                    "$ref": "#/definitions/financial.SignatureSummary"
+                },
+                "signed_document_id": {
+                    "type": "string"
+                },
+                "size_bytes": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "uploaded_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "financial.Indicator": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "basis": {
+                    "type": "string"
+                },
+                "data_eligible": {
+                    "type": "boolean"
+                },
+                "eligible": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "period": {
+                    "type": "string"
+                },
+                "period_kind": {
+                    "type": "string"
+                },
+                "reasons": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/financial.Source"
+                    }
+                }
+            }
+        },
+        "financial.Result": {
+            "type": "object",
+            "properties": {
+                "content_sha256": {
+                    "type": "string"
+                },
+                "data_eligible": {
+                    "type": "boolean"
+                },
+                "diagnostics": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/financial.Diagnostic"
+                    }
+                },
+                "document_id": {
+                    "type": "string"
+                },
+                "document_sha256": {
+                    "type": "string"
+                },
+                "extracted": {
+                    "type": "object"
+                },
+                "generation": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "indicators": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/financial.Indicator"
+                    }
+                },
+                "parser_version": {
+                    "type": "string"
+                },
+                "processed_at": {
+                    "type": "string"
+                },
+                "scoring_indicators": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/financial.Indicator"
+                    }
+                },
+                "signature": {
+                    "$ref": "#/definitions/financial.SignatureReport"
+                },
+                "signature_report_id": {
+                    "type": "string"
+                },
+                "validation": {
+                    "type": "object"
+                }
+            }
+        },
+        "financial.SignatureCheck": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "details": {
+                    "type": "object",
+                    "x-raw-json": true
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "financial.SignatureInfo": {
+            "type": "object",
+            "properties": {
+                "authority": {
+                    "type": "object"
+                },
+                "certificate": {
+                    "type": "object"
+                },
+                "checks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/financial.SignatureCheck"
+                    }
+                },
+                "container": {
+                    "type": "string"
+                },
+                "format": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "signer": {
+                    "type": "object",
+                    "properties": {
+                        "full_name": {
+                            "type": "string"
+                        },
+                        "inn_individual": {
+                            "type": "string"
+                        },
+                        "kind": {
+                            "type": "string"
+                        },
+                        "organization": {
+                            "type": "object",
+                            "properties": {
+                                "inn": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "signing_time": {
+                    "type": "object"
+                },
+                "verdict": {
+                    "type": "string"
+                }
+            }
+        },
+        "financial.SignatureReport": {
+            "type": "object",
+            "properties": {
+                "document_sha256": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "policy": {
+                    "type": "string"
+                },
+                "policy_result": {
+                    "type": "object",
+                    "properties": {
+                        "message": {
+                            "type": "string"
+                        },
+                        "satisfied": {
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "raw": {
+                    "description": "Full verifier response, including certificate and individual check diagnostics.",
+                    "type": "object"
+                },
+                "signatures": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/financial.SignatureInfo"
+                    }
+                },
+                "signed_content": {
+                    "description": "Optional exact encapsulated bytes, returned only by the trusted verifier.",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "signed_content_sha256": {
+                    "type": "string"
+                },
+                "trust_mode": {
+                    "type": "string"
+                },
+                "verdict": {
+                    "type": "string"
+                },
+                "verified_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "financial.SignatureSummary": {
+            "type": "object",
+            "properties": {
+                "state": {
+                    "type": "string"
+                },
+                "verdict": {
+                    "type": "string"
+                }
+            }
+        },
+        "financial.Source": {
+            "type": "object",
+            "additionalProperties": {}
+        },
+        "financial.documentErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "financial.documentListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/financial.Document"
+                    }
+                }
+            }
+        },
+        "financial.processingPendingResponse": {
+            "type": "object",
+            "properties": {
+                "state": {
+                    "type": "string",
+                    "example": "PENDING"
+                }
+            }
+        },
+        "httptransport.creditEventAck": {
+            "type": "object",
+            "properties": {
+                "accepted": {
+                    "type": "boolean"
+                },
+                "event_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "httptransport.draftFields": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "children_count": {
+                    "type": "integer"
+                },
+                "collateral": {
+                    "$ref": "#/definitions/Collateral"
+                },
+                "consents": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "director": {
+                    "$ref": "#/definitions/Person"
+                },
+                "marital_status": {
+                    "type": "string"
+                },
+                "other_bank_biks": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "poa_number": {
+                    "type": "string"
+                },
+                "product_code": {
+                    "type": "string"
+                },
+                "purpose": {
+                    "$ref": "#/definitions/Purpose"
+                },
+                "representative_inn": {
+                    "type": "string"
+                },
+                "requested": {
+                    "type": "object",
+                    "properties": {
+                        "amount": {
+                            "type": "integer"
+                        },
+                        "term_months": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "scoring": {
+                    "$ref": "#/definitions/ScoringAnswers"
+                },
+                "tax_scope": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "with_director": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "httptransport.signatureReportResponse": {
+            "type": "object",
+            "properties": {
+                "algorithm": {
+                    "type": "string"
+                },
+                "application_id": {
+                    "type": "string"
+                },
+                "authority": {
+                    "$ref": "#/definitions/signature.AuthorityReport"
+                },
+                "certificate": {
+                    "$ref": "#/definitions/signature.CertificateReport"
+                },
+                "container": {
+                    "$ref": "#/definitions/signature.Container"
+                },
+                "decision": {
+                    "$ref": "#/definitions/domain.VerificationStatus"
+                },
+                "document_id": {
+                    "type": "string"
+                },
+                "document_sha256": {
+                    "description": "проверенные байты документа",
+                    "type": "string"
+                },
+                "document_type": {
+                    "$ref": "#/definitions/domain.DocumentType"
+                },
+                "encoding": {
+                    "type": "string"
+                },
+                "failed_check": {
+                    "description": "код первой непройденной проверки",
+                    "type": "string"
+                },
+                "failure_reason": {
+                    "type": "string"
+                },
+                "file_name": {
+                    "type": "string"
+                },
+                "format": {
+                    "description": "CADES_BES, CMS, PADES, XMLDSIG, UNKNOWN",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "internal_error": {
+                    "description": "проверка упала: отчёт INDETERMINATE",
+                    "type": "boolean"
+                },
+                "limitations": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pdf": {
+                    "description": "подпись внутри PDF",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/signature.PDFSignature"
+                        }
+                    ]
+                },
+                "policy": {
+                    "type": "string"
+                },
+                "policy_result": {
+                    "$ref": "#/definitions/signature.PolicyResult"
+                },
+                "profile": {
+                    "description": "TEST",
+                    "type": "string"
+                },
+                "profile_notice": {
+                    "description": "чем профиль отличается от проверки УКЭП",
+                    "type": "string"
+                },
+                "rules_version": {
+                    "type": "string"
+                },
+                "scope_note": {
+                    "type": "string"
+                },
+                "signature_document_id": {
+                    "type": "string"
+                },
+                "signature_file_name": {
+                    "type": "string"
+                },
+                "signature_sha256": {
+                    "type": "string"
+                },
+                "signer": {
+                    "$ref": "#/definitions/signature.SignerReport"
+                },
+                "signing_time": {
+                    "$ref": "#/definitions/signature.SigningTime"
+                },
+                "stages": {
+                    "$ref": "#/definitions/signature.Stages"
+                },
+                "trust_mode": {
+                    "description": "MOCK",
+                    "type": "string"
+                },
+                "verdict": {
+                    "description": "VALID_WITH_WARNINGS, INVALID, INDETERMINATE",
+                    "type": "string"
+                },
+                "verified_at": {
+                    "type": "string"
+                }
+            }
+        },
         "httptransport.signingSignerResponse": {
             "type": "object",
             "required": [
@@ -4529,6 +6337,302 @@
                 },
                 "id": {
                     "type": "string"
+                }
+            }
+        },
+        "signature.AuthorityReport": {
+            "type": "object",
+            "properties": {
+                "applicant_inn": {
+                    "type": "string"
+                },
+                "applicant_type": {
+                    "type": "string"
+                },
+                "basis": {
+                    "description": "REGISTRY_HEAD, SOLE_PROPRIETOR, POWER_OF_ATTORNEY, NONE",
+                    "type": "string"
+                },
+                "power_of_attorney": {
+                    "$ref": "#/definitions/signature.PowerOfAttorney"
+                },
+                "required_power": {
+                    "type": "string"
+                },
+                "source": {
+                    "description": "откуда данные ЕГРЮЛ и МЧД",
+                    "type": "string"
+                }
+            }
+        },
+        "signature.CertificateIssuer": {
+            "type": "object",
+            "properties": {
+                "accredited": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "signature.CertificateReport": {
+            "type": "object",
+            "properties": {
+                "chain": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "issuer": {
+                    "$ref": "#/definitions/signature.CertificateIssuer"
+                },
+                "key_algorithm": {
+                    "type": "string"
+                },
+                "key_usage": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "revocation": {
+                    "$ref": "#/definitions/signature.Revocation"
+                },
+                "serial_number": {
+                    "type": "string"
+                },
+                "sha256": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "thumbprint": {
+                    "description": "SHA-1, hex",
+                    "type": "string"
+                },
+                "valid_from": {
+                    "type": "string"
+                },
+                "valid_to": {
+                    "type": "string"
+                }
+            }
+        },
+        "signature.Check": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/domain.VerificationStatus"
+                }
+            }
+        },
+        "signature.Container": {
+            "type": "string",
+            "enum": [
+                "DETACHED",
+                "ATTACHED",
+                "PDF_EMBEDDED",
+                "XML_ENVELOPED"
+            ],
+            "x-enum-comments": {
+                "ContainerAttached": "присоединённая: документ внутри контейнера CMS",
+                "ContainerDetached": "открепленная подпись .sig/.p7s к отдельному файлу",
+                "ContainerPDF": "подпись внутри PDF (PAdES): проверяется, если одна и покрывает весь файл",
+                "ContainerXML": "подпись внутри XML (XMLDSig/XAdES)"
+            },
+            "x-enum-descriptions": [
+                "открепленная подпись .sig/.p7s к отдельному файлу",
+                "присоединённая: документ внутри контейнера CMS",
+                "подпись внутри PDF (PAdES): проверяется, если одна и покрывает весь файл",
+                "подпись внутри XML (XMLDSig/XAdES)"
+            ],
+            "x-enum-varnames": [
+                "ContainerDetached",
+                "ContainerAttached",
+                "ContainerPDF",
+                "ContainerXML"
+            ]
+        },
+        "signature.Organization": {
+            "type": "object",
+            "properties": {
+                "inn": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "ogrn": {
+                    "type": "string"
+                }
+            }
+        },
+        "signature.PDFSignature": {
+            "type": "object",
+            "properties": {
+                "byte_range": {
+                    "description": "[0, b, c, d]: подписаны байты [0, b) и [c, c+d)",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "signed_bytes": {
+                    "type": "integer"
+                },
+                "sub_filter": {
+                    "type": "string"
+                }
+            }
+        },
+        "signature.PolicyResult": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "satisfied": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "signature.PowerOfAttorney": {
+            "type": "object",
+            "properties": {
+                "number": {
+                    "type": "string"
+                },
+                "powers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "registry_status": {
+                    "description": "ACTIVE, EXPIRED, REVOKED",
+                    "type": "string"
+                },
+                "revoked_at": {
+                    "type": "string"
+                },
+                "valid_from": {
+                    "type": "string"
+                },
+                "valid_to": {
+                    "type": "string"
+                }
+            }
+        },
+        "signature.Revocation": {
+            "type": "object",
+            "properties": {
+                "checked_at": {
+                    "type": "string"
+                },
+                "method": {
+                    "description": "CRL, NONE",
+                    "type": "string"
+                },
+                "revoked_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "GOOD, REVOKED, UNKNOWN",
+                    "type": "string"
+                }
+            }
+        },
+        "signature.SignerReport": {
+            "type": "object",
+            "properties": {
+                "full_name": {
+                    "type": "string"
+                },
+                "inn_individual": {
+                    "type": "string"
+                },
+                "kind": {
+                    "description": "LEGAL_ENTITY_HEAD, LEGAL_ENTITY_EMPLOYEE, SOLE_PROPRIETOR, INDIVIDUAL",
+                    "type": "string"
+                },
+                "ogrnip": {
+                    "type": "string"
+                },
+                "organization": {
+                    "$ref": "#/definitions/signature.Organization"
+                },
+                "position": {
+                    "type": "string"
+                },
+                "snils_masked": {
+                    "type": "string"
+                }
+            }
+        },
+        "signature.SigningTime": {
+            "type": "object",
+            "properties": {
+                "source": {
+                    "description": "SIGNED_ATTRIBUTE — заявлено подписантом; NONE — нет",
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "signature.Stage": {
+            "type": "object",
+            "properties": {
+                "checks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/signature.Check"
+                    }
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/domain.VerificationStatus"
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "signature.Stages": {
+            "type": "object",
+            "properties": {
+                "authority": {
+                    "$ref": "#/definitions/signature.Stage"
+                },
+                "certificate": {
+                    "$ref": "#/definitions/signature.Stage"
+                },
+                "decision": {
+                    "$ref": "#/definitions/signature.Stage"
+                },
+                "format": {
+                    "$ref": "#/definitions/signature.Stage"
+                },
+                "identity": {
+                    "$ref": "#/definitions/signature.Stage"
+                },
+                "integrity": {
+                    "$ref": "#/definitions/signature.Stage"
                 }
             }
         }

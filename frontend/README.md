@@ -11,7 +11,7 @@ npm run dev        # http://localhost:5173
 
 ## API
 
-Источник правды — живой сервис сбора данных [data-collector](../data-collector/README.md) (спецификация `../data-collector/docs/swagger.yaml`). Контракт `../api/openapi.yaml` соблюдать не обязательно: фронт переделывается под то, что есть в data-collector.
+Источник правды — живой [data-collector](../data-collector/README.md), его Go-маршруты и DTO. [Основной OpenAPI](../api/openapi.yaml) сгенерирован из актуального backend Swagger; [справочник API](../docs/api.md) описывает доступ и ограничения. Старый проектный OpenAPI удалён.
 
 Что работает с живым data-collector (`VITE_COLLECTOR_MOCK=false`, стек поднят `make up`), а что пока только на моках MSW:
 
@@ -34,7 +34,7 @@ npm run dev        # http://localhost:5173
 
 В вопросах банка внутренние пути полей заменяются понятными названиями; неизвестные поля называются «Дополнительные сведения». Ошибки загрузки документов показываются как «Не удалось загрузить документы», без тела ответа сервера и подробностей разбора JSON.
 
-Остального бэкенда пока нет: запросы к `/api/v1` перехватывает [MSW](https://mswjs.io) (`src/mocks`), ответы — по контракту `../api/openapi.yaml`.
+Запросы старых демо-экранов к `/api/v1` перехватывает [MSW](https://mswjs.io) (`src/mocks`); их статические типы — в `src/api/schema.d.ts`. Они не являются контрактом backend и не входят в основной OpenAPI.
 `VITE_API_MOCK=false` отключает демо-экраны, их запросы к `/api/v1` и WebSocket. Профиль, компании, заявки, каталог и рабочее место банка продолжают работать через data-collector. Ссылки на старые демо-заявки показывают «Экран в разработке». Для локального запуска с живым сервисом скопируйте `.env.example` в `.env` и поставьте оба флага `VITE_API_MOCK=false` и `VITE_COLLECTOR_MOCK=false`; адрес сервиса задаётся через `COLLECTOR_PROXY_TARGET`.
 
 После отправки заявка в моке сама идёт по конвейеру FSM (`src/mocks/workflow.ts`): рассмотрение → вопросы банка (если подал не директор) или ручное рассмотрение (ИП Смирнов) → предложения. Каждый шаг занимает 2,5 с; ускорить можно ключом `credit-cabinet:mock-pipeline-ms` в `localStorage`. Изменения статуса приходят событиями через WebSocket `/api/v1/ws` (`docs/websocket.md`), MSW мокает его в браузере, а фронт по событию перечитывает REST (`src/api/live.ts`).
@@ -116,6 +116,6 @@ E2E_BASE_URL=http://localhost:3000 npm run test:e2e   # против конте�
 
 ## Команды
 
-- `npm run gen:api` — перегенерировать типы после изменения `api/openapi.yaml`
+- `npm run gen:api` — экспортировать текущий backend Swagger в `api/openapi.yaml` и обновить `src/api/collector/schema.d.ts`; `gen:collector` — совместимое имя этой команды. Для обновления Swagger и клиента вместе использовать `make api-docs` из корня
 - `npm run typecheck`, `npm run lint`, `npm run build`
 - `npm run test:e2e` — e2e-тесты

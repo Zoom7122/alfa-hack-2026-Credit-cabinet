@@ -1,14 +1,17 @@
 // Сервис сбора данных о заёмщике для передачи в скоринг.
 //
-//	@title						data-collector API
+//	@title						Credit Cabinet Backend / data-collector API
 //	@version					0.2
-//	@description				Сбор данных о заёмщике для скоринга: заявитель и компания, анкета с документами и сырые ответы
-//	@description				всех внешних систем (эмулятор mock-api). Сначала регистрация (POST /applicants → черновик заявки),
-//	@description				затем анкета с файлами (POST /applications/{id}/questionnaire). Сбор асинхронный: анкета ставит
-//	@description				задачу в очередь (outbox → Kafka), системы опрашивает worker.
-//	@description				Вход — мок-логином, как в api/openapi.yaml: GET /auth/test-users → POST /auth/mock-login → токен
-//	@description				`mock.<user_id>` в `Authorization: Bearer …`. С токеном регистрация идёт от имени пользователя; без него — анонимно.
-//	@description				Ошибки — RFC 9457 (`application/problem+json`).
+//	@description				Действующий backend кредитного кабинета: вход, компании, каталог, черновики и анкеты,
+//	@description				сбор данных через outbox/Kafka, документы и подписи TEST, результаты скоринга, вопросы банка,
+//	@description				предложения, демо-подписание кодом и рабочее место андеррайтера. Внешние системы — локальный mock-api.
+//	@description				GET /auth/test-users → POST /auth/mock-login → Authorization: Bearer mock.<user_id>.
+//	@description				Регистрация допускает анонимный режим; черновики и изменения заявки проверяют её автора.
+//	@description				Служебные /borrowers/{id}/statements, /credit-events и /check-mock доступны напрямую на 8081,
+//	@description				но не через nginx кабинета. WebSocket, PATCH заявки и КЭП договора backend не реализует.
+//	@description				Большинство ошибок — RFC 9457 (application/problem+json); ошибки multipart загрузки документов
+//	@description				могут содержать только code. Версия черновика передаётся в JSON, не в If-Match.
+//	@description				OpenAPI 3: api/openapi.yaml; справочник и ограничения: docs/api.md.
 //	@BasePath					/api/v1
 //
 //	@securityDefinitions.apikey	bearer

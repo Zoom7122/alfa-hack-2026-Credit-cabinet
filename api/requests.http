@@ -1,0 +1,131 @@
+# Текущий backend. Блоки выполнять последовательно в HTTP-клиенте.
+# После регистрации заменить applicationId на id из ответа (app_...).
+# Критические данные компании A сохранять согласованно с examples/scenario-a.json.
+@baseUrl = http://localhost:8081
+@api = {{baseUrl}}/api/v1
+@token = mock.usr_director_north
+@applicationId = REPLACE_WITH_APP_ID
+@documentId = REPLACE_WITH_DOC_ID
+@offerId = REPLACE_WITH_OFFER_ID
+@requestId = REPLACE_WITH_INFO_REQUEST_ID
+@demoCode = REPLACE_WITH_DEMO_CODE
+
+### Доступность процесса
+GET {{baseUrl}}/healthz
+
+### Список пользователей
+GET {{api}}/auth/test-users
+
+### Вход директором компании A; далее используется его token
+POST {{api}}/auth/mock-login
+Content-Type: application/json
+
+{"user_id":"usr_director_north"}
+
+### Текущий профиль
+GET {{api}}/me
+Authorization: Bearer {{token}}
+
+### Компании
+GET {{api}}/applicants
+Authorization: Bearer {{token}}
+
+### Каталог
+GET {{api}}/products?purpose=WORKING_CAPITAL&applicant_type=LEGAL_ENTITY
+
+### Калькулятор
+POST {{api}}/products/WORKING_CAPITAL/calculate
+Content-Type: application/json
+
+{"amount":5000000,"term_months":24}
+
+### Компания A и собственный черновик; записать id в applicationId
+POST {{api}}/applicants
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"representative":{"full_name":"Ковалёв Игорь Сергеевич","role":"DIRECTOR"},"company":{"inn":"7799000012","name":"ООО «Северный ветер»"}}
+
+### Сохранённый черновик; version из ответа нужна при PUT
+GET {{api}}/applications/{{applicationId}}/draft
+Authorization: Bearer {{token}}
+
+### Отправить JSON-анкету без файлов; повтор по уже отправленной заявке даст 409
+POST {{api}}/applications/{{applicationId}}/questionnaire
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "age":42,"marital_status":"MARRIED","children_count":2,
+  "product_code":"WORKING_CAPITAL","requested":{"amount":5000000,"term_months":24},
+  "purpose":{"code":"WORKING_CAPITAL","description":"Закупка товара под сезон"},
+  "director":{"inn":"779900010139","last_name":"Ковалёв","first_name":"Игорь","middle_name":"Сергеевич","birth_date":"1984-07-19"},
+  "consents":{
+    "bki_company":{"id":"CNS-2026-000781","signed_at":"2026-10-21T14:02:11Z","valid_until":"2027-04-21"},
+    "bki_person":{"id":"CNS-2026-000782","signed_at":"2026-10-21T14:02:40Z","valid_until":"2027-04-21"},
+    "tax":{"id":"TAX-CNS-2026-000781","signed_at":"2026-10-21T14:03:02Z","valid_until":"2027-04-21","scope":["DECLARATIONS","ENS_BALANCE"]}
+  },
+  "other_bank_biks":["044525225"],"ofd_token":"demo-ofd-token",
+  "scoring":{"max_annual_rate":28,"min_acceptable_amount":1500000,"max_acceptable_term_months":36,"need_cost":5500000,"own_contribution":500000,"free_cash":100000,"minimum_cash":20000,"need_evidence":"VERIFIED_ESTIMATE","experience_years":8}
+}
+
+### Статус; collection_task_id из ответа можно читать через GET /collections/{id}
+GET {{api}}/applications/{{applicationId}}
+Authorization: Bearer {{token}}
+
+### История
+GET {{api}}/applications/{{applicationId}}/timeline
+Authorization: Bearer {{token}}
+
+### Итог оценки; 404 до появления решения
+GET {{api}}/applications/{{applicationId}}/decision
+Authorization: Bearer {{token}}
+
+### Предложения
+GET {{api}}/applications/{{applicationId}}/offers
+Authorization: Bearer {{token}}
+
+### Вопросы банка
+GET {{api}}/applications/{{applicationId}}/info-requests
+Authorization: Bearer {{token}}
+
+### Ответ: value должен соответствовать input.type фактического вопроса
+POST {{api}}/applications/{{applicationId}}/info-requests/{{requestId}}/answer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"value":100000,"comment":"Синтетические данные для демонстрации","document_ids":[]}
+
+### Документы
+GET {{api}}/applications/{{applicationId}}/documents
+Authorization: Bearer {{token}}
+
+### Результат обработки финансового документа; нужен действительный documentId
+GET {{api}}/applications/{{applicationId}}/documents/{{documentId}}/financial-result
+Authorization: Bearer {{token}}
+
+### Отчёт подписи TEST
+GET {{api}}/applications/{{applicationId}}/documents/{{documentId}}/signature-report
+Authorization: Bearer {{token}}
+
+### Принять активное предложение, когда заявка OFFERED
+POST {{api}}/applications/{{applicationId}}/offers/{{offerId}}/accept
+Authorization: Bearer {{token}}
+
+### Код показывается только назначенному подписанту
+GET {{api}}/applications/{{applicationId}}/signing
+Authorization: Bearer {{token}}
+
+### Подтвердить учебную выдачу кодом из сессии
+POST {{api}}/applications/{{applicationId}}/signing/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"code":"{{demoCode}}","method":"SIMPLE_CODE"}
+
+### Очередь сотрудника банка, отдельный тестовый токен
+GET {{api}}/backoffice/applications?limit=50
+Authorization: Bearer mock.usr_underwriter_sokolova
+
+### Метаданные действующих моделей скоринга, отдельный компонент
+GET http://localhost:8082/api/v1/models

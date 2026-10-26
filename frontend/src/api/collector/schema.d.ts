@@ -16,44 +16,7 @@ export interface paths {
          * @description Компании, от имени которых действует вошедший пользователь, с его ролью и реквизитами из ЕГРЮЛ
          *     (после сбора данных; до него — только ИНН и название). Первая — основная (заведённая тестовому пользователю).
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Applicants"];
-                    };
-                };
-                /** @description нет или неверный токен */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        get: operations["getApplicants"];
         put?: never;
         /**
          * Зарегистрировать заявителя: кто оформляет кредит и за какую компанию
@@ -146,78 +109,7 @@ export interface paths {
          *     }
          *     ```
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            /** @description Представитель и компания */
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["RegisterApplicantRequest"];
-                };
-            };
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        /** @description /api/v1/applications/{id} */
-                        Location?: string;
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Application"];
-                    };
-                };
-                /** @description битый JSON, нет обязательного поля (representative.full_name, representative.role, company.inn) */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description неверный токен */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description токен сотрудника банка */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description неверный ИНН или роль */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        post: operations["postApplicants"];
         delete?: never;
         options?: never;
         head?: never;
@@ -236,60 +128,7 @@ export interface paths {
          * @description Заявки всех компаний вошедшего пользователя — его и коллег по компании, новые сверху (до 100).
          *     Черновики — только свои: чужой черновик не виден и не отправляется.
          */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description только эта компания (apl_…) */
-                    company_id?: string;
-                    /** @description статусы через запятую: DRAFT,SUBMITTED,ENRICHING,VERIFYING,SCORING,MANUAL_REVIEW,WAITING_FOR_INFO,OFFERED,REJECTED */
-                    status?: string;
-                    /** @description true — только заявки, оформленные самим пользователем */
-                    mine?: boolean;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Applications"];
-                    };
-                };
-                /** @description нет или неверный токен */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description неизвестный статус */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        get: operations["getApplications"];
         put?: never;
         post?: never;
         delete?: never;
@@ -310,47 +149,7 @@ export interface paths {
          * @description Статус заявки (DRAFT → SUBMITTED → ENRICHING → VERIFYING), компания (реквизиты из ЕГРЮЛ — после сбора),
          *     представитель с ролью, сумма и срок, документы и последняя задача на сбор.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description id заявки (app_…) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Application"];
-                    };
-                };
-                /** @description заявки нет */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        get: operations["getApplicationsId"];
         put?: never;
         post?: never;
         delete?: never;
@@ -370,41 +169,55 @@ export interface paths {
          * Решение по заявке
          * @description Итог оценки (движка или специалиста) для клиента: причины отказа и когда можно подать снова.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description id заявки (app_…) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ClientDecision"];
-                    };
-                };
-                /** @description заявки нет или её ещё не оценили */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        get: operations["getApplicationsIdDecision"];
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Документы заявки с состояниями обработки
+         * @description Автор, представитель компании или андеррайтер; для анонимной заявки допускается запрос без токена.
+         */
+        get: operations["getApplicationsIdDocuments"];
+        put?: never;
+        /**
+         * Загрузить документ и до двух откреплённых подписей
+         * @description Один file, обязательный type. Изменяет вложения только автор заявки в DRAFT или WAITING_FOR_INFO. Для отдельной SIGNATURE нужен signed_document_id; signatures тогда не передаются. Каждый файл до 20 МиБ. Ошибки разбора multipart возвращают JSON только с code; ошибки репозитория — Problem.
+         */
+        post: operations["postApplicationsIdDocuments"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/documents/{documentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Карточка документа */
+        get: operations["getApplicationsIdDocumentsDocumentId"];
+        put?: never;
+        post?: never;
+        /**
+         * Удалить документ и связанные подписи
+         * @description Только автор: в DRAFT либо в WAITING_FOR_INFO для документа открытого вопроса банка. Вместе с оригиналом удаляются его подписи.
+         */
+        delete: operations["deleteApplicationsIdDocumentsDocumentId"];
         options?: never;
         head?: never;
         patch?: never;
@@ -418,49 +231,27 @@ export interface paths {
             cookie?: never;
         };
         /** Файл документа заявки */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description id заявки (app_…) */
-                    id: string;
-                    /** @description id документа (doc_…) */
-                    documentId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/octet-stream": string;
-                    };
-                };
-                /** @description заявки или документа нет */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/octet-stream": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/octet-stream": components["schemas"]["Problem"];
-                    };
-                };
-            };
+        get: operations["getApplicationsIdDocumentsDocumentIdContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/documents/{documentId}/financial-result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
+        /**
+         * Результат разбора и проверки финансового документа
+         * @description 202 state=PENDING означает, что сохранённого результата ещё нет. 200 содержит поколения, извлечённые показатели, диагностику и результат проверки подписи.
+         */
+        get: operations["getApplicationsIdDocumentsDocumentIdFinancialResult"];
         put?: never;
         post?: never;
         delete?: never;
@@ -480,52 +271,31 @@ export interface paths {
          * Отчёт проверки электронной подписи
          * @description Последний отчёт worker'а подписи по документу или его открепленной подписи (signature_reports.report):
          *     итог (decision, verdict), этапы проверки с причинами, подписант, сертификат, время подписи, политика.
+         *     У финансового обработчика сохраняется financial.SignatureReport с массивом signatures и raw-отчётом; OpenAPI 3 описывает оба варианта.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description id заявки (app_…) */
-                    id: string;
-                    /** @description id документа (doc_…) */
-                    documentId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description отчёт (signature.Report) */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": Record<string, never>;
-                    };
-                };
-                /** @description заявки или документа нет (NOT_FOUND) или подпись ещё не проверяли (REPORT_NOT_READY) */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        get: operations["getApplicationsIdDocumentsDocumentIdSignatureReport"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/documents/{documentId}/signature-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Поставить повторную обработку документа и проверки подписи
+         * @description Создаёт новое поколение обработки, сохраняет исходные байты. Доступ и допустимый статус проверяются как при изменении вложений.
+         */
+        post: operations["postApplicationsIdDocumentsDocumentIdSignatureVerification"];
         delete?: never;
         options?: never;
         head?: never;
@@ -540,166 +310,9 @@ export interface paths {
             cookie?: never;
         };
         /** Полная сохранённая анкета черновика, без подстановки отсутствующих полей */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description id заявки */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ApplicationDraft"];
-                    };
-                };
-                /** @description Unauthorized */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Forbidden */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        get: operations["getApplicationsIdDraft"];
         /** Сохранить незавершённую анкету в БД без отправки заявки */
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description id заявки */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            /** @description Поля и версия черновика */
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["SaveApplicationDraft"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ApplicationDraft"];
-                    };
-                };
-                /** @description Bad Request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Unauthorized */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Forbidden */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Request Entity Too Large */
-                413: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        put: operations["putApplicationsIdDraft"];
         post?: never;
         delete?: never;
         options?: never;
@@ -718,38 +331,7 @@ export interface paths {
          * Вопросы банка по заявке
          * @description input — как отвечать (тип значения и варианты), documents — какие документы приложить.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description id заявки (app_…) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["InfoRequests"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        get: operations["getApplicationsIdInfoRequests"];
         put?: never;
         post?: never;
         delete?: never;
@@ -774,91 +356,7 @@ export interface paths {
          *     Проверенные до ответа вложения передаются в document_ids; загружать те же байты повторно не нужно.
          *     оценку или к специалисту, если вопросы задал он. Отвечает только автор заявки.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description id заявки (app_…) */
-                    id: string;
-                    /** @description id вопроса (ir_…) */
-                    requestId: string;
-                };
-                cookie?: never;
-            };
-            /** @description ответ (для JSON) */
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["InfoRequestAnswerInput"];
-                    "multipart/form-data": components["schemas"]["InfoRequestAnswerInput"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["InfoRequestAnswered"];
-                    };
-                };
-                /** @description Bad Request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description заявка тестового пользователя — нужен его токен */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description отвечает не автор заявки */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description банк не ждёт ответов или на вопрос уже ответили */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        post: operations["postApplicationsIdInfoRequestsRequestIdAnswer"];
         delete?: never;
         options?: never;
         head?: never;
@@ -873,38 +371,7 @@ export interface paths {
             cookie?: never;
         };
         /** Предложения банка по заявке */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description id заявки (app_…) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Offers"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        get: operations["getApplicationsIdOffers"];
         put?: never;
         post?: never;
         delete?: never;
@@ -926,85 +393,7 @@ export interface paths {
          * Выбрать предложение и получить договор с демо-кодом
          * @description OFFERED → SIGNING. Повтор выбора того же предложения возвращает прежнюю сессию. Код виден только подписанту, действует 10 минут; 3 попытки.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description id заявки */
-                    id: string;
-                    /** @description id предложения */
-                    offerId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SigningSession"];
-                    };
-                };
-                /** @description Unauthorized */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Forbidden */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Gone */
-                410: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        post: operations["postApplicationsIdOffersOfferIdAccept"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1042,7 +431,8 @@ export interface paths {
          *     balance.pdf.sig (или balance.sig); подпись без пары — присоединённая (документ внутри). Тип файла —
          *     в documents анкеты: `[{"file_name": "balance.pdf", "type": "FINANCIAL_STATEMENTS"}]`, без него — OTHER.
          *     Без файлов анкету можно прислать и как application/json. Одной транзакцией пишутся документы, анкета,
-         *     задача на сбор и события в outbox (о задаче и о документах — для будущих worker'ов подписи и OCR).
+         *     задача на сбор и события в outbox. Подписи проверяет signature-worker, финансовые документы — worker сбора;
+         *     разбор выполняется по текстовому слою и таблицам, OCR сканов не поддерживается.
          *
          *     **Примеры анкет** — сценарии mock-api A–E (`examples/scenario-X.json`). Заявку регистрируйте примером того же сценария из POST /applicants: данные в моках привязаны к компании.
          *
@@ -1277,106 +667,7 @@ export interface paths {
          *     }
          *     ```
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description id заявки (app_…) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "multipart/form-data": {
-                        /**
-                         * @description JSON анкеты. Подставлен сценарий A без файлов — для заявки на ИНН 7799000012; другие сценарии — в описании
-                         * @example {"age":42,"marital_status":"MARRIED","children_count":2,"product_code":"WORKING_CAPITAL","requested":{"amount":5000000,"term_months":24},"purpose":{"code":"WORKING_CAPITAL","description":"Закупка товара под сезон"},"director":{"inn":"779900010139","last_name":"Ковалёв","first_name":"Игорь","middle_name":"Сергеевич","birth_date":"1984-07-19"},"consents":{"bki_company":{"id":"CNS-2026-000781","signed_at":"2026-10-21T14:02:11Z","valid_until":"2027-04-21"},"bki_person":{"id":"CNS-2026-000782","signed_at":"2026-10-21T14:02:40Z","valid_until":"2027-04-21"},"tax":{"id":"TAX-CNS-2026-000781","signed_at":"2026-10-21T14:03:02Z","valid_until":"2027-04-21","scope":["DECLARATIONS","ENS_BALANCE"]}},"other_bank_biks":["044525225"],"ofd_token":"demo-ofd-token","poa_number":"0f5a2c1e-7b3d-4e8a-9c21-6d4b8e0a1f37","representative_inn":"779900010333"}
-                         */
-                        questionnaire: string;
-                        /** @description до 10 файлов, считая подписи; документ и его подпись — balance.pdf и balance.pdf.sig */
-                        files?: Record<string, never>[];
-                    };
-                };
-            };
-            responses: {
-                /** @description Accepted */
-                202: {
-                    headers: {
-                        /** @description /api/v1/collections/{id} — состояние задачи на сбор */
-                        Location?: string;
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["QuestionnaireSubmitted"];
-                    };
-                };
-                /** @description битый JSON или multipart, нет обязательного поля (age, marital_status, children_count) или неверный тип */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description заявки нет */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description анкету по заявке уже отправили */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description запрос больше лимита */
-                413: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description не multipart/form-data и не application/json */
-                415: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description нарушено правило анкеты или файлов: формат, размер, пары подписей, больше 10 файлов */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        post: operations["postApplicationsIdQuestionnaire"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1394,65 +685,7 @@ export interface paths {
          * Состояние демо-подписания договора
          * @description Сессия сохраняется в БД; после перезагрузки возвращается тот же код. У других представителей компании код скрыт.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description id заявки */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SigningSession"];
-                    };
-                };
-                /** @description Unauthorized */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Forbidden */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        get: operations["getApplicationsIdSigning"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1474,106 +707,7 @@ export interface paths {
          * Подтвердить договор кодом и завершить учебную выдачу
          * @description Только директор компании или сам ИП. SIGNING → COMPLETED, код стирается. Повтор успешного подтверждения безопасен. Неверный код расходует попытку; 3 ошибки или истечение кода возвращают заявку в OFFERED.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description id заявки */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            /** @description Код из интерфейса */
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["ConfirmSigningRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SigningSession"];
-                    };
-                };
-                /** @description Bad Request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Unauthorized */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Forbidden */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Gone */
-                410: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        post: operations["postApplicationsIdSigningConfirm"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1592,47 +726,7 @@ export interface paths {
          * @description События заявки по времени: создание, отправка анкеты, начало и итог сбора данных, проверка подписи.
          *     Служебные события без текста для клиента не отдаются.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description id заявки (app_…) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Timeline"];
-                    };
-                };
-                /** @description заявки нет */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        get: operations["getApplicationsIdTimeline"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1655,58 +749,7 @@ export interface paths {
          * @description Возвращает токен `mock.<user_id>` и пользователя. Токен передаётся в `Authorization: Bearer …`:
          *     с ним POST /applicants оформляет заявку от имени этого пользователя, а GET /me возвращает его компании.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            /** @description id тестового пользователя */
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["MockLoginRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["MockLoginResponse"];
-                    };
-                };
-                /** @description битый JSON, нет user_id */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description пользователя нет или он не тестовый */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        post: operations["postAuthMockLogin"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1726,35 +769,7 @@ export interface paths {
          *     экранов кабинета и андеррайтер. Заводятся при старте API (SEED_TEST_USERS). Вход — POST /auth/mock-login,
          *     только под ними: пользователи, заведённые анонимной регистрацией, войти не могут. Токен этой ручке не нужен.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TestUsers"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        get: operations["getAuthTestUsers"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1775,62 +790,7 @@ export interface paths {
          * @description Заявки после отправки анкеты: сначала ручное рассмотрение по сроку, затем остальные — свежие сверху.
          *     counters — счётчики над очередью (без учёта фильтров). Курсор — смещение следующей страницы.
          */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description статусы через запятую, например MANUAL_REVIEW,WAITING_FOR_INFO */
-                    status?: string;
-                    /** @description me — мои, none — без исполнителя, или id андеррайтера */
-                    assignee?: string;
-                    /** @description до 100, по умолчанию 50 */
-                    limit?: number;
-                    /** @description next_cursor прошлой страницы */
-                    cursor?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["BoQueue"];
-                    };
-                };
-                /** @description Unauthorized */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description не андеррайтер */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description неизвестный статус */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        get: operations["getBackofficeApplications"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1852,56 +812,7 @@ export interface paths {
          *     итог сбора по системам, находки, скоринг и решение credit-engine, предложения, вопросы клиенту,
          *     другие заявки компании и журнал со служебными событиями. ETag — версия заявки.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description id заявки (app_…) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["BoDossier"];
-                    };
-                };
-                /** @description Unauthorized */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Forbidden */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        get: operations["getBackofficeApplicationsId"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1920,65 +831,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Взять заявку в работу */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description id заявки (app_…) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["BoApplicationListItem"];
-                    };
-                };
-                /** @description Unauthorized */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Forbidden */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description не на ручном рассмотрении (INVALID_TRANSITION) или уже у другого (CONFLICT) */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        post: operations["postBackofficeApplicationsIdAssign"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2002,102 +855,7 @@ export interface paths {
          *     expert_adjustments и internal_comment — в журнал, клиенту не видны. Заявка без исполнителя
          *     закрепляется за андеррайтером. Повтор с тем же Idempotency-Key ничего не меняет.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: {
-                    /** @description версия заявки из досье */
-                    "If-Match"?: string;
-                    /** @description ключ повтора */
-                    "Idempotency-Key"?: string;
-                };
-                path: {
-                    /** @description id заявки (app_…) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            /** @description решение */
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["BoDecisionInput"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["BoDossier"];
-                    };
-                };
-                /** @description Bad Request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Unauthorized */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Forbidden */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description не на ручном рассмотрении или у другого андеррайтера */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description заявка изменилась (If-Match) */
-                412: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        post: operations["postBackofficeApplicationsIdDecision"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2115,41 +873,7 @@ export interface paths {
          * Бухотчётность компании для credit-engine (поставщик Б)
          * @description Два годовых комплекта из ГИР БО последнего сбора: баланс и ОФР в тыс. руб. id — компания (apl_…).
          */
-        get: {
-            parameters: {
-                query: {
-                    /** @description годы через запятую */
-                    years: string;
-                };
-                header?: never;
-                path: {
-                    /** @description id компании (apl_…) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description StatementsResponse credit-engine */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": Record<string, never>;
-                    };
-                };
-                /** @description по компании не было сбора */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        get: operations["getBorrowersIdStatements"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2170,59 +894,7 @@ export interface paths {
          * @description Параллельно опрашивает 5 систем банка (эмулятор mock-api) и возвращает их ответы как есть.
          *     Секция системы, которая не ответила, — null; причина — в sources.
          */
-        get: {
-            parameters: {
-                query: {
-                    /**
-                     * @description ИНН: 10 цифр (ЮЛ) или 12 (ИП)
-                     * @example 7701234567
-                     */
-                    inn: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["InternalData"];
-                    };
-                };
-                /** @description не передан inn */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description inn не из 10 или 12 цифр */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        get: operations["getCheckMock"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2244,47 +916,7 @@ export interface paths {
          *     COMPLETED — сбор сохранён в raw_collections (строка raw_collection_id), FAILED — не выполнена, причина в error.
          *     У COMPLETED в sources — состояние по каждой системе: DONE, PARTIAL, FAILED, SKIPPED.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description id задачи (tsk_…) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CollectionTask"];
-                    };
-                };
-                /** @description задачи нет */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        get: operations["getCollectionsId"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2307,76 +939,7 @@ export interface paths {
          * @description Синхронный запрос в ЕГРЮЛ/ЕГРИП (эмулятор mock-api) — подсказка на шаге «Компания» до регистрации.
          *     already_known — компания уже есть в системе (по ней подавали заявку). Нужен токен.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            /** @description ИНН */
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CounterpartyLookupRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CounterpartyPrefill"];
-                    };
-                };
-                /** @description битый JSON, нет inn */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description нет или неверный токен */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description в реестре нет */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description неверный ИНН */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description реестр не ответил: таймаут, сбой или капча (UPSTREAM_TIMEOUT) */
-                504: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        post: operations["postCounterpartyLookup"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2393,40 +956,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Событие credit-engine (МС3): выдача, ручное рассмотрение, проблема банка */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            /** @description AdminEvent credit-engine */
-            requestBody: {
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-            responses: {
-                /** @description EventAck */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": Record<string, never>;
-                    };
-                };
-                /** @description Bad Request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        post: operations["postCreditEvents"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2444,44 +974,7 @@ export interface paths {
          * Текущий пользователь и его компании
          * @description Пользователь по токену `Authorization: Bearer mock.<user_id>` и компании, от имени которых он действует.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Me"];
-                    };
-                };
-                /** @description нет или неверный токен */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        get: operations["getMe"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2501,40 +994,7 @@ export interface paths {
          * Каталог кредитных продуктов
          * @description Продукты под задачу и тип заявителя; без фильтров — весь каталог. Порядок — от самого подходящего.
          */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Цель кредита */
-                    purpose?: "WORKING_CAPITAL" | "EQUIPMENT" | "VEHICLE" | "REAL_ESTATE" | "REFINANCING" | "TENDER" | "BUSINESS_EXPANSION" | "OTHER";
-                    /** @description Тип заявителя */
-                    applicant_type?: "LEGAL_ENTITY" | "SOLE_PROPRIETOR";
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProductList"];
-                    };
-                };
-                /** @description неизвестная цель или тип заявителя */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        get: operations["getProducts"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2551,41 +1011,7 @@ export interface paths {
             cookie?: never;
         };
         /** Карточка продукта */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /**
-                     * @description Код продукта
-                     * @example WORKING_CAPITAL
-                     */
-                    code: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Product"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
-        };
+        get: operations["getProductsCode"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2607,64 +1033,24 @@ export interface paths {
          * Предварительный расчёт платежа
          * @description Аннуитетный платёж по ставке «от» продукта, без скоринга. Сумма и срок — в диапазоне продукта.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /**
-                     * @description Код продукта
-                     * @example WORKING_CAPITAL
-                     */
-                    code: string;
-                };
-                cookie?: never;
-            };
-            /** @description Сумма и срок */
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CalculateRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Calculation"];
-                    };
-                };
-                /** @description некорректное тело */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-                /** @description сумма или срок вне диапазона продукта */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Problem"];
-                    };
-                };
-            };
+        post: operations["postProductsCodeCalculate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/healthz": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
+        /** Процесс HTTP API работает */
+        get: operations["getHealthz"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2974,6 +1360,29 @@ export interface components {
             description?: string;
             title?: string;
         };
+        Collateral: {
+            /**
+             * @description недвижимость → ЕГРН
+             * @example [
+             *       "50:21:0110203:845"
+             *     ]
+             */
+            cadastral_numbers?: string[];
+            /**
+             * @description техника → реестр залогов
+             * @example [
+             *       "JCB3CX2023118457"
+             *     ]
+             */
+            serials?: string[];
+            /**
+             * @description транспорт → реестр залогов
+             * @example [
+             *       "XTC652005N1498213"
+             *     ]
+             */
+            vins?: string[];
+        };
         CollectionSource: {
             calls?: number;
             duration_ms?: number;
@@ -3057,6 +1466,24 @@ export interface components {
             /** @enum {string} */
             method?: "SIMPLE_CODE";
         };
+        Consent: {
+            /** @example CNS-2026-000781 */
+            id?: string;
+            /** @description только у consents.tax */
+            scope?: ("DECLARATIONS" | "ENS_BALANCE")[];
+            /** @example 2026-10-21T14:02:11Z */
+            signed_at?: string;
+            /** @example 2027-04-21 */
+            valid_until?: string;
+        };
+        Consents: {
+            /** @description компании на запрос в БКИ */
+            bki_company?: components["schemas"]["Consent"];
+            /** @description руководителя на запрос в БКИ */
+            bki_person?: components["schemas"]["Consent"];
+            /** @description на налоговую отчётность */
+            tax?: components["schemas"]["Consent"];
+        };
         CounterpartyLookupRequest: {
             /** @example 7799000012 */
             inn: string;
@@ -3109,6 +1536,15 @@ export interface components {
             type?: string;
             uploaded_at?: string;
         };
+        DocumentSpec: {
+            /** @example balance.pdf */
+            file_name?: string;
+            /**
+             * @example FINANCIAL_STATEMENTS
+             * @enum {string}
+             */
+            type?: "FINANCIAL_STATEMENTS" | "TAX_RETURN" | "BANK_STATEMENT" | "MANAGEMENT_REPORT" | "CHARTER" | "POWER_OF_ATTORNEY" | "DIRECTOR_PASSPORT" | "COLLATERAL_TITLE" | "EGRN_EXTRACT" | "LEASE_AGREEMENT" | "CONTRACT_WITH_CUSTOMER" | "LOAN_AGREEMENT_DRAFT" | "OTHER";
+        };
         ExpertAdjustment: {
             code?: string;
             comment?: string;
@@ -3134,8 +1570,8 @@ export interface components {
         InfoRequestAnswerInput: {
             comment?: string;
             document_ids?: string[];
-            /** @description Значение по input.type вопроса: число (NUMBER, MONEY), код варианта (CHOICE), строка (TEXT). NONE — не нужно. */
-            value?: string;
+            /** @description JSON-значение по input.type вопроса: число NUMBER/MONEY, код CHOICE или строка TEXT; для NONE можно не передавать. */
+            value?: unknown;
         };
         InfoRequestAnswered: {
             info_requests?: components["schemas"]["InfoRequest"][];
@@ -3219,6 +1655,18 @@ export interface components {
         Offers: {
             items?: components["schemas"]["Offer"][];
         };
+        Person: {
+            /** @example 1984-07-19 */
+            birth_date?: string;
+            /** @example Игорь */
+            first_name?: string;
+            /** @example 779900010139 */
+            inn?: string;
+            /** @example Ковалёв */
+            last_name?: string;
+            /** @example Сергеевич */
+            middle_name?: string;
+        };
         Problem: {
             code?: string;
             detail?: string;
@@ -3273,6 +1721,58 @@ export interface components {
             id?: string;
             marital_status?: string;
         };
+        QuestionnaireRequest: {
+            /** @example 42 */
+            age: number;
+            /** @example 2 */
+            children_count: number;
+            collateral?: components["schemas"]["Collateral"];
+            consents?: components["schemas"]["Consents"];
+            /**
+             * @description Руководитель; у ИП — сам предприниматель. Без него не запрашиваются данные физлица:
+             *     БКИ, ФССП, Федресурс, Госуслуги, дисквалификация, санкции.
+             */
+            director?: components["schemas"]["Person"];
+            /** @description Тип документа по имени файла из files. Не указан — OTHER (позже тип определит распознавание). */
+            documents?: components["schemas"]["DocumentSpec"][];
+            /**
+             * @example MARRIED
+             * @enum {string}
+             */
+            marital_status: "SINGLE" | "MARRIED" | "DIVORCED" | "DIVORCED_MULTIPLE";
+            /** @description Токены продавца: {"wildberries": "…", "ozon": "…"}. Мок принимает любой непустой токен (кроме начинающегося с invalid). */
+            marketplace_tokens?: {
+                [key: string]: string;
+            };
+            /**
+             * @description Токен оператора фискальных данных (онлайн-кассы).
+             * @example demo-ofd-token
+             */
+            ofd_token?: string;
+            /**
+             * @description БИК банков, где у клиента ещё есть счета: мультибанкинг и блокировки ФНС.
+             * @example [
+             *       "044525225"
+             *     ]
+             */
+            other_bank_biks?: string[];
+            /**
+             * @description Номер МЧД, если заявку подаёт представитель, и его ИНН.
+             * @example 0f5a2c1e-7b3d-4e8a-9c21-6d4b8e0a1f37
+             */
+            poa_number?: string;
+            /**
+             * @description Продукт, сумма и срок, цель кредита — пишутся в заявку.
+             * @example WORKING_CAPITAL
+             */
+            product_code?: string;
+            purpose?: components["schemas"]["Purpose"];
+            /** @example 779900010333 */
+            representative_inn?: string;
+            requested?: components["schemas"]["RequestedTerms"];
+            /** @description Ответы для оценки credit-engine, которых нет в собранных данных. Чего нет — банк спросит позже. */
+            scoring?: components["schemas"]["ScoringAnswers"];
+        };
         QuestionnaireSubmitted: {
             application?: components["schemas"]["Application"];
             collection?: components["schemas"]["CollectionTask"];
@@ -3326,6 +1826,43 @@ export interface components {
         SaveApplicationDraft: {
             data: Record<string, never>;
             version: number;
+        };
+        ScoringAnswers: {
+            /** @enum {string} */
+            business_location?: "VERIFIED_PHYSICAL" | "VERIFIED_ONLINE_OR_MOBILE" | "UNVERIFIED";
+            /** @enum {string} */
+            buyer_contracts?: "ACTIVE_AND_PERFORMED" | "REPEAT_ORDERS" | "PLANS_ONLY";
+            /** @enum {string} */
+            car_class?: "NONE" | "ECONOMY" | "COMFORT" | "PREMIUM";
+            /** @enum {string} */
+            education_level?: "BELOW_GENERAL" | "GENERAL" | "VOCATIONAL" | "HIGHER" | "ACADEMIC_DEGREE";
+            /** @example 9 */
+            experience_years?: number;
+            /** @example 400000 */
+            free_cash?: number;
+            location_stability_months?: number;
+            /** @example 36 */
+            max_acceptable_term_months?: number;
+            /** @example 24 */
+            max_annual_rate?: number;
+            /** @example 3000000 */
+            min_acceptable_amount?: number;
+            /** @example 100000 */
+            minimum_cash?: number;
+            /** @example 6000000 */
+            need_cost?: number;
+            /** @enum {string} */
+            need_evidence?: "CONTRACT_AND_COST" | "VERIFIED_ESTIMATE" | "ORAL_ONLY";
+            net_monthly_income?: number;
+            /** @example 1000000 */
+            own_contribution?: number;
+            /** @enum {string} */
+            primary_income_source?: "BUSINESS" | "PUBLIC_EMPLOYMENT" | "PRIVATE_EMPLOYMENT" | "PENSION" | "SELF_EMPLOYED_OR_GPH" | "NONE";
+            /** @enum {string} */
+            qualification?: "NONE" | "SUPPORT" | "SPECIALIST" | "MANAGER_OR_HIGHLY_QUALIFIED";
+            /** @enum {string} */
+            real_estate_status?: "UNENCUMBERED_WHOLE" | "UNENCUMBERED_SHARE" | "ENCUMBERED_ONLY" | "NONE";
+            total_experience_months?: number;
         };
         SigningSession: {
             attempts_left: number;
@@ -3391,6 +1928,138 @@ export interface components {
             full_name?: string;
             /** @example usr_underwriter_sokolova */
             id?: string;
+        };
+        "decision.AnnualReport": {
+            balance?: components["schemas"]["decision.Balance"];
+            period_end?: string;
+            profit_and_loss?: components["schemas"]["decision.ProfitAndLoss"];
+            year?: number;
+        };
+        "decision.Balance": {
+            /** @description 1350 — Добавочный капитал */
+            additional_capital?: number;
+            /** @description 1250 — Деньги и денежные эквиваленты */
+            cash_and_equivalents?: number;
+            /** @description 1310 — Уставный капитал */
+            charter_capital?: number;
+            /** @description 1200 — Итого оборотные активы */
+            current_assets?: number;
+            /** @description 1500 — Итого краткосрочные обязательства */
+            current_liabilities?: number;
+            /** @description 1530 — Доходы будущих периодов */
+            deferred_income?: number;
+            /** @description 1180 — Отложенные налоговые активы */
+            deferred_tax_assets?: number;
+            /** @description 1420 — Отложенные налоговые обязательства */
+            deferred_tax_liabilities?: number;
+            /** @description 1300 — Итого капитал и резервы */
+            equity?: number;
+            /** @description 1150 — Основные средства */
+            fixed_assets?: number;
+            /** @description 1160 — Доходные вложения в материальные ценности */
+            income_bearing_tangible_investments?: number;
+            /** @description 1110 — Нематериальные активы */
+            intangible_assets?: number;
+            /** @description 1130 — Нематериальные поисковые активы */
+            intangible_exploration_assets?: number;
+            /** @description 1210 — Запасы */
+            inventories?: number;
+            /** @description 1410 — Долгосрочные заёмные средства */
+            long_term_borrowings?: number;
+            /** @description 1170 — Долгосрочные финансовые вложения */
+            long_term_financial_investments?: number;
+            /** @description 1400 — Итого долгосрочные обязательства */
+            long_term_liabilities?: number;
+            /** @description 1430 — Долгосрочные оценочные обязательства */
+            long_term_provisions?: number;
+            /** @description 1100 — Итого внеоборотные активы */
+            non_current_assets?: number;
+            /** @description 1260 — Прочие оборотные активы */
+            other_current_assets?: number;
+            /** @description 1450 — Прочие долгосрочные обязательства */
+            other_long_term_liabilities?: number;
+            /** @description 1190 — Прочие внеоборотные активы */
+            other_non_current_assets?: number;
+            /** @description 1550 — Прочие краткосрочные обязательства */
+            other_short_term_liabilities?: number;
+            /** @description 1520 — Кредиторская задолженность */
+            payables?: number;
+            /** @description 1230 — Дебиторская задолженность */
+            receivables?: number;
+            /** @description 1120 — Результаты исследований и разработок */
+            research_and_development?: number;
+            /** @description 1360 — Резервный капитал */
+            reserve_capital?: number;
+            /** @description 1370 — Нераспределённая прибыль / непокрытый убыток */
+            retained_earnings?: number;
+            /** @description 1340 — Переоценка внеоборотных активов */
+            revaluation_reserve?: number;
+            /** @description 1510 — Краткосрочные заёмные средства */
+            short_term_borrowings?: number;
+            /** @description 1240 — Краткосрочные финансовые вложения */
+            short_term_financial_investments?: number;
+            /** @description 1540 — Краткосрочные оценочные обязательства */
+            short_term_provisions?: number;
+            /** @description 1140 — Материальные поисковые активы */
+            tangible_exploration_assets?: number;
+            /** @description 1600 — Баланс: актив */
+            total_assets?: number;
+            /** @description 1700 — Баланс: пассив */
+            total_equity_and_liabilities?: number;
+            /** @description 1320 — Собственные выкупленные акции: вычитаемая величина */
+            treasury_shares?: number;
+            unit?: string;
+            /** @description 1220 — НДС по приобретённым ценностям */
+            vat_on_acquired_assets?: number;
+        };
+        "decision.CreditEvent": {
+            application_id?: string;
+            event_id?: string;
+            /** @description LOAN_ISSUED, BORROWER_REVIEW, BANK_REVIEW */
+            kind?: string;
+            loan_id?: string;
+            occurred_at?: string;
+            reasons?: components["schemas"]["decision.Reason"][];
+        };
+        "decision.ProfitAndLoss": {
+            /** @description 2220 — Управленческие расходы */
+            administrative_expenses?: number;
+            /** @description 2120 — Себестоимость продаж */
+            cost_of_sales?: number;
+            /** @description 2100 — Валовая прибыль / убыток */
+            gross_profit?: number;
+            /** @description 2410 — Налог на прибыль: расход положительный, доход отрицательный */
+            income_tax?: number;
+            /** @description 2330 — Проценты к уплате */
+            interest_payable?: number;
+            /** @description 2320 — Проценты к получению */
+            interest_receivable?: number;
+            /** @description 2400 — Чистая прибыль / убыток */
+            net_profit?: number;
+            /** @description 2350 — Прочие расходы */
+            other_expenses?: number;
+            /** @description 2340 — Прочие доходы */
+            other_income?: number;
+            /** @description 2310 — Доходы от участия в других организациях */
+            participation_income?: number;
+            /** @description 2300 — Прибыль / убыток до налогообложения */
+            profit_before_tax?: number;
+            /** @description 2110 — Выручка без НДС и акцизов */
+            revenue?: number;
+            /** @description 2200 — Прибыль / убыток от продаж */
+            sales_profit?: number;
+            /** @description 2210 — Коммерческие расходы */
+            selling_expenses?: number;
+            unit?: string;
+        };
+        "decision.Reason": {
+            code?: string;
+            fields?: string[];
+            message?: string;
+        };
+        "decision.Statements": {
+            annual_reports?: components["schemas"]["decision.AnnualReport"][];
+            borrower_id?: string;
         };
         "decision.YearFigures": {
             equity?: number;
@@ -3514,6 +2183,8 @@ export interface components {
             overdueDebt?: string;
             totalDebt?: string;
         };
+        /** @enum {string} */
+        "domain.DocumentType": "FINANCIAL_STATEMENTS" | "TAX_RETURN" | "BANK_STATEMENT" | "MANAGEMENT_REPORT" | "CHARTER" | "POWER_OF_ATTORNEY" | "DIRECTOR_PASSPORT" | "COLLATERAL_TITLE" | "EGRN_EXTRACT" | "LEASE_AGREEMENT" | "CONTRACT_WITH_CUSTOMER" | "LOAN_AGREEMENT_DRAFT" | "SIGNATURE" | "OTHER";
         "domain.Merchant": {
             inn?: string;
             mcc?: string;
@@ -3590,9 +2261,296 @@ export interface components {
             queue?: number;
             recipient?: string;
         };
+        /** @enum {string} */
+        "domain.VerificationStatus": "VERIFIED" | "INVALID" | "INDETERMINATE" | "NOT_REQUIRED";
+        "financial.Diagnostic": {
+            code?: string;
+            indicators?: string[];
+            message?: string;
+            period?: string;
+            severity?: string;
+            sources?: components["schemas"]["financial.Source"][];
+        };
+        "financial.Document": {
+            application_id?: string;
+            file_name?: string;
+            generation?: number;
+            id?: string;
+            info_request_id?: string;
+            is_test?: boolean;
+            mime_type?: string;
+            origin?: string;
+            recognition?: Record<string, never>;
+            sha256?: string;
+            signatures?: components["schemas"]["financial.SignatureSummary"];
+            signed_document_id?: string;
+            size_bytes?: number;
+            type?: string;
+            uploaded_at?: string;
+        };
+        "financial.Indicator": {
+            amount?: string;
+            basis?: string;
+            data_eligible?: boolean;
+            eligible?: boolean;
+            name?: string;
+            period?: string;
+            period_kind?: string;
+            reasons?: string[];
+            sources?: components["schemas"]["financial.Source"][];
+        };
+        "financial.Result": {
+            content_sha256?: string;
+            data_eligible?: boolean;
+            diagnostics?: components["schemas"]["financial.Diagnostic"][];
+            document_id?: string;
+            document_sha256?: string;
+            extracted?: Record<string, never>;
+            generation?: number;
+            id?: string;
+            indicators?: components["schemas"]["financial.Indicator"][];
+            parser_version?: string;
+            processed_at?: string;
+            scoring_indicators?: components["schemas"]["financial.Indicator"][];
+            signature?: components["schemas"]["financial.SignatureReport"];
+            signature_report_id?: string;
+            validation?: Record<string, never>;
+        };
+        "financial.SignatureCheck": {
+            code?: string;
+            details?: unknown;
+            message?: string;
+            status?: string;
+        };
+        "financial.SignatureInfo": {
+            authority?: Record<string, never>;
+            certificate?: Record<string, never>;
+            checks?: components["schemas"]["financial.SignatureCheck"][];
+            container?: string;
+            format?: string;
+            index?: number;
+            kind?: string;
+            signer?: {
+                full_name?: string;
+                inn_individual?: string;
+                kind?: string;
+                organization?: {
+                    inn?: string;
+                };
+            };
+            signing_time?: Record<string, never>;
+            verdict?: string;
+        };
+        "financial.SignatureReport": {
+            document_sha256?: string;
+            id?: string;
+            policy?: string;
+            policy_result?: {
+                message?: string;
+                satisfied?: boolean;
+            };
+            /** @description Full verifier response, including certificate and individual check diagnostics. */
+            raw?: Record<string, never>;
+            signatures?: components["schemas"]["financial.SignatureInfo"][];
+            /**
+             * Format: byte
+             * @description Base64 точных вложенных байтов документа, если валидатор их возвращает.
+             */
+            signed_content?: string;
+            signed_content_sha256?: string;
+            trust_mode?: string;
+            verdict?: string;
+            verified_at?: string;
+        };
+        "financial.SignatureSummary": {
+            state?: string;
+            verdict?: string;
+        };
+        "financial.Source": {
+            [key: string]: unknown;
+        };
+        "financial.documentErrorResponse": {
+            code?: string;
+            status?: number;
+            title?: string;
+            type?: string;
+        };
+        "financial.documentListResponse": {
+            items?: components["schemas"]["financial.Document"][];
+        };
+        "financial.processingPendingResponse": {
+            /** @example PENDING */
+            state?: string;
+        };
+        "httptransport.creditEventAck": {
+            accepted?: boolean;
+            event_id?: string;
+        };
+        "httptransport.draftFields": {
+            age?: number;
+            children_count?: number;
+            collateral?: components["schemas"]["Collateral"];
+            consents?: {
+                [key: string]: string;
+            };
+            director?: components["schemas"]["Person"];
+            marital_status?: string;
+            other_bank_biks?: string[];
+            poa_number?: string;
+            product_code?: string;
+            purpose?: components["schemas"]["Purpose"];
+            representative_inn?: string;
+            requested?: {
+                amount?: number;
+                term_months?: number;
+            };
+            scoring?: components["schemas"]["ScoringAnswers"];
+            tax_scope?: string[];
+            with_director?: boolean;
+        };
+        "httptransport.signatureReportResponse": {
+            algorithm?: string;
+            application_id?: string;
+            authority?: components["schemas"]["signature.AuthorityReport"];
+            certificate?: components["schemas"]["signature.CertificateReport"];
+            container?: components["schemas"]["signature.Container"];
+            decision?: components["schemas"]["domain.VerificationStatus"];
+            document_id?: string;
+            /** @description проверенные байты документа */
+            document_sha256?: string;
+            document_type?: components["schemas"]["domain.DocumentType"];
+            encoding?: string;
+            /** @description код первой непройденной проверки */
+            failed_check?: string;
+            failure_reason?: string;
+            file_name?: string;
+            /** @description CADES_BES, CMS, PADES, XMLDSIG, UNKNOWN */
+            format?: string;
+            id?: string;
+            /** @description проверка упала: отчёт INDETERMINATE */
+            internal_error?: boolean;
+            limitations?: string[];
+            /** @description подпись внутри PDF */
+            pdf?: components["schemas"]["signature.PDFSignature"];
+            policy?: string;
+            policy_result?: components["schemas"]["signature.PolicyResult"];
+            /** @description TEST */
+            profile?: string;
+            /** @description чем профиль отличается от проверки УКЭП */
+            profile_notice?: string;
+            rules_version?: string;
+            scope_note?: string;
+            signature_document_id?: string;
+            signature_file_name?: string;
+            signature_sha256?: string;
+            signer?: components["schemas"]["signature.SignerReport"];
+            signing_time?: components["schemas"]["signature.SigningTime"];
+            stages?: components["schemas"]["signature.Stages"];
+            /** @description MOCK */
+            trust_mode?: string;
+            /** @description VALID_WITH_WARNINGS, INVALID, INDETERMINATE */
+            verdict?: string;
+            verified_at?: string;
+        };
         "httptransport.signingSignerResponse": {
             full_name: string;
             id: string;
+        };
+        "signature.AuthorityReport": {
+            applicant_inn?: string;
+            applicant_type?: string;
+            /** @description REGISTRY_HEAD, SOLE_PROPRIETOR, POWER_OF_ATTORNEY, NONE */
+            basis?: string;
+            power_of_attorney?: components["schemas"]["signature.PowerOfAttorney"];
+            required_power?: string;
+            /** @description откуда данные ЕГРЮЛ и МЧД */
+            source?: string;
+        };
+        "signature.CertificateIssuer": {
+            accredited?: boolean;
+            name?: string;
+        };
+        "signature.CertificateReport": {
+            chain?: string[];
+            issuer?: components["schemas"]["signature.CertificateIssuer"];
+            key_algorithm?: string;
+            key_usage?: string[];
+            revocation?: components["schemas"]["signature.Revocation"];
+            serial_number?: string;
+            sha256?: string;
+            subject?: string;
+            /** @description SHA-1, hex */
+            thumbprint?: string;
+            valid_from?: string;
+            valid_to?: string;
+        };
+        "signature.Check": {
+            code?: string;
+            message?: string;
+            status?: components["schemas"]["domain.VerificationStatus"];
+        };
+        /** @enum {string} */
+        "signature.Container": "DETACHED" | "ATTACHED" | "PDF_EMBEDDED" | "XML_ENVELOPED";
+        "signature.Organization": {
+            inn?: string;
+            name?: string;
+            ogrn?: string;
+        };
+        "signature.PDFSignature": {
+            /** @description [0, b, c, d]: подписаны байты [0, b) и [c, c+d) */
+            byte_range?: number[];
+            signed_bytes?: number;
+            sub_filter?: string;
+        };
+        "signature.PolicyResult": {
+            message?: string;
+            satisfied?: boolean;
+        };
+        "signature.PowerOfAttorney": {
+            number?: string;
+            powers?: string[];
+            /** @description ACTIVE, EXPIRED, REVOKED */
+            registry_status?: string;
+            revoked_at?: string;
+            valid_from?: string;
+            valid_to?: string;
+        };
+        "signature.Revocation": {
+            checked_at?: string;
+            /** @description CRL, NONE */
+            method?: string;
+            revoked_at?: string;
+            /** @description GOOD, REVOKED, UNKNOWN */
+            status?: string;
+        };
+        "signature.SignerReport": {
+            full_name?: string;
+            inn_individual?: string;
+            /** @description LEGAL_ENTITY_HEAD, LEGAL_ENTITY_EMPLOYEE, SOLE_PROPRIETOR, INDIVIDUAL */
+            kind?: string;
+            ogrnip?: string;
+            organization?: components["schemas"]["signature.Organization"];
+            position?: string;
+            snils_masked?: string;
+        };
+        "signature.SigningTime": {
+            /** @description SIGNED_ATTRIBUTE — заявлено подписантом; NONE — нет */
+            source?: string;
+            value?: string;
+        };
+        "signature.Stage": {
+            checks?: components["schemas"]["signature.Check"][];
+            reason?: string;
+            status?: components["schemas"]["domain.VerificationStatus"];
+            warnings?: string[];
+        };
+        "signature.Stages": {
+            authority?: components["schemas"]["signature.Stage"];
+            certificate?: components["schemas"]["signature.Stage"];
+            decision?: components["schemas"]["signature.Stage"];
+            format?: components["schemas"]["signature.Stage"];
+            identity?: components["schemas"]["signature.Stage"];
+            integrity?: components["schemas"]["signature.Stage"];
         };
     };
     responses: never;
@@ -3602,4 +2560,2427 @@ export interface components {
     pathItems: never;
 }
 export type $defs = Record<string, never>;
-export type operations = Record<string, never>;
+export interface operations {
+    getApplicants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Applicants"];
+                };
+            };
+            /** @description нет или неверный токен */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    postApplicants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Представитель и компания */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterApplicantRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    /** @description /api/v1/applications/{id} */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Application"];
+                };
+            };
+            /** @description битый JSON, нет обязательного поля (representative.full_name, representative.role, company.inn) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description неверный токен */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description токен сотрудника банка */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description неверный ИНН или роль */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getApplications: {
+        parameters: {
+            query?: {
+                /** @description только эта компания (apl_…) */
+                company_id?: string;
+                /** @description статусы через запятую: DRAFT,SUBMITTED,ENRICHING,VERIFYING,SCORING,MANUAL_REVIEW,WAITING_FOR_INFO,OFFERED,REJECTED */
+                status?: string;
+                /** @description true — только заявки, оформленные самим пользователем */
+                mine?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Applications"];
+                };
+            };
+            /** @description нет или неверный токен */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description неизвестный статус */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getApplicationsId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки (app_…) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Application"];
+                };
+            };
+            /** @description Неверный переданный токен либо вход обязателен для этой заявки */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description заявки нет */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getApplicationsIdDecision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки (app_…) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientDecision"];
+                };
+            };
+            /** @description Неверный переданный токен либо вход обязателен для этой заявки */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description заявки нет или её ещё не оценили */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getApplicationsIdDocuments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentListResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+        };
+    };
+    postApplicationsIdDocuments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description Оригинал или отдельная подпись
+                     */
+                    file: string;
+                    /** @description Тип документа из DocumentType */
+                    type: string;
+                    /** @description До двух подписей к file */
+                    signatures?: string[];
+                    /** @description Оригинал для отдельной SIGNATURE */
+                    signed_document_id?: string;
+                    /** @description Вопрос банка, к которому относится вложение */
+                    info_request_id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.Document"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+        };
+    };
+    getApplicationsIdDocumentsDocumentId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки */
+                id: string;
+                /** @description id документа */
+                documentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.Document"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+        };
+    };
+    deleteApplicationsIdDocumentsDocumentId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки */
+                id: string;
+                /** @description id документа */
+                documentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Удалено, без тела */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+        };
+    };
+    getApplicationsIdDocumentsDocumentIdContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки (app_…) */
+                id: string;
+                /** @description id документа (doc_…) */
+                documentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            /** @description Неверный переданный токен либо вход обязателен для этой заявки */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description заявки или документа нет */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getApplicationsIdDocumentsDocumentIdFinancialResult: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки */
+                id: string;
+                /** @description id документа */
+                documentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.Result"];
+                };
+            };
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.processingPendingResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+        };
+    };
+    getApplicationsIdDocumentsDocumentIdSignatureReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки (app_…) */
+                id: string;
+                /** @description id документа (doc_…) */
+                documentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["httptransport.signatureReportResponse"] | components["schemas"]["financial.SignatureReport"];
+                };
+            };
+            /** @description Неверный переданный токен либо вход обязателен для этой заявки */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description заявки или документа нет (NOT_FOUND) или подпись ещё не проверяли (REPORT_NOT_READY) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    postApplicationsIdDocumentsDocumentIdSignatureVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки */
+                id: string;
+                /** @description id документа */
+                documentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.Document"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["financial.documentErrorResponse"];
+                    "application/problem+json": components["schemas"]["financial.documentErrorResponse"];
+                };
+            };
+        };
+    };
+    getApplicationsIdDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationDraft"] & {
+                        data?: components["schemas"]["httptransport.draftFields"];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    putApplicationsIdDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки */
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** @description Поля и версия черновика */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveApplicationDraft"] & {
+                    data?: components["schemas"]["httptransport.draftFields"];
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationDraft"] & {
+                        data?: components["schemas"]["httptransport.draftFields"];
+                    };
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getApplicationsIdInfoRequests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки (app_…) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InfoRequests"];
+                };
+            };
+            /** @description Неверный переданный токен либо вход обязателен для этой заявки */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    postApplicationsIdInfoRequestsRequestIdAnswer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки (app_…) */
+                id: string;
+                /** @description id вопроса (ir_…) */
+                requestId: string;
+            };
+            cookie?: never;
+        };
+        /** @description ответ (для JSON) */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InfoRequestAnswerInput"];
+                "multipart/form-data": {
+                    /** @description JSON объекта InfoRequestAnswerInput */
+                    answer: string;
+                    files?: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InfoRequestAnswered"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description заявка тестового пользователя — нужен его токен */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description отвечает не автор заявки */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description банк не ждёт ответов или на вопрос уже ответили */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getApplicationsIdOffers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки (app_…) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Offers"];
+                };
+            };
+            /** @description Неверный переданный токен либо вход обязателен для этой заявки */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    postApplicationsIdOffersOfferIdAccept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки */
+                id: string;
+                /** @description id предложения */
+                offerId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SigningSession"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Gone */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    postApplicationsIdQuestionnaire: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки (app_…) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * @description JSON анкеты. Подставлен сценарий A без файлов — для заявки на ИНН 7799000012; другие сценарии — в описании
+                     * @example {"age":42,"marital_status":"MARRIED","children_count":2,"product_code":"WORKING_CAPITAL","requested":{"amount":5000000,"term_months":24},"purpose":{"code":"WORKING_CAPITAL","description":"Закупка товара под сезон"},"director":{"inn":"779900010139","last_name":"Ковалёв","first_name":"Игорь","middle_name":"Сергеевич","birth_date":"1984-07-19"},"consents":{"bki_company":{"id":"CNS-2026-000781","signed_at":"2026-10-21T14:02:11Z","valid_until":"2027-04-21"},"bki_person":{"id":"CNS-2026-000782","signed_at":"2026-10-21T14:02:40Z","valid_until":"2027-04-21"},"tax":{"id":"TAX-CNS-2026-000781","signed_at":"2026-10-21T14:03:02Z","valid_until":"2027-04-21","scope":["DECLARATIONS","ENS_BALANCE"]}},"other_bank_biks":["044525225"],"ofd_token":"demo-ofd-token","poa_number":"0f5a2c1e-7b3d-4e8a-9c21-6d4b8e0a1f37","representative_inn":"779900010333"}
+                     */
+                    questionnaire: string;
+                    /** @description до 10 файлов, считая подписи; документ и его подпись — balance.pdf и balance.pdf.sig */
+                    files?: string[];
+                };
+                "application/json": components["schemas"]["QuestionnaireRequest"];
+            };
+        };
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    /** @description /api/v1/collections/{id} — состояние задачи на сбор */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionnaireSubmitted"];
+                };
+            };
+            /** @description битый JSON или multipart, нет обязательного поля (age, marital_status, children_count) или неверный тип */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description нужен токен автора заявки */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description нужен токен автора заявки */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description заявки нет */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description анкету по заявке уже отправили */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description запрос больше лимита */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description не multipart/form-data и не application/json */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description нарушено правило анкеты или файлов: формат, размер, пары подписей, больше 10 файлов */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getApplicationsIdSigning: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SigningSession"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    postApplicationsIdSigningConfirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки */
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** @description Код из интерфейса */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmSigningRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SigningSession"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Gone */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getApplicationsIdTimeline: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки (app_…) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Timeline"];
+                };
+            };
+            /** @description Неверный переданный токен либо вход обязателен для этой заявки */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description заявки нет */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    postAuthMockLogin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description id тестового пользователя */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MockLoginRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MockLoginResponse"];
+                };
+            };
+            /** @description битый JSON, нет user_id */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description пользователя нет или он не тестовый */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getAuthTestUsers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestUsers"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getBackofficeApplications: {
+        parameters: {
+            query?: {
+                /** @description статусы через запятую, например MANUAL_REVIEW,WAITING_FOR_INFO */
+                status?: string;
+                /** @description me — мои, none — без исполнителя, или id андеррайтера */
+                assignee?: string;
+                /** @description до 100, по умолчанию 50 */
+                limit?: number;
+                /** @description next_cursor прошлой страницы */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoQueue"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description не андеррайтер */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description неизвестный статус */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getBackofficeApplicationsId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки (app_…) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoDossier"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    postBackofficeApplicationsIdAssign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id заявки (app_…) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoApplicationListItem"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description не на ручном рассмотрении (INVALID_TRANSITION) или уже у другого (CONFLICT) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    postBackofficeApplicationsIdDecision: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description версия заявки из досье */
+                "If-Match"?: string;
+                /** @description ключ повтора */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                /** @description id заявки (app_…) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** @description решение */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoDecisionInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoDossier"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description не на ручном рассмотрении или у другого андеррайтера */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description заявка изменилась (If-Match) */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getBorrowersIdStatements: {
+        parameters: {
+            query?: {
+                /** @description годы через запятую */
+                years?: string;
+            };
+            header?: never;
+            path: {
+                /** @description id компании (apl_…) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["decision.Statements"];
+                };
+            };
+            /** @description Неверный переданный токен либо вход обязателен для этой заявки */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description по компании не было сбора */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getCheckMock: {
+        parameters: {
+            query: {
+                /**
+                 * @description ИНН: 10 цифр (ЮЛ) или 12 (ИП)
+                 * @example 7701234567
+                 */
+                inn: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalData"];
+                };
+            };
+            /** @description не передан inn */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Неверный переданный токен либо вход обязателен для этой заявки */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description inn не из 10 или 12 цифр */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getCollectionsId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id задачи (tsk_…) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionTask"];
+                };
+            };
+            /** @description Неверный переданный токен либо вход обязателен для этой заявки */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description задачи нет */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    postCounterpartyLookup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description ИНН */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CounterpartyLookupRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CounterpartyPrefill"];
+                };
+            };
+            /** @description битый JSON, нет inn */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description нет или неверный токен */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description в реестре нет */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description неверный ИНН */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description реестр не ответил: таймаут, сбой или капча (UPSTREAM_TIMEOUT) */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    postCreditEvents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Событие с обязательным event_id */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["decision.CreditEvent"];
+            };
+        };
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["httptransport.creditEventAck"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Неверный переданный токен либо вход обязателен для этой заявки */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            /** @description нет или неверный токен */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getProducts: {
+        parameters: {
+            query?: {
+                /** @description Цель кредита */
+                purpose?: "WORKING_CAPITAL" | "EQUIPMENT" | "VEHICLE" | "REAL_ESTATE" | "REFINANCING" | "TENDER" | "BUSINESS_EXPANSION" | "OTHER";
+                /** @description Тип заявителя */
+                applicant_type?: "LEGAL_ENTITY" | "SOLE_PROPRIETOR";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductList"];
+                };
+            };
+            /** @description Неверный переданный токен либо вход обязателен для этой заявки */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description неизвестная цель или тип заявителя */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getProductsCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Код продукта
+                 * @example WORKING_CAPITAL
+                 */
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Product"];
+                };
+            };
+            /** @description Неверный переданный токен либо вход обязателен для этой заявки */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    postProductsCodeCalculate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Код продукта
+                 * @example WORKING_CAPITAL
+                 */
+                code: string;
+            };
+            cookie?: never;
+        };
+        /** @description Сумма и срок */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CalculateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Calculation"];
+                };
+            };
+            /** @description некорректное тело */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Неверный переданный токен либо вход обязателен для этой заявки */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description сумма или срок вне диапазона продукта */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getHealthz: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Процесс доступен; не проверяет готовность всего конвейера */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "ok";
+                    };
+                };
+            };
+        };
+    };
+}

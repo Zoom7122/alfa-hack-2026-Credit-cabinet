@@ -148,7 +148,7 @@ curl -s localhost:8081/api/v1/collections/tsk_…                  # PENDING →
 
 ### Вход: `GET /api/v1/auth/test-users`, `POST /api/v1/auth/mock-login`, `GET /api/v1/me`
 
-Мок-вход, как в контракте кабинета `api/openapi.yaml`: паролей нет, токен — `mock.<user_id>`.
+Текущий контракт кабинета — [OpenAPI backend](../api/openapi.yaml), полное описание — [docs/api.md](../docs/api.md). Мок-вход: паролей нет, токен — `mock.<user_id>`.
 - `GET /auth/test-users` — тестовые пользователи: `id`, `full_name`, `roles`, `persona`, `companies` (`applicant_id`, `short_name`, `inn`, `role`, `can_sign`).
 - `POST /auth/mock-login` с `{"user_id": "usr_director_north"}` — `{"token": "mock.usr_director_north", "user": Me}`. Ошибки: `400` — нет или пустой `user_id`; `404` — пользователя нет или он не тестовый. Войти можно только под тестовым пользователем (с `persona`): под пользователем, заведённым анонимной регистрацией, нельзя.
 - `GET /me` с `Authorization: Bearer mock.<user_id>` — текущий пользователь и его компании: сначала заведённые ему, потом добавленные регистрацией, по имени (кабинет берёт первую как основную). `pending_signatures` пока всегда пустой — подписания в модуле нет. Без токена или с неизвестным пользователем — `401 UNAUTHORIZED`.
@@ -527,7 +527,7 @@ curl -s 'localhost:8081/api/v1/check-mock?inn=7701234567'
   - `expert_adjustments` и `internal_comment` — в журнал (служебные), клиенту не видны.
   Заявка без исполнителя закрепляется за андеррайтером. Ошибки: `409` (не на рассмотрении, у другого), `412 VERSION_CONFLICT` (версия устарела), `422` (поля). Повтор с тем же `Idempotency-Key` возвращает досье без второго решения (`decision_requests`, миграция 00006). Решение пишется в `decisions.outcome`/`decided_by`/`comment` поверх строки оценки движка; в журнал — `uw.decision` с текстом для клиента.
 
-Перезапрос одной системы (`…/sources/{code}/refresh` из `openapi.yaml`) не сделан.
+Перезапрос одной системы (`…/sources/{code}/refresh`) не реализован и не включён в текущий OpenAPI.
 
 ## Онлайн-подписание договора кодом (MOCK)
 

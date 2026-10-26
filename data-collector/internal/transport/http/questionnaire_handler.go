@@ -63,7 +63,8 @@ func NewQuestionnaireHandler(svc QuestionnaireService, maxBody int64, log *slog.
 //	@Description	balance.pdf.sig (или balance.sig); подпись без пары — присоединённая (документ внутри). Тип файла —
 //	@Description	в documents анкеты: `[{"file_name": "balance.pdf", "type": "FINANCIAL_STATEMENTS"}]`, без него — OTHER.
 //	@Description	Без файлов анкету можно прислать и как application/json. Одной транзакцией пишутся документы, анкета,
-//	@Description	задача на сбор и события в outbox (о задаче и о документах — для будущих worker'ов подписи и OCR).
+//	@Description	задача на сбор и события в outbox. Подписи проверяет signature-worker, финансовые документы — worker сбора;
+//	@Description	разбор выполняется по текстовому слою и таблицам, OCR сканов не поддерживается.
 //	@Description
 //	@Description.markdown	questionnaire
 //	@Tags					questionnaires
@@ -75,6 +76,7 @@ func NewQuestionnaireHandler(svc QuestionnaireService, maxBody int64, log *slog.
 //	@Success				202				{object}	submittedResponse
 //	@Header					202				{string}	Location	"/api/v1/collections/{id} — состояние задачи на сбор"
 //	@Failure				400				{object}	problem		"битый JSON или multipart, нет обязательного поля (age, marital_status, children_count) или неверный тип"
+//	@Failure				401,403			{object}	problem		"нужен токен автора заявки"
 //	@Failure				404				{object}	problem		"заявки нет"
 //	@Failure				409				{object}	problem		"анкету по заявке уже отправили"
 //	@Failure				413				{object}	problem		"запрос больше лимита"

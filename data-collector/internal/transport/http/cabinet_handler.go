@@ -14,6 +14,7 @@ import (
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/domain"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/service"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/signature"
 )
 
 // CabinetService — то, что хендлеру кабинета нужно от бизнес-слоя.
@@ -31,6 +32,9 @@ type CabinetHandler struct {
 	svc CabinetService
 	log *slog.Logger
 }
+
+// signatureReportResponse documents the persisted report returned as raw JSON.
+type signatureReportResponse = signature.Report
 
 func NewCabinetHandler(svc CabinetService, log *slog.Logger) *CabinetHandler {
 	return &CabinetHandler{svc: svc, log: log}
@@ -194,12 +198,13 @@ func (h *CabinetHandler) content(c *gin.Context) {
 //	@Summary		Отчёт проверки электронной подписи
 //	@Description	Последний отчёт worker'а подписи по документу или его открепленной подписи (signature_reports.report):
 //	@Description	итог (decision, verdict), этапы проверки с причинами, подписант, сертификат, время подписи, политика.
+//	@Description	У финансового обработчика сохраняется financial.SignatureReport с массивом signatures и raw-отчётом; OpenAPI 3 описывает оба варианта.
 //	@Tags			applications
 //	@Produce		json
 //	@Security		bearer
 //	@Param			id			path		string	true	"id заявки (app_…)"
 //	@Param			documentId	path		string	true	"id документа (doc_…)"
-//	@Success		200			{object}	object	"отчёт (signature.Report)"
+//	@Success		200			{object}	signatureReportResponse
 //	@Failure		404			{object}	problem	"заявки или документа нет (NOT_FOUND) или подпись ещё не проверяли (REPORT_NOT_READY)"
 //	@Failure		500			{object}	problem
 //	@Router			/applications/{id}/documents/{documentId}/signature-report [get]

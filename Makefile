@@ -5,7 +5,7 @@ DOZZLE_PORT ?= 8888
 KAFKA_UI_PORT ?= 8086
 MODULES := data-collector db mock-api
 
-.PHONY: help env up down restart build ps logs migrate migrate-status test test-integration clean front
+.PHONY: help env up down restart build ps logs migrate migrate-status test test-integration clean front api-docs
 
 help: ## список команд
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-16s %s\n", $$1, $$2}'
@@ -51,6 +51,10 @@ test-integration: ## интеграционные тесты data-collector пр
 		MOCK_API_URL=http://localhost:$(or $(MOCK_API_PORT),8090) \
 		DATABASE_URL=postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(or $(POSTGRES_PORT),5432)/$(POSTGRES_DB)?sslmode=disable \
 		KAFKA_BROKERS=localhost:$(or $(KAFKA_PORT),9094)
+
+api-docs: ## обновить Swagger backend, OpenAPI 3 и типы клиента (Go и npm ci в frontend)
+	$(MAKE) -C data-collector swagger
+	npm --prefix frontend run gen:api
 
 clean: ## остановить и удалить данные БД и Kafka
 	docker compose down -v

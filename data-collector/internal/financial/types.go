@@ -36,7 +36,7 @@ type Document struct {
 	StorageKey       string           `json:"-"`
 	SignedDocumentID string           `json:"signed_document_id,omitempty"`
 	InfoRequestID    string           `json:"info_request_id,omitempty"`
-	Recognition      json.RawMessage  `json:"recognition,omitempty"`
+	Recognition      json.RawMessage  `json:"recognition,omitempty" swaggertype:"object"`
 	Generation       int              `json:"generation"`
 	UploadedAt       time.Time        `json:"uploaded_at"`
 }
@@ -64,8 +64,8 @@ type Indicator struct {
 type Extraction struct {
 	ParserVersion  string          `json:"parser_version"`
 	DocumentSHA256 string          `json:"document_sha256"`
-	Extracted      json.RawMessage `json:"extracted"`
-	Validation     json.RawMessage `json:"validation"`
+	Extracted      json.RawMessage `json:"extracted" swaggertype:"object"`
+	Validation     json.RawMessage `json:"validation" swaggertype:"object"`
 	Diagnostics    []Diagnostic    `json:"diagnostics"`
 	Indicators     []Indicator     `json:"indicators"`
 	DataEligible   bool            `json:"data_eligible"`
@@ -97,14 +97,14 @@ type SignatureVerifier interface {
 }
 type SignatureCheck struct {
 	Message string          `json:"message,omitempty"`
-	Details json.RawMessage `json:"details,omitempty"`
+	Details json.RawMessage `json:"details,omitempty" swaggertype:"object" extensions:"x-raw-json"`
 	Code    string          `json:"code"`
 	Status  string          `json:"status"`
 }
 type SignatureInfo struct {
-	Certificate json.RawMessage  `json:"certificate,omitempty"`
-	SigningTime json.RawMessage  `json:"signing_time,omitempty"`
-	Authority   json.RawMessage  `json:"authority,omitempty"`
+	Certificate json.RawMessage  `json:"certificate,omitempty" swaggertype:"object"`
+	SigningTime json.RawMessage  `json:"signing_time,omitempty" swaggertype:"object"`
+	Authority   json.RawMessage  `json:"authority,omitempty" swaggertype:"object"`
 	Index       int              `json:"index"`
 	Format      string           `json:"format"`
 	Container   string           `json:"container"`
@@ -136,7 +136,7 @@ type SignatureReport struct {
 	SignedContent       []byte `json:"signed_content,omitempty"`
 	SignedContentSHA256 string `json:"signed_content_sha256,omitempty"`
 	// Full verifier response, including certificate and individual check diagnostics.
-	Raw json.RawMessage `json:"raw,omitempty"`
+	Raw json.RawMessage `json:"raw,omitempty" swaggertype:"object"`
 }
 
 type Parser interface {

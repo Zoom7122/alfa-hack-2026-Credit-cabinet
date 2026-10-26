@@ -27,6 +27,11 @@ type EngineHandler struct {
 	log *slog.Logger
 }
 
+type creditEventAck struct {
+	EventID  string `json:"event_id"`
+	Accepted bool   `json:"accepted"`
+}
+
 func NewEngineHandler(svc EngineHooks, log *slog.Logger) *EngineHandler {
 	return &EngineHandler{svc: svc, log: log}
 }
@@ -46,9 +51,10 @@ func WithEngineHooks(h *EngineHandler) RouterOption {
 //	@Tags			credit-engine
 //	@Produce		json
 //	@Param			id		path		string	true	"id компании (apl_…)"
-//	@Param			years	query		string	true	"годы через запятую"
-//	@Success		200		{object}	object	"StatementsResponse credit-engine"
+//	@Param			years	query		string	false	"годы через запятую"
+//	@Success		200		{object}	decision.Statements
 //	@Failure		404		{object}	problem	"по компании не было сбора"
+//	@Failure		500		{object}	problem
 //	@Router			/borrowers/{id}/statements [get]
 func (h *EngineHandler) statements(c *gin.Context) {
 	var years []int
@@ -75,9 +81,10 @@ func (h *EngineHandler) statements(c *gin.Context) {
 //	@Tags		credit-engine
 //	@Accept		json
 //	@Produce	json
-//	@Param		body	body		object	true	"AdminEvent credit-engine"
-//	@Success	202		{object}	object	"EventAck"
+//	@Param		body	body		decision.CreditEvent	true	"Событие с обязательным event_id"
+//	@Success	202		{object}	creditEventAck
 //	@Failure	400		{object}	problem
+//	@Failure	500		{object}	problem
 //	@Router		/credit-events [post]
 func (h *EngineHandler) creditEvent(c *gin.Context) {
 	var ev decision.CreditEvent

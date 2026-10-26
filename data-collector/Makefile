@@ -35,5 +35,4 @@ lint:
 # перегенерировать docs/ после изменения аннотаций над хендлерами или примеров в examples/
 swagger:
 	go run ./tools/swaggerexamples -examples examples -out docs/markdown
-	go run github.com/swaggo/swag/cmd/swag@v1.16.6 fmt -g cmd/data-collector/main.go
-	go run github.com/swaggo/swag/cmd/swag@v1.16.6 init -g cmd/data-collector/main.go -o docs --parseInternal --outputTypes go,json,yaml --md docs/markdown
+	go run github.com/swaggo/swag/cmd/swag@v1.16.6 init -g cmd/data-collector/main.go -o docs --parseInternal --parseFuncBody --outputTypes go,json,yaml --md docs/markdown

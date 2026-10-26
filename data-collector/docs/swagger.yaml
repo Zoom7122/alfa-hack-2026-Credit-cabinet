@@ -619,6 +619,30 @@ definitions:
       title:
         type: string
     type: object
+  Collateral:
+    properties:
+      cadastral_numbers:
+        description: недвижимость → ЕГРН
+        example:
+        - 50:21:0110203:845
+        items:
+          type: string
+        type: array
+      serials:
+        description: техника → реестр залогов
+        example:
+        - JCB3CX2023118457
+        items:
+          type: string
+        type: array
+      vins:
+        description: транспорт → реестр залогов
+        example:
+        - XTC652005N1498213
+        items:
+          type: string
+        type: array
+    type: object
   CollectionSource:
     properties:
       calls:
@@ -778,6 +802,41 @@ definitions:
     required:
     - code
     type: object
+  Consent:
+    properties:
+      id:
+        example: CNS-2026-000781
+        type: string
+      scope:
+        description: только у consents.tax
+        items:
+          enum:
+          - DECLARATIONS
+          - ENS_BALANCE
+          type: string
+        type: array
+      signed_at:
+        example: "2026-10-21T14:02:11Z"
+        type: string
+      valid_until:
+        example: "2027-04-21"
+        type: string
+    type: object
+  Consents:
+    properties:
+      bki_company:
+        allOf:
+        - $ref: '#/definitions/Consent'
+        description: компании на запрос в БКИ
+      bki_person:
+        allOf:
+        - $ref: '#/definitions/Consent'
+        description: руководителя на запрос в БКИ
+      tax:
+        allOf:
+        - $ref: '#/definitions/Consent'
+        description: на налоговую отчётность
+    type: object
   CounterpartyLookupRequest:
     properties:
       inn:
@@ -882,6 +941,29 @@ definitions:
         example: FINANCIAL_STATEMENTS
         type: string
       uploaded_at:
+        type: string
+    type: object
+  DocumentSpec:
+    properties:
+      file_name:
+        example: balance.pdf
+        type: string
+      type:
+        enum:
+        - FINANCIAL_STATEMENTS
+        - TAX_RETURN
+        - BANK_STATEMENT
+        - MANAGEMENT_REPORT
+        - CHARTER
+        - POWER_OF_ATTORNEY
+        - DIRECTOR_PASSPORT
+        - COLLATERAL_TITLE
+        - EGRN_EXTRACT
+        - LEASE_AGREEMENT
+        - CONTRACT_WITH_CUSTOMER
+        - LOAN_AGREEMENT_DRAFT
+        - OTHER
+        example: FINANCIAL_STATEMENTS
         type: string
     type: object
   ExpertAdjustment:
@@ -1123,6 +1205,24 @@ definitions:
           $ref: '#/definitions/Offer'
         type: array
     type: object
+  Person:
+    properties:
+      birth_date:
+        example: "1984-07-19"
+        type: string
+      first_name:
+        example: Игорь
+        type: string
+      inn:
+        example: "779900010139"
+        type: string
+      last_name:
+        example: Ковалёв
+        type: string
+      middle_name:
+        example: Сергеевич
+        type: string
+    type: object
   Problem:
     properties:
       code:
@@ -1233,6 +1333,85 @@ definitions:
       marital_status:
         type: string
     type: object
+  QuestionnaireRequest:
+    properties:
+      age:
+        example: 42
+        maximum: 100
+        minimum: 18
+        type: integer
+      children_count:
+        example: 2
+        maximum: 20
+        minimum: 0
+        type: integer
+      collateral:
+        $ref: '#/definitions/Collateral'
+      consents:
+        $ref: '#/definitions/Consents'
+      director:
+        allOf:
+        - $ref: '#/definitions/Person'
+        description: |-
+          Руководитель; у ИП — сам предприниматель. Без него не запрашиваются данные физлица:
+          БКИ, ФССП, Федресурс, Госуслуги, дисквалификация, санкции.
+      documents:
+        description: Тип документа по имени файла из files. Не указан — OTHER (позже
+          тип определит распознавание).
+        items:
+          $ref: '#/definitions/DocumentSpec'
+        type: array
+      marital_status:
+        enum:
+        - SINGLE
+        - MARRIED
+        - DIVORCED
+        - DIVORCED_MULTIPLE
+        example: MARRIED
+        type: string
+      marketplace_tokens:
+        additionalProperties:
+          type: string
+        description: 'Токены продавца: {"wildberries": "…", "ozon": "…"}. Мок принимает
+          любой непустой токен (кроме начинающегося с invalid).'
+        type: object
+      ofd_token:
+        description: Токен оператора фискальных данных (онлайн-кассы).
+        example: demo-ofd-token
+        type: string
+      other_bank_biks:
+        description: 'БИК банков, где у клиента ещё есть счета: мультибанкинг и блокировки
+          ФНС.'
+        example:
+        - "044525225"
+        items:
+          type: string
+        type: array
+      poa_number:
+        description: Номер МЧД, если заявку подаёт представитель, и его ИНН.
+        example: 0f5a2c1e-7b3d-4e8a-9c21-6d4b8e0a1f37
+        type: string
+      product_code:
+        description: Продукт, сумма и срок, цель кредита — пишутся в заявку.
+        example: WORKING_CAPITAL
+        type: string
+      purpose:
+        $ref: '#/definitions/Purpose'
+      representative_inn:
+        example: "779900010333"
+        type: string
+      requested:
+        $ref: '#/definitions/RequestedTerms'
+      scoring:
+        allOf:
+        - $ref: '#/definitions/ScoringAnswers'
+        description: Ответы для оценки credit-engine, которых нет в собранных данных.
+          Чего нет — банк спросит позже.
+    required:
+    - age
+    - children_count
+    - marital_status
+    type: object
   QuestionnaireSubmitted:
     properties:
       application:
@@ -1335,6 +1514,95 @@ definitions:
     required:
     - data
     - version
+    type: object
+  ScoringAnswers:
+    properties:
+      business_location:
+        enum:
+        - VERIFIED_PHYSICAL
+        - VERIFIED_ONLINE_OR_MOBILE
+        - UNVERIFIED
+        type: string
+      buyer_contracts:
+        enum:
+        - ACTIVE_AND_PERFORMED
+        - REPEAT_ORDERS
+        - PLANS_ONLY
+        type: string
+      car_class:
+        enum:
+        - NONE
+        - ECONOMY
+        - COMFORT
+        - PREMIUM
+        type: string
+      education_level:
+        enum:
+        - BELOW_GENERAL
+        - GENERAL
+        - VOCATIONAL
+        - HIGHER
+        - ACADEMIC_DEGREE
+        type: string
+      experience_years:
+        example: 9
+        type: integer
+      free_cash:
+        example: 400000
+        type: integer
+      location_stability_months:
+        type: integer
+      max_acceptable_term_months:
+        example: 36
+        type: integer
+      max_annual_rate:
+        example: 24
+        type: number
+      min_acceptable_amount:
+        example: 3000000
+        type: integer
+      minimum_cash:
+        example: 100000
+        type: integer
+      need_cost:
+        example: 6000000
+        type: integer
+      need_evidence:
+        enum:
+        - CONTRACT_AND_COST
+        - VERIFIED_ESTIMATE
+        - ORAL_ONLY
+        type: string
+      net_monthly_income:
+        type: integer
+      own_contribution:
+        example: 1000000
+        type: integer
+      primary_income_source:
+        enum:
+        - BUSINESS
+        - PUBLIC_EMPLOYMENT
+        - PRIVATE_EMPLOYMENT
+        - PENSION
+        - SELF_EMPLOYED_OR_GPH
+        - NONE
+        type: string
+      qualification:
+        enum:
+        - NONE
+        - SUPPORT
+        - SPECIALIST
+        - MANAGER_OR_HIGHLY_QUALIFIED
+        type: string
+      real_estate_status:
+        enum:
+        - UNENCUMBERED_WHOLE
+        - UNENCUMBERED_SHARE
+        - ENCUMBERED_ONLY
+        - NONE
+        type: string
+      total_experience_months:
+        type: integer
     type: object
   SigningSession:
     properties:
@@ -1496,6 +1764,218 @@ definitions:
         type: string
       id:
         example: usr_underwriter_sokolova
+        type: string
+    type: object
+  decision.AnnualReport:
+    properties:
+      balance:
+        $ref: '#/definitions/decision.Balance'
+      period_end:
+        type: string
+      profit_and_loss:
+        $ref: '#/definitions/decision.ProfitAndLoss'
+      year:
+        type: integer
+    type: object
+  decision.Balance:
+    properties:
+      additional_capital:
+        description: 1350 — Добавочный капитал
+        type: integer
+      cash_and_equivalents:
+        description: 1250 — Деньги и денежные эквиваленты
+        type: integer
+      charter_capital:
+        description: 1310 — Уставный капитал
+        type: integer
+      current_assets:
+        description: 1200 — Итого оборотные активы
+        type: integer
+      current_liabilities:
+        description: 1500 — Итого краткосрочные обязательства
+        type: integer
+      deferred_income:
+        description: 1530 — Доходы будущих периодов
+        type: integer
+      deferred_tax_assets:
+        description: 1180 — Отложенные налоговые активы
+        type: integer
+      deferred_tax_liabilities:
+        description: 1420 — Отложенные налоговые обязательства
+        type: integer
+      equity:
+        description: 1300 — Итого капитал и резервы
+        type: integer
+      fixed_assets:
+        description: 1150 — Основные средства
+        type: integer
+      income_bearing_tangible_investments:
+        description: 1160 — Доходные вложения в материальные ценности
+        type: integer
+      intangible_assets:
+        description: 1110 — Нематериальные активы
+        type: integer
+      intangible_exploration_assets:
+        description: 1130 — Нематериальные поисковые активы
+        type: integer
+      inventories:
+        description: 1210 — Запасы
+        type: integer
+      long_term_borrowings:
+        description: 1410 — Долгосрочные заёмные средства
+        type: integer
+      long_term_financial_investments:
+        description: 1170 — Долгосрочные финансовые вложения
+        type: integer
+      long_term_liabilities:
+        description: 1400 — Итого долгосрочные обязательства
+        type: integer
+      long_term_provisions:
+        description: 1430 — Долгосрочные оценочные обязательства
+        type: integer
+      non_current_assets:
+        description: 1100 — Итого внеоборотные активы
+        type: integer
+      other_current_assets:
+        description: 1260 — Прочие оборотные активы
+        type: integer
+      other_long_term_liabilities:
+        description: 1450 — Прочие долгосрочные обязательства
+        type: integer
+      other_non_current_assets:
+        description: 1190 — Прочие внеоборотные активы
+        type: integer
+      other_short_term_liabilities:
+        description: 1550 — Прочие краткосрочные обязательства
+        type: integer
+      payables:
+        description: 1520 — Кредиторская задолженность
+        type: integer
+      receivables:
+        description: 1230 — Дебиторская задолженность
+        type: integer
+      research_and_development:
+        description: 1120 — Результаты исследований и разработок
+        type: integer
+      reserve_capital:
+        description: 1360 — Резервный капитал
+        type: integer
+      retained_earnings:
+        description: 1370 — Нераспределённая прибыль / непокрытый убыток
+        type: integer
+      revaluation_reserve:
+        description: 1340 — Переоценка внеоборотных активов
+        type: integer
+      short_term_borrowings:
+        description: 1510 — Краткосрочные заёмные средства
+        type: integer
+      short_term_financial_investments:
+        description: 1240 — Краткосрочные финансовые вложения
+        type: integer
+      short_term_provisions:
+        description: 1540 — Краткосрочные оценочные обязательства
+        type: integer
+      tangible_exploration_assets:
+        description: 1140 — Материальные поисковые активы
+        type: integer
+      total_assets:
+        description: '1600 — Баланс: актив'
+        type: integer
+      total_equity_and_liabilities:
+        description: '1700 — Баланс: пассив'
+        type: integer
+      treasury_shares:
+        description: '1320 — Собственные выкупленные акции: вычитаемая величина'
+        type: integer
+      unit:
+        type: string
+      vat_on_acquired_assets:
+        description: 1220 — НДС по приобретённым ценностям
+        type: integer
+    type: object
+  decision.CreditEvent:
+    properties:
+      application_id:
+        type: string
+      event_id:
+        type: string
+      kind:
+        description: LOAN_ISSUED, BORROWER_REVIEW, BANK_REVIEW
+        type: string
+      loan_id:
+        type: string
+      occurred_at:
+        type: string
+      reasons:
+        items:
+          $ref: '#/definitions/decision.Reason'
+        type: array
+    type: object
+  decision.ProfitAndLoss:
+    properties:
+      administrative_expenses:
+        description: 2220 — Управленческие расходы
+        type: integer
+      cost_of_sales:
+        description: 2120 — Себестоимость продаж
+        type: integer
+      gross_profit:
+        description: 2100 — Валовая прибыль / убыток
+        type: integer
+      income_tax:
+        description: '2410 — Налог на прибыль: расход положительный, доход отрицательный'
+        type: integer
+      interest_payable:
+        description: 2330 — Проценты к уплате
+        type: integer
+      interest_receivable:
+        description: 2320 — Проценты к получению
+        type: integer
+      net_profit:
+        description: 2400 — Чистая прибыль / убыток
+        type: integer
+      other_expenses:
+        description: 2350 — Прочие расходы
+        type: integer
+      other_income:
+        description: 2340 — Прочие доходы
+        type: integer
+      participation_income:
+        description: 2310 — Доходы от участия в других организациях
+        type: integer
+      profit_before_tax:
+        description: 2300 — Прибыль / убыток до налогообложения
+        type: integer
+      revenue:
+        description: 2110 — Выручка без НДС и акцизов
+        type: integer
+      sales_profit:
+        description: 2200 — Прибыль / убыток от продаж
+        type: integer
+      selling_expenses:
+        description: 2210 — Коммерческие расходы
+        type: integer
+      unit:
+        type: string
+    type: object
+  decision.Reason:
+    properties:
+      code:
+        type: string
+      fields:
+        items:
+          type: string
+        type: array
+      message:
+        type: string
+    type: object
+  decision.Statements:
+    properties:
+      annual_reports:
+        items:
+          $ref: '#/definitions/decision.AnnualReport'
+        type: array
+      borrower_id:
         type: string
     type: object
   decision.YearFigures:
@@ -1740,6 +2220,55 @@ definitions:
       totalDebt:
         type: string
     type: object
+  domain.DocumentType:
+    enum:
+    - FINANCIAL_STATEMENTS
+    - TAX_RETURN
+    - BANK_STATEMENT
+    - MANAGEMENT_REPORT
+    - CHARTER
+    - POWER_OF_ATTORNEY
+    - DIRECTOR_PASSPORT
+    - COLLATERAL_TITLE
+    - EGRN_EXTRACT
+    - LEASE_AGREEMENT
+    - CONTRACT_WITH_CUSTOMER
+    - LOAN_AGREEMENT_DRAFT
+    - SIGNATURE
+    - OTHER
+    type: string
+    x-enum-comments:
+      DocSignature: открепленная подпись к другому документу
+    x-enum-descriptions:
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - открепленная подпись к другому документу
+    - ""
+    x-enum-varnames:
+    - DocFinancialStatements
+    - DocTaxReturn
+    - DocBankStatement
+    - DocManagementReport
+    - DocCharter
+    - DocPowerOfAttorney
+    - DocDirectorPassport
+    - DocCollateralTitle
+    - DocEGRNExtract
+    - DocLeaseAgreement
+    - DocContractWithCustomer
+    - DocLoanAgreementDraft
+    - DocSignature
+    - DocOther
   domain.Merchant:
     properties:
       inn:
@@ -1877,6 +2406,398 @@ definitions:
       recipient:
         type: string
     type: object
+  domain.VerificationStatus:
+    enum:
+    - VERIFIED
+    - INVALID
+    - INDETERMINATE
+    - NOT_REQUIRED
+    type: string
+    x-enum-comments:
+      VerificationIndeterminate: 'вывод сделать нельзя: формат не поддержан, нет данных
+        или файла'
+      VerificationInvalid: 'этап не пройден: подпись не годится для этого документа'
+      VerificationNotRequired: этап не нужен по правилам банка для этого типа документа
+      VerificationVerified: этап пройден
+    x-enum-descriptions:
+    - этап пройден
+    - 'этап не пройден: подпись не годится для этого документа'
+    - 'вывод сделать нельзя: формат не поддержан, нет данных или файла'
+    - этап не нужен по правилам банка для этого типа документа
+    x-enum-varnames:
+    - VerificationVerified
+    - VerificationInvalid
+    - VerificationIndeterminate
+    - VerificationNotRequired
+  financial.Diagnostic:
+    properties:
+      code:
+        type: string
+      indicators:
+        items:
+          type: string
+        type: array
+      message:
+        type: string
+      period:
+        type: string
+      severity:
+        type: string
+      sources:
+        items:
+          $ref: '#/definitions/financial.Source'
+        type: array
+    type: object
+  financial.Document:
+    properties:
+      application_id:
+        type: string
+      file_name:
+        type: string
+      generation:
+        type: integer
+      id:
+        type: string
+      info_request_id:
+        type: string
+      is_test:
+        type: boolean
+      mime_type:
+        type: string
+      origin:
+        type: string
+      recognition:
+        type: object
+      sha256:
+        type: string
+      signatures:
+        $ref: '#/definitions/financial.SignatureSummary'
+      signed_document_id:
+        type: string
+      size_bytes:
+        type: integer
+      type:
+        type: string
+      uploaded_at:
+        type: string
+    type: object
+  financial.Indicator:
+    properties:
+      amount:
+        type: string
+      basis:
+        type: string
+      data_eligible:
+        type: boolean
+      eligible:
+        type: boolean
+      name:
+        type: string
+      period:
+        type: string
+      period_kind:
+        type: string
+      reasons:
+        items:
+          type: string
+        type: array
+      sources:
+        items:
+          $ref: '#/definitions/financial.Source'
+        type: array
+    type: object
+  financial.Result:
+    properties:
+      content_sha256:
+        type: string
+      data_eligible:
+        type: boolean
+      diagnostics:
+        items:
+          $ref: '#/definitions/financial.Diagnostic'
+        type: array
+      document_id:
+        type: string
+      document_sha256:
+        type: string
+      extracted:
+        type: object
+      generation:
+        type: integer
+      id:
+        type: string
+      indicators:
+        items:
+          $ref: '#/definitions/financial.Indicator'
+        type: array
+      parser_version:
+        type: string
+      processed_at:
+        type: string
+      scoring_indicators:
+        items:
+          $ref: '#/definitions/financial.Indicator'
+        type: array
+      signature:
+        $ref: '#/definitions/financial.SignatureReport'
+      signature_report_id:
+        type: string
+      validation:
+        type: object
+    type: object
+  financial.SignatureCheck:
+    properties:
+      code:
+        type: string
+      details:
+        type: object
+        x-raw-json: true
+      message:
+        type: string
+      status:
+        type: string
+    type: object
+  financial.SignatureInfo:
+    properties:
+      authority:
+        type: object
+      certificate:
+        type: object
+      checks:
+        items:
+          $ref: '#/definitions/financial.SignatureCheck'
+        type: array
+      container:
+        type: string
+      format:
+        type: string
+      index:
+        type: integer
+      kind:
+        type: string
+      signer:
+        properties:
+          full_name:
+            type: string
+          inn_individual:
+            type: string
+          kind:
+            type: string
+          organization:
+            properties:
+              inn:
+                type: string
+            type: object
+        type: object
+      signing_time:
+        type: object
+      verdict:
+        type: string
+    type: object
+  financial.SignatureReport:
+    properties:
+      document_sha256:
+        type: string
+      id:
+        type: string
+      policy:
+        type: string
+      policy_result:
+        properties:
+          message:
+            type: string
+          satisfied:
+            type: boolean
+        type: object
+      raw:
+        description: Full verifier response, including certificate and individual
+          check diagnostics.
+        type: object
+      signatures:
+        items:
+          $ref: '#/definitions/financial.SignatureInfo'
+        type: array
+      signed_content:
+        description: Optional exact encapsulated bytes, returned only by the trusted
+          verifier.
+        items:
+          type: integer
+        type: array
+      signed_content_sha256:
+        type: string
+      trust_mode:
+        type: string
+      verdict:
+        type: string
+      verified_at:
+        type: string
+    type: object
+  financial.SignatureSummary:
+    properties:
+      state:
+        type: string
+      verdict:
+        type: string
+    type: object
+  financial.Source:
+    additionalProperties: {}
+    type: object
+  financial.documentErrorResponse:
+    properties:
+      code:
+        type: string
+      status:
+        type: integer
+      title:
+        type: string
+      type:
+        type: string
+    type: object
+  financial.documentListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/financial.Document'
+        type: array
+    type: object
+  financial.processingPendingResponse:
+    properties:
+      state:
+        example: PENDING
+        type: string
+    type: object
+  httptransport.creditEventAck:
+    properties:
+      accepted:
+        type: boolean
+      event_id:
+        type: string
+    type: object
+  httptransport.draftFields:
+    properties:
+      age:
+        type: integer
+      children_count:
+        type: integer
+      collateral:
+        $ref: '#/definitions/Collateral'
+      consents:
+        additionalProperties:
+          type: string
+        type: object
+      director:
+        $ref: '#/definitions/Person'
+      marital_status:
+        type: string
+      other_bank_biks:
+        items:
+          type: string
+        type: array
+      poa_number:
+        type: string
+      product_code:
+        type: string
+      purpose:
+        $ref: '#/definitions/Purpose'
+      representative_inn:
+        type: string
+      requested:
+        properties:
+          amount:
+            type: integer
+          term_months:
+            type: integer
+        type: object
+      scoring:
+        $ref: '#/definitions/ScoringAnswers'
+      tax_scope:
+        items:
+          type: string
+        type: array
+      with_director:
+        type: boolean
+    type: object
+  httptransport.signatureReportResponse:
+    properties:
+      algorithm:
+        type: string
+      application_id:
+        type: string
+      authority:
+        $ref: '#/definitions/signature.AuthorityReport'
+      certificate:
+        $ref: '#/definitions/signature.CertificateReport'
+      container:
+        $ref: '#/definitions/signature.Container'
+      decision:
+        $ref: '#/definitions/domain.VerificationStatus'
+      document_id:
+        type: string
+      document_sha256:
+        description: проверенные байты документа
+        type: string
+      document_type:
+        $ref: '#/definitions/domain.DocumentType'
+      encoding:
+        type: string
+      failed_check:
+        description: код первой непройденной проверки
+        type: string
+      failure_reason:
+        type: string
+      file_name:
+        type: string
+      format:
+        description: CADES_BES, CMS, PADES, XMLDSIG, UNKNOWN
+        type: string
+      id:
+        type: string
+      internal_error:
+        description: 'проверка упала: отчёт INDETERMINATE'
+        type: boolean
+      limitations:
+        items:
+          type: string
+        type: array
+      pdf:
+        allOf:
+        - $ref: '#/definitions/signature.PDFSignature'
+        description: подпись внутри PDF
+      policy:
+        type: string
+      policy_result:
+        $ref: '#/definitions/signature.PolicyResult'
+      profile:
+        description: TEST
+        type: string
+      profile_notice:
+        description: чем профиль отличается от проверки УКЭП
+        type: string
+      rules_version:
+        type: string
+      scope_note:
+        type: string
+      signature_document_id:
+        type: string
+      signature_file_name:
+        type: string
+      signature_sha256:
+        type: string
+      signer:
+        $ref: '#/definitions/signature.SignerReport'
+      signing_time:
+        $ref: '#/definitions/signature.SigningTime'
+      stages:
+        $ref: '#/definitions/signature.Stages'
+      trust_mode:
+        description: MOCK
+        type: string
+      verdict:
+        description: VALID_WITH_WARNINGS, INVALID, INDETERMINATE
+        type: string
+      verified_at:
+        type: string
+    type: object
   httptransport.signingSignerResponse:
     properties:
       full_name:
@@ -1887,17 +2808,221 @@ definitions:
     - full_name
     - id
     type: object
+  signature.AuthorityReport:
+    properties:
+      applicant_inn:
+        type: string
+      applicant_type:
+        type: string
+      basis:
+        description: REGISTRY_HEAD, SOLE_PROPRIETOR, POWER_OF_ATTORNEY, NONE
+        type: string
+      power_of_attorney:
+        $ref: '#/definitions/signature.PowerOfAttorney'
+      required_power:
+        type: string
+      source:
+        description: откуда данные ЕГРЮЛ и МЧД
+        type: string
+    type: object
+  signature.CertificateIssuer:
+    properties:
+      accredited:
+        type: boolean
+      name:
+        type: string
+    type: object
+  signature.CertificateReport:
+    properties:
+      chain:
+        items:
+          type: string
+        type: array
+      issuer:
+        $ref: '#/definitions/signature.CertificateIssuer'
+      key_algorithm:
+        type: string
+      key_usage:
+        items:
+          type: string
+        type: array
+      revocation:
+        $ref: '#/definitions/signature.Revocation'
+      serial_number:
+        type: string
+      sha256:
+        type: string
+      subject:
+        type: string
+      thumbprint:
+        description: SHA-1, hex
+        type: string
+      valid_from:
+        type: string
+      valid_to:
+        type: string
+    type: object
+  signature.Check:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+      status:
+        $ref: '#/definitions/domain.VerificationStatus'
+    type: object
+  signature.Container:
+    enum:
+    - DETACHED
+    - ATTACHED
+    - PDF_EMBEDDED
+    - XML_ENVELOPED
+    type: string
+    x-enum-comments:
+      ContainerAttached: 'присоединённая: документ внутри контейнера CMS'
+      ContainerDetached: открепленная подпись .sig/.p7s к отдельному файлу
+      ContainerPDF: 'подпись внутри PDF (PAdES): проверяется, если одна и покрывает
+        весь файл'
+      ContainerXML: подпись внутри XML (XMLDSig/XAdES)
+    x-enum-descriptions:
+    - открепленная подпись .sig/.p7s к отдельному файлу
+    - 'присоединённая: документ внутри контейнера CMS'
+    - 'подпись внутри PDF (PAdES): проверяется, если одна и покрывает весь файл'
+    - подпись внутри XML (XMLDSig/XAdES)
+    x-enum-varnames:
+    - ContainerDetached
+    - ContainerAttached
+    - ContainerPDF
+    - ContainerXML
+  signature.Organization:
+    properties:
+      inn:
+        type: string
+      name:
+        type: string
+      ogrn:
+        type: string
+    type: object
+  signature.PDFSignature:
+    properties:
+      byte_range:
+        description: '[0, b, c, d]: подписаны байты [0, b) и [c, c+d)'
+        items:
+          type: integer
+        type: array
+      signed_bytes:
+        type: integer
+      sub_filter:
+        type: string
+    type: object
+  signature.PolicyResult:
+    properties:
+      message:
+        type: string
+      satisfied:
+        type: boolean
+    type: object
+  signature.PowerOfAttorney:
+    properties:
+      number:
+        type: string
+      powers:
+        items:
+          type: string
+        type: array
+      registry_status:
+        description: ACTIVE, EXPIRED, REVOKED
+        type: string
+      revoked_at:
+        type: string
+      valid_from:
+        type: string
+      valid_to:
+        type: string
+    type: object
+  signature.Revocation:
+    properties:
+      checked_at:
+        type: string
+      method:
+        description: CRL, NONE
+        type: string
+      revoked_at:
+        type: string
+      status:
+        description: GOOD, REVOKED, UNKNOWN
+        type: string
+    type: object
+  signature.SignerReport:
+    properties:
+      full_name:
+        type: string
+      inn_individual:
+        type: string
+      kind:
+        description: LEGAL_ENTITY_HEAD, LEGAL_ENTITY_EMPLOYEE, SOLE_PROPRIETOR, INDIVIDUAL
+        type: string
+      ogrnip:
+        type: string
+      organization:
+        $ref: '#/definitions/signature.Organization'
+      position:
+        type: string
+      snils_masked:
+        type: string
+    type: object
+  signature.SigningTime:
+    properties:
+      source:
+        description: SIGNED_ATTRIBUTE — заявлено подписантом; NONE — нет
+        type: string
+      value:
+        type: string
+    type: object
+  signature.Stage:
+    properties:
+      checks:
+        items:
+          $ref: '#/definitions/signature.Check'
+        type: array
+      reason:
+        type: string
+      status:
+        $ref: '#/definitions/domain.VerificationStatus'
+      warnings:
+        items:
+          type: string
+        type: array
+    type: object
+  signature.Stages:
+    properties:
+      authority:
+        $ref: '#/definitions/signature.Stage'
+      certificate:
+        $ref: '#/definitions/signature.Stage'
+      decision:
+        $ref: '#/definitions/signature.Stage'
+      format:
+        $ref: '#/definitions/signature.Stage'
+      identity:
+        $ref: '#/definitions/signature.Stage'
+      integrity:
+        $ref: '#/definitions/signature.Stage'
+    type: object
 info:
   contact: {}
   description: |-
-    Сбор данных о заёмщике для скоринга: заявитель и компания, анкета с документами и сырые ответы
-    всех внешних систем (эмулятор mock-api). Сначала регистрация (POST /applicants → черновик заявки),
-    затем анкета с файлами (POST /applications/{id}/questionnaire). Сбор асинхронный: анкета ставит
-    задачу в очередь (outbox → Kafka), системы опрашивает worker.
-    Вход — мок-логином, как в api/openapi.yaml: GET /auth/test-users → POST /auth/mock-login → токен
-    `mock.<user_id>` в `Authorization: Bearer …`. С токеном регистрация идёт от имени пользователя; без него — анонимно.
-    Ошибки — RFC 9457 (`application/problem+json`).
-  title: data-collector API
+    Действующий backend кредитного кабинета: вход, компании, каталог, черновики и анкеты,
+    сбор данных через outbox/Kafka, документы и подписи TEST, результаты скоринга, вопросы банка,
+    предложения, демо-подписание кодом и рабочее место андеррайтера. Внешние системы — локальный mock-api.
+    GET /auth/test-users → POST /auth/mock-login → Authorization: Bearer mock.<user_id>.
+    Регистрация допускает анонимный режим; черновики и изменения заявки проверяют её автора.
+    Служебные /borrowers/{id}/statements, /credit-events и /check-mock доступны напрямую на 8081,
+    но не через nginx кабинета. WebSocket, PATCH заявки и КЭП договора backend не реализует.
+    Большинство ошибок — RFC 9457 (application/problem+json); ошибки multipart загрузки документов
+    могут содержать только code. Версия черновика передаётся в JSON, не в If-Match.
+    OpenAPI 3: api/openapi.yaml; справочник и ограничения: docs/api.md.
+  title: Credit Cabinet Backend / data-collector API
   version: "0.2"
 paths:
   /applicants:
@@ -2158,6 +3283,209 @@ paths:
       summary: Решение по заявке
       tags:
       - applications
+  /applications/{id}/documents:
+    get:
+      description: Автор, представитель компании или андеррайтер; для анонимной заявки
+        допускается запрос без токена.
+      parameters:
+      - description: id заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/financial.documentListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+      security:
+      - bearer: []
+      summary: Документы заявки с состояниями обработки
+      tags:
+      - documents
+    post:
+      consumes:
+      - multipart/form-data
+      description: Один file, обязательный type. Изменяет вложения только автор заявки
+        в DRAFT или WAITING_FOR_INFO. Для отдельной SIGNATURE нужен signed_document_id;
+        signatures тогда не передаются. Каждый файл до 20 МиБ. Ошибки разбора multipart
+        возвращают JSON только с code; ошибки репозитория — Problem.
+      parameters:
+      - description: id заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Оригинал или отдельная подпись
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Тип документа из DocumentType
+        in: formData
+        name: type
+        required: true
+        type: string
+      - collectionFormat: multi
+        description: До двух подписей к file
+        in: formData
+        items:
+          type: file
+        name: signatures
+        type: array
+      - description: Оригинал для отдельной SIGNATURE
+        in: formData
+        name: signed_document_id
+        type: string
+      - description: Вопрос банка, к которому относится вложение
+        in: formData
+        name: info_request_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/financial.Document'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+      security:
+      - bearer: []
+      summary: Загрузить документ и до двух откреплённых подписей
+      tags:
+      - documents
+  /applications/{id}/documents/{documentId}:
+    delete:
+      description: 'Только автор: в DRAFT либо в WAITING_FOR_INFO для документа открытого
+        вопроса банка. Вместе с оригиналом удаляются его подписи.'
+      parameters:
+      - description: id заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: id документа
+        in: path
+        name: documentId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Удалено, без тела
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+      security:
+      - bearer: []
+      summary: Удалить документ и связанные подписи
+      tags:
+      - documents
+    get:
+      parameters:
+      - description: id заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: id документа
+        in: path
+        name: documentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/financial.Document'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+      security:
+      - bearer: []
+      summary: Карточка документа
+      tags:
+      - documents
   /applications/{id}/documents/{documentId}/content:
     get:
       parameters:
@@ -2191,11 +3519,60 @@ paths:
       summary: Файл документа заявки
       tags:
       - applications
+  /applications/{id}/documents/{documentId}/financial-result:
+    get:
+      description: 202 state=PENDING означает, что сохранённого результата ещё нет.
+        200 содержит поколения, извлечённые показатели, диагностику и результат проверки
+        подписи.
+      parameters:
+      - description: id заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: id документа
+        in: path
+        name: documentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/financial.Result'
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/financial.processingPendingResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+      security:
+      - bearer: []
+      summary: Результат разбора и проверки финансового документа
+      tags:
+      - documents
   /applications/{id}/documents/{documentId}/signature-report:
     get:
       description: |-
         Последний отчёт worker'а подписи по документу или его открепленной подписи (signature_reports.report):
         итог (decision, verdict), этапы проверки с причинами, подписант, сертификат, время подписи, политика.
+        У финансового обработчика сохраняется financial.SignatureReport с массивом signatures и raw-отчётом; OpenAPI 3 описывает оба варианта.
       parameters:
       - description: id заявки (app_…)
         in: path
@@ -2211,9 +3588,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: отчёт (signature.Report)
+          description: OK
           schema:
-            type: object
+            $ref: '#/definitions/httptransport.signatureReportResponse'
         "404":
           description: заявки или документа нет (NOT_FOUND) или подпись ещё не проверяли
             (REPORT_NOT_READY)
@@ -2228,6 +3605,57 @@ paths:
       summary: Отчёт проверки электронной подписи
       tags:
       - applications
+  /applications/{id}/documents/{documentId}/signature-verification:
+    post:
+      description: Создаёт новое поколение обработки, сохраняет исходные байты. Доступ
+        и допустимый статус проверяются как при изменении вложений.
+      parameters:
+      - description: id заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: id документа
+        in: path
+        name: documentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/financial.Document'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/financial.documentErrorResponse'
+      security:
+      - bearer: []
+      summary: Поставить повторную обработку документа и проверки подписи
+      tags:
+      - documents
   /applications/{id}/draft:
     get:
       parameters:
@@ -2242,7 +3670,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApplicationDraft'
+            allOf:
+            - $ref: '#/definitions/ApplicationDraft'
+            - properties:
+                data:
+                  $ref: '#/definitions/httptransport.draftFields'
+              type: object
         "401":
           description: Unauthorized
           schema:
@@ -2283,14 +3716,24 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SaveApplicationDraft'
+          allOf:
+          - $ref: '#/definitions/SaveApplicationDraft'
+          - properties:
+              data:
+                $ref: '#/definitions/httptransport.draftFields'
+            type: object
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApplicationDraft'
+            allOf:
+            - $ref: '#/definitions/ApplicationDraft'
+            - properties:
+                data:
+                  $ref: '#/definitions/httptransport.draftFields'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -2508,7 +3951,8 @@ paths:
         balance.pdf.sig (или balance.sig); подпись без пары — присоединённая (документ внутри). Тип файла —
         в documents анкеты: `[{"file_name": "balance.pdf", "type": "FINANCIAL_STATEMENTS"}]`, без него — OTHER.
         Без файлов анкету можно прислать и как application/json. Одной транзакцией пишутся документы, анкета,
-        задача на сбор и события в outbox (о задаче и о документах — для будущих worker'ов подписи и OCR).
+        задача на сбор и события в outbox. Подписи проверяет signature-worker, финансовые документы — worker сбора;
+        разбор выполняется по текстовому слою и таблицам, OCR сканов не поддерживается.
 
         **Примеры анкет** — сценарии mock-api A–E (`examples/scenario-X.json`). Заявку регистрируйте примером того же сценария из POST /applicants: данные в моках привязаны к компании.
 
@@ -2778,6 +4222,14 @@ paths:
         "400":
           description: битый JSON или multipart, нет обязательного поля (age, marital_status,
             children_count) или неверный тип
+          schema:
+            $ref: '#/definitions/Problem'
+        "401":
+          description: нужен токен автора заявки
+          schema:
+            $ref: '#/definitions/Problem'
+        "403":
+          description: нужен токен автора заявки
           schema:
             $ref: '#/definitions/Problem'
         "404":
@@ -3201,17 +4653,20 @@ paths:
       - description: годы через запятую
         in: query
         name: years
-        required: true
         type: string
       produces:
       - application/json
       responses:
         "200":
-          description: StatementsResponse credit-engine
+          description: OK
           schema:
-            type: object
+            $ref: '#/definitions/decision.Statements'
         "404":
           description: по компании не было сбора
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/Problem'
       summary: Бухотчётность компании для credit-engine (поставщик Б)
@@ -3334,21 +4789,25 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: AdminEvent credit-engine
+      - description: Событие с обязательным event_id
         in: body
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/decision.CreditEvent'
       produces:
       - application/json
       responses:
         "202":
-          description: EventAck
+          description: Accepted
           schema:
-            type: object
+            $ref: '#/definitions/httptransport.creditEventAck'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/Problem'
+        "500":
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/Problem'
       summary: 'Событие credit-engine (МС3): выдача, ручное рассмотрение, проблема

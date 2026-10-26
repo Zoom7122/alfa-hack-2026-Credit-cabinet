@@ -8,11 +8,12 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint --deny-warnings src e2e",
     "preview": "vite preview",
-    "gen:api": "openapi-typescript ../api/openapi.yaml -o src/api/schema.d.ts",
+    "gen:openapi": "node scripts/generate-openapi.mjs",
+    "gen:api": "npm run gen:openapi && openapi-typescript ../api/openapi.yaml -o src/api/collector/schema.d.ts",
     "typecheck": "tsc -b",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "gen:collector": "mkdir -p node_modules/.cache && swagger2openapi ../data-collector/docs/swagger.yaml -y -o node_modules/.cache/collector.openapi.yaml && openapi-typescript node_modules/.cache/collector.openapi.yaml -o src/api/collector/schema.d.ts"
+    "gen:collector": "npm run gen:api"
   },
   "dependencies": {
     "@alfalab/core-components": "50.38.0",
@@ -38,7 +39,8 @@
     "oxlint": "1.89.0",
     "swagger2openapi": "7.0.8",
     "typescript": "5.9.3",
-    "vite": "8.3.5"
+    "vite": "8.3.5",
+    "yaml": "2.9.1"
   },
   "msw": {
     "workerDirectory": [

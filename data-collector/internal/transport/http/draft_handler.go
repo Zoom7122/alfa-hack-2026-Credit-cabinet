@@ -76,7 +76,7 @@ func draftActor(c *gin.Context) string { u, _ := currentUser(c); return u.ID }
 // @Produce	json
 // @Security	bearer
 // @Param		id					path		string	true	"id заявки"
-// @Success	200					{object}	draftResponse
+// @Success	200					{object}	draftResponse{data=draftFields}
 // @Failure	401,403,404,409,500	{object}	problem
 // @Router		/applications/{id}/draft [get]
 func (h *DraftHandler) get(c *gin.Context) {
@@ -89,9 +89,9 @@ func (h *DraftHandler) get(c *gin.Context) {
 // @Accept		json
 // @Produce	json
 // @Security	bearer
-// @Param		id							path		string			true	"id заявки"
-// @Param		body						body		draftRequest	true	"Поля и версия черновика"
-// @Success	200							{object}	draftResponse
+// @Param		id							path		string							true	"id заявки"
+// @Param		body						body		draftRequest{data=draftFields}	true	"Поля и версия черновика"
+// @Success	200							{object}	draftResponse{data=draftFields}
 // @Failure	400,401,403,404,409,413,500	{object}	problem
 // @Router		/applications/{id}/draft [put]
 func (h *DraftHandler) put(c *gin.Context) {

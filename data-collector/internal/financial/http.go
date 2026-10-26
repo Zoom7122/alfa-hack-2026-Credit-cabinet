@@ -46,6 +46,22 @@ func register(r *gin.RouterGroup, repo Repository, files Files, documentReads bo
 		c.Header("Content-Type", "application/problem+json")
 		c.AbortWithStatusJSON(status, gin.H{"type": "about:blank", "title": code, "status": status, "code": code})
 	}
+	//	@Summary		Загрузить документ и до двух откреплённых подписей
+	//	@Description	Один file, обязательный type. Изменяет вложения только автор заявки в DRAFT или WAITING_FOR_INFO. Для отдельной SIGNATURE нужен signed_document_id; signatures тогда не передаются. Каждый файл до 20 МиБ. Ошибки разбора multipart возвращают JSON только с code; ошибки репозитория — Problem.
+	//	@Tags			documents
+	//	@Accept			multipart/form-data
+	//	@Produce		json
+	//	@Security		bearer
+	//	@Param			id						path		string	true	"id заявки"
+	//	@Param			file					formData	file	true	"Оригинал или отдельная подпись"
+	//	@Param			type					formData	string	true	"Тип документа из DocumentType"
+	//	@Param			signatures				formData	[]file	false	"До двух подписей к file"	collectionFormat(multi)
+	//	@Param			signed_document_id		formData	string	false	"Оригинал для отдельной SIGNATURE"
+	//	@Param			info_request_id			formData	string	false	"Вопрос банка, к которому относится вложение"
+	//	@Success		201						{object}	Document
+	//	@Failure		400,413					{object}	documentErrorResponse
+	//	@Failure		401,403,404,409,422,500	{object}	documentErrorResponse
+	//	@Router			/applications/{id}/documents [post]
 	r.POST(base, func(c *gin.Context) {
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 3*MaxFileSize+(1<<20))
 		if err := c.Request.ParseMultipartForm(1 << 20); err != nil {
@@ -141,6 +157,15 @@ func register(r *gin.RouterGroup, repo Repository, files Files, documentReads bo
 		}
 		c.JSON(201, d)
 	})
+	//	@Summary		Удалить документ и связанные подписи
+	//	@Description	Только автор: в DRAFT либо в WAITING_FOR_INFO для документа открытого вопроса банка. Вместе с оригиналом удаляются его подписи.
+	//	@Tags			documents
+	//	@Security		bearer
+	//	@Param			id					path	string	true	"id заявки"
+	//	@Param			documentId			path	string	true	"id документа"
+	//	@Success		204					"Удалено, без тела"
+	//	@Failure		401,403,404,409,500	{object}	documentErrorResponse
+	//	@Router			/applications/{id}/documents/{documentId} [delete]
 	r.DELETE(base+"/:documentId", func(c *gin.Context) {
 		if err := repo.Delete(c.Request.Context(), c.Param("id"), c.Param("documentId")); err != nil {
 			fail(c, err)
@@ -148,6 +173,15 @@ func register(r *gin.RouterGroup, repo Repository, files Files, documentReads bo
 		}
 		c.Status(204)
 	})
+	//	@Summary		Документы заявки с состояниями обработки
+	//	@Description	Автор, представитель компании или андеррайтер; для анонимной заявки допускается запрос без токена.
+	//	@Tags			documents
+	//	@Produce		json
+	//	@Security		bearer
+	//	@Param			id				path		string	true	"id заявки"
+	//	@Success		200				{object}	documentListResponse
+	//	@Failure		401,403,404,500	{object}	documentErrorResponse
+	//	@Router			/applications/{id}/documents [get]
 	r.GET(base, func(c *gin.Context) {
 		items, err := repo.List(c.Request.Context(), c.Param("id"))
 		if err != nil {
@@ -156,6 +190,15 @@ func register(r *gin.RouterGroup, repo Repository, files Files, documentReads bo
 		}
 		c.JSON(200, gin.H{"items": items})
 	})
+	//	@Summary	Карточка документа
+	//	@Tags		documents
+	//	@Produce	json
+	//	@Security	bearer
+	//	@Param		id				path		string	true	"id заявки"
+	//	@Param		documentId		path		string	true	"id документа"
+	//	@Success	200				{object}	Document
+	//	@Failure	401,403,404,500	{object}	documentErrorResponse
+	//	@Router		/applications/{id}/documents/{documentId} [get]
 	r.GET(base+"/:documentId", func(c *gin.Context) {
 		d, err := repo.Get(c.Request.Context(), c.Param("id"), c.Param("documentId"))
 		if err != nil {
@@ -185,6 +228,17 @@ func register(r *gin.RouterGroup, repo Repository, files Files, documentReads bo
 			c.Data(200, "application/octet-stream", b)
 		})
 	}
+	//	@Summary		Результат разбора и проверки финансового документа
+	//	@Description	202 state=PENDING означает, что сохранённого результата ещё нет. 200 содержит поколения, извлечённые показатели, диагностику и результат проверки подписи.
+	//	@Tags			documents
+	//	@Produce		json
+	//	@Security		bearer
+	//	@Param			id				path		string	true	"id заявки"
+	//	@Param			documentId		path		string	true	"id документа"
+	//	@Success		200				{object}	Result
+	//	@Success		202				{object}	processingPendingResponse
+	//	@Failure		401,403,404,500	{object}	documentErrorResponse
+	//	@Router			/applications/{id}/documents/{documentId}/financial-result [get]
 	r.GET(base+"/:documentId/financial-result", func(c *gin.Context) {
 		app, id := c.Param("id"), c.Param("documentId")
 		if _, err := repo.Get(c.Request.Context(), app, id); err != nil {
@@ -226,6 +280,16 @@ func register(r *gin.RouterGroup, repo Repository, files Files, documentReads bo
 			c.JSON(200, result.Signature)
 		})
 	}
+	//	@Summary		Поставить повторную обработку документа и проверки подписи
+	//	@Description	Создаёт новое поколение обработки, сохраняет исходные байты. Доступ и допустимый статус проверяются как при изменении вложений.
+	//	@Tags			documents
+	//	@Produce		json
+	//	@Security		bearer
+	//	@Param			id						path		string	true	"id заявки"
+	//	@Param			documentId				path		string	true	"id документа"
+	//	@Success		202						{object}	Document
+	//	@Failure		401,403,404,409,422,500	{object}	documentErrorResponse
+	//	@Router			/applications/{id}/documents/{documentId}/signature-verification [post]
 	r.POST(base+"/:documentId/signature-verification", func(c *gin.Context) {
 		if err := repo.Retry(c.Request.Context(), c.Param("id"), c.Param("documentId")); err != nil {
 			fail(c, err)

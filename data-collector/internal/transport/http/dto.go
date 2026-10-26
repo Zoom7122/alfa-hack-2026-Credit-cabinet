@@ -47,6 +47,10 @@ func (r registerRequest) toRegisterInput() service.RegisterInput {
 // questionnaireRequest — анкета заёмщика, данные заявки и всё, что нужно для сбора данных
 // о компании из внешних систем. ИНН компании берётся из заявки.
 // Указатели нужны, чтобы явный 0 отличался от отсутствующего поля.
+// The body annotation exports the JSON alternative's schema with --parseFuncBody;
+// the routed operation describes multipart separately.
+//
+//	@Param	body	body	questionnaireRequest	true	"JSON-вариант тела POST /applications/{id}/questionnaire"
 type questionnaireRequest struct {
 	Age           *int    `json:"age" binding:"required" example:"42" minimum:"18" maximum:"100"`
 	MaritalStatus *string `json:"marital_status" binding:"required" enums:"SINGLE,MARRIED,DIVORCED,DIVORCED_MULTIPLE" example:"MARRIED"`
@@ -66,7 +70,7 @@ type questionnaireRequest struct {
 	// БИК банков, где у клиента ещё есть счета: мультибанкинг и блокировки ФНС.
 	OtherBankBIKs []string `json:"other_bank_biks" example:"044525225"`
 	// Токены продавца: {"wildberries": "…", "ozon": "…"}. Мок принимает любой непустой токен (кроме начинающегося с invalid).
-	MarketplaceTokens map[string]string `json:"marketplace_tokens" swaggertype:"object"`
+	MarketplaceTokens map[string]string `json:"marketplace_tokens"`
 	// Токен оператора фискальных данных (онлайн-кассы).
 	OFDToken   string            `json:"ofd_token" example:"demo-ofd-token"`
 	Collateral collateralRequest `json:"collateral"`

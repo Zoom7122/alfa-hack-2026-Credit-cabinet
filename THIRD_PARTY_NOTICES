@@ -1,0 +1,197 @@
+# THIRD_PARTY_NOTICES
+
+Умный кредитный кабинет предпринимателя, Альфа-Хак 2026.
+Состав сверён с файлами репозитория на 26.10.2026.
+
+Этот файл перечисляет основные сторонние компоненты, источники данных, модели
+и смоделированные интеграции. Указания лицензий относятся к соответствующим
+компонентам; исходные LICENSE/NOTICE и copyright-уведомления поставщиков сохраняют
+силу. Полный граф транзитивных зависимостей находится в перечисленных ниже
+манифестах. Лицензия приложения в целом этим файлом не устанавливается.
+
+## 1. Манифесты и фиксация состава
+
+- Go: data-collector/go.mod + go.sum, db/go.mod + go.sum,
+  mock-api/go.mod + go.sum, credit-engine/go.mod + go.sum.
+- Кабинет: frontend/package.json + frontend/package-lock.json.
+- Конструктор: credit-engine/admin-frontend/package.json + package-lock.json.
+- Финансовый парсер: data-collector/financial_parser/requirements.txt.
+- Контейнеры: docker-compose.yml, Dockerfile каждого компонента,
+  credit-engine/compose.credit-engine.yaml и compose.acceptance.yaml.
+- Скоринговые определения: credit-engine/models/, release.json и manifests
+  релизов; активные модели и их SHA-256 сохраняются в PostgreSQL админки.
+
+Версии npm указаны по lock-файлам, лицензии — по их metadata и пакетам.
+Лицензии Go сверены с LICENSE/license соответствующих модулей. Для образов
+и Python приведены первичные страницы проектов. Плавающий тег latest, семейство
+базового образа и незакреплённые транзитивные Python-зависимости не определяют
+неизменяемый состав поставки: для точного снимка нужны digest/lock окружения.
+
+## 2. Языки, инфраструктура и контейнеры
+
+| Компонент / конфигурация | Использование | Лицензия / первичный источник |
+|---|---|---|
+| Go 1.26.8 (go.mod), golang:1.26-alpine / 1.26.8-bookworm | Go-сервисы и сборка | BSD-3-Clause; https://go.dev/LICENSE |
+| Node.js 24.22.x; node:24.22-alpine / 24.22.0-bookworm-slim | сборка двух React UI и инструменты API | MIT и уведомления включённых библиотек; https://github.com/nodejs/node/blob/main/LICENSE |
+| CPython 3.12, python:3.12-slim-bookworm | финансовый парсер | PSF-2.0 и связанные уведомления; https://docs.python.org/3.12/license.html |
+| PostgreSQL, postgres:16-alpine | заявки, задания, модели, сессии, банковское состояние | PostgreSQL License; https://www.postgresql.org/about/licence/ |
+| Apache Kafka, apache/kafka:4.1.2 | брокер событий KRaft | Apache-2.0; https://github.com/apache/kafka/blob/trunk/LICENSE и NOTICE |
+| nginx:1.28-alpine | статика, клиентский прокси, gateway скоринга | BSD-2-Clause; https://nginx.org/LICENSE |
+| Kafbat Kafka UI, ghcr.io/kafbat/kafka-ui:latest | диагностика топиков/consumer groups | Apache-2.0; https://github.com/kafbat/kafka-ui/blob/main/LICENSE |
+| Dozzle, amir20/dozzle:latest | просмотр логов Docker | MIT, Copyright (c) 2025 Amir Raminfar; https://github.com/amir20/dozzle/blob/main/LICENSE |
+| gcr.io/distroless/static-debian12:nonroot | runtime Go-компонентов | Distroless Apache-2.0; включённые пакеты имеют собственные лицензии; https://github.com/GoogleContainerTools/distroless/blob/main/LICENSE |
+| Alpine Linux / Debian Bookworm | базовые пакеты контейнеров | набор лицензий пакетов дистрибутива; https://www.alpinelinux.org/ и https://www.debian.org/legal/licenses/ |
+| Docker Engine / Compose v2 | внешнее окружение запуска | Moby/Compose Apache-2.0; https://github.com/moby/moby/blob/master/LICENSE и https://github.com/docker/compose/blob/main/LICENSE |
+
+Лицензии основного проекта образа не заменяют лицензии его ОС, OpenSSL, ICU и
+остальных включённых пакетов. Их notices находятся в дистрибутивах и upstream
+образов. Docker Desktop — альтернативное внешнее средство запуска с отдельными
+условиями Docker; оно не включено в исходники приложения.
+
+## 3. Прямые Go-зависимости
+
+| Модуль | Версия | Лицензия | Назначение / источник |
+|---|---|---|---|
+| github.com/IBM/sarama | v1.61.1 | MIT; Shopify / IBM Corporation | Kafka; https://github.com/IBM/sarama |
+| github.com/gin-gonic/gin | v1.12.0 | MIT; Manuel Martínez-Almeida и участники | HTTP; https://github.com/gin-gonic/gin |
+| github.com/go-jet/jet/v2 | v2.14.0 | Apache-2.0 | типизированные SQL-запросы/генерация; https://github.com/go-jet/jet |
+| github.com/go-playground/validator/v10 | v10.30.5 | MIT; Dean Karn | проверка DTO; https://github.com/go-playground/validator |
+| github.com/jackc/pgx/v5 | v5.11.0 | MIT; Jack Christensen | PostgreSQL; https://github.com/jackc/pgx |
+| github.com/oklog/ulid/v2 | v2.1.2 | Apache-2.0 | идентификаторы; https://github.com/oklog/ulid |
+| github.com/pressly/goose/v3 | v3.29.0 | MIT; Liam Staskawicz, Vojtech Vitek, Michael Fridman и участники | миграции; https://github.com/pressly/goose |
+| github.com/swaggo/swag | v1.16.6 | MIT | генератор Swagger; https://github.com/swaggo/swag |
+| github.com/swaggo/files | v1.0.1 | MIT | встроенные файлы Swagger UI; https://github.com/swaggo/files |
+| github.com/swaggo/gin-swagger | v1.6.1 | MIT | Swagger UI в Gin; https://github.com/swaggo/gin-swagger |
+| golang.org/x/crypto | v0.58.0 (прямая зависимость credit-engine) | BSD-3-Clause; The Go Authors | bcrypt и криптографические примитивы; https://cs.opensource.google/go/x/crypto |
+
+В data-collector и mock-api дополнительно закреплены собственные версии
+golang.org/x/crypto и других x/* как транзитивные зависимости. Точные версии
+смотреть в go.mod/go.sum конкретного модуля, а не объединять их в одну версию.
+Swagger UI, включённый через swaggo/files, является отдельным компонентом
+swagger-api под Apache-2.0: https://github.com/swagger-api/swagger-ui/blob/master/LICENSE.
+
+## 4. Frontend и инструменты npm
+
+Версии совпадающих пакетов в двух интерфейсах одинаковы. Часть пакетов используется
+только кабинетом или только для разработки; принадлежность и весь транзитивный
+граф отражены в соответствующем package-lock.json.
+
+| Пакет | Версия | Лицензия / источник |
+|---|---|---|
+| @alfalab/core-components | 50.38.0 | MIT; https://github.com/core-ds/core-components |
+| @alfalab/core-components-config | 1.1.0 | MIT, metadata lock-файла |
+| @alfalab/core-components-stack-context | 1.0.1 | MIT, metadata lock-файла |
+| @alfalab/core-components-vars | 11.4.1 | MIT, metadata lock-файла |
+| @alfalab/icons-glyph | 2.293.3 | MIT, metadata lock-файла |
+| @alfalab/icons-logotype | 2.37.3 | MIT, metadata lock-файла |
+| react / react-dom | 19.3.1 | MIT; https://github.com/facebook/react/blob/main/LICENSE |
+| react-router-dom | 7.18.4 | MIT; https://github.com/remix-run/react-router |
+| @tanstack/react-query | 5.104.5 | MIT; https://github.com/TanStack/query |
+| openapi-fetch | 0.17.0 | MIT; https://github.com/openapi-ts/openapi-typescript |
+| @playwright/test | 1.64.0 | Apache-2.0; https://github.com/microsoft/playwright |
+| typescript | 5.9.3 | Apache-2.0; https://github.com/microsoft/TypeScript |
+| vite | 8.3.5 | MIT; https://github.com/vitejs/vite |
+| @vitejs/plugin-react | 6.1.2 | MIT; https://github.com/vitejs/vite-plugin-react |
+| msw | 2.14.4 | MIT; https://github.com/mswjs/msw |
+| openapi-typescript | 7.13.0 | MIT; https://github.com/openapi-ts/openapi-typescript |
+| swagger2openapi | 7.0.8 | BSD-3-Clause; https://github.com/Mermade/oas-kit |
+| yaml | 2.9.1 | ISC; https://github.com/eemeli/yaml |
+| oxlint | 1.89.0 | MIT; https://github.com/oxc-project/oxc |
+| @types/node | 24.19.2 | MIT; https://github.com/DefinitelyTyped/DefinitelyTyped |
+| @types/react | 19.3.0 | MIT; DefinitelyTyped |
+| @types/react-dom | 19.3.0 | MIT; DefinitelyTyped |
+
+Иконки, логотипы и названия организаций сохраняют принадлежность своим
+правообладателям. Лицензия программной библиотеки не устанавливает права на
+товарные знаки и не означает одобрение проекта владельцами брендов.
+
+Playwright при установке браузеров скачивает отдельные Chromium/Firefox/WebKit
+сборки с собственными лицензиями. Они нужны для тестов, не включаются в
+пользовательский runtime приложения и не заменяются лицензией Playwright.
+
+## 5. Python, документы, шрифты и вспомогательные материалы
+
+| Компонент | Версия / область | Лицензия / источник |
+|---|---|---|
+| xlrd | 2.0.2, чтение XLS | BSD; https://pypi.org/project/xlrd/2.0.2/ |
+| openpyxl | 3.1.5, XLSX | MIT; https://pypi.org/project/openpyxl/3.1.5/ |
+| pdfplumber | 0.11.9, текст и таблицы PDF | MIT; Copyright Jeremy Singer-Vine; https://github.com/jsvine/pdfplumber/blob/stable/LICENSE.txt |
+| pdfminer.six, pypdfium2/PDFium, Pillow, et-xmlfile и другие транзитивные пакеты | разрешаются pip при сборке парсера; версии не закреплены отдельным lock-файлом | собственные лицензии в metadata/дистрибутивах; не считать их все MIT по лицензии pdfplumber |
+| ReportLab | необязательный генератор scripts/generate-test-document.py; версия в проекте не закреплена | BSD; https://pypi.org/project/reportlab/ |
+| Pillow | необязательная генерация схем credit-engine/scripts/render_admin_diagrams.py; версия в проекте не закреплена | MIT-CMU для современных Pillow; https://github.com/python-pillow/Pillow/blob/main/LICENSE |
+| DejaVu Sans | встроенный шрифт TEST PDF, системный источник генератора | Bitstream Vera Font License; изменения DejaVu public domain; https://dejavu-fonts.github.io/License.html |
+
+DejaVu copyright: Copyright (c) 2003 by Bitstream, Inc. All Rights Reserved.
+Bitstream Vera is a trademark of Bitstream, Inc. DejaVu changes are in public domain.
+Импортированные из Arev глифы имеют уведомления Tavmjong Bah, приведённые на той
+же странице лицензии. Скрипт PDF использует системный DejaVuSans.ttf, а не
+загружает коммерческий шрифт Alfa Sans.
+
+Файлы в data-collector/internal/signature/testdata/openssl/ — эталонные
+криптографические контейнеры для совместимости с OpenSSL. OpenSSL не вызывается
+backend-процессом проверки: криптографические проверки реализованы на Go.
+Отдельные Bouncy Castle, CryptoPro SDK и внешние платные сервисы верификации в
+штатный образ не включены. SIGNATURE_VERIFIER_URL — опциональная граница адаптера;
+если подключить свой сервис, его условия и состав нужно учитывать отдельно.
+
+## 6. Модели и датасеты
+
+- ip-v2 и legal-v2 — детерминированные JSON-скоринговые определения проекта,
+  их версии, правила, параметры и проверка переноса описаны в
+  credit-engine/models/README.md и credit-engine/docs/12_v2_model_sources.md.
+  Это не скачанные нейросетевые веса и не модели, обученные на клиентском датасете.
+- В штатном Docker Compose нет OpenAI, иных LLM/ML API, платного OCR или удалённого
+  inference. Для оценки не требуется внешний API key.
+- Компании A–E, пользователи, ИНН-сценарии, финансовые показатели, токены demo-*,
+  согласия, МЧД и ответы источников подготовлены для демонстрации. Наборы находятся
+  в mock-api/*/seed/, data-collector/examples/, frontend/src/mocks/ и
+  credit-engine/testdata/. Они не являются выгрузкой реальных клиентов.
+- Встроенный TEST PDF создаётся scripts/generate-test-document.py. Он содержит
+  синтетические значения и исключён из оценки по известному SHA-256.
+- data-collector/examples/files/ и testdata/signature/trust содержат тестовые
+  документы, сертификаты и CRL профиля TEST. Они не подтверждают УКЭП и не являются
+  сертификатами промышленного удостоверяющего центра.
+- Реальные локальные финансовые образцы не распространяются через Git и Docker
+  build context; порядок их добавления описан в
+  data-collector/financial_parser/testdata/README.md. Соответствующие тесты
+  пропускаются без файлов. Лицензия/основание использования своих образцов
+  определяется отдельно их владельцем.
+
+## 7. Смоделированные внешние интеграции
+
+Все перечисленные ниже интеграции в штатной поставке обслуживает локальный
+контейнер mock-api. Названия указывают моделируемый источник, а не договор,
+сертификацию, подключение к промышленному API или подтверждение достоверности
+реестровых сведений.
+
+| Группа / префикс mock-api | Что моделируется |
+|---|---|
+| CoreBanking /core-banking/v1 | АБС, профиль, счета, обороты, кредиты, ограничения |
+| FNS /fns | ФНС: ЕГРЮЛ/ЕГРИП, ГИР БО, прозрачность, МСП, блокировки |
+| BKI /bki/v1 | БКИ компании и руководителя по синтетическому согласию |
+| Compliance /compliance/v1 | ЗСК, санкции и контрольные перечни |
+| FSSP /fssp/v1 | исполнительные производства |
+| KAD /kad/v1 | арбитражные дела |
+| Fedresurs /fedresurs/v1 | банкротство, лизинг и события организаций |
+| M4D /m4d/v1 | реестр МЧД, статусы и полномочия |
+| TaxReports /tax-reports/v1 | налоговые формы, УСН, НПД, ЕНС |
+| PledgeRegistry /pledge-registry/v1 | залоги движимого имущества |
+| EGRN /egrn/v1 | права, ипотека и ограничения недвижимости |
+| Gosuslugi /gosuslugi/v1 | цифровой профиль, паспорт, доходы, занятость |
+| OpenBanking /open-banking/v1 | счета в других банках и согласия |
+| Marketplaces /marketplaces/v1 | Wildberries и Ozon, продажи/выплаты |
+| OFD /ofd/v1 | онлайн-кассы и выручка по чекам |
+| Zakupki /zakupki/v1 | закупки 44-ФЗ/223-ФЗ, контракты и РНП |
+| Signals /signals/v1 | проверки, товарные знаки, новости |
+| CBR /cbr | SOAP-форма ответа о ключевой ставке ЦБ |
+| HH /hh | работодатели/вакансии в форме hh.ru |
+| Bank /bank/v1 | совместимый диагностический мок старых внутренних систем |
+
+Банковские лимиты/выдача credit-engine-bank, вход по выбранному пользователю,
+демо-код подписания и исходы старых MSW-экранов также моделируются. SMS не
+отправляется, реальная выплата не выполняется. Внешний удостоверяющий центр
+/ca/v1, промышленный OCSP и реальная КЭП договора не подключены.
+
+Описание источников: mock-api/README.md и docs/mock-api-guide.md.
+Сценарии и ограничения: docs/run-scenarios.md, docs/e-signature.md,
+docs/financial-documents.md и docs/api.md.
