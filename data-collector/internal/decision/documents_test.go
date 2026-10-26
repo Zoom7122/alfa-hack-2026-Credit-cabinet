@@ -3,10 +3,34 @@ package decision
 import (
 	"encoding/json"
 	"math"
+	"reflect"
 	"testing"
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/domain"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/testdocument"
 )
+
+func TestTestPDFAttachmentCannotConfirmScoringEvidence(t *testing.T) {
+	for _, soleProprietor := range []bool{false, true} {
+		in := legalInput()
+		if soleProprietor {
+			in.Application.Company.Type = domain.CompanySoleProprietor
+		}
+		in.Scoring = nil
+		in.Systems = nil
+		baseline, baseFacts := Build(in)
+		for _, typ := range []domain.DocumentType{domain.DocFinancialStatements, domain.DocTaxReturn, domain.DocBankStatement, domain.DocContractWithCustomer} {
+			in.Application.Documents = []domain.Document{{ID: "test-pdf", Type: typ, SHA256: testdocument.SHA256}}
+			got, facts := Build(in)
+			if !reflect.DeepEqual(got, baseline) || !reflect.DeepEqual(facts, baseFacts) {
+				t.Fatalf("test PDF affects evidence for %s/%s", in.Application.Company.Type, typ)
+			}
+			if len(in.Application.Documents) != 1 {
+				t.Fatal("scoring mutated the application's attachment list")
+			}
+		}
+	}
+}
 
 func TestDocumentIncomeChangesScoringEvidence(t *testing.T) {
 	in := legalInput()

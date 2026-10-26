@@ -9,6 +9,7 @@ import (
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/domain"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/storage"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/testdocument"
 )
 
 func staged(names ...string) []storage.Staged {
@@ -95,6 +96,24 @@ func TestPlanDocumentsStates(t *testing.T) {
 	if d := got["contract.sig"]; d.MimeType != "application/pkcs7-signature" || d.SignatureState != domain.SignaturePending ||
 		d.RecognitionState != domain.RecognitionNotApplicable || d.SignedDocumentID != "" {
 		t.Errorf("attached signature = %+v", d)
+	}
+}
+
+func TestPlanTestPDFDoesNotWaitForProcessing(t *testing.T) {
+	files := staged("renamed.pdf", "renamed.pdf.sig", "real.pdf", "real.pdf.sig")
+	files[0].SHA256 = testdocument.SHA256
+	planned, fields := plan(files, DocumentSpec{FileName: "renamed.pdf", Type: domain.DocFinancialStatements})
+	if len(fields) != 0 || len(planned) != 4 {
+		t.Fatalf("test attachment not accepted: %+v %+v", planned, fields)
+	}
+	for _, p := range planned {
+		if strings.HasPrefix(p.doc.FileName, "renamed") {
+			if p.doc.SignatureState != domain.SignatureNotSigned || p.doc.RecognitionState != domain.RecognitionNotApplicable {
+				t.Fatalf("test attachment waits for processing: %+v", p.doc)
+			}
+		} else if p.doc.SignatureState != domain.SignaturePending {
+			t.Fatalf("real document verification changed: %+v", p.doc)
+		}
 	}
 }
 

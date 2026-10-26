@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/testdocument"
 )
 
 type SnapshotDocument struct {
@@ -117,6 +120,8 @@ var indicatorCodes = map[string]string{"accounting_revenue": "2110", "net_profit
 
 // BuildSnapshot uses only admitted, hash-bound indicators of the current document generation.
 func BuildSnapshot(in Input, id, collection string, docs []SnapshotDocument) (Request, Facts, error) {
+	// Keep synthetic attachments, their values and verification diagnostics out of the engine request.
+	docs = slices.DeleteFunc(slices.Clone(docs), func(d SnapshotDocument) bool { return testdocument.IsSHA256(d.SHA256) })
 	statements, err := ExactStatements(in.Systems["FNS"], in.Application.Company.ID, []int{in.Now.Year() - 2, in.Now.Year() - 1})
 	if err != nil {
 		return Request{}, Facts{}, err

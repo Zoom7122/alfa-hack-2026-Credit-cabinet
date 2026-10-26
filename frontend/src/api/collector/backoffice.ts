@@ -211,6 +211,7 @@ export function toBoDossier(c: S['BoDossier']): BoDossierView {
                     file_name: d.file_name ?? '',
                     mime_type: d.mime_type ?? '',
                     size_bytes: d.size_bytes ?? 0,
+                    is_test: d.is_test,
                     uploaded_at: d.uploaded_at ?? '',
                     signature: { state: d.signature_state === 'DONE' ? 'VALID' : d.signature_state === 'PENDING' ? 'PENDING' : 'NOT_SIGNED' },
                 }) as unknown as Document,

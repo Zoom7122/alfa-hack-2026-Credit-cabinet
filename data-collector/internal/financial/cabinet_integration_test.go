@@ -1,12 +1,13 @@
 //go:build integration
 
-package financial
+package financial_test
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	. "github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/financial"
 	"mime/multipart"
 	"net/http/httptest"
 	"strings"
@@ -20,7 +21,7 @@ import (
 )
 
 func TestCabinetPowerOfAttorneyAttachments(t *testing.T) {
-	pool := financialDB(t)
+	pool := IntegrationDB(t)
 	ctx := context.Background()
 	// A power of attorney does not depend on the financial parser's tax/legal-form context.
 	if _, err := pool.Exec(ctx, `UPDATE applications SET status='WAITING_FOR_INFO', form='{}' WHERE id='app-ooo';
@@ -131,11 +132,11 @@ func TestCabinetPowerOfAttorneyAttachments(t *testing.T) {
 }
 
 func TestFinancialAttachmentGenerationStates(t *testing.T) {
-	pool := financialDB(t)
+	pool := IntegrationDB(t)
 	ctx := context.Background()
 	repo := Repository{Pool: pool, Topic: "finance"}
-	doc := Document{ID: "doc-fin", ApplicationID: "app-ooo", Type: "FINANCIAL_STATEMENTS", FileName: "balance.pdf", MIME: "application/pdf", SHA256: hash([]byte("original")), StorageKey: "original", Size: 8}
-	sig := Document{ID: "doc-sig", ApplicationID: "app-ooo", Type: "SIGNATURE", FileName: "balance.pdf.sig", MIME: "application/pkcs7-signature", SignedDocumentID: doc.ID, SHA256: hash([]byte("signature")), StorageKey: "signature", Size: 9}
+	doc := Document{ID: "doc-fin", ApplicationID: "app-ooo", Type: "FINANCIAL_STATEMENTS", FileName: "balance.pdf", MIME: "application/pdf", SHA256: IntegrationHash([]byte("original")), StorageKey: "original", Size: 8}
+	sig := Document{ID: "doc-sig", ApplicationID: "app-ooo", Type: "SIGNATURE", FileName: "balance.pdf.sig", MIME: "application/pkcs7-signature", SignedDocumentID: doc.ID, SHA256: IntegrationHash([]byte("signature")), StorageKey: "signature", Size: 9}
 	if err := repo.Upload(ctx, doc, []Document{sig}); err != nil {
 		t.Fatal(err)
 	}
@@ -157,8 +158,8 @@ func TestFinancialAttachmentGenerationStates(t *testing.T) {
 	}
 	complete := func(job Job) {
 		t.Helper()
-		report := SignatureReport{ID: newID("sigr_"), Verdict: "INDETERMINATE", Policy: "FINANCIAL_STATEMENTS", TrustMode: "MOCK", DocumentSHA256: doc.SHA256, VerifiedAt: time.Now().UTC()}
-		if err := repo.Complete(ctx, job, Result{ID: newID("fin_"), DocumentID: doc.ID, Generation: job.Generation, SignatureReportID: report.ID, Signature: report, ProcessedAt: time.Now().UTC(), Extraction: Extraction{DocumentSHA256: doc.SHA256}}); err != nil {
+		report := SignatureReport{ID: IntegrationNewID("sigr_"), Verdict: "INDETERMINATE", Policy: "FINANCIAL_STATEMENTS", TrustMode: "MOCK", DocumentSHA256: doc.SHA256, VerifiedAt: time.Now().UTC()}
+		if err := repo.Complete(ctx, job, Result{ID: IntegrationNewID("fin_"), DocumentID: doc.ID, Generation: job.Generation, SignatureReportID: report.ID, Signature: report, ProcessedAt: time.Now().UTC(), Extraction: Extraction{DocumentSHA256: doc.SHA256}}); err != nil {
 			t.Fatal(err)
 		}
 	}

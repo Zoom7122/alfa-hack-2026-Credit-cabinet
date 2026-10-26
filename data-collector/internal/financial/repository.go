@@ -16,6 +16,7 @@ import (
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/events"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/generated/financial/model"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/generated/financial/table"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/testdocument"
 )
 
 var ErrNotFound = errors.New("document/application not found")
@@ -90,7 +91,7 @@ func notFound(err error) error {
 func document(m model.Documents) Document {
 	return Document{ID: m.ID, ApplicationID: m.ApplicationID, Type: m.Type, FileName: m.FileName, MIME: m.MimeType,
 		Size: m.SizeBytes, SHA256: m.Sha256, StorageKey: m.StorageKey, SignedDocumentID: value(m.SignedDocumentID),
-		Generation: int(m.FinancialGeneration), UploadedAt: m.UploadedAt, Origin: "CLIENT_UPLOAD",
+		Generation: int(m.FinancialGeneration), UploadedAt: m.UploadedAt, Origin: "CLIENT_UPLOAD", IsTest: testdocument.IsSHA256(m.Sha256),
 		InfoRequestID: value(m.InfoRequestID), Recognition: json.RawMessage(value(m.Recognition)),
 		Signatures: SignatureSummary{State: m.SignatureState, Verdict: value(m.SignatureVerdict)}}
 }
@@ -168,6 +169,9 @@ func insertDocument(ctx context.Context, tx pgx.Tx, d Document) error {
 	return err
 }
 func (r Repository) enqueue(ctx context.Context, tx pgx.Tx, d Document, a Applicant) error {
+	if testdocument.IsSHA256(d.SHA256) {
+		return skipTestDocument(ctx, tx, d)
+	}
 	type generation struct{ Value int32 }
 	g, err := queryOne[generation](ctx, tx, documents.UPDATE().SET(documents.FinancialGeneration.SET(documents.FinancialGeneration.ADD(jet.Int(1))), documents.SignatureState.SET(jet.String("PENDING")), documents.SignatureVerdict.SET(jet.StringExp(jet.NULL))).
 		WHERE(documents.ID.EQ(jet.String(d.ID)).AND(documents.DeletedAt.IS_NULL())).RETURNING(documents.FinancialGeneration))
@@ -217,7 +221,7 @@ func (r Repository) Upload(ctx context.Context, d Document, sigs []Document) err
 				return ErrUnsupported
 			}
 		}
-		if isFinancial(target.Type) && !supportsFinancial(a, target.Type) {
+		if isFinancial(target.Type) && !testdocument.IsSHA256(target.SHA256) && !supportsFinancial(a, target.Type) {
 			return ErrUnsupported
 		}
 		if d.InfoRequestID != "" {
@@ -239,6 +243,9 @@ func (r Repository) Upload(ctx context.Context, d Document, sigs []Document) err
 			if err = insertDocument(ctx, tx, s); err != nil {
 				return err
 			}
+		}
+		if testdocument.IsSHA256(target.SHA256) {
+			return skipTestDocument(ctx, tx, target)
 		}
 		if isFinancial(target.Type) {
 			return r.enqueue(ctx, tx, target, a)
@@ -262,6 +269,9 @@ func (r Repository) Retry(ctx context.Context, app, id string) error {
 				return err
 			}
 		}
+		if testdocument.IsSHA256(d.SHA256) {
+			return skipTestDocument(ctx, tx, d)
+		}
 		if isFinancial(d.Type) {
 			if !supportsFinancial(a, d.Type) {
 				return ErrUnsupported
@@ -272,8 +282,23 @@ func (r Repository) Retry(ctx context.Context, app, id string) error {
 	})
 }
 
+// A sample is accepted as an attachment without queuing a parser or verifier.
+// Signature children must not leave scoring waiting for work that is skipped.
+func skipTestDocument(ctx context.Context, tx pgx.Tx, d Document) error {
+	_, err := execute(ctx, tx, documents.UPDATE().SET(
+		documents.SignatureState.SET(jet.String("NOT_SIGNED")),
+		documents.SignatureVerdict.SET(jet.StringExp(jet.NULL)),
+		documents.Recognition.SET(jet.StringExp(jet.CAST(jet.String(`{"state":"NOT_APPLICABLE"}`)).AS("jsonb"))),
+	).WHERE(documents.ApplicationID.EQ(jet.String(d.ApplicationID)).AND(documents.DeletedAt.IS_NULL()).AND(
+		documents.ID.EQ(jet.String(d.ID)).OR(documents.SignedDocumentID.EQ(jet.String(d.ID))))))
+	return err
+}
+
 // Generic attachments (including powers of attorney) use the signature worker, without financial parsing.
 func (r Repository) enqueueSignature(ctx context.Context, tx pgx.Tx, d Document, a Applicant, requestID string) error {
+	if testdocument.IsSHA256(d.SHA256) {
+		return skipTestDocument(ctx, tx, d)
+	}
 	rows, err := queryMany[model.Documents](ctx, tx, documents.SELECT(documents.AllColumns).WHERE(
 		documents.ApplicationID.EQ(jet.String(d.ApplicationID)).AND(documents.DeletedAt.IS_NULL()).AND(
 			documents.ID.EQ(jet.String(d.ID)).OR(documents.SignedDocumentID.EQ(jet.String(d.ID))))))

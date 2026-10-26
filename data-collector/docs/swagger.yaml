@@ -840,6 +840,8 @@ definitions:
         type: string
       info_request_id:
         type: string
+      is_test:
+        type: boolean
       mime_type:
         example: application/pdf
         type: string

@@ -7,6 +7,13 @@
     text-align: center;
 }
 
+.documents-step__demo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--gap-12);
+}
+
 .documents-step__list {
     display: flex;
     flex-direction: column;

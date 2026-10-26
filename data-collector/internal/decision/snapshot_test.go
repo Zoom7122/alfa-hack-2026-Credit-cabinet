@@ -3,6 +3,8 @@ package decision
 import (
 	"encoding/json"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/domain"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/testdocument"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -77,5 +79,38 @@ func TestSnapshotIntegrityUsesIncludedDocuments(t *testing.T) {
 	}
 	if !*req.Scoring.LegalEntity.MaterialForgery {
 		t.Fatal("confirmed current integrity failure lost")
+	}
+}
+
+func TestSnapshotIgnoresAllTestPDFData(t *testing.T) {
+	in := Input{Application: domain.Application{Company: domain.Company{ID: "borrower", Type: domain.CompanyLegalEntity}}, Now: time.Date(2026, 10, 23, 0, 0, 0, 0, time.UTC),
+		Systems: map[domain.System]json.RawMessage{domain.SystemFNS: json.RawMessage(`{"bo_bfo":[{"period":"2025","typeCorrections":[{"correction":{"financialResult":{"current2110":100}}}]}]}`)}}
+	baseline, baseFacts, err := BuildSnapshot(in, "job", "collection", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Even a stale report claiming qualified verification, huge revenue and forgery
+	// must have no effect when it belongs to the recognised sample.
+	var doc SnapshotDocument
+	err = json.Unmarshal([]byte(`{"id":"test-pdf","generation":1,"signature_state":"FAILED","signature_verdict":"INVALID","integrity_status":"INVALID","financial_status":"FAILED","financial_result":{"diagnostics":[{"code":"INN_MISMATCH"}],"scoring_indicators":[{"name":"accounting_revenue","period":"2025","period_kind":"YEAR","amount":"999999999999.00","eligible":true,"sources":[]}]}}`), &doc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc.SHA256, doc.FinancialResult.DocumentSHA256 = testdocument.SHA256, testdocument.SHA256
+	req, facts, err := BuildSnapshot(in, "job", "collection", []SnapshotDocument{doc})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(req.Scoring, baseline.Scoring) || !reflect.DeepEqual(req.FinancialStatements, baseline.FinancialStatements) || !reflect.DeepEqual(facts, baseFacts) {
+		t.Fatal("test PDF changed scoring facts or financial statements")
+	}
+	if len(req.InputSnapshot.Indicators) != 0 || len(req.InputSnapshot.Diagnostics) != 0 || string(req.InputSnapshot.Documents) != "[]" {
+		t.Fatalf("test PDF data leaked into scoring snapshot: %+v", req.InputSnapshot)
+	}
+	// A real document beside the sample must still contribute its integrity result.
+	invalid := "INVALID"
+	req, _, err = BuildSnapshot(in, "job", "collection", []SnapshotDocument{doc, {ID: "real", SHA256: "real-hash", IntegrityStatus: &invalid}})
+	if err != nil || !*req.Scoring.LegalEntity.MaterialForgery {
+		t.Fatal("real document was excluded with the sample", err)
 	}
 }

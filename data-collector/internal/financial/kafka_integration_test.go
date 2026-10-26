@@ -1,10 +1,11 @@
 //go:build integration
 
-package financial
+package financial_test
 
 import (
 	"context"
 	"errors"
+	. "github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/financial"
 	"os"
 	"testing"
 	"time"
@@ -30,9 +31,9 @@ func TestFinancialKafkaRedelivery(t *testing.T) {
 	if os.Getenv("KAFKA_BROKERS") == "" {
 		t.Skip("set KAFKA_BROKERS for live Kafka tests")
 	}
-	pool := financialDB(t)
+	pool := IntegrationDB(t)
 	brokers := kafka.Brokers(os.Getenv("KAFKA_BROKERS"))
-	topic := "it.financial." + newID("")
+	topic := "it.financial." + IntegrationNewID("")
 	group := topic + ".worker"
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -51,8 +52,8 @@ func TestFinancialKafkaRedelivery(t *testing.T) {
 	}
 	defer p.Close()
 	r := Repository{Pool: pool, Topic: topic}
-	d, ev := enqueueTestDocument(t, r)
-	pub := outbox.New(postgres.NewOutboxRepository(pool), p, outbox.Config{Topics: []string{topic}, BatchSize: 10, PublishTimeout: 10 * time.Second}, workerTestLog)
+	d, ev := IntegrationEnqueueTestDocument(t, r)
+	pub := outbox.New(postgres.NewOutboxRepository(pool), p, outbox.Config{Topics: []string{topic}, BatchSize: 10, PublishTimeout: 10 * time.Second}, IntegrationLog)
 	if n, err := pub.PublishOnce(ctx); err != nil || n != 1 {
 		t.Fatalf("outbox: %d %v", n, err)
 	}
@@ -60,10 +61,12 @@ func TestFinancialKafkaRedelivery(t *testing.T) {
 	if err = pool.QueryRow(ctx, `SELECT published_at IS NOT NULL FROM outbox WHERE key=$1`, d.ID).Scan(&published); err != nil || !published {
 		t.Fatal("outbox not persisted", err)
 	}
-	processor := processorFunc(func(_ context.Context, j Job, d Document, _ []Document) (Result, error) { return testResult(j, d), nil })
+	processor := IntegrationProcessorFunc(func(_ context.Context, j Job, d Document, _ []Document) (Result, error) {
+		return IntegrationResult(j, d), nil
+	})
 	failure := errors.New("simulated database outage during result persistence")
-	first := NewWorker(interruptedSave{Repository: r, err: failure}, processor, WorkerConfig{}, workerTestLog)
-	c, err := kafka.NewConsumer(brokers, "financial-test", group, topic, 1, workerTestLog)
+	first := NewWorker(interruptedSave{Repository: r, err: failure}, processor, WorkerConfig{}, IntegrationLog)
+	c, err := kafka.NewConsumer(brokers, "financial-test", group, topic, 1, IntegrationLog)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,13 +94,13 @@ func TestFinancialKafkaRedelivery(t *testing.T) {
 	if err = pool.QueryRow(ctx, `SELECT count(*) FROM financial_document_results`).Scan(&count); err != nil || count != 0 {
 		t.Fatalf("failed save leaked results: %d %v", count, err)
 	}
-	expireLease(t, r, ev.TaskID)
+	IntegrationExpireLease(t, r, ev.TaskID)
 	// Outbox delivery may repeat, even after a successful broker acknowledgement.
-	if err = p.Publish(ctx, []events.Message{{Topic: topic, Key: d.ID, Payload: requested(ev.TaskID)}}); err != nil {
+	if err = p.Publish(ctx, []events.Message{{Topic: topic, Key: d.ID, Payload: IntegrationRequested(ev.TaskID)}}); err != nil {
 		t.Fatal(err)
 	}
-	second := NewWorker(r, processor, WorkerConfig{}, workerTestLog)
-	c, err = kafka.NewConsumer(brokers, "financial-test", group, topic, 1, workerTestLog)
+	second := NewWorker(r, processor, WorkerConfig{}, IntegrationLog)
+	c, err = kafka.NewConsumer(brokers, "financial-test", group, topic, 1, IntegrationLog)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -14,6 +14,7 @@ import (
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/decision"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/domain"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/testdocument"
 )
 
 const (
@@ -28,7 +29,7 @@ const (
 	selectDecisionInputSQL = `
 SELECT a.form, coalesce(t.raw_collection_id, ''), coalesce(t.finished_at, a.updated_at),
        EXISTS (SELECT 1 FROM signature_reports r JOIN documents d ON d.id = r.document_id
-               WHERE d.application_id = a.id AND d.deleted_at IS NULL AND r.integrity_status = 'INVALID' AND r.document_sha256=d.sha256 AND r.verified_at=(SELECT max(r2.verified_at) FROM signature_reports r2 WHERE r2.document_id=d.id))
+               WHERE d.application_id = a.id AND d.deleted_at IS NULL AND d.sha256 <> $2 AND r.integrity_status = 'INVALID' AND r.document_sha256=d.sha256 AND r.verified_at=(SELECT max(r2.verified_at) FROM signature_reports r2 WHERE r2.document_id=d.id))
 FROM applications a
 LEFT JOIN LATERAL (SELECT rc.id AS raw_collection_id, ct.finished_at FROM collection_tasks ct
                    LEFT JOIN raw_collections rc ON rc.task_id = ct.id
@@ -122,7 +123,7 @@ func (r *DecisionRepository) Input(ctx context.Context, appID string, now time.T
 		formDecoded  formRecord
 		systemsQuery = make([]string, 0, len(domain.Systems))
 	)
-	if err := r.pool.QueryRow(ctx, selectDecisionInputSQL, appID).Scan(&form, &rawID, &finished, &forged); err != nil {
+	if err := r.pool.QueryRow(ctx, selectDecisionInputSQL, appID, testdocument.SHA256).Scan(&form, &rawID, &finished, &forged); err != nil {
 		return decision.Input{}, fmt.Errorf("select decision input: %w", err)
 	}
 	if err := json.Unmarshal(form, &formDecoded); err != nil {

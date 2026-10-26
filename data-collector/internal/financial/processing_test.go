@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/testdocument"
 )
 
 type verifierFunc func(context.Context, VerifyInput) (SignatureReport, error)
@@ -68,6 +70,15 @@ func TestSignatureGate(t *testing.T) {
 				t.Fatalf("eligible=%v want=%v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestTestPDFNeverEligibleEvenWithValidSignature(t *testing.T) {
+	a := Applicant{Type: "SOLE_PROPRIETOR", INN: "123456789012", TaxRegime: "USN_INCOME"}
+	in := VerifyInput{DocumentSHA256: testdocument.SHA256, Applicant: a, Policy: policy(a)}
+	r := Result{Extraction: Extraction{DocumentSHA256: in.DocumentSHA256}, Signature: validReport(in)}
+	if r.EligibleForScoring(a) {
+		t.Fatal("test PDF admitted by a positive verifier report")
 	}
 }
 

@@ -13,6 +13,7 @@ import type { CollectorDocument } from '../../../api/collector/types';
 import type { DocumentType } from '../../../api/types';
 import { DOCUMENT_LABELS } from '../../../shared/lib/dictionaries';
 import { formatFileSize, formatUpdated } from '../../../shared/lib/format';
+import { TEST_DOCUMENT_NOTICE } from '../../../shared/lib/testDocument';
 import { SIGNATURE_PANEL_ID, CollectorSignaturePanel } from './CollectorSignaturePanel';
 import './CollectorDocumentsTab.css';
 
@@ -122,6 +123,7 @@ export function CollectorDocumentsTab({ applicationId, documents }: { applicatio
                                             <Typography.Text view='primary-small' weight='bold'>
                                                 {doc.file_name}
                                             </Typography.Text>
+                                            {doc.is_test && <Typography.Text view='primary-small' color='secondary'>{TEST_DOCUMENT_NOTICE}</Typography.Text>}
                                             <Typography.Text view='primary-small' color='secondary'>
                                                 {[doc.size_bytes !== undefined && formatFileSize(doc.size_bytes), signed && `подпись к «${signed.file_name}»`, doc.uploaded_at && formatUpdated(doc.uploaded_at)]
                                                     .filter(Boolean)

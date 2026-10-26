@@ -3020,6 +3020,9 @@ const docTemplate = `{
                 "info_request_id": {
                     "type": "string"
                 },
+                "is_test": {
+                    "type": "boolean"
+                },
                 "mime_type": {
                     "type": "string",
                     "example": "application/pdf"

@@ -6,6 +6,7 @@ import type { Document } from '../../../api/types';
 import { DOCUMENT_LABELS } from '../../../shared/lib/dictionaries';
 import { type Badge, recognitionBadge, signatureBadge } from '../../../shared/lib/documentBadges';
 import { formatFileSize, formatUpdated, shortName } from '../../../shared/lib/format';
+import { TEST_DOCUMENT_NOTICE } from '../../../shared/lib/testDocument';
 import { FormCard } from '../../../shared/ui/FormCard/FormCard';
 
 function BadgeCell({ badge }: { badge?: Badge }) {
@@ -47,6 +48,7 @@ export function BoDocumentsTab({ documents }: { documents: Document[] }) {
                                     <Typography.Text view='primary-small' weight='bold' tag='div'>
                                         {doc.file_name}
                                     </Typography.Text>
+                                    {doc.is_test && <Typography.Text view='primary-small' color='secondary' tag='div'>{TEST_DOCUMENT_NOTICE}</Typography.Text>}
                                     <Typography.Text view='primary-small' color='secondary' tag='div'>
                                         {formatFileSize(doc.size_bytes)}
                                     </Typography.Text>

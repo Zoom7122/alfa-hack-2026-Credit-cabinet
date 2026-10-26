@@ -203,6 +203,20 @@ func planDocuments(applicationID, uploadedBy string, files []storage.Staged, spe
 			planned = append(planned, plannedFile{staged: e.staged, doc: doc})
 		}
 	}
+	// The supplied demo PDF and any attached signatures stay out of processing.
+	testIDs := make(map[string]bool)
+	for _, p := range planned {
+		if p.doc.IsTest() {
+			testIDs[p.doc.ID] = true
+		}
+	}
+	for i := range planned {
+		d := &planned[i].doc
+		if testIDs[d.ID] || testIDs[d.SignedDocumentID] {
+			d.SignatureState = domain.SignatureNotSigned
+			d.RecognitionState = domain.RecognitionNotApplicable
+		}
+	}
 	return planned, nil
 }
 
