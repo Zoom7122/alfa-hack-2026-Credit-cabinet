@@ -1,0 +1,30 @@
+.test-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-8);
+    min-width: 0;
+}
+
+.test-field__controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--gap-8);
+    font-size: 13px;
+}
+
+.test-field__controls select {
+    min-width: 128px;
+    min-height: 36px;
+    padding: 4px 8px;
+    border: 1px solid var(--color-light-neutral-300, #d2d3d5);
+    border-radius: 8px;
+    background: var(--color-light-base-bg-primary);
+    color: inherit;
+    font: inherit;
+}
+
+.test-field__controls select:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}

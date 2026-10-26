@@ -50,13 +50,13 @@ export async function releasesWithRuntime(page, go) {
     refresh.disabled = true; status.replaceChildren(el("p", {class: "loading"}, "Запрашиваем запущенный МС1…"));
     try {
       const result = await api("/api/admin/v1/runtime/models");
-      status.replaceChildren(el("p", {class: "notice success"}, "Получен ответ МС1. Время запроса: " + date(new Date().toISOString())), table(["Версия / ID", "Заёмщик", "SHA-256 определения", "Схема фактов / SHA-256"], result.models.map(m => [m.version + " · " + m.id, borrower(m.borrower_type), el("code", {}, m.definition_sha256), el("span", {}, (m.uses_facts ? m.facts_schema_version : "Поставщик не используется"), el("code", {class: "block"}, m.facts_schema_sha256))])));
+      status.replaceChildren(el("p", {class: "notice success"}, "Получен ответ МС1. Время запроса: " + date(new Date().toISOString())), table(["Версия / ID", "Применение", "Заёмщик", "SHA-256 определения", "Схема фактов / SHA-256"], result.models.map(m => [m.version + " · " + m.id, m.active ? "Активная модель" : "Опубликована", borrower(m.borrower_type), el("code", {}, m.definition_sha256), el("span", {}, (m.uses_facts ? m.facts_schema_version : "Поставщик не используется"), el("code", {class: "block"}, m.facts_schema_sha256))])));
     } catch (error) { status.replaceChildren(el("p", {class: "notice warning"}, "Сведения о запущенных версиях недоступны. Подготовленные релизы ниже не подтверждают их применение."), problemView(error)); }
     finally { refresh.disabled = false; }
   });
   runtime.append(el("div", {class: "page-heading"}, el("h2", {}, "Версии, сообщённые запущенным МС1"), refresh), status);
   refresh.click();
-  return el("div", {}, el("h1", {}, "Релизы и запущенные версии"), runtime, el("section", {class: "panel"}, el("h2", {}, "Подготовленные комплекты"), el("p", {class: "notice info"}, "Подготовка комплекта не меняет рабочую сборку. Сверяйте версии и SHA-256 с ответом МС1."), rows.length ? table(["Релиз / дата", "Модели / SHA-256", "Архив"], rows.map(row => [
+  return el("div", {}, el("h1", {}, "Релизы и запущенные версии"), runtime, el("section", {class: "panel"}, el("h2", {}, "Подготовленные комплекты"), el("p", {class: "notice info"}, "Экспорт комплекта не переключает активные версии. Применение выполняется в разделе «Модели»."), rows.length ? table(["Релиз / дата", "Модели / SHA-256", "Архив"], rows.map(row => [
     el("span", {}, row.version, el("small", {class: "block muted"}, date(row.created_at)), row.created_by),
     el("div", {}, row.manifest.models.map(m => el("p", {}, m.version, el("code", {class: "block"}, m.definition_sha256)))),
     el("span", {}, el("a", {href: "/api/admin/v1/releases/" + encodeURIComponent(row.version) + "/archive", class: "button", download: "credit-engine-models-" + row.version + ".zip"}, "Скачать ZIP"), el("code", {class: "block"}, row.archive_sha256))

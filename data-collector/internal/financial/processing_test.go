@@ -76,8 +76,7 @@ func TestSignatureGate(t *testing.T) {
 func TestTestPDFNeverEligibleEvenWithValidSignature(t *testing.T) {
 	a := Applicant{Type: "SOLE_PROPRIETOR", INN: "123456789012", TaxRegime: "USN_INCOME"}
 	in := VerifyInput{DocumentSHA256: testdocument.SHA256, Applicant: a, Policy: policy(a)}
-	r := Result{Extraction: Extraction{DocumentSHA256: in.DocumentSHA256}, Signature: validReport(in)}
-	if r.EligibleForScoring(a) {
+	if signatureEligible(validReport(in), a, in.DocumentSHA256, false) {
 		t.Fatal("test PDF admitted by a positive verifier report")
 	}
 }

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { AmountInput } from '@alfalab/core-components/amount-input';
 import { Input } from '@alfalab/core-components/input';
 import { SliderInput } from '@alfalab/core-components/slider-input';
@@ -6,6 +7,7 @@ import { withSuffix } from '@alfalab/core-components/with-suffix';
 import type { Product } from '../../../api/types';
 import { clamp, type TermsValue } from '../../lib/terms';
 import { formatCompactMoney, formatMoney, pluralize } from '../../lib/format';
+import { TestField } from '../TestField/TestField';
 import './TermsFields.css';
 
 const MonthsInput = withSuffix(Input);
@@ -17,19 +19,29 @@ type Props = {
     onChange: (value: TermsValue) => void;
     size?: 56 | 64;
     errors?: { amount?: string; term?: string };
+    withTestValues?: boolean;
 };
 
 /** Пара «сумма + срок» со слайдерами в пределах продукта. */
-export function TermsFields({ product, value, onChange, size = 56, errors }: Props) {
+export function TermsFields({ product, value, onChange, size = 56, errors, withTestValues }: Props) {
     const { amount, term_months: term } = product;
     const amountStep = amount.max - amount.min > 5_000_000 ? 100_000 : 10_000;
     const amountError =
         value.amount !== '' && (value.amount < amount.min || value.amount > amount.max)
             ? `От ${formatMoney(amount.min)} до ${formatMoney(amount.max)}`
             : undefined;
+    const field = (key: keyof TermsValue, children: ReactNode) => {
+        if (!withTestValues) return children;
+        const range = key === 'amount' ? amount : term;
+        return <TestField label={key === 'amount' ? 'Сумма кредита' : 'Срок'}
+            value={typeof value[key] === 'number' ? value[key] as number : undefined}
+            values={{ good: key === 'amount' ? range.min : range.max, neutral: Math.round((range.min + range.max) / 2), bad: key === 'amount' ? range.max : range.min }}
+            onChange={(next) => onChange({ ...value, [key]: next })}>{children}</TestField>;
+    };
 
     return (
         <div className='terms-fields'>
+            {field('amount',
             <SliderInput
                 block={true}
                 size={size}
@@ -47,6 +59,8 @@ export function TermsFields({ product, value, onChange, size = 56, errors }: Pro
                 onSliderChange={({ value: v }) => onChange({ ...value, amount: v })}
                 onBlur={() => value.amount !== '' && onChange({ ...value, amount: clamp(value.amount, amount.min, amount.max) })}
             />
+            )}
+            {field('term',
             <SliderInput
                 block={true}
                 size={size}
@@ -66,6 +80,7 @@ export function TermsFields({ product, value, onChange, size = 56, errors }: Pro
                 onSliderChange={({ value: v }) => onChange({ ...value, term: v })}
                 onBlur={() => value.term !== '' && onChange({ ...value, term: clamp(value.term, term.min, term.max) })}
             />
+            )}
         </div>
     );
 }

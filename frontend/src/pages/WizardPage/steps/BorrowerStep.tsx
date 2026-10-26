@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { Checkbox } from '@alfalab/core-components/checkbox';
 import { DateInput } from '@alfalab/core-components/date-input';
 import { Input } from '@alfalab/core-components/input';
@@ -7,9 +7,11 @@ import { Select } from '@alfalab/core-components/select';
 
 import { MARITAL_LABELS, type MaritalStatus } from '../../../api/collector/types';
 import { FormCard } from '../../../shared/ui/FormCard/FormCard';
+import { TestField } from '../../../shared/ui/TestField/TestField';
 import { StepLayout } from '../components/StepLayout';
 import type { DirectorDraft } from '../draft';
 import { type StepProps, useStepGate } from '../stepProps';
+import { testDirector } from '../testValues';
 import './BorrowerStep.css';
 
 const MARITAL_OPTIONS = (Object.entries(MARITAL_LABELS) as [MaritalStatus, string][]).map(([key, content]) => ({ key, content }));
@@ -29,6 +31,13 @@ export function BorrowerStep({ app, draft, hrefFor, errors, serverErrors, solePr
     // у ИП руководитель — сам предприниматель: ИНН совпадает с ИНН ИП
     const { update } = draft;
     const companyInn = app.applicant?.inn ?? '';
+    const example = testDirector(companyInn);
+    const directorField = (field: keyof DirectorDraft, label: string, children: ReactNode) => (
+        <TestField label={label} value={d.director[field]}
+            values={{ good: example[field], neutral: field === 'inn' ? '779900099018' : field === 'birth_date' ? '1991-06-15' : 'Тестовый',
+                bad: field === 'inn' ? '779900030147' : field === 'birth_date' ? '2007-01-01' : 'Несовпадение' }}
+            onChange={(value) => setDirector({ [field]: value })}>{children}</TestField>
+    );
     useEffect(() => {
         if (soleProprietor && !d.director.inn) update((prev) => ({ director: { ...prev.director, inn: companyInn } }));
     }, [soleProprietor, companyInn, d.director.inn, update]);
@@ -43,6 +52,7 @@ export function BorrowerStep({ app, draft, hrefFor, errors, serverErrors, solePr
         >
             <FormCard title='Анкета заёмщика'>
                 <div className='borrower-step__grid'>
+                    <TestField label='Возраст, лет' value={d.age} values={{ good: 42, neutral: 30, bad: 18 }} onChange={(age) => draft.update({ age })}>
                     <Input
                         label='Возраст, лет'
                         value={d.age === undefined ? '' : String(d.age)}
@@ -52,6 +62,9 @@ export function BorrowerStep({ app, draft, hrefFor, errors, serverErrors, solePr
                         block={true}
                         size={56}
                     />
+                    </TestField>
+                    <TestField<MaritalStatus> label='Семейное положение' value={d.marital_status}
+                        values={{ good: 'MARRIED', neutral: 'SINGLE', bad: 'DIVORCED' }} onChange={(marital_status) => draft.update({ marital_status })}>
                     <Select
                         label='Семейное положение'
                         size={56}
@@ -61,6 +74,8 @@ export function BorrowerStep({ app, draft, hrefFor, errors, serverErrors, solePr
                         onChange={({ selected }) => selected && draft.update({ marital_status: selected.key as MaritalStatus })}
                         error={gate.errorOf('marital_status')}
                     />
+                    </TestField>
+                    <TestField label='Дети и иждивенцы' value={d.children_count} values={{ good: 0, neutral: 2, bad: 10 }} onChange={(children_count) => draft.update({ children_count })}>
                     <Input
                         label='Дети и иждивенцы'
                         value={d.children_count === undefined ? '' : String(d.children_count)}
@@ -71,6 +86,7 @@ export function BorrowerStep({ app, draft, hrefFor, errors, serverErrors, solePr
                         block={true}
                         size={56}
                     />
+                    </TestField>
                 </div>
             </FormCard>
 
@@ -86,9 +102,10 @@ export function BorrowerStep({ app, draft, hrefFor, errors, serverErrors, solePr
                 />
                 {d.with_director ? (
                     <div className='borrower-step__grid'>
-                        <Input label='Фамилия' value={d.director.last_name} onChange={(_, { value }) => setDirector({ last_name: value })} error={gate.errorOf('director.last_name')} block={true} size={56} />
-                        <Input label='Имя' value={d.director.first_name} onChange={(_, { value }) => setDirector({ first_name: value })} error={gate.errorOf('director.first_name')} block={true} size={56} />
-                        <Input label='Отчество' value={d.director.middle_name} onChange={(_, { value }) => setDirector({ middle_name: value })} hint='Если есть' block={true} size={56} />
+                        {directorField('last_name', 'Фамилия', <Input label='Фамилия' value={d.director.last_name} onChange={(_, { value }) => setDirector({ last_name: value })} error={gate.errorOf('director.last_name')} block={true} size={56} />)}
+                        {directorField('first_name', 'Имя', <Input label='Имя' value={d.director.first_name} onChange={(_, { value }) => setDirector({ first_name: value })} error={gate.errorOf('director.first_name')} block={true} size={56} />)}
+                        {directorField('middle_name', 'Отчество', <Input label='Отчество' value={d.director.middle_name} onChange={(_, { value }) => setDirector({ middle_name: value })} hint='Если есть' block={true} size={56} />)}
+                        {directorField('inn', 'ИНН физлица',
                         <Input
                             label='ИНН физлица'
                             value={d.director.inn}
@@ -99,6 +116,8 @@ export function BorrowerStep({ app, draft, hrefFor, errors, serverErrors, solePr
                             block={true}
                             size={56}
                         />
+                        )}
+                        {directorField('birth_date', 'Дата рождения',
                         <DateInput
                             label='Дата рождения'
                             value={fromIso(d.director.birth_date)}
@@ -107,6 +126,7 @@ export function BorrowerStep({ app, draft, hrefFor, errors, serverErrors, solePr
                             block={true}
                             size={56}
                         />
+                        )}
                     </div>
                 ) : (
                     <Plate view='attention' title='Без руководителя проверим только компанию'>

@@ -14,7 +14,9 @@ import type { Document, InfoRequest } from '../../../api/types';
 import { fieldLabel } from '../../../shared/lib/dictionaries';
 import { formatMoney } from '../../../shared/lib/format';
 import { DocumentUploader } from '../../../shared/ui/DocumentUploader/DocumentUploader';
+import { TestField } from '../../../shared/ui/TestField/TestField';
 import type { AnswerDraft } from './answers';
+import { testAnswers } from './testAnswers';
 import './InfoRequestCard.css';
 
 type Props = {
@@ -48,11 +50,15 @@ function recognizedValue(request: InfoRequest, documents: Document[]) {
 }
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const answerLabel = (request: InfoRequest) => request.target_field?.includes(',')
+    ? 'Ответ по запрошенным сведениям'
+    : request.target_field && fieldLabel(request.target_field) !== 'дополнительные сведения'
+        ? capitalize(fieldLabel(request.target_field)) : 'Ответ';
 
 
 /** Поле значения ответа по типу вопроса. */
 export function ValueField({ request, answer, onChange }: Pick<Props, 'request' | 'answer' | 'onChange'>) {
-    const label = request.target_field ? capitalize(fieldLabel(request.target_field)) : 'Ответ';
+    const label = answerLabel(request);
     const set = (value: AnswerDraft['value']) => onChange({ ...answer, value });
     switch (request.input.type) {
         case 'MONEY':
@@ -132,6 +138,9 @@ export function ValueField({ request, answer, onChange }: Pick<Props, 'request' 
 export function InfoRequestCard({ index, request, applicationId, answer, documents, onChange, error, onUploadingChange, children }: Props) {
     const accepted = request.documents?.accepted_types ?? [];
     const titleId = `info-request-${request.id}`;
+    const examples = request.required ? testAnswers(request) : undefined;
+    const fields = request.target_field?.includes(',') ? [...new Set(request.target_field.split(',').map(fieldLabel))] : [];
+    const input = <ValueField request={request} answer={answer} onChange={onChange} />;
     return (
         <section className='info-request-card' aria-labelledby={titleId}>
             <div className='info-request-card__head'>
@@ -149,10 +158,14 @@ export function InfoRequestCard({ index, request, applicationId, answer, documen
                     {request.description}
                 </Typography.Text>
             )}
+            {fields.length > 0 && <ul className='info-request-card__details' aria-label='Запрошенные сведения'>
+                {fields.map((field) => <li key={field}>{capitalize(field)}</li>)}
+            </ul>}
 
             {request.input.type !== 'NONE' && (
                 <div className='info-request-card__fields'>
-                    <ValueField request={request} answer={answer} onChange={onChange} />
+                    {examples ? <TestField label={answerLabel(request)} value={answer.value} values={examples}
+                        onChange={(value) => onChange({ ...answer, value })}>{input}</TestField> : input}
                     <Input
                         label='Комментарий, если нужно'
                         value={answer.comment}

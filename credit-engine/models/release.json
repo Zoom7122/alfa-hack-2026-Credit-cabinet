@@ -1,10 +1,10 @@
 {
   "format_version": 1,
   "generator_version": "1",
-  "version": "2.0.2",
-  "previous_version": "2.0.1",
-  "previous_sha256": "f7dab89bcb2c71f6e816d89da865202317189b2e61faf8bb4f543e5a1239bb9d",
-  "notes": "Merge application financial statements with durable scoring input snapshots",
+  "version": "2.2.0",
+  "previous_version": "2.1.0",
+  "previous_sha256": "b1f73c9d9e9fd8e45ab249554be6506ddf3774e6f00d93be122b37a57b6e1d75",
+  "notes": "Combine active JSON models with persistent scoring snapshots and bank operations",
   "models": [
     {
       "id": "ip",
@@ -28,18 +28,18 @@
   "files": [
     {
       "path": "contracts/openapi.json",
-      "sha256": "e89407d61886ad652f05af97034662aa9b6f7d63f6aaf10bbbb063aac672b23b",
-      "size": 89672
+      "sha256": "b19f6e2f5213ab2efb29ca93657d5a4397d8c4411a36c7ff847567c0489b59fa",
+      "size": 92162
     },
     {
       "path": "contracts/scoring_facts.openapi.json",
-      "sha256": "173ff116c9115e466bd4f0727c88c1c4958ec6c7b472e5bb95a2387981c6a3a5",
+      "sha256": "f32a0890864132bc44918e24b4036aada2ae24ed94add0093515002007fe5ab4",
       "size": 3568
     },
     {
       "path": "docs/02_inputs_and_scoring.md",
-      "sha256": "c956d122b3e3f4e71b98825da5969894bb1c89b0f4e0381b8b0cc496dfeb04a4",
-      "size": 230859
+      "sha256": "b5063dc9b11fe8ad375855d6d933f3a5d3a4cb17bb1aa70a11fef8f0faac05a1",
+      "size": 229674
     },
     {
       "path": "internal/modelbindings/catalog_generated.go",
@@ -58,8 +58,8 @@
     },
     {
       "path": "models/changes.md",
-      "sha256": "18ffe52bcfde052cee4f78bba915490da563fdfdb358558ef379e2082f2b70ab",
-      "size": 879
+      "sha256": "baee726ef38c35ff4b511858fae6cc19dd1fc3aabc6485dc3d85f4f2f3c2fe92",
+      "size": 884
     },
     {
       "path": "models/ip-v2.json",

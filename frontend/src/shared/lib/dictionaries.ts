@@ -132,10 +132,33 @@ export const FIELD_LABELS: Record<string, string> = {
     guarantors: 'поручитель',
     'consents.personal_data': 'согласие на обработку персональных данных',
     'consents.credit_bureau': 'согласие на запрос в бюро кредитных историй',
+    'scoring.free_cash_source_verified': 'сумма свободных денег, ₽',
+    'scoring.business_age_months': 'срок работы бизнеса, месяцев',
+    'scoring.overdue_taxes_rub': 'просроченная задолженность по налогам, ₽',
+    'scoring.bank_relationship_months': 'срок обслуживания в банке, месяцев',
+    'scoring.material_register_inaccuracy': 'достоверность сведений о компании в реестре',
+    'scoring.operating_nonfinancial_company': 'ведение основной деятельности компанией',
+    'scoring.liquidated_or_excluded': 'сведения о ликвидации компании',
+    'scoring.active': 'действующий статус компании',
+    'scoring.identity_and_authority_verified': 'подтверждение полномочий представителя',
+    'scoring.documents_complete': 'полнота документов',
+    'scoring.report_verification_level': 'подтверждение бухгалтерской отчётности',
+    'scoring.auditor_opinion': 'аудиторское заключение',
+    'scoring.structural_business_change': 'изменения в бизнесе',
+    'scoring.consents_verified': 'согласия на проверку данных',
+    'scoring.bureau_received': 'кредитная история',
 };
 
 /** «guarantors[0].inn» → «поручитель»: для элементов массивов берём название списка. */
-export const fieldLabel = (field: string) => FIELD_LABELS[field] ?? FIELD_LABELS[field.replace(/\[\d+\].*$/, '')] ?? field;
+export const fieldLabel = (field: string): string => {
+    const labels = field.split(',').map((part) => {
+        const key = part.trim();
+        return FIELD_LABELS[key] ?? FIELD_LABELS[key.replace(/\[\d+\].*$/, '')]
+            ?? FIELD_LABELS[key.replace(/^scoring\.(legal_entity|ip)\./, 'scoring.')]
+            ?? 'дополнительные сведения';
+    });
+    return [...new Set(labels)].join(', ');
+};
 
 export const DECLINE_REASON_LABELS: Record<DeclineReason, string> = {
     RATE_TOO_HIGH: 'Высокая ставка',

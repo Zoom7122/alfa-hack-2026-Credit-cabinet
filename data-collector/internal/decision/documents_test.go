@@ -70,6 +70,7 @@ func TestDocumentStatementsOverlayInRubles(t *testing.T) {
 		{DocumentID: "pdf", Name: "long_term_liabilities", Period: "2025", PeriodKind: "AS_OF", AmountRUB: 4_000_000},
 		{DocumentID: "pdf", Name: "short_term_liabilities", Period: "2025", PeriodKind: "AS_OF", AmountRUB: 5_100_000},
 		{Name: "accounting_revenue", Period: "2024", PeriodKind: "AS_OF", AmountRUB: 99_000_000},
+		{DocumentID: "older-pdf", Name: "accounting_revenue", Period: "2025", PeriodKind: "YEAR", AmountRUB: 99_000_000},
 	}
 	r, facts := Build(in)
 	if r.FinancialStatements == nil || len(facts.DocumentIndicators) != 6 || facts.DeclaredSource != "DOCUMENT_GIRBO" {

@@ -384,6 +384,9 @@ func (e *Engine) Evaluate(input Input) (Result, error) {
 	score := &Score{Model: e.definition.Version, Criteria: []CriterionResult{}}
 	for _, c := range e.definition.Criteria {
 		if !c.Enabled {
+			if err := appendManual(c.ID); err != nil {
+				return Result{}, err
+			}
 			continue
 		}
 		if c.AppliesWhen != nil {

@@ -20,10 +20,10 @@ type DocumentIndicator struct {
 	Sources    []map[string]any `json:"sources"`
 }
 
-// WholeRubles rejects malformed amounts, fractions and overflow instead of
-// rounding parser output into a different financial fact.
 var decimalAmount = regexp.MustCompile(`^-?[0-9]+(?:\.[0-9]{1,2})?$`)
 
+// WholeRubles rejects malformed amounts, fractions and overflow instead of
+// rounding parser output into a different financial fact.
 func WholeRubles(amount string) (int64, bool) {
 	if len(amount) > 40 || !decimalAmount.MatchString(amount) {
 		return 0, false
@@ -155,4 +155,20 @@ func documentIncome(documents []DocumentIndicator, year int) (int64, *DocumentIn
 		}
 	}
 	return 0, nil
+}
+
+func completeStatement(r AnnualReport) bool {
+	if r.Year == nil || r.PeriodEnd == nil || r.Balance == nil || r.ProfitAndLoss == nil || r.Balance.Unit == nil || r.ProfitAndLoss.Unit == nil {
+		return false
+	}
+	b, p := r.Balance, r.ProfitAndLoss
+	for _, value := range []*int64{b.NonCurrentAssets, b.Inventories, b.Receivables, b.ShortTermFinancialInvest,
+		b.CashAndEquivalents, b.CurrentAssets, b.TotalAssets, b.Equity, b.LongTermBorrowings, b.LongTermLiabilities,
+		b.ShortTermBorrowings, b.CurrentLiabilities, b.TotalEquityAndLiabilities, p.Revenue, p.CostOfSales,
+		p.SellingExpenses, p.AdministrativeExpenses, p.SalesProfit, p.InterestPayable, p.NetProfit} {
+		if value == nil {
+			return false
+		}
+	}
+	return true
 }

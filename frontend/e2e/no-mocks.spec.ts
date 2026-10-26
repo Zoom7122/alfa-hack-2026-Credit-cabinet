@@ -226,6 +226,12 @@ async function stubSavedDraft(page: Page, id: string, data: SavedDraft['data']) 
     return state;
 }
 
+async function applyTestValue(page: Page, label: string, variant = 'good') {
+    const control = page.getByTestId(`test-field:${label}`).getByRole('group', { name: 'Тестовые значения', exact: true });
+    await control.getByRole('combobox').selectOption(variant);
+    if (!await control.getByRole('checkbox').isChecked()) await control.getByText('Подставить тестовое значение', { exact: true }).click();
+}
+
 test('без данных БД форма пустая, выбор и частично заполненная анкета сохраняются на backend', async ({ page }) => {
     await stubCollector(page, 'director');
     const id = `app_${'141'.padStart(26, '0')}`;
@@ -303,4 +309,114 @@ test('частичная анкета из БД и ошибка сохранен
     await expect(page.getByLabel('Возраст, лет')).toHaveValue('43');
     await expect(page.getByLabel('Фамилия', { exact: true })).toHaveValue('Сидоров');
     await expect(page.getByLabel('Имя', { exact: true })).toHaveValue('');
+});
+
+test('тестовые значения обязательных полей анкеты редактируются и сохраняются через backend', async ({ page }) => {
+    await stubCollector(page, 'director');
+    const id = `app_${'144'.padStart(26, '0')}`;
+    await page.route(`**/collector/api/v1/applications/${id}`, (route) => route.fulfill({ json: {
+        id, number: 'A-TEST-VALUES', status: 'DRAFT', applicant: { id: 'apl_live_company', inn: '7799000012', type: 'LEGAL_ENTITY' },
+        representative: { id: USERS.director.id, role: 'DIRECTOR', can_sign: true },
+    } }));
+    await page.route('**/collector/api/v1/products', (route) => route.fulfill({ json: { items: [{
+        code: 'WORKING_CAPITAL', name: 'Оборотный кредит', purposes: ['WORKING_CAPITAL'],
+        amount: { min: 100_000, max: 10_000_000 }, term_months: { min: 6, max: 60 }, rate_annual_from: 18.9,
+    }] } }));
+    await page.route('**/collector/api/v1/products/*/calculate', (route) => route.fulfill({ json: { monthly_payment_from: 80_000 } }));
+    const state = await stubSavedDraft(page, id, {});
+    await loginAs(page, 'director');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Добрый день, Пётр Петрович');
+    await page.goto(`/applications/${id}/edit/terms`);
+    await applyTestValue(page, 'Кредитный продукт');
+    await expect(page.getByLabel('Сумма кредита')).toHaveValue('');
+    await applyTestValue(page, 'Сумма кредита');
+    await expect.poll(() => state.data.requested?.amount).toBe(100_000);
+    await applyTestValue(page, 'Сумма кредита', 'bad');
+    await expect.poll(() => state.data.requested?.amount).toBe(10_000_000);
+    await applyTestValue(page, 'Сумма кредита', 'neutral');
+    await expect.poll(() => state.data.requested?.amount).toBe(5_050_000);
+    await applyTestValue(page, 'Срок', 'neutral');
+    await applyTestValue(page, 'Цель кредита', 'bad');
+    await expect(page.getByLabel('Расскажите подробнее')).toHaveValue(/пока не подтверждены/);
+    await applyTestValue(page, 'Цель кредита', 'good');
+    await expect(page.getByLabel('Расскажите подробнее')).toHaveValue(/подтверждённой стоимостью/);
+    await page.getByRole('button', { name: 'Продолжить', exact: true }).click();
+    await expect(page).toHaveURL(/\/edit\/borrower$/);
+    for (const label of ['Возраст, лет', 'Семейное положение', 'Дети и иждивенцы', 'Фамилия', 'Имя', 'Отчество', 'ИНН физлица', 'Дата рождения']) {
+        await applyTestValue(page, label);
+    }
+    await expect(page.getByLabel('Возраст, лет')).toHaveValue('42');
+    await expect(page.getByLabel('Фамилия', { exact: true })).toHaveValue('Ковалёв');
+    await expect(page.getByLabel('ИНН физлица')).toHaveValue('779900010139');
+    await expect(page.getByLabel('Дата рождения')).toHaveValue('19.07.1984');
+    await page.getByLabel('Возраст, лет').fill('45');
+    await expect(page.getByTestId('test-field:Возраст, лет').getByRole('checkbox')).not.toBeChecked();
+    await expect.poll(() => state.data.age).toBe(45);
+    await page.reload();
+    await expect(page.getByLabel('Возраст, лет')).toHaveValue('45');
+    await expect(page.getByLabel('Фамилия', { exact: true })).toHaveValue('Ковалёв');
+    await page.getByRole('button', { name: 'Продолжить', exact: true }).click();
+    await applyTestValue(page, 'Максимальная ставка, % годовых', 'neutral');
+    await applyTestValue(page, 'Свободные деньги после вклада', 'bad');
+    await expect.poll(() => state.data.scoring?.max_annual_rate).toBe(26.5);
+    await expect.poll(() => state.data.scoring?.free_cash).toBe(0);
+});
+
+test('вопросы банка скрывают коды полей и технический текст ошибки документов', async ({ page }) => {
+    await stubCollector(page, 'director');
+    const id = `app_${'146'.padStart(26, '0')}`;
+    await page.route(`**/collector/api/v1/applications/${id}`, (route) => route.fulfill({ json: {
+        id, number: 'A-QUESTIONS', status: 'WAITING_FOR_INFO', applicant: { id: 'apl_live_company', inn: '7701234567', type: 'LEGAL_ENTITY' },
+        representative: { id: USERS.director.id, role: 'DIRECTOR', can_sign: true },
+    } }));
+    await page.route(`**/collector/api/v1/applications/${id}/info-requests`, (route) => route.fulfill({ json: { items: [
+        { id: 'q_money', title: 'Свободные деньги', required: true, state: 'OPEN',
+            target_field: 'scoring.legal_entity.free_cash_source_verified', input: { type: 'MONEY' } },
+        { id: 'q_details', title: 'Уточните сведения', required: true, state: 'OPEN', description: 'Нужны полные и достоверные сведения.',
+            target_field: 'scoring.legal_entity.business_age_months,scoring.legal_entity.overdue_taxes_rub,scoring.legal_entity.active,scoring.legal_entity.unknown_check', input: { type: 'TEXT' } },
+        { id: 'q_doc', title: 'Полномочия представителя', required: true, state: 'OPEN', input: { type: 'NONE' },
+            documents: { required: true, accepted_types: ['POWER_OF_ATTORNEY'] } },
+    ] } }));
+    let failing = true;
+    await page.route(`**/collector/api/v1/applications/${id}/documents`, (route) => failing || route.request().method() === 'POST'
+        ? route.fulfill({ status: 502, contentType: 'text/html', body: '<html><h1>Bad Gateway</h1></html>' })
+        : route.fulfill({ json: { items: [] } }));
+    const posted: { value?: unknown }[] = [];
+    await page.route(`**/collector/api/v1/applications/${id}/info-requests/*/answer`, async (route) => {
+        const request = route.request();
+        const contentType = request.headers()['content-type'] ?? '';
+        if (contentType.includes('multipart/form-data')) {
+            const form = await new Response(request.postData(), { headers: { 'Content-Type': contentType } }).formData();
+            posted.push(JSON.parse(String(form.get('answer'))) as { value?: unknown });
+        } else posted.push(request.postDataJSON() as { value?: unknown });
+        return route.fulfill({ json: { application_id: id, status: 'WAITING_FOR_INFO' } });
+    });
+    await loginAs(page, 'director');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Добрый день, Пётр Петрович');
+    await page.goto(`/applications/${id}`);
+    await expect(page.getByText('Не удалось загрузить документы', { exact: true }).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('body')).not.toContainText('Unexpected token');
+    await expect(page.locator('body')).not.toContainText('Bad Gateway');
+    await expect(page.locator('body')).not.toContainText('scoring.');
+    await expect(page.getByRole('list', { name: 'Запрошенные сведения' })).toContainText('Срок работы бизнеса, месяцев');
+    await expect(page.getByLabel('Сумма свободных денег, ₽')).toBeVisible();
+    const chooser = page.waitForEvent('filechooser');
+    await page.getByRole('button', { name: 'Выбрать на компьютере' }).click();
+    await (await chooser).setFiles({ name: 'test.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\nTEST') });
+    await expect(page.getByRole('list', { name: 'Загруженные файлы' })).toContainText('Не удалось загрузить документы');
+    await expect(page.locator('body')).not.toContainText('is not valid JSON');
+    failing = false;
+    await page.reload();
+    await expect(page.getByText('Не удалось загрузить документы', { exact: true })).toHaveCount(0);
+    await applyTestValue(page, 'Сумма свободных денег, ₽', 'bad');
+    await page.getByRole('button', { name: 'Отправить ответ' }).first().click();
+    await expect.poll(() => posted[0]?.value).toBe(0);
+    await applyTestValue(page, 'Ответ по запрошенным сведениям', 'good');
+    await expect(page.getByLabel('Ответ по запрошенным сведениям')).toHaveValue(/срок работы бизнеса, месяцев: 72/);
+    await applyTestValue(page, 'Ответ по запрошенным сведениям', 'neutral');
+    await expect(page.getByLabel('Ответ по запрошенным сведениям')).toHaveValue(/срок работы бизнеса, месяцев: 24/);
+    await applyTestValue(page, 'Ответ по запрошенным сведениям', 'bad');
+    await page.getByRole('button', { name: 'Отправить ответ' }).nth(1).click();
+    await expect.poll(() => posted[1]?.value).toContain('срок работы бизнеса, месяцев: 6');
+    expect(JSON.stringify(posted)).not.toContain('scoring.');
 });

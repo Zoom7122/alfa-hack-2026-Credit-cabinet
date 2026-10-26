@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -85,7 +86,11 @@ func run(log *slog.Logger) error {
 	if poll <= 0 || timeout <= 0 || heartbeat <= 0 || lease <= heartbeat*2 || lease <= timeout+10*time.Second {
 		return fmt.Errorf("decision durations must be positive; lease must exceed 2 heartbeats and HTTP timeout + save timeout")
 	}
-	repo := postgres.ScoringJobRepository{Pool: pool}
+	activeModels, err := strconv.ParseBool(env.String("DECISION_ACTIVE_MODELS", "false"))
+	if err != nil {
+		return fmt.Errorf("DECISION_ACTIVE_MODELS: %w", err)
+	}
+	repo := postgres.ScoringJobRepository{Pool: pool, UseActiveModels: activeModels}
 	w := &dispatch.Worker{Repo: repo, Engine: scoring.New(scoringURL, timeout), Config: dispatch.Config{Lease: lease, Heartbeat: heartbeat, MaxAttempts: attempts, ReviewSLA: cfg.ReviewSLA, OfferValidity: cfg.OfferValidity, EvaluationDate: cfg.EvaluationDate}, Log: log}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(rw http.ResponseWriter, r *http.Request) { rw.WriteHeader(200) })

@@ -16,6 +16,7 @@ import { formatIsoDate } from '../../../shared/lib/format';
 import { isInn } from '../../../shared/lib/inn';
 import { useDebouncedValue } from '../../../shared/lib/useDebouncedValue';
 import { FormCard } from '../../../shared/ui/FormCard/FormCard';
+import { TestField } from '../../../shared/ui/TestField/TestField';
 import { StepLayout } from '../components/StepLayout';
 import { loadSavedDraft, saveDraft } from '../draftApi';
 import './CompanyStep.css';
@@ -65,11 +66,13 @@ function CompanyFacts({ company }: { company: CounterpartyPrefill }) {
     );
 }
 
-type RoleCardProps = { value?: CollectorRole; onChange?: (r: CollectorRole) => void; disabled?: boolean; lockedHint?: string; error?: string };
+type RoleCardProps = { value?: CollectorRole; onChange?: (r: CollectorRole) => void; disabled?: boolean; soleProprietor?: boolean; lockedHint?: string; error?: string };
 
-function RoleCard({ value, onChange, disabled, lockedHint = 'Роль указана при регистрации заявки', error }: RoleCardProps) {
+function RoleCard({ value, onChange, disabled, soleProprietor, lockedHint = 'Роль указана при регистрации заявки', error }: RoleCardProps) {
     return (
         <FormCard title='Ваша роль в компании'>
+            <TestField<CollectorRole> label='Ваша роль в компании' value={value} disabled={disabled}
+                values={{ good: soleProprietor ? 'OWNER' : 'DIRECTOR', neutral: 'CFO', bad: 'AUTHORIZED_EMPLOYEE' }} onChange={(role) => onChange?.(role)}>
             <RadioGroup
                 name='representative_role'
                 // заголовок карточки с группой не связан — даём ей имя явно
@@ -86,6 +89,7 @@ function RoleCard({ value, onChange, disabled, lockedHint = 'Роль указа
                     <Radio key={role} value={role} label={COLLECTOR_ROLE_LABELS[role]} size={24} />
                 ))}
             </RadioGroup>
+            </TestField>
             <Plate view='common' rounded={true}>
                 Подписать договор без доверенности может генеральный директор, у ИП — сам предприниматель. Остальным понадобится
                 машиночитаемая доверенность (МЧД) — её номер укажете перед отправкой.
@@ -210,6 +214,9 @@ function CreateCompanyStep({ me, productCode, requested, purpose }: CreateProps)
             hint={!canContinue && validInn && !role ? 'Укажите вашу роль в компании' : undefined}
         >
             <FormCard>
+                <TestField label='ИНН компании или ИП' value={inn}
+                    values={{ good: '7799000012', neutral: '7799000020', bad: '7799000037' }}
+                    onChange={(value) => { setInn(value); setName(''); setChosen(undefined); }}>
                 <Input
                     label='ИНН компании или ИП'
                     value={inn}
@@ -222,6 +229,7 @@ function CreateCompanyStep({ me, productCode, requested, purpose }: CreateProps)
                     error={innError}
                     rightAddons={lookup.isFetching && <Spinner visible={true} preset={24} />}
                 />
+                </TestField>
                 {lookup.isFetching && !lookup.data && (
                     <Typography.Text view='primary-small' color='secondary' role='status'>
                         Ищем компанию в реестре…
@@ -247,6 +255,7 @@ function CreateCompanyStep({ me, productCode, requested, purpose }: CreateProps)
                         value={role}
                         onChange={(next) => validInn && setChosen({ inn: validInn, role: next })}
                         disabled={Boolean(linked)}
+                        soleProprietor={soleProprietor}
                         lockedHint='Роль в этой компании — из вашего профиля'
                         error={serverErrors.role}
                     />

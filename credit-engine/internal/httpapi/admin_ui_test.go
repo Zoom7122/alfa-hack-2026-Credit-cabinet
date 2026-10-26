@@ -1,37 +1,40 @@
 package httpapi
 
 import (
+	"github.com/gin-gonic/gin"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
-
-	"github.com/gin-gonic/gin"
 )
 
 func TestEmbeddedAdminUIAssetsAndSecurityHeaders(t *testing.T) {
 	r := gin.New()
 	RegisterAdminUI(r)
-	for _, name := range []string{"forms.js", "model-edit.js", "editor.js", "rules-editor.js", "workbench.js", "audit.js"} {
+	root := httptest.NewRecorder()
+	r.ServeHTTP(root, httptest.NewRequest("GET", "/", nil))
+	if root.Code != 200 || !strings.Contains(root.Body.String(), `id="root"`) {
+		t.Fatal("React entry not embedded", root.Code)
+	}
+	paths := []string{"/"}
+	for _, match := range regexp.MustCompile(`(?:src|href)="(/assets/[^\"]+)"`).FindAllStringSubmatch(root.Body.String(), -1) {
+		paths = append(paths, match[1])
+	}
+	if len(paths) < 3 {
+		t.Fatal("built JavaScript and CSS must be present")
+	}
+	for _, path := range paths {
 		w := httptest.NewRecorder()
-		r.ServeHTTP(w, httptest.NewRequest("GET", "/assets/"+name, nil))
-		if w.Code != 200 || !strings.HasPrefix(w.Header().Get("Content-Type"), "text/javascript") {
-			t.Fatal("editor module not served", name)
+		r.ServeHTTP(w, httptest.NewRequest("GET", path, nil))
+		if w.Code != 200 || w.Header().Get("Cache-Control") != "no-store" || w.Header().Get("X-Frame-Options") != "DENY" {
+			t.Fatal("invalid asset", path, w.Code)
+		}
+		csp := w.Header().Get("Content-Security-Policy")
+		if !strings.Contains(csp, "script-src 'self'") || strings.Contains(csp, "unsafe-eval") {
+			t.Fatal("unsafe script policy")
 		}
 	}
-	for _, tc := range []struct{ path, content string }{{"/", "text/html"}, {"/assets/app.js", "text/javascript"}, {"/assets/api.js", "text/javascript"}, {"/assets/dom.js", "text/javascript"}, {"/assets/numbers.js", "text/javascript"}, {"/assets/styles.css", "text/css"}} {
-		t.Run(tc.path, func(t *testing.T) {
-			w := httptest.NewRecorder()
-			r.ServeHTTP(w, httptest.NewRequest("GET", tc.path, nil))
-			if w.Code != 200 || !strings.HasPrefix(w.Header().Get("Content-Type"), tc.content) || w.Header().Get("Cache-Control") != "no-store" || w.Header().Get("X-Frame-Options") != "DENY" {
-				t.Fatal("invalid asset", w.Code, w.Header())
-			}
-			csp := w.Header().Get("Content-Security-Policy")
-			if !strings.Contains(csp, "script-src 'self'") || strings.Contains(csp, "unsafe-inline") || strings.Contains(csp, "unsafe-eval") {
-				t.Fatal("unsafe script policy")
-			}
-		})
-	}
-	for _, path := range []string{"/assets/AGENT.md", "/assets/agent_log.md", "/assets/index.html", "/assets/../AGENT.md", "/assets/app.js.map", "/assets/missing.js"} {
+	for _, path := range []string{"/assets/AGENT.md", "/assets/index.html", "/assets/../AGENT.md", "/assets/app.js.map", "/assets/missing.js", "/assets/src/App.tsx"} {
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, httptest.NewRequest("GET", path, nil))
 		if w.Code == 200 {

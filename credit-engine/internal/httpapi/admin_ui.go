@@ -3,6 +3,7 @@ package httpapi
 import (
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/adminui"
 	"github.com/gin-gonic/gin"
+	"strings"
 )
 
 func RegisterAdminUI(router *gin.Engine) {
@@ -19,11 +20,11 @@ func RegisterAdminUI(router *gin.Engine) {
 		c.Data(200, contentType, data)
 	}
 	router.GET("/", func(c *gin.Context) { serve(c, "index.html") })
-	router.GET("/assets/:file", func(c *gin.Context) {
+	router.GET("/assets/*file", func(c *gin.Context) {
 		if c.Param("file") == "index.html" {
 			writeProblem(c, 404, "NOT_FOUND", nil)
 			return
 		}
-		serve(c, c.Param("file"))
+		serve(c, "assets/"+strings.TrimPrefix(c.Param("file"), "/"))
 	})
 }

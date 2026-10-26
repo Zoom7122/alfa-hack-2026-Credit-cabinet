@@ -3,6 +3,7 @@ package decision
 import (
 	"encoding/json"
 	"math"
+	"math/big"
 	"slices"
 	"strconv"
 	"strings"
@@ -172,7 +173,13 @@ func Build(in Input) (Request, Facts) {
 	vat := !ip && (source == "FNS_BFO" || source == "DOCUMENT_GIRBO" || hasTax && tax.Report.TaxRegime.Current == "OSN")
 	gross := func(v int64) int64 {
 		if vat {
-			return v * 120 / 100
+			n := new(big.Int).Mul(big.NewInt(v), big.NewInt(120))
+			n.Quo(n, big.NewInt(100))
+			if !n.IsInt64() {
+				// Only compared with observed receipts, which fit in int64.
+				return math.MaxInt64
+			}
+			return n.Int64()
 		}
 		return v
 	}
@@ -251,7 +258,11 @@ func Build(in Input) (Request, Facts) {
 	risk.ConsentsVerified = ptr(consents)
 	risk.BureauReceived = ptr(report != nil)
 	risk.DebtsComplete = ptr(report != nil && (core.Loans != nil || !hasCore))
-	facts.StatementYears = len(statements.AnnualReports)
+	for _, report := range statements.AnnualReports {
+		if completeStatement(report) {
+			facts.StatementYears++
+		}
+	}
 	docsComplete := len(history) == 12 && (ip || facts.StatementYears == 2)
 	risk.DocumentsComplete = ptr(docsComplete)
 	if sc.FreeCash != nil && avgBalance >= 0 {

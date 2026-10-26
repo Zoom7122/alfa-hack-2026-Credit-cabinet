@@ -1,0 +1,34 @@
+{
+  "name": "credit-engine-admin-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint --deny-warnings src",
+    "test": "node --test test/*.mjs",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@alfalab/core-components": "50.38.0",
+    "@alfalab/core-components-config": "1.1.0",
+    "@alfalab/core-components-stack-context": "1.0.1",
+    "@alfalab/core-components-vars": "11.4.1",
+    "@alfalab/icons-glyph": "2.293.3",
+    "@alfalab/icons-logotype": "2.37.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "oxlint": "1.89.0",
+    "typescript": "5.9.3",
+    "vite": "8.3.5"
+  }
+}

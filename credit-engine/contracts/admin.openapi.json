@@ -4331,6 +4331,10 @@
           "format_version": {
             "type": "integer",
             "const": 1
+          },
+          "active": {
+            "type": "boolean",
+            "description": "True for the active default of this borrower type."
           }
         }
       },
@@ -4354,6 +4358,213 @@
             }
           }
         }
+      },
+      "ActiveModel": {
+        "type": "object",
+        "required": [
+          "borrower_type",
+          "version",
+          "definition_sha256",
+          "revision",
+          "changed_by",
+          "reason",
+          "changed_at"
+        ],
+        "properties": {
+          "borrower_type": {
+            "type": "string",
+            "enum": [
+              "SOLE_PROPRIETOR",
+              "LEGAL_ENTITY"
+            ]
+          },
+          "version": {
+            "type": "string"
+          },
+          "definition_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "changed_by": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "changed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApplyDraftRequest": {
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "expected_activation_revision",
+          "reason"
+        ],
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "expected_activation_revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActivateModelRequest": {
+        "type": "object",
+        "required": [
+          "version",
+          "expected_activation_revision",
+          "reason"
+        ],
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "expected_activation_revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "FieldCatalog": {
+        "type": "object",
+        "required": [
+          "format_version",
+          "systems",
+          "fields"
+        ],
+        "properties": {
+          "format_version": {
+            "type": "integer",
+            "const": 1
+          },
+          "systems": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "title",
+                "collection_condition"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "collection_condition": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "system",
+                "path",
+                "title",
+                "type",
+                "bindings",
+                "roles",
+                "criteria",
+                "used",
+                "derived",
+                "reason"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "system": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "bindings": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string"
+                      },
+                      "path": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "roles": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "criteria": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "used": {
+                  "type": "boolean"
+                },
+                "derived": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      },
+      "FieldUsageRequest": {
+        "type": "object",
+        "required": [
+          "definition"
+        ],
+        "properties": {
+          "definition": {
+            "$ref": "#/components/schemas/ModelDefinition"
+          }
+        },
+        "additionalProperties": false
       }
     },
     "securitySchemes": {
@@ -8735,6 +8946,766 @@
           }
         ],
         "summary": "Fetch actual compiled model metadata from the configured MS1"
+      }
+    },
+    "/api/admin/v1/active-models": {
+      "get": {
+        "operationId": "listActiveModels",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActiveModel"
+                  }
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "413": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "415": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "504": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          }
+        },
+        "security": [
+          {
+            "AdminSession": [],
+            "CSRFCookie": []
+          }
+        ],
+        "summary": "Validate the current pinned draft result without publishing"
+      }
+    },
+    "/api/admin/v1/drafts/{id}/apply": {
+      "post": {
+        "operationId": "applyDraft",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Exact ADMIN_PUBLIC_ORIGIN; unsafe requests reject cross-site Fetch Metadata.",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyDraftRequest"
+              }
+            }
+          },
+          "description": "Strict case-sensitive keys, no duplicates/unknown fields/null required values. Model body maximum 4 MiB; complete envelope maximum 4 MiB + 32 KiB.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActiveModel"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "413": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "415": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "504": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          }
+        },
+        "security": [
+          {
+            "AdminSession": [],
+            "CSRFCookie": [],
+            "CSRFHeader": []
+          }
+        ],
+        "summary": "Save only if expected_revision matches"
+      }
+    },
+    "/api/admin/v1/active-models/{borrower_type}": {
+      "put": {
+        "operationId": "activatePublishedModel",
+        "parameters": [
+          {
+            "name": "borrower_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Exact ADMIN_PUBLIC_ORIGIN; unsafe requests reject cross-site Fetch Metadata.",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivateModelRequest"
+              }
+            }
+          },
+          "description": "Strict case-sensitive keys, no duplicates/unknown fields/null required values. Model body maximum 4 MiB; complete envelope maximum 4 MiB + 32 KiB.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActiveModel"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "413": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "415": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "504": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          }
+        },
+        "security": [
+          {
+            "AdminSession": [],
+            "CSRFCookie": [],
+            "CSRFHeader": []
+          }
+        ],
+        "summary": "Save only if expected_revision matches"
+      }
+    },
+    "/api/admin/v1/field-catalog": {
+      "get": {
+        "operationId": "getCollectorFieldCatalog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldCatalog"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "413": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "415": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "504": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          }
+        },
+        "security": [
+          {
+            "AdminSession": [],
+            "CSRFCookie": []
+          }
+        ],
+        "summary": "Validate the current pinned draft result without publishing"
+      }
+    },
+    "/api/admin/v1/field-catalog/usage": {
+      "post": {
+        "operationId": "analyzeCollectorFieldUsage",
+        "parameters": [
+          {
+            "description": "Exact ADMIN_PUBLIC_ORIGIN; unsafe requests reject cross-site Fetch Metadata.",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FieldUsageRequest"
+              }
+            }
+          },
+          "description": "Strict case-sensitive keys, no duplicates/unknown fields/null required values. Model body maximum 4 MiB; complete envelope maximum 4 MiB + 32 KiB.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldCatalog"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "413": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "415": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          },
+          "504": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Administrative error; REVISION_CONFLICT includes current_revision, MODEL_VALIDATION_FAILED includes model_version and validation."
+          }
+        },
+        "security": [
+          {
+            "AdminSession": [],
+            "CSRFCookie": [],
+            "CSRFHeader": []
+          }
+        ],
+        "summary": "Save only if expected_revision matches"
       }
     }
   }

@@ -20,7 +20,11 @@ export async function documentRequest<T>(applicationId: string, suffix = '', ini
     const token = session.getToken();
     if (token) headers.set('Authorization', `Bearer ${token}`);
     const response = await fetch(`${base}/applications/${encodeURIComponent(applicationId)}/documents${suffix}`, { ...init, headers });
-    const body: unknown = response.status === 204 ? undefined : await response.json();
+    let body: unknown;
+    if (response.status !== 204) {
+        try { body = await response.json(); }
+        catch { throw new ApiError(response.ok ? 502 : response.status, 'Не удалось загрузить документы'); }
+    }
     return unwrap({ response, ...(response.ok ? { data: body as T } : { error: body }) });
 }
 

@@ -9,7 +9,7 @@ assert.equal(fail,0);assert.equal(skip,0);
 const scenarios=(await readFile(output+"/network-scenarios.jsonl","utf8")).trim().split("\n").map(JSON.parse);
 assert.equal(scenarios.length,24);assert.ok(scenarios.every(s=>s.passed));
 const provenance=await json("go-provenance.json").catch(error=>{if(error.code==="ENOENT")return null;throw error;});
-const summary={status:"passed",go:{passed:pass,failed:fail,skipped:skip},javascript:await json("javascript.json"),browser:[await json("browser-workflow.json"),await json("admin-acceptance.json")],networkScenarios:scenarios,deliveryRetry:await json("delivery-retry.json"),runtime:[await json("runtime-smoke.json"),await json("rebuilt-runtime-smoke.json")],generation:await json("modelgen-check.json"),rebuiltGeneration:await json("rebuilt-modelgen.json")};
+const summary={status:"passed",go:{passed:pass,failed:fail,skipped:skip},javascript:await json("javascript.json"),browser:[await json("browser-workflow.json"),await json("admin-acceptance.json")],networkScenarios:scenarios,deliveryRetry:await json("delivery-retry.json"),liveActivation:await json("live-activation.json"),liveActivationRestart:await json("live-activation-restart.json"),runtime:[await json("runtime-smoke.json"),await json("rebuilt-runtime-smoke.json")],generation:await json("modelgen-check.json"),rebuiltGeneration:await json("rebuilt-modelgen.json")};
 if(provenance)summary.go.provenance=provenance;
 await writeFile(output+"/verification.json",JSON.stringify(summary,null,2));
 console.log(JSON.stringify({status:summary.status,go:pass,javascript:summary.javascript.passed,network:scenarios.length,browser:summary.browser.reduce((n,b)=>n+b.passed,0)}));

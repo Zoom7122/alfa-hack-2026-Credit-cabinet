@@ -3,10 +3,10 @@ import assert from "node:assert/strict";
 import {readFile, writeFile} from "node:fs/promises";
 import {pathToFileURL} from "node:url";
 import {createHash} from "node:crypto";
-import {parseJSON, stringifyJSON} from "../web/numbers.js";
+import {parseJSON, stringifyJSON} from "../../../admin-frontend/src/legacy/numbers.js";
 if (process.env.CREDIT_ENGINE_UI_TEST !== "1") throw Error("Isolated Docker instance required");
 const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE).href);
-const origin="http://localhost:18084", output=process.env.CREDIT_ENGINE_UI_OUTPUT;
+const origin=process.env.CREDIT_ENGINE_UI_ORIGIN || "http://localhost:18084", output=process.env.CREDIT_ENGINE_UI_OUTPUT;
 const browser=await chromium.launch({headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:1000}});
 const page=await context.newPage(), errors=[], checks=[];
@@ -25,6 +25,7 @@ async function request(method,path,body,token=csrf) {
 }
 async function closeModal() { await click("Применить к черновику",dialog()); await dialog().waitFor({state:"detached"}); }
 async function addParameter(id,type) {
+  await click("Параметры");
   await click("Добавить параметр");
   await dialog().getByLabel("Идентификатор параметра",{exact:true}).fill(id);
   await dialog().getByLabel("Название параметра",{exact:true}).fill("Приёмка "+id);
@@ -35,6 +36,7 @@ async function addParameter(id,type) {
   await closeModal();
 }
 async function redistribute(c,delta) {
+  await click("Критерии и баллы");
   await click("Изменить критерий "+c.id);
   const max=Number(String(c.max_points))-delta;
   await dialog().getByLabel("Максимум баллов",{exact:true}).fill(String(max));
@@ -44,6 +46,7 @@ async function redistribute(c,delta) {
   await closeModal();
 }
 async function addCriterion(id,parameter,block,cases) {
+  await click("Критерии и баллы");
   await click("Добавить критерий");
   await dialog().getByLabel("Идентификатор критерия",{exact:true}).fill(id);
   await dialog().getByLabel("Название критерия",{exact:true}).fill("Приёмка "+id);
@@ -68,7 +71,7 @@ try {
   await page.goto(origin);
   await page.getByLabel("Логин",{exact:true}).fill("editor");
   await page.getByLabel("Пароль",{exact:true}).fill("fictional-admin-password");
-  await click("Войти"); await visible(page.getByRole("heading",{name:"Модели",exact:true}));
+  await click("Войти"); await visible(page.getByRole("heading",{name:"Модели скоринга",exact:true}));
   csrf=(await request("GET","/api/admin/v1/auth/session")).csrf_token;
   const source=await request("GET","/api/admin/v1/models/ip-v2");
   await page.locator('a[href="#model/ip-v2"]').click();
@@ -85,8 +88,10 @@ try {
   await addCriterion("ACCEPT_Q","supplier_flag","QUESTIONNAIRE",[{op:"EQ",value:false,points:0},{op:"EQ",value:true,points:10}]);
   await addCriterion("ACCEPT_E","supplier_metric","ADDITIONAL",[{op:"LE",value:5,points:0},{op:"GT",value:5,points:10}]);
   checks.push("redistribution across both 750/250 blocks and typed scales");
+  await click("Параметры");
   await click("Изменить параметр supplier_flag");
   await visible(dialog().getByText(/ACCEPT_Q/)); await click("Отмена",dialog()); checks.push("dependency warning");
+  await click("Проверки и стоп-факторы");
   await click("Добавить: Стоп-факторы");
   await dialog().getByLabel("ID правила",{exact:true}).fill("ACCEPT_STOP");
   await dialog().getByLabel("Название правила",{exact:true}).fill("Fictional supplier stop");
@@ -100,14 +105,14 @@ try {
   await dialog().getByLabel("Максимум D",{exact:true}).fill("548");
   await dialog().getByLabel("Минимум C",{exact:true}).fill("549");
   await closeModal(); checks.push("stop and class boundary editing");
-  await page.getByLabel("Основание изменения",{exact:true}).fill("Fictional complete editor change");
-  await click("Сохранить новую ревизию");
-  await visible(page.getByText("Ревизия 2",{exact:true})); await visible(page.getByText("Модель прошла проверку.",{exact:true}));
+  await page.getByLabel("Основание сохранения / применения",{exact:true}).fill("Fictional complete editor change");
+  await click("Сохранить ревизию");
+  await visible(page.getByText("Черновик · ревизия 2",{exact:true})); await visible(page.getByText("Модель прошла проверку.",{exact:true}));
   const saved=await request("GET","/api/admin/v1/drafts/"+id);
   assert.equal(String(saved.revision),"2");
   const conflict=await context.request.put(origin+"/api/admin/v1/drafts/"+id,{headers:{Origin:origin,"X-CSRF-Token":csrf,"Content-Type":"application/json"},data:stringifyJSON({expected_revision:1,definition:saved.definition,reason:"stale test"})});
   assert.equal(conflict.status(),409); checks.push("saved revision and optimistic conflict");
-  await page.getByRole("link",{name:"Проверить сохранённую ревизию и выпустить",exact:true}).click();
+  await page.getByRole("link",{name:"Проверить расчёт →",exact:true}).click();
   await visible(page.getByRole("heading",{name:"Проверка и выпуск",exact:true}));
   const sample=parseJSON(await readFile(new URL("../../../testdata/simulation/ip-v2.json",import.meta.url),"utf8"));
   sample.additional_facts={supplier_flag:false,supplier_metric:9}; sample.facts_date=sample.evaluation_date;
@@ -136,7 +141,7 @@ try {
   await visible(page.getByText("Комплект прошёл проверку. Подготовка ещё не выполнена.",{exact:true}));
   await visible(page.locator("summary").filter({hasText:"docs/02_inputs_and_scoring.md"}));
   await click("Подготовить релиз");
-  await visible(page.getByText("Релиз "+releaseVersion+" подготовлен. Для применения нужны сборка и развёртывание МС1.",{exact:true}));
+  await visible(page.getByText("Релиз "+releaseVersion+" подготовлен. Опубликованные модели можно применить в разделе «Модели» без перезапуска.",{exact:true}));
   const prepared=await request("GET","/api/admin/v1/releases/"+releaseVersion);
   const zip=await context.request.get(origin+"/api/admin/v1/releases/"+releaseVersion+"/archive");
   const zipData=await zip.body(); assert.equal(createHash("sha256").update(zipData).digest("hex"),prepared.archive_sha256);
@@ -166,7 +171,9 @@ try {
   await page.getByRole("navigation").getByRole("link",{name:"Релизы",exact:true}).click();
   await visible(page.getByText("Версии, сообщённые запущенным МС1",{exact:true}));
   await visible(page.locator(".runtime-models").getByText(/Получен ответ МС1/));
-  assert.ok(!(await page.locator(".runtime-models").innerText()).includes(version));
+  const runtimeModels=await request("GET","/api/admin/v1/runtime/models");
+  assert.equal(runtimeModels.models.find(m=>m.version===version)?.active ?? false,false);
+  assert.equal(runtimeModels.models.find(m=>m.version==="ip-v2")?.active,true);
   await page.screenshot({path:output+"/releases-desktop.png",fullPage:true}); checks.push("prepared release does not activate running catalog");
   assert.deepEqual(errors,[]);
   await writeFile(output+"/admin-acceptance.json",JSON.stringify({passed:checks.length,checks,javascriptErrors:errors,version,releaseVersion},null,2));

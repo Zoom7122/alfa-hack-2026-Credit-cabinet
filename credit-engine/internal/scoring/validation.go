@@ -82,6 +82,14 @@ func Validate(r contracts.DecisionRequest) error {
 		return &Error{Status: 400, Code: "MISSING_ENVELOPE", Fields: technical}
 	}
 	c := inspectValues(r)
+	if s := r.FinancialStatements; s != nil {
+		if r.Borrower.Type != contracts.BorrowerTypeLegalEntity {
+			c.invalid = append(c.invalid, "financial_statements")
+		}
+		if s.BorrowerID != r.Borrower.ID {
+			c.invalid = append(c.invalid, "financial_statements.borrower_id")
+		}
+	}
 	if len(c.invalid) > 0 {
 		return &Error{Status: 422, Code: "INVALID_VALUE", Fields: unique(c.invalid)}
 	}

@@ -179,6 +179,7 @@ services:
       # та же дата оценки, что у движка: от неё считаются 12 месяцев истории и 36 — графика долгов
       DEMO_EVALUATION_DATE: ${DEMO_EVALUATION_DATE:-2026-10-22}
       SCORING_TIMEOUT: 20s
+      DECISION_ACTIVE_MODELS: "true"
       DECISION_CONCURRENCY: ${DECISION_CONCURRENCY:-4}
       DECISION_POLL_INTERVAL: 2s
       DECISION_LEASE: 60s
@@ -197,9 +198,12 @@ services:
     environment:
       BANK_URL: http://credit-engine-gateway:8082
       DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
+      SCORING_MODELS_DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
       STATEMENTS_URL: http://data-collector:8081
       DEMO_EVALUATION_DATE: ${DEMO_EVALUATION_DATE:-2026-10-22}
     depends_on:
+      credit-engine-admin:
+        condition: service_started
       migrate:
         condition: service_completed_successfully
     restart: unless-stopped
@@ -265,8 +269,6 @@ services:
     depends_on:
       credit-engine-admin-migrate:
         condition: service_completed_successfully
-      credit-engine-scoring:
-        condition: service_started
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]

@@ -8,6 +8,7 @@ import (
 
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/contracts"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/economics"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/modelbindings"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/optimizer"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/scoring"
 )
@@ -34,6 +35,7 @@ func New(policyID string, evaluator *scoring.Evaluator, selector *optimizer.Sele
 
 // Prepared is persisted before any bank call; retries never recalculate a committed operation.
 type Prepared struct {
+	Model  *modelbindings.Metadata        `json:"model,omitempty"`
 	Result contracts.DecisionResponse     `json:"result"`
 	Check  *contracts.BankCheckRequest    `json:"check,omitempty"`
 	Manual *contracts.ManualReviewRequest `json:"manual,omitempty"`
@@ -132,4 +134,8 @@ func (s *Service) Finish(ctx context.Context, p Prepared) (contracts.DecisionRes
 
 func (s *Service) ModelVersion(r contracts.DecisionRequest) (string, error) {
 	return s.evaluator.ModelVersion(r)
+}
+
+func (s *Service) ModelSnapshot(ctx context.Context, r contracts.DecisionRequest) (context.Context, modelbindings.Metadata, error) {
+	return s.evaluator.ModelSnapshot(ctx, r)
 }

@@ -5,12 +5,24 @@ import { Select } from '@alfalab/core-components/select';
 
 import type { ScoringAnswers } from '../../../api/collector/types';
 import { FormCard } from '../../../shared/ui/FormCard/FormCard';
+import { TestField, type TestValues } from '../../../shared/ui/TestField/TestField';
 import { StepLayout } from '../components/StepLayout';
 import { type StepProps, useStepGate } from '../stepProps';
 import './ScoringStep.css';
 
 type ChoiceField = 'need_evidence' | 'primary_income_source' | 'qualification' | 'car_class' | 'education_level' | 'real_estate_status' | 'business_location' | 'buyer_contracts';
 type Choice<K extends ChoiceField> = { key: NonNullable<ScoringAnswers[K]>; content: string }[];
+
+const CHOICE_EXAMPLES: { [K in ChoiceField]: TestValues<NonNullable<ScoringAnswers[K]>> } = {
+    need_evidence: { good: 'CONTRACT_AND_COST', neutral: 'VERIFIED_ESTIMATE', bad: 'ORAL_ONLY' },
+    primary_income_source: { good: 'BUSINESS', neutral: 'PRIVATE_EMPLOYMENT', bad: 'NONE' },
+    qualification: { good: 'MANAGER_OR_HIGHLY_QUALIFIED', neutral: 'SPECIALIST', bad: 'NONE' },
+    car_class: { good: 'PREMIUM', neutral: 'ECONOMY', bad: 'NONE' },
+    education_level: { good: 'HIGHER', neutral: 'VOCATIONAL', bad: 'BELOW_GENERAL' },
+    real_estate_status: { good: 'UNENCUMBERED_WHOLE', neutral: 'UNENCUMBERED_SHARE', bad: 'NONE' },
+    business_location: { good: 'VERIFIED_PHYSICAL', neutral: 'VERIFIED_ONLINE_OR_MOBILE', bad: 'UNVERIFIED' },
+    buyer_contracts: { good: 'ACTIVE_AND_PERFORMED', neutral: 'REPEAT_ORDERS', bad: 'PLANS_ONLY' },
+};
 
 const NEED_EVIDENCE: Choice<'need_evidence'> = [
     { key: 'CONTRACT_AND_COST', content: 'Договор или заказ и документы о стоимости' },
@@ -69,8 +81,19 @@ export function ScoringStep({ draft, hrefFor, errors, serverErrors, solePropriet
     const s = draft.value.scoring ?? {};
     const gate = useStepGate(errors, serverErrors, hrefFor('sources'));
     const set = (patch: Partial<ScoringAnswers>) => draft.update((prev) => ({ scoring: { ...prev.scoring, ...patch } }));
+    const requestedAmount = draft.value.requested?.amount ?? 5_000_000;
+    const requestedTerm = draft.value.requested?.term_months ?? 24;
+    const moneyExamples: Record<string, TestValues<number>> = {
+        min_acceptable_amount: { good: Math.round(requestedAmount * 0.3), neutral: Math.round(requestedAmount * 0.7), bad: requestedAmount },
+        need_cost: { good: requestedAmount + 1_000_000, neutral: requestedAmount, bad: Math.round(requestedAmount / 2) },
+        own_contribution: { good: 1_000_000, neutral: 100_000, bad: 0 },
+        free_cash: { good: 1_000_000, neutral: 100_000, bad: 0 },
+        minimum_cash: { good: 20_000, neutral: 50_000, bad: 200_000 },
+        net_monthly_income: { good: 250_000, neutral: 100_000, bad: 20_000 },
+    };
 
     const amount = (field: 'min_acceptable_amount' | 'need_cost' | 'own_contribution' | 'free_cash' | 'minimum_cash' | 'net_monthly_income', label: string, hint?: string) => (
+        <TestField label={label} value={s[field]} values={moneyExamples[field]!} onChange={(value) => set({ [field]: value })}>
         <AmountInput
             label={label}
             value={s[field] ?? null}
@@ -82,8 +105,13 @@ export function ScoringStep({ draft, hrefFor, errors, serverErrors, solePropriet
             block={true}
             size={56}
         />
+        </TestField>
     );
     const count = (field: 'max_acceptable_term_months' | 'experience_years' | 'total_experience_months' | 'location_stability_months', label: string, hint?: string) => (
+        <TestField label={label} value={s[field]} values={field === 'max_acceptable_term_months'
+            ? { good: Math.min(120, requestedTerm + 24), neutral: Math.min(120, requestedTerm + 12), bad: requestedTerm }
+            : field.endsWith('months') ? { good: 120, neutral: 24, bad: 0 } : { good: 15, neutral: 5, bad: 0 }}
+            onChange={(value) => set({ [field]: value })}>
         <Input
             label={label}
             value={s[field] === undefined ? '' : String(s[field])}
@@ -94,8 +122,11 @@ export function ScoringStep({ draft, hrefFor, errors, serverErrors, solePropriet
             block={true}
             size={56}
         />
+        </TestField>
     );
     const choice = <K extends ChoiceField>(field: K, label: string, options: Choice<K>) => (
+        <TestField label={label} value={s[field]} values={CHOICE_EXAMPLES[field]}
+            onChange={(value) => set({ [field]: value } as Partial<ScoringAnswers>)}>
         <Select
             label={label}
             size={56}
@@ -105,6 +136,7 @@ export function ScoringStep({ draft, hrefFor, errors, serverErrors, solePropriet
             onChange={({ selected }) => set({ [field]: selected?.key } as Partial<ScoringAnswers>)}
             error={gate.errorOf(`scoring.${field}`)}
         />
+        </TestField>
     );
 
     return (
@@ -117,6 +149,7 @@ export function ScoringStep({ draft, hrefFor, errors, serverErrors, solePropriet
         >
             <FormCard title='Какие условия вам подойдут'>
                 <div className='scoring-step__grid'>
+                    <TestField label='Максимальная ставка, % годовых' value={s.max_annual_rate} values={{ good: 40, neutral: 26.5, bad: 5 }} onChange={(max_annual_rate) => set({ max_annual_rate })}>
                     <Input
                         label='Максимальная ставка, % годовых'
                         value={s.max_annual_rate === undefined ? '' : String(s.max_annual_rate)}
@@ -129,6 +162,7 @@ export function ScoringStep({ draft, hrefFor, errors, serverErrors, solePropriet
                         block={true}
                         size={56}
                     />
+                    </TestField>
                     {amount('min_acceptable_amount', 'Минимальная сумма', 'Если всю сумму дать нельзя')}
                     {count('max_acceptable_term_months', 'Максимальный срок, мес.', 'Можно дольше запрошенного')}
                 </div>

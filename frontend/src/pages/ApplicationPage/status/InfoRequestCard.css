@@ -29,6 +29,14 @@
     gap: var(--gap-12);
 }
 
+.info-request-card__details {
+    margin: 0;
+    padding-left: 24px;
+    color: var(--color-light-text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
 @media (max-width: 599px) {
     .info-request-card {
         padding: var(--gap-16);

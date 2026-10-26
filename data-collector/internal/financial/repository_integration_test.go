@@ -32,6 +32,7 @@ func financialDB(t *testing.T) *pgxpool.Pool {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Runtime migrations create fixed schemas, so each test needs its own database.
 	databaseName := strings.ToLower(newID("test_"))
 	if _, err = base.Exec(ctx, `CREATE DATABASE `+databaseName); err != nil {
 		base.Close()

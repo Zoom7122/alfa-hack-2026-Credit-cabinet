@@ -61,6 +61,9 @@ compose run --rm --no-deps node scripts/scenarios.mjs prepare default
 reset_test_runtime
 compose up -d --no-deps --force-recreate bank-state-service
 compose run --rm --no-deps browser internal/adminui/testdata/runtime_smoke.mjs
+compose run --rm --no-deps browser internal/adminui/testdata/live_activation.mjs
+compose restart scoring-service
+compose run --rm --no-deps browser internal/adminui/testdata/live_activation.mjs restart
 compose run --rm --no-deps --entrypoint sh go scripts/rebuild.sh
 reset_test_runtime
 compose --profile checks up -d --no-deps bank-rebuilt scoring-rebuilt

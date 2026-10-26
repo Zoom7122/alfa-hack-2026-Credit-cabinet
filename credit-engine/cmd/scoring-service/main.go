@@ -38,6 +38,9 @@ func run() error {
 		defer service.Database.Close()
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	if service.ModelsDatabase != nil {
+		defer service.ModelsDatabase.Close()
+	}
 	defer stop()
 	return httpapi.Serve(ctx, service.Server)
 }

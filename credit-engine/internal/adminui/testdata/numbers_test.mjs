@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import {ExactNumber, parseJSON, stringifyJSON, integer, copyJSON} from "../web/numbers.js";
+import {ExactNumber, parseJSON, stringifyJSON, integer, copyJSON} from "../../../admin-frontend/src/legacy/numbers.js";
 
 let passed = 0;
 const check = (name, action) => { action(); passed++; };

@@ -58,11 +58,11 @@ export function DocumentVerification({ applicationId, document: doc, editable }:
                     </Button>
                 )}
             </div>
-            {retry.isError && <Plate view='negative' title='Не удалось запустить проверку'>{retry.error.message}</Plate>}
+            {retry.isError && <Plate view='negative' title='Не удалось запустить проверку' />}
             {expanded && (
                 <div role='region' aria-label={`Проверка подписи: ${doc.file_name}`}>
                     {report.isPending && <Typography.Text view='primary-small'>Загружаем отчёт…</Typography.Text>}
-                    {report.isError && <Plate view='negative' title='Не удалось загрузить отчёт'>{report.error.message}</Plate>}
+                    {report.isError && <Plate view='negative' title='Не удалось загрузить отчёт' />}
                     {r === null && <Typography.Text view='primary-small'>Отчёт ещё не готов</Typography.Text>}
                     {r && <>
                         <Typography.Text tag='p' view='primary-small' weight='bold'>

@@ -61,7 +61,12 @@ func (c *ModelsClient) Models(ctx context.Context) (modelbindings.RuntimeMetadat
 	}
 	seen := map[string]bool{}
 	for i, raw := range rows {
-		_, err := jsonstrict.Object(raw, "/models", []string{"id", "version", "borrower_type", "facts_schema_version", "definition_sha256", "facts_schema_sha256", "uses_facts", "format_version"}, nil)
+		fields := []string{"id", "version", "borrower_type", "facts_schema_version", "definition_sha256", "facts_schema_sha256", "uses_facts", "format_version"}
+		var object map[string]json.RawMessage
+		if json.Unmarshal(raw, &object) == nil && object["active"] != nil {
+			fields = append(fields, "active")
+		}
+		_, err := jsonstrict.Object(raw, "/models", fields, nil)
 		m := out.Models[i]
 		if err != nil || !release.ValidVersion(m.ID) || !release.ValidVersion(m.Version) || seen[m.Version] || m.FormatVersion != 1 ||
 			(m.BorrowerType != contracts.BorrowerTypeSoleProprietor && m.BorrowerType != contracts.BorrowerTypeLegalEntity) ||

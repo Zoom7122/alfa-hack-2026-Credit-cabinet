@@ -151,3 +151,29 @@ func TestScoringCollectionExhaustionAndEventInbox(t *testing.T) {
 		t.Fatal("duplicate inbox event", count)
 	}
 }
+
+func TestScoringJobPersistsModelSelectionMode(t *testing.T) {
+	for _, active := range []bool{false, true} {
+		t.Run(map[bool]string{false: "explicit-v2", true: "active-model"}[active], func(t *testing.T) {
+			p := scoringTestDB(t)
+			seedScoringApp(t, p)
+			ctx := context.Background()
+			r := ScoringJobRepository{Pool: p, UseActiveModels: active}
+			if ok, err := r.EnqueueNext(ctx, time.Now()); err != nil || !ok {
+				t.Fatal(ok, err)
+			}
+			// A restart with a different configuration cannot mutate an existing snapshot.
+			r.UseActiveModels = !active
+			job, ok, err := r.Claim(ctx, time.Minute)
+			if err != nil || !ok {
+				t.Fatal(ok, err)
+			}
+			if active && job.Payload.Request.ModelVersion != nil {
+				t.Fatal("active selection overridden by static version")
+			}
+			if !active && (job.Payload.Request.ModelVersion == nil || *job.Payload.Request.ModelVersion != "legal-v2") {
+				t.Fatal("explicit version not frozen")
+			}
+		})
+	}
+}

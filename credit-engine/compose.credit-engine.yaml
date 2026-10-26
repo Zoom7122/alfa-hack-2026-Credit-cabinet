@@ -47,6 +47,7 @@ services:
       BANK_URL: http://runtime-gateway:8082
       STATEMENTS_URL: ${STATEMENTS_URL:?Set STATEMENTS_URL}
       FACTS_URL: ${FACTS_URL:-}
+      SCORING_MODELS_DATABASE_URL: ${ADMIN_DATABASE_URL:?Set ADMIN_DATABASE_URL}
     depends_on: [bank-state-service]
 
   runtime-gateway:

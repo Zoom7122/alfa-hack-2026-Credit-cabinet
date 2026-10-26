@@ -9,7 +9,7 @@ import (
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/model"
 )
 
-const DocumentsFormatVersion = "1"
+const DocumentsFormatVersion = "2"
 const ModelsMarkdownStart = "<!-- modelgen:models:start -->"
 const ModelsMarkdownEnd = "<!-- modelgen:models:end -->"
 

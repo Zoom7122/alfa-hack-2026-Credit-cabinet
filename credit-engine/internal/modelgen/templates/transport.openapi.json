@@ -83,6 +83,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The configured model store is unavailable or its active model is invalid. No fallback model is selected.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
           }
         },
         "requestBody": {

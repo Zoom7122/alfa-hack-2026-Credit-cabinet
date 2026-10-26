@@ -16,6 +16,12 @@
 !docs/02_inputs_and_scoring.md
 !config/
 !config/*.json
+!admin-frontend/
+!admin-frontend/**
+admin-frontend/node_modules/
+admin-frontend/node_modules/**
+admin-frontend/test-results/**
+admin-frontend/playwright-report/**
 **/*_test.go
 **/testdata/
 **/testdata/**

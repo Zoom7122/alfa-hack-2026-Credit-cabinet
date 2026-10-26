@@ -9,7 +9,9 @@ import (
 	"mime/multipart"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/repository/postgres"
 	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/data-collector/internal/testdocument"
 	"github.com/gin-gonic/gin"
 )
@@ -92,4 +94,48 @@ func TestTestPDFAcceptedWithoutContextAndNeverQueued(t *testing.T) {
 		t.Fatalf("filename or is_test request flag bypassed real validation: %d %s", response.Code, response.Body.String())
 	}
 	assertNoWork()
+}
+
+func TestPersistedTestPDFCannotAffectDecision(t *testing.T) {
+	pool := financialDB(t)
+	ctx := context.Background()
+	repo := Repository{Pool: pool, Topic: "financial-test"}
+	doc, event := enqueueTestDocument(t, repo)
+	job, ok, err := repo.Claim(ctx, event.TaskID, 3, time.Minute)
+	if err != nil || !ok {
+		t.Fatalf("claim: %v %v", ok, err)
+	}
+	report := validReport(VerifyInput{DocumentSHA256: doc.SHA256, Applicant: job.Applicant, Policy: policy(job.Applicant)})
+	report.ID, report.VerifiedAt = newID("sigr_"), time.Now().UTC()
+	result := Result{ID: newID("fin_"), DocumentID: doc.ID, Generation: job.Generation, SignatureReportID: report.ID, Signature: report,
+		Extraction:        Extraction{DocumentSHA256: doc.SHA256},
+		ScoringIndicators: []Indicator{{Name: "usn_taxable_income", Period: "2025", PeriodKind: "YEAR", Amount: "999999999.00", Eligible: true, DataEligible: true}}}
+	if err := repo.Complete(ctx, job, result); err != nil {
+		t.Fatal(err)
+	}
+	decisions := postgres.NewDecisionRepository(pool)
+	before, err := decisions.Input(ctx, doc.ApplicationID, time.Now().UTC())
+	if err != nil || len(before.DocumentIndicators) != 1 {
+		t.Fatalf("positive control did not reach scoring: %+v %v", before.DocumentIndicators, err)
+	}
+	// Simulate an old/incorrect processor persisting an approved sample result and
+	// an invalid-integrity report. Neither values nor the fraud flag may be used.
+	result.DocumentSHA256, result.Signature.DocumentSHA256 = testdocument.SHA256, testdocument.SHA256
+	raw, err := json.Marshal(result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = pool.Exec(ctx, `UPDATE documents SET sha256=$2 WHERE id=$1`, doc.ID, testdocument.SHA256); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = pool.Exec(ctx, `UPDATE financial_document_results SET original_sha256=$2,result=$3 WHERE id=$1`, result.ID, testdocument.SHA256, raw); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = pool.Exec(ctx, `UPDATE signature_reports SET document_sha256=$2,integrity_status='INVALID' WHERE id=$1`, report.ID, testdocument.SHA256); err != nil {
+		t.Fatal(err)
+	}
+	after, err := decisions.Input(ctx, doc.ApplicationID, time.Now().UTC())
+	if err != nil || len(after.DocumentIndicators) != 0 || after.ForgedDocument {
+		t.Fatalf("sample changed scoring input: indicators=%+v forged=%v err=%v", after.DocumentIndicators, after.ForgedDocument, err)
+	}
 }

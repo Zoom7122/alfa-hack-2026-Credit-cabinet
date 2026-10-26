@@ -3,9 +3,14 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/httpapi"
+	"github.com/Zoom7122/alfa-hack-2026-Credit-cabinet/credit-engine/internal/modelbindings"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"reflect"
 	"sync"
@@ -197,5 +202,82 @@ func TestScoringRuntimeConcurrentReplicasAndOutbox(t *testing.T) {
 	// A new round is allowed to change a review, but cannot issue a second loan.
 	if _, err = s1.DecideWithKey(ctx, request, "different-round"); err == nil {
 		t.Fatal("second round issued twice")
+	}
+}
+
+// A new request resolves the active model, but recovery and replay must retain
+// the metadata of the already prepared operation even when the model store is down.
+type runtimeModelsWithOutage struct {
+	modelbindings.Provider
+	unavailable bool
+}
+
+func (p *runtimeModelsWithOutage) Resolve(ctx context.Context, version string, borrower contracts.BorrowerType) (*modelbindings.Entry, error) {
+	if p.unavailable {
+		return nil, errors.New("model store unavailable")
+	}
+	return p.Provider.Resolve(ctx, version, borrower)
+}
+func TestScoringRuntimePinsModelMetadataOnRecoveryAndReplay(t *testing.T) {
+	pool := scoringTestDB(t)
+	ctx := context.Background()
+	policy, state, request := runtimeFixture(t)
+	request.ModelVersion = nil
+	fixed := clock.Fixed{Time: time.Date(2026, 10, 23, 0, 0, 0, 0, time.UTC)}
+	b, err := bank.NewPersistent(ctx, pool, policy, state, fixed, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	catalog, err := modelbindings.NewDefault()
+	if err != nil {
+		t.Fatal(err)
+	}
+	provider := &runtimeModelsWithOutage{Provider: catalog}
+	evaluator, err := scoring.NewEvaluatorWithProvider(nil, nil, fixed, provider)
+	if err != nil {
+		t.Fatal(err)
+	}
+	selector, err := optimizer.New(policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	core, err := decision.New(policy.ID, evaluator, selector, &dropBankReply{bank: b})
+	if err != nil {
+		t.Fatal(err)
+	}
+	router := httpapi.NewScoringRouter(&decision.Persistent{Pool: pool, Core: core})
+	raw, err := json.Marshal(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	call := func(key string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/decisions", bytes.NewReader(raw))
+		req.Header.Set("Idempotency-Key", key)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		return w
+	}
+	first := call("model-round")
+	version, sha := first.Header().Get("X-Scoring-Model-Version"), first.Header().Get("X-Scoring-Model-SHA256")
+	if first.Code < 500 || version != "ip-v2" || len(sha) != 64 {
+		t.Fatalf("initial preparation: %d %s %s", first.Code, version, sha)
+	}
+	provider.unavailable = true
+	recovered := call("model-round")
+	cached := call("model-round")
+	for _, r := range []*httptest.ResponseRecorder{recovered, cached} {
+		if r.Code != 200 || r.Header().Get("X-Scoring-Model-Version") != version || r.Header().Get("X-Scoring-Model-SHA256") != sha {
+			t.Fatalf("metadata changed on retry: %d %v %s", r.Code, r.Header(), r.Body.String())
+		}
+	}
+	if recovered.Body.String() != cached.Body.String() {
+		t.Fatal("replay response changed")
+	}
+	if r := call("new-model-round"); r.Code != 503 {
+		t.Fatalf("new round bypassed model store: %d", r.Code)
+	}
+	loans, err := b.Loans()
+	if err != nil || len(loans) != 1 {
+		t.Fatal("duplicate loan", loans, err)
 	}
 }
