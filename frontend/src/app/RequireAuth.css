@@ -7,11 +7,18 @@
 }
 
 .auth-state__plate {
-    width: 480px;
+    width: 100%;
+    max-width: 480px;
 }
 
 .auth-state__actions {
     display: flex;
     gap: var(--gap-12);
     margin-top: var(--gap-12);
+}
+
+@media (max-width: 599px) {
+    .auth-state {
+        padding: var(--gap-16);
+    }
 }

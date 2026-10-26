@@ -24,3 +24,13 @@
     border-radius: var(--border-radius-16);
     background: var(--color-light-neutral-100);
 }
+
+@media (max-width: 599px) {
+    .documents-step__zone {
+        padding: var(--gap-16);
+    }
+
+    .documents-step__item {
+        padding: var(--gap-12);
+    }
+}

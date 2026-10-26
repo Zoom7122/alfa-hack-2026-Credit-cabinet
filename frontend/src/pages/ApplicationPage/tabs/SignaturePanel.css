@@ -73,3 +73,15 @@
     padding: 0;
     list-style: none;
 }
+
+@media (max-width: 599px) {
+    .signature-panel {
+        padding: var(--gap-16);
+        border-radius: var(--border-radius-20);
+    }
+
+    .signature-panel__head,
+    .signature-panel__signature-head {
+        flex-wrap: wrap;
+    }
+}

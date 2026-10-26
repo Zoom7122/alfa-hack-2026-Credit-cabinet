@@ -33,6 +33,7 @@ export function StageBar({ stages, clientStage }: Props) {
                             view='primary-small'
                             weight={current ? 'bold' : 'regular'}
                             color={current ? 'primary' : 'secondary'}
+                            className='stage-bar__label'
                         >
                             {title}
                             <VisuallyHidden>, {STATE_LABELS[stage.state]}</VisuallyHidden>

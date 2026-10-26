@@ -48,3 +48,10 @@
 .offer-card__choose {
     margin-top: auto;
 }
+
+@media (max-width: 599px) {
+    .offer-card {
+        padding: var(--gap-16);
+        border-radius: var(--border-radius-20);
+    }
+}

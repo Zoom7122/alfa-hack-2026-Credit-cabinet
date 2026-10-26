@@ -38,3 +38,27 @@
 .score-card__bar {
     display: block;
 }
+
+@media (max-width: 1023px) {
+    .score-card__factor {
+        grid-template-columns: 200px minmax(0, 1fr) 56px;
+    }
+}
+
+/* телефон: название и баллы — строкой, полоска — под ними */
+@media (max-width: 599px) {
+    .score-card {
+        padding: var(--gap-16);
+        border-radius: var(--border-radius-20);
+    }
+
+    .score-card__factor {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: var(--gap-4) var(--gap-12);
+    }
+
+    .score-card__bar {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+}

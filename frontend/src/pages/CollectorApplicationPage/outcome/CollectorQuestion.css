@@ -24,8 +24,19 @@
     align-self: stretch;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 599px) {
     .collector-question__fields {
         grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 599px) {
+    .collector-question {
+        padding: var(--gap-16);
+        border-radius: var(--border-radius-20);
+    }
+
+    .collector-question__head {
+        flex-wrap: wrap;
     }
 }

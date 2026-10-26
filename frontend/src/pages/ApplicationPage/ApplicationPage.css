@@ -49,3 +49,34 @@
 .application-page__stage {
     outline: none;
 }
+
+@media (max-width: 1023px) {
+    .application-page {
+        padding: var(--gap-24) var(--gap-24) var(--gap-48);
+    }
+
+    .application-page__columns {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .application-page__aside {
+        width: auto;
+    }
+}
+
+@media (max-width: 599px) {
+    .application-page {
+        gap: var(--gap-20);
+        padding: var(--gap-20) var(--gap-16) var(--gap-40);
+    }
+
+    .application-page__head {
+        flex-direction: column;
+        gap: var(--gap-16);
+    }
+
+    .application-page__panel {
+        padding-top: var(--gap-16);
+    }
+}

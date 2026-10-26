@@ -85,3 +85,41 @@
     background: var(--color-light-status-muted-attention);
     color: var(--color-light-status-attention);
 }
+
+/* планшет и телефон: навигация — над формой, шаги — строкой с прокруткой */
+@media (max-width: 1023px) {
+    .wizard-nav {
+        position: static;
+        width: auto;
+        gap: var(--gap-16);
+    }
+
+    .wizard-nav__steps {
+        position: relative;
+        flex-direction: row;
+        margin: 0 var(--gap-20-neg);
+        padding: 0 var(--gap-20);
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .wizard-nav__step {
+        flex: none;
+        gap: var(--gap-8);
+        padding: var(--gap-8) var(--gap-12);
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 599px) {
+    .wizard-nav {
+        gap: var(--gap-12);
+        padding: var(--gap-16);
+        border-radius: var(--border-radius-20);
+    }
+
+    .wizard-nav__steps {
+        margin: 0 var(--gap-16-neg);
+        padding: 0 var(--gap-16);
+    }
+}

@@ -7,7 +7,7 @@ import { Input } from '@alfalab/core-components/input';
 import { Plate } from '@alfalab/core-components/plate';
 import { Segment, SegmentedControl } from '@alfalab/core-components/segmented-control';
 import { Select } from '@alfalab/core-components/select';
-import { SidePanelDesktop } from '@alfalab/core-components/side-panel/desktop';
+import { SidePanelResponsive } from '@alfalab/core-components/side-panel';
 import { Textarea } from '@alfalab/core-components/textarea';
 import { Typography } from '@alfalab/core-components/typography';
 import { CrossMIcon } from '@alfalab/icons-glyph/CrossMIcon';
@@ -273,13 +273,13 @@ export function DecisionPanel({ dossier, mode, decide, onModeChange, onClose }: 
     const fieldErrors = error?.status === 422 ? (error.problem?.errors ?? []) : [];
 
     return (
-        <SidePanelDesktop open={true} onClose={onClose} size={500} wrapperProps={{ 'aria-label': 'Решение по заявке', 'aria-modal': true }}>
-            <SidePanelDesktop.Header hasCloser={true} title='Решение по заявке' />
-            <SidePanelDesktop.Content>
+        <SidePanelResponsive breakpoint={600} open={true} onClose={onClose} size={500} wrapperProps={{ 'aria-label': 'Решение по заявке', 'aria-modal': true }}>
+            <SidePanelResponsive.Header hasCloser={true} title='Решение по заявке' />
+            <SidePanelResponsive.Content>
                 <div className='decision-panel'>
                     <SegmentedControl selectedId={mode} onChange={(id) => changeMode(id as DecisionMode)}>
                         <Segment id='APPROVE' title='Одобрить' />
-                        <Segment id='REQUEST_INFO' title='Запросить данные' />
+                        <Segment id='REQUEST_INFO' title='Запросить' />
                         <Segment id='REJECT' title='Отказать' />
                     </SegmentedControl>
 
@@ -529,9 +529,9 @@ export function DecisionPanel({ dossier, mode, decide, onModeChange, onClose }: 
                         </Plate>
                     )}
                 </div>
-            </SidePanelDesktop.Content>
-            <SidePanelDesktop.Footer>
-                <SidePanelDesktop.Controls
+            </SidePanelResponsive.Content>
+            <SidePanelResponsive.Footer>
+                <SidePanelResponsive.Controls
                     primary={
                         <Button view={mode === 'REJECT' ? 'secondary' : 'primary'} size={56} onClick={submit} loading={decide.isPending}>
                             {submitLabel}
@@ -543,7 +543,7 @@ export function DecisionPanel({ dossier, mode, decide, onModeChange, onClose }: 
                         </Button>
                     }
                 />
-            </SidePanelDesktop.Footer>
-        </SidePanelDesktop>
+            </SidePanelResponsive.Footer>
+        </SidePanelResponsive>
     );
 }

@@ -79,3 +79,45 @@
     border-radius: var(--border-radius-circle);
     background: var(--color-light-neutral-300);
 }
+
+@media (max-width: 1023px) {
+    .app-header__inner {
+        gap: var(--gap-24);
+        padding: 0 var(--gap-24);
+    }
+
+    .app-header__user-text {
+        display: none;
+    }
+}
+
+/* телефон: логотип и действия — первой строкой, разделы — второй, с прокруткой */
+@media (max-width: 599px) {
+    .app-header__inner {
+        flex-wrap: wrap;
+        gap: 0 var(--gap-12);
+        height: auto;
+        padding: var(--gap-8) var(--gap-16) 0;
+    }
+
+    .app-header__logo {
+        height: 48px;
+    }
+
+    .app-header__actions {
+        gap: var(--gap-4);
+    }
+
+    .app-header__nav {
+        order: 1;
+        width: 100%;
+        gap: var(--gap-20);
+        padding: var(--gap-4) 0 var(--gap-12);
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .app-header__nav-link {
+        flex: none;
+    }
+}

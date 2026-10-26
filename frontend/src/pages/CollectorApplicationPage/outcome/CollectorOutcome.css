@@ -31,3 +31,9 @@
     height: 160px;
     border-radius: var(--border-radius-16);
 }
+
+@media (max-width: 599px) {
+    .collector-outcome__offers {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

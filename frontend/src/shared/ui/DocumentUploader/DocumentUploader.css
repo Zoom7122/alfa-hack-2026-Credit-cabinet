@@ -30,3 +30,13 @@
     border-radius: var(--border-radius-16);
     background: var(--color-light-neutral-100);
 }
+
+@media (max-width: 599px) {
+    .document-uploader__zone {
+        padding: var(--gap-16);
+    }
+
+    .document-uploader__item {
+        padding: var(--gap-12);
+    }
+}

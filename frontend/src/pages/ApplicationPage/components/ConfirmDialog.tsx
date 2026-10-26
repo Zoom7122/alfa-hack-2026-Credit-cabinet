@@ -1,6 +1,6 @@
 import { type ReactNode, useId } from 'react';
 import { Button } from '@alfalab/core-components/button';
-import { ModalDesktop } from '@alfalab/core-components/modal/desktop';
+import { ModalResponsive } from '@alfalab/core-components/modal';
 import { Typography } from '@alfalab/core-components/typography';
 
 import './ConfirmDialog.css';
@@ -18,18 +18,18 @@ type Props = {
 export function ConfirmDialog({ title, children, confirmLabel, onConfirm, onClose, loading }: Props) {
     const titleId = useId();
     return (
-        <ModalDesktop open={true} onClose={onClose} size={500} wrapperProps={{ 'aria-labelledby': titleId, 'aria-modal': true }}>
-            <ModalDesktop.Header hasCloser={true} />
-            <ModalDesktop.Content>
+        <ModalResponsive breakpoint={600} open={true} onClose={onClose} size={500} wrapperProps={{ 'aria-labelledby': titleId, 'aria-modal': true }}>
+            <ModalResponsive.Header hasCloser={true} />
+            <ModalResponsive.Content>
                 <div className='confirm-dialog'>
                     <Typography.Title id={titleId} tag='h2' view='small' font='system'>
                         {title}
                     </Typography.Title>
                     {children}
                 </div>
-            </ModalDesktop.Content>
-            <ModalDesktop.Footer>
-                <ModalDesktop.Controls
+            </ModalResponsive.Content>
+            <ModalResponsive.Footer>
+                <ModalResponsive.Controls
                     primary={
                         <Button view='primary' size={48} onClick={onConfirm} loading={loading}>
                             {confirmLabel}
@@ -41,7 +41,7 @@ export function ConfirmDialog({ title, children, confirmLabel, onConfirm, onClos
                         </Button>
                     }
                 />
-            </ModalDesktop.Footer>
-        </ModalDesktop>
+            </ModalResponsive.Footer>
+        </ModalResponsive>
     );
 }

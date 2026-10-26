@@ -61,3 +61,44 @@
     border-radius: var(--border-radius-circle);
     background: var(--color-light-neutral-translucent-300-inverted);
 }
+
+@media (max-width: 1023px) {
+    .backoffice-header__inner {
+        gap: var(--gap-24);
+        padding: 0 var(--gap-24);
+    }
+
+    .backoffice-header__user-text {
+        display: none;
+    }
+}
+
+@media (max-width: 599px) {
+    .backoffice-header__inner {
+        flex-wrap: wrap;
+        gap: 0 var(--gap-12);
+        height: auto;
+        padding: var(--gap-8) var(--gap-16) 0;
+    }
+
+    .backoffice-header__logo {
+        height: 48px;
+    }
+
+    .backoffice-header__avatar {
+        display: none;
+    }
+
+    .backoffice-header__nav {
+        order: 1;
+        width: 100%;
+        gap: var(--gap-20);
+        padding: var(--gap-4) 0 var(--gap-12);
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .backoffice-header__link {
+        flex: none;
+    }
+}

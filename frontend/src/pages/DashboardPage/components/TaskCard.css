@@ -41,3 +41,24 @@
 .task-card__action {
     flex: none;
 }
+
+@media (max-width: 599px) {
+    .task-card {
+        flex-wrap: wrap;
+        gap: var(--gap-12);
+        padding: var(--gap-16);
+    }
+
+    .task-card__icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .task-card__text {
+        flex-basis: calc(100% - 52px);
+    }
+
+    .task-card__action {
+        padding-left: 52px;
+    }
+}

@@ -19,7 +19,6 @@ const NAV: NavItem[] = [
         active: (path, assignee) => (path === '/backoffice' && assignee !== 'me') || path.startsWith('/backoffice/applications'),
     },
     { to: '/backoffice?assignee=me', label: 'Мои заявки', active: (path, assignee) => path === '/backoffice' && assignee === 'me' },
-    { to: '/backoffice/companies', label: 'Компании', active: (path) => path.startsWith('/backoffice/companies') },
 ];
 
 /** Тёмная шапка рабочего места андеррайтера (макеты 16–17). */

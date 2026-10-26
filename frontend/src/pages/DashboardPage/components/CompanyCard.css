@@ -38,3 +38,9 @@
 .company-card__add {
     align-self: flex-start;
 }
+
+@media (max-width: 599px) {
+    .company-card {
+        padding: var(--gap-16);
+    }
+}

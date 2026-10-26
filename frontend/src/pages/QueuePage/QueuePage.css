@@ -80,3 +80,51 @@
     justify-content: flex-end;
     white-space: nowrap;
 }
+
+@media (max-width: 1023px) {
+    .queue {
+        padding: var(--gap-24) var(--gap-24) var(--gap-48);
+    }
+
+    .queue__stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    /* таблица очереди прокручивается внутри карточки */
+    .queue__card {
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 599px) {
+    .queue {
+        gap: var(--gap-16);
+        padding: var(--gap-20) var(--gap-16) var(--gap-40);
+    }
+
+    .queue__head {
+        flex-wrap: wrap;
+        gap: var(--gap-8);
+    }
+
+    .queue__stats {
+        gap: var(--gap-8);
+    }
+
+    .queue__stat {
+        gap: var(--gap-8);
+        padding: var(--gap-16);
+        border-radius: var(--border-radius-20);
+    }
+
+    .queue__card {
+        padding: var(--gap-16);
+        border-radius: var(--border-radius-20);
+    }
+
+    .queue__search,
+    .queue__assignee,
+    .queue__query {
+        width: 100%;
+    }
+}

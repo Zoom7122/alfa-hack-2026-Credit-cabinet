@@ -35,3 +35,33 @@
     height: 156px;
     border-radius: var(--border-radius-24);
 }
+
+@media (max-width: 1023px) {
+    .products {
+        padding: var(--gap-24) var(--gap-24) var(--gap-48);
+    }
+
+    .products__columns {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .products__list {
+        flex: none;
+    }
+}
+
+@media (max-width: 599px) {
+    .products {
+        gap: var(--gap-20);
+        padding: var(--gap-20) var(--gap-16) var(--gap-40);
+    }
+
+    .products__columns {
+        gap: var(--gap-16);
+    }
+
+    .products__list {
+        gap: var(--gap-12);
+    }
+}

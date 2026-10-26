@@ -47,3 +47,18 @@
     gap: var(--gap-12);
     padding-left: var(--gap-32);
 }
+
+@media (max-width: 599px) {
+    .review-step__section-head {
+        flex-wrap: wrap;
+    }
+
+    .review-step__row {
+        flex-wrap: wrap;
+        gap: var(--gap-2) var(--gap-16);
+    }
+
+    .review-step__scopes {
+        padding-left: var(--gap-16);
+    }
+}

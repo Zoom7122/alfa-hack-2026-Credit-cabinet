@@ -18,7 +18,7 @@ body {
 }
 
 body {
-    min-width: 1280px;
+    min-width: 320px;
     background: var(--color-light-base-bg-secondary);
     color: var(--color-light-text-primary);
     font-family: var(--font-family-system);

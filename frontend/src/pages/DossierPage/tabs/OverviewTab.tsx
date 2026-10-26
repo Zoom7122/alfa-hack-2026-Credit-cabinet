@@ -47,7 +47,7 @@ function FindingsCard({ findings }: { findings: Finding[] }) {
                     Расхождений не нашли
                 </Typography.Text>
             ) : (
-                <Table wrapper={false}>
+                <Table wrapper={false} className='overview__table'>
                     <Table.THead>
                         <Table.THeadCell>Поле</Table.THeadCell>
                         <Table.THeadCell>Заявлено</Table.THeadCell>

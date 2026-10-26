@@ -78,8 +78,7 @@ test.describe('Главная клиента', () => {
 
     test('несверстанный раздел — заглушка с «На главную»', async ({ page }) => {
         await seedToken(page, 'director');
-        await page.goto('/');
-        await page.getByRole('link', { name: 'Счета' }).click();
+        await page.goto('/accounts');
         await expect(page.getByRole('heading', { name: 'Экран в разработке' })).toBeVisible();
         await page.getByRole('link', { name: 'На главную', exact: true }).click();
         await expectPath(page, '/');

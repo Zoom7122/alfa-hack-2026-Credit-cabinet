@@ -34,3 +34,15 @@
     display: flex;
     justify-content: flex-end;
 }
+
+@media (max-width: 599px) {
+    .collector-documents {
+        gap: var(--gap-16);
+    }
+
+    .collector-documents__main {
+        flex-basis: 100%;
+        padding: var(--gap-16);
+        border-radius: var(--border-radius-20);
+    }
+}

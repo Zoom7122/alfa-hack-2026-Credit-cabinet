@@ -24,3 +24,9 @@
     outline: 2px solid var(--color-light-accent-secondary);
     outline-offset: var(--gap-2);
 }
+
+@media (max-width: 599px) {
+    .breadcrumbs {
+        flex-wrap: wrap;
+    }
+}

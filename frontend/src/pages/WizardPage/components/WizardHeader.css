@@ -30,3 +30,32 @@
 .wizard-header__status {
     font-variant-numeric: tabular-nums;
 }
+
+@media (max-width: 1023px) {
+    .wizard-header {
+        padding: 0 var(--gap-24);
+    }
+}
+
+/* телефон: от логотипа остаётся знак — кнопке выхода нужно место */
+@media (max-width: 599px) {
+    .wizard-header {
+        gap: var(--gap-12);
+        height: 64px;
+        padding: 0 var(--gap-16);
+    }
+
+    .wizard-header__brand {
+        display: none;
+    }
+
+    .wizard-header__actions {
+        gap: var(--gap-12);
+        min-width: 0;
+    }
+
+    /* экранному диктору статус объявляет скрытый role=status */
+    .wizard-header__status {
+        display: none;
+    }
+}

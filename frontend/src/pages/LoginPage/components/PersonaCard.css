@@ -49,3 +49,10 @@
 .persona-card__persona {
     margin-top: var(--gap-4);
 }
+
+@media (max-width: 599px) {
+    .persona-card {
+        gap: var(--gap-12);
+        padding: var(--gap-16);
+    }
+}
