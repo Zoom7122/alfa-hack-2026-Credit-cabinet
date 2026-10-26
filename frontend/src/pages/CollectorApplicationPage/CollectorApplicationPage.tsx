@@ -33,10 +33,10 @@ const DECIDED = new Set(['WAITING_FOR_INFO', 'OFFERED', 'REJECTED']);
 /** Этапы заявки data-collector: анкета → сбор данных → проверка банком (оценка, специалист) → решение. */
 function stagesOf(app: CollectorApplication, failed: boolean): StageItem[] {
     const status = app.status ?? 'SUBMITTED';
-    const current = failed || COLLECTING.has(status) ? 1 : DECIDED.has(status) ? 3 : 2;
+    const current = status === 'COMPLETED' ? 5 : status === 'SIGNING' ? 4 : failed || COLLECTING.has(status) ? 1 : DECIDED.has(status) ? 3 : 2;
     const state = (i: number): StageItem['state'] => (i < current ? 'DONE' : i === current ? 'CURRENT' : 'UPCOMING');
     const step = (code: ClientStage, title: string, i: number): StageItem => ({ code, title, state: state(i) });
-    return [step('FILLING', 'Анкета', 0), step('REVIEW', 'Сбор данных', 1), step('OFFER', 'Проверка банком', 2), step('DONE', 'Решение', 3)];
+    return [step('FILLING', 'Анкета', 0), step('REVIEW', 'Сбор данных', 1), step('REVIEW', 'Проверка банком', 2), step('OFFER', 'Решение', 3), step('SIGNING', 'Подписание', 4), step('DONE', 'Выдача', 5)];
 }
 
 const rowsOf = (items: [string, ReactNode][]) => items.filter(([, value]) => value).map(([label, value]) => ({ label, value }));

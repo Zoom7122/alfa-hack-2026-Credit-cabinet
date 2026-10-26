@@ -1,4 +1,4 @@
-import type { CollectorDocument, CollectorRole, QuestionnaireInput } from '../../api/collector/types';
+import type { CollectorDocument, CollectorRole, CollectorSigningSession, QuestionnaireInput } from '../../api/collector/types';
 
 /* Состояние мока data-collector: заявки, документы, задачи на сбор. Переживает перезагрузку, как и остальные моки. */
 
@@ -24,6 +24,9 @@ export type StoredCollectorApp = {
     answers?: Record<string, { value?: unknown; comment?: string; document_ids: string[]; at: string }>;
     /** Ручное рассмотрение: исполнитель, версия заявки, решения андеррайтера, служебный журнал. */
     review?: StoredReview;
+    signing?: CollectorSigningSession;
+    signing_contract?: string;
+    signing_events?: { id: string; at: string; type: string; message: string; actor_kind: 'CLIENT' | 'SYSTEM' }[];
 };
 
 export type StoredQuestion = { id: string; title: string; description?: string; required: boolean; input: unknown; documents?: unknown; created_at: string };

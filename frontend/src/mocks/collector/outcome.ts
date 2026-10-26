@@ -92,6 +92,14 @@ export function offerOf(app: StoredCollectorApp, createdMs: number): CollectorOf
     };
 }
 
+export function offersOf(app: StoredCollectorApp, createdMs: number): CollectorOffer[] {
+    const approved = app.review?.decisions.filter((d) => d.action === 'APPROVE').at(-1);
+    const offers: CollectorOffer[] = approved
+        ? (approved.offers ?? []).map((o, i) => ({ ...o, kind: o.kind === 'ALTERNATIVE' ? 'ALTERNATIVE' : 'REQUESTED', id: `ofr_${app.id.slice(4)}_${i}`, state: 'ACTIVE', recommended: i === 0, collateral_required: [] }))
+        : [offerOf(app, createdMs)];
+    return offers.map((o) => ({ ...o, state: !app.signing ? 'ACTIVE' : o.id !== app.signing.offer_id ? 'WITHDRAWN' : app.signing.state === 'FAILED' ? 'ACTIVE' : 'ACCEPTED' }));
+}
+
 export const REJECT_REASONS = [
     { code: 'BANKRUPT', title: 'Подтверждено банкротство заёмщика.' },
     { code: 'CURRENT_DPD_30_PLUS', title: 'Текущая просрочка составляет не менее 30 дней.' },

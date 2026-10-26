@@ -12,6 +12,7 @@ export type CollectorStatus = NonNullable<CollectorApplication['status']>;
 export type CollectorRole = Schemas['RepresentativeInput']['role'];
 export type CollectorDecision = Schemas['ClientDecision'];
 export type CollectorOffer = Schemas['Offer'];
+export type CollectorSigningSession = Schemas['SigningSession'];
 export type CollectorInfoRequest = Schemas['InfoRequest'];
 export type RegisterInput = Schemas['RegisterApplicantRequest'];
 export type QuestionnaireSubmitted = Schemas['QuestionnaireSubmitted'];

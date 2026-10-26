@@ -105,13 +105,15 @@ const (
 	ApplicationManualReview   ApplicationStatus = "MANUAL_REVIEW"    // решение за андеррайтером
 	ApplicationWaitingForInfo ApplicationStatus = "WAITING_FOR_INFO" // банк ждёт ответы клиента
 	ApplicationOffered        ApplicationStatus = "OFFERED"          // клиенту выданы предложения
+	ApplicationSigning        ApplicationStatus = "SIGNING"          // выбран договор, ждём подтверждение кодом
+	ApplicationCompleted      ApplicationStatus = "COMPLETED"        // договор подписан, учебная выдача завершена
 	ApplicationRejected       ApplicationStatus = "REJECTED"         // отказ банка
 )
 
 // ApplicationStatuses — статусы, которые ставит модуль, в порядке конвейера.
 var ApplicationStatuses = []ApplicationStatus{ApplicationDraft, ApplicationSubmitted, ApplicationEnriching,
 	ApplicationVerifying, ApplicationScoring, ApplicationManualReview, ApplicationWaitingForInfo, ApplicationOffered,
-	ApplicationRejected}
+	ApplicationRejected, ApplicationSigning, ApplicationCompleted}
 
 // Valid — статус из тех, что ставит модуль.
 func (s ApplicationStatus) Valid() bool { return slices.Contains(ApplicationStatuses, s) }

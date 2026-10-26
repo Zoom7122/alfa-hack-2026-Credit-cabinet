@@ -32,6 +32,7 @@ const MAX_POLL_MS = 30 * 60_000;
  */
 function shouldPoll(app: CollectorApplication | undefined, queryClient: QueryClient) {
     if (!app) return false;
+    if (app.status === 'SIGNING') return true;
     const recent = !app.submitted_at || Date.now() - new Date(app.submitted_at).getTime() < MAX_POLL_MS;
     // после сбора ждём оценку банка; подписи worker проверяет и в итоговых статусах
     if (SCORING.has(app.status ?? '')) return recent;

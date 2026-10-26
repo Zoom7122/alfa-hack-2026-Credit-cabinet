@@ -82,9 +82,9 @@ export function useMockLogin() {
 }
 
 /**
- * Профиль: пользователь и компании — у data-collector (там вход). Подписание пока живёт в основном API (моки по
- * openapi.yaml): оттуда — `pending_signatures` для колокольчика и id компаний, на которые завязаны его экраны
- * (совпадение по ИНН). Основной API недоступен — профиль всё равно есть, без подписей.
+ * Профиль и новые подписания — у data-collector. Основной API (моки по openapi.yaml) добавляет
+ * старые демо-подписания для колокольчика и id компаний, на которые завязаны его экраны
+ * (совпадение по ИНН). При недоступном основном API остаются профиль и подписания data-collector.
  */
 async function loadMe(): Promise<Me> {
     const [live, legacy] = await Promise.all([
@@ -98,7 +98,7 @@ async function loadMe(): Promise<Me> {
     const companies = live.companies.map((c) => ({ ...c, applicant_id: legacyByInn.get(c.inn)?.applicant_id ?? c.applicant_id }));
     // компании, привязанные в основном API (экран «Добавить компанию»), — тоже в профиле
     for (const c of legacy?.companies ?? []) if (!companies.some((x) => x.inn === c.inn)) companies.push(c);
-    return { ...live, companies, pending_signatures: legacy?.pending_signatures ?? live.pending_signatures };
+    return { ...live, companies, pending_signatures: [...new Set([...(live.pending_signatures ?? []), ...(legacy?.pending_signatures ?? [])])] };
 }
 
 export function useMe(enabled = true) {

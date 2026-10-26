@@ -16,7 +16,7 @@ import { REGISTRY_TIMEOUT_INN, registry } from '../data';
 import { mockFailure } from '../handlers';
 import { stepMs } from '../workflow';
 import { productByCode, termsErrors } from './catalog';
-import { allAnswered, offerOf, questionsOf, REJECT_REASONS, scoredOutcome } from './outcome';
+import { allAnswered, offersOf, questionsOf, REJECT_REASONS, scoredOutcome } from './outcome';
 import { FAILING_COLLECTION_INN, scenarioByInn } from './scenarios';
 import { mutateCollector, newId, readCollector, type StoredCollectorApp } from './store';
 import { collectorUser, COLLECTOR_TEST_USERS } from './users';
@@ -81,6 +81,8 @@ const canSign = (role: CollectorRole, soleProprietor: boolean) => role === 'DIRE
 
 /** Статус по времени отправки: шаг конвейера — как у остальных моков (флаг credit-cabinet:mock-pipeline-ms). */
 export function statusOf(app: StoredCollectorApp, now = Date.now()): CollectorStatus {
+    if (app.signing?.state === 'SIGNED') return 'COMPLETED';
+    if (app.signing?.state === 'AWAITING_SIGNER') return 'SIGNING';
     if (app.submitted_ms === undefined) return 'DRAFT';
     const elapsed = now - app.submitted_ms;
     if (elapsed < stepMs()) return 'SUBMITTED';
@@ -209,7 +211,7 @@ export function timelineOf(app: StoredCollectorApp) {
     for (const e of app.review?.events ?? []) {
         if (!e.internal) events.push({ id: e.id, at: e.at, type: e.type, message: e.message, actor_kind: e.actor ? 'EMPLOYEE' : 'SYSTEM' } as (typeof events)[number]);
     }
-    return events.sort((a, b) => b.at.localeCompare(a.at));
+    return [...events, ...(app.signing_events ?? [])].sort((a, b) => b.at.localeCompare(a.at));
 }
 
 /** Системы без входных данных (domain.SkippedSystems) — с причиной. */
@@ -442,7 +444,8 @@ function meOf(user: (typeof COLLECTOR_TEST_USERS)[number]) {
         added.push({ applicant_id: app.company.id, short_name: app.company.name ?? `ИНН ${app.company.inn}`, inn: app.company.inn, role: app.representative.role, can_sign: app.representative.can_sign });
     }
     added.sort((a, b) => a.short_name.localeCompare(b.short_name) || a.applicant_id.localeCompare(b.applicant_id));
-    return { id: user.id, full_name: user.full_name, roles: user.roles, companies: [...user.companies, ...added], pending_signatures: [] };
+    const pending = readCollector().apps.filter((a) => a.signing?.state === 'AWAITING_SIGNER' && a.signing.required_signer.id === user.id).map((a) => a.id);
+    return { id: user.id, full_name: user.full_name, roles: user.roles, companies: [...user.companies, ...added], pending_signatures: pending };
 }
 
 // ---------------------------------------------------------------- обработчики
@@ -781,13 +784,7 @@ export const collectorHandlers = [
         await delay(150);
         const app = readCollector().apps.find((a) => a.id === params.id);
         if (!app) return notFound('не найдено');
-        const approved = app.review?.decisions.filter((d) => d.action === 'APPROVE').at(-1);
-        if (approved) {
-            return HttpResponse.json({
-                items: (approved.offers ?? []).map((o, i) => ({ id: `ofr_${app.id.slice(4)}_${i}`, state: 'ACTIVE', recommended: i === 0, collateral_required: [], conditions: [], ...o })),
-            });
-        }
-        return HttpResponse.json({ items: statusOf(app) === 'OFFERED' ? [offerOf(app, scoredAt(app))] : [] });
+        return HttpResponse.json({ items: ['OFFERED', 'SIGNING', 'COMPLETED'].includes(statusOf(app)) ? offersOf(app, scoredAt(app)) : [] });
     }),
 
     http.get(url('/applications/:id/info-requests'), async ({ params }) => {

@@ -135,6 +135,8 @@ func run(log *slog.Logger) error {
 		// итог для клиента: решение, предложения, вопросы банка и ответы
 		httptransport.WithOutcome(httptransport.NewOutcomeHandler(service.NewOutcomeService(postgres.NewBackofficeRepository(pool),
 			applications, files, 4*time.Hour), service.MaxFiles*maxFileSize+2<<20, log)),
+		httptransport.WithSigning(httptransport.NewSigningHandler(service.NewSigningService(postgres.NewSigningRepository(pool),
+			files, func(key string) (io.ReadCloser, error) { return files.Open(key) }), log)),
 		// рабочее место андеррайтера
 		httptransport.WithBackoffice(httptransport.NewBackofficeHandler(
 			service.NewBackofficeService(postgres.NewBackofficeRepository(pool)), log)),
