@@ -104,6 +104,13 @@ func run(log *slog.Logger) error {
 			return err
 		}
 		log.Info("test users seeded", "count", len(service.TestUsers))
+		if env.String("SEED_TEST_APPLICATIONS", "true") != "false" {
+			count, err := applications.SeedTestApplications(ctx)
+			if err != nil {
+				return fmt.Errorf("seed test applications: %w", err)
+			}
+			log.Info("test applications seeded", "inserted", count)
+		}
 	}
 	questionnaireSvc := service.NewQuestionnaireService(applications, files, collectionSvc)
 

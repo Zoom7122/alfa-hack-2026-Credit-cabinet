@@ -13,6 +13,9 @@ import (
 )
 
 const (
+	// Общая блокировка стартового заполнения пользователей и заявок.
+	seedTestDataLockSQL = `SELECT pg_advisory_xact_lock(20261026, 1)`
+
 	// Тестовый пользователь: id фиксирован, поэтому повторный старт обновляет строку, а не дублирует.
 	// created_at — порядок в списке входа (как в service.TestUsers): обновляется и у уже заведённых.
 	seedUser = `
@@ -54,6 +57,9 @@ func NewUserRepository(pool *pgxpool.Pool) *UserRepository {
 func (r *UserRepository) SeedTestUsers(ctx context.Context, users []domain.TestUserSeed) error {
 	base := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	return pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
+		if _, err := tx.Exec(ctx, seedTestDataLockSQL); err != nil {
+			return fmt.Errorf("lock test users: %w", err)
+		}
 		ids := make([]string, len(users))
 		for i, u := range users {
 			ids[i] = u.ID

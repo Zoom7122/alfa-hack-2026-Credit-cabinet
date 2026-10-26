@@ -81,6 +81,8 @@ services:
     build: ./data-collector
     environment:
       HTTP_ADDR: :8081
+      SEED_TEST_USERS: ${SEED_TEST_USERS:-true}
+      SEED_TEST_APPLICATIONS: ${SEED_TEST_APPLICATIONS:-true}
       DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?sslmode=disable
       BANK_API_URL: http://mock-api:8090/bank/v1
       BANK_API_TIMEOUT: 5s
